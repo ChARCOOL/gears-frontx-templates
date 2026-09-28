@@ -419,6 +419,7 @@ export const useWeekGridController = <Payload = unknown>(
     onPaintSelect: handlePaintSelect,
     onQuickCreate: options.onQuickCreate,
     shouldInvalidate: shouldInvalidateInteraction,
+    timeZone: options.timeZone,
   });
 
   const cellKey = useCallback(

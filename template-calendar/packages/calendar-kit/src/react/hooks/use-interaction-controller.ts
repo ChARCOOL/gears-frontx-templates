@@ -23,6 +23,7 @@ import type {
   CalendarEvent,
   CalendarMoveRequest,
   CalendarSelectionRange,
+  IanaTimeZone,
   WeekGridInteractionMode,
 } from "../../core/model";
 import type { CalendarQuickCreatePayload } from "../slots";
@@ -36,6 +37,8 @@ export interface UseInteractionControllerOptions {
   readonly onPaintSelect?: (range: CalendarSelectionRange) => void;
   readonly onMoveRequest?: (request: CalendarMoveRequest) => void;
   readonly shouldInvalidate?: (state: InteractionState) => boolean;
+  /** Labels inferred paint cells from their instants, so DST cannot mislabel them. */
+  readonly timeZone?: IanaTimeZone;
 }
 
 export interface InteractionControllerInternals {
@@ -100,7 +103,8 @@ export const useInteractionController = (
   const [state, dispatch] = useReducer(
     reduceInteraction,
     mode,
-    createInteractionState
+    (initialMode: WeekGridInteractionMode) =>
+      createInteractionState(initialMode, options.timeZone)
   );
 
   // Imperative mirror: the move handshake reads and advances state across callbacks within one commit.
@@ -112,9 +116,13 @@ export const useInteractionController = (
   const moveRequestRef = useRef(options.onMoveRequest);
 
   const shouldResetState =
-    state.mode !== mode || options.shouldInvalidate?.(state) === true;
+    state.mode !== mode ||
+    state.timeZone !== options.timeZone ||
+    options.shouldInvalidate?.(state) === true;
 
-  const renderState = shouldResetState ? createInteractionState(mode) : state;
+  const renderState = shouldResetState
+    ? createInteractionState(mode, options.timeZone)
+    : state;
 
   if (shouldResetState) {
     dispatch({ state: renderState, type: "replace" });
@@ -153,11 +161,11 @@ export const useInteractionController = (
   }, []);
 
   const restoreModeState = useCallback((): void => {
-    const nextState = createInteractionState(mode);
+    const nextState = createInteractionState(mode, options.timeZone);
     stateRef.current = nextState;
     dispatch({ state: nextState, type: "replace" });
     clearActiveMove();
-  }, [clearActiveMove, mode]);
+  }, [clearActiveMove, mode, options.timeZone]);
 
   const prepareNextInteraction = useCallback((): void => {
     const currentState = stateRef.current;
