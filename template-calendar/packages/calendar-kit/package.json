@@ -1,6 +1,6 @@
 {
   "name": "@gears-frontx/calendar-kit",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.0",
   "description": "Composable calendar and scheduling components for FrontX applications",
   "files": [
     "dist",
@@ -37,7 +37,6 @@
     "./reset.css": "./dist/reset.css",
     "./themes/example.css": "./dist/themes/example.css"
   },
-  "private": true,
   "publishConfig": {
     "access": "public"
   },
