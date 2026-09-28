@@ -12,10 +12,13 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces",
-    "type-check": "npm run type-check --workspaces",
+    "type-check": "npm run type-check --workspaces && npm run type-check:demo --workspace=@gears-frontx/calendar-kit",
     "arch:deps": "npx dependency-cruiser packages/ --config .dependency-cruiser.cjs --output-type err-long",
     "lint": "eslint . --max-warnings 0",
-    "test:unit": "npm run test:unit --workspaces"
+    "test:unit": "npm run test:unit --workspaces",
+    "test:dist": "npm run test:dist --workspace=@gears-frontx/calendar-kit",
+    "test:consumer": "npm run test:consumer --workspace=@gears-frontx/calendar-kit",
+    "demo": "npm run demo --workspace=@gears-frontx/calendar-kit"
   },
   "devDependencies": {
     "@eslint/js": "9.27.0",

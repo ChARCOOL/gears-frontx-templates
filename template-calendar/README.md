@@ -22,6 +22,9 @@ npm run type-check
 npm run arch:deps
 npm run lint
 npm run test:unit
+npm run test:dist       # imports the built package entries
+npm run test:consumer   # installs the packed tarball into a clean consumer
+npm run demo
 ```
 
 ## Boundaries

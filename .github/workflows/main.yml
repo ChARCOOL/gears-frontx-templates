@@ -197,6 +197,10 @@ jobs:
             npm run arch:deps
             npm run lint
             npm run test:unit
+            # Package gates only some templates define (calendar-kit's built
+            # entries and its clean-consumer install).
+            npm run --if-present test:dist
+            npm run --if-present test:consumer
           )
         done
 

@@ -1,7 +1,5 @@
 # @gears-frontx/calendar-kit
 
-> **Not yet complete.** The package lands in parts and stays private until the last one. This README and `llms.txt` describe the finished kit; `CalendarProvider`, the views and `dist/docs/*` arrive in later parts.
-
 A calendar and scheduling UI for FrontX host applications: week, day, month and agenda views, the event card and detail, the create-event form, availability painting, and the side-panel tools around them.
 
 The kit renders what the host gives it and reports what the user did. It never fetches, saves or decides anything about scheduling: data, permissions, conflicts, language and persistence stay with your app.

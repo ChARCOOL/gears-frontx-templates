@@ -2,8 +2,6 @@
 
 > React 19 calendar and scheduling UI for FrontX host applications: week, day, month and agenda views, event card and detail, create-event form, availability painting, and side-panel tools. It renders host data and reports user intent through typed callbacks; the host owns data, permissions, conflicts, persistence and translations.
 
-> **Not yet complete.** The package lands in parts and stays private until the last one. This README and `llms.txt` describe the finished kit; `CalendarProvider`, the views and `dist/docs/*` arrive in later parts.
-
 Rules an assistant should follow when writing code against this package:
 
 - Import `@gears-frontx/calendar-kit/theme.css` once and map the `--cal-*` seams to your own tokens (`themes/example.css` is an optional example preset showing one complete mapping). Do not import `@gears-frontx/ui-kit` styles.
