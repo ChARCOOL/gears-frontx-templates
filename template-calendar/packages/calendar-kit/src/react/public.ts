@@ -102,7 +102,6 @@ export {
 export {
   useAvailabilityGridController,
   type AvailabilityFocusedCell,
-  type AvailabilityGridControllerInternals,
   type UseAvailabilityGridControllerOptions,
   type UseAvailabilityGridControllerResult,
 } from "./controllers/use-availability-grid-controller";

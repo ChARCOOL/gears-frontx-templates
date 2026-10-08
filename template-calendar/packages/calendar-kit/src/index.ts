@@ -347,7 +347,6 @@ export {
 
 export type {
   AvailabilityFocusedCell,
-  AvailabilityGridControllerInternals,
   UseAvailabilityGridControllerOptions,
   UseAvailabilityGridControllerResult,
   CalendarSidePanelControllerOptions,
