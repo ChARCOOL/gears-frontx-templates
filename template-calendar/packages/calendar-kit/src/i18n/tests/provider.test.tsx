@@ -132,6 +132,24 @@ describe("CalendarLocalizationProvider and useCalendarLocalization", () => {
     expect(screen.getByText("1 meeting|2 events")).toBeInTheDocument();
   });
 
+  it("accepts a locale and a catalogue key written with an underscore", () => {
+    render(
+      <CalendarLocalizationProvider
+        locale="pt_BR"
+        messages={{
+          pt_BR: {
+            "calendar.month.eventCount_one": "{{count}} evento",
+            "calendar.month.eventCount_other": "{{count}} eventos",
+          },
+        }}
+      >
+        <PluralProbe />
+      </CalendarLocalizationProvider>
+    );
+
+    expect(screen.getByText("1 evento|2 eventos")).toBeInTheDocument();
+  });
+
   it("isolates nested provider values while inheriting omitted fields", () => {
     render(
       <CalendarProvider timeZone={NEW_YORK}>
