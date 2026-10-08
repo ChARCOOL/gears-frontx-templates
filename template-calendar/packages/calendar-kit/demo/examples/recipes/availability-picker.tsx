@@ -1,16 +1,13 @@
 import { AvailabilityGrid } from "@gears-frontx/calendar-kit";
 import type {
   CalendarAvailabilityCell,
-  CalendarDate,
   CalendarSelectionRange,
 } from "@gears-frontx/calendar-kit";
 import { useState } from "react";
 
 export const AvailabilityPicker = ({
-  date,
   cells,
 }: {
-  readonly date: CalendarDate;
   readonly cells: readonly CalendarAvailabilityCell[];
 }) => {
   const [range, setRange] = useState<CalendarSelectionRange | null>(null);
@@ -18,7 +15,6 @@ export const AvailabilityPicker = ({
   return (
     <>
       <AvailabilityGrid
-        date={date}
         cells={cells}
         selectedRange={range ?? undefined}
         onSelectedRangeChange={setRange}

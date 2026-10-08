@@ -97,7 +97,6 @@ const CalendarSuiteDemo = ({ direction }: { direction: CalendarDirection }) => {
         hint="Paint an ordered range across days; lunch and late-afternoon cells are unavailable."
       >
         <AvailabilityGrid
-          date={DEMO_DATE}
           cells={sampleAvailabilityCells}
           interactionMode="paint"
           direction={direction}
