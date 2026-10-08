@@ -1,26 +1,25 @@
 import { useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
-import { arrayAt, sortCopy } from "../../core/array";
 import {
   buildAvailabilityColumns,
   buildAvailabilityRange,
+  buildAvailabilityRows,
 } from "../../core/availability";
-import type { AvailabilityColumn } from "../../core/availability";
+import type {
+  AvailabilityColumn,
+  AvailabilityRow,
+} from "../../core/availability";
 import { isGridNavigationKey, stepGridPosition } from "../../core/grid-keys";
 import type {
   CalendarAvailabilityCell,
-  CalendarCell,
   CalendarDirection,
   CalendarSelectionRange,
-  IanaTimeZone,
 } from "../../core/model";
 import { useControlledValue } from "../hooks/use-controlled-value";
 
 export interface UseAvailabilityGridControllerOptions {
-  readonly date: CalendarAvailabilityCell["date"];
   readonly cells: readonly CalendarAvailabilityCell[];
-  readonly timeZone: IanaTimeZone;
   readonly direction?: CalendarDirection;
   readonly selectedRange?: CalendarSelectionRange | null;
   readonly defaultSelectedRange?: CalendarSelectionRange | null;
@@ -36,14 +35,10 @@ export interface AvailabilityFocusedCell {
   readonly columnIndex: number;
 }
 
-export interface AvailabilityGridControllerInternals {
-  readonly paintAnchor: CalendarCell | null;
-  readonly keyboardAnchor: CalendarCell | null;
-}
-
 export interface UseAvailabilityGridControllerResult {
   readonly interactionMode: "paint" | "read-only";
   readonly columns: readonly AvailabilityColumn[];
+  readonly rows: readonly AvailabilityRow[];
   readonly selectedRange: CalendarSelectionRange | null;
   readonly paint: CalendarSelectionRange | null;
   readonly focusedCell: AvailabilityFocusedCell;
@@ -62,10 +57,11 @@ export interface UseAvailabilityGridControllerResult {
     rowIndex: number,
     columnIndex: number
   ) => void;
-  readonly getInternals: () => Readonly<AvailabilityGridControllerInternals>;
 }
 
 const DEFAULT_INTERACTION_MODE = "paint" as const;
+
+const FIRST_CELL: AvailabilityFocusedCell = { columnIndex: 0, rowIndex: 0 };
 
 export const useAvailabilityGridController = (
   options: UseAvailabilityGridControllerOptions
@@ -99,47 +95,26 @@ export const useAvailabilityGridController = (
     readonly range: CalendarSelectionRange | null;
   }>({ range: null, signature: cellsSignature });
 
-  const [focusedCellState, setFocusedCellState] =
-    useState<AvailabilityFocusedCell>({
-      columnIndex: 0,
-      rowIndex: 0,
-    });
+  // Focus and the keyboard anchor point into one cell list; a new list (the next week)
+  // drops both, the same way it drops a pending paint.
+  const [focusState, setFocusState] = useState<{
+    readonly signature: string;
+    readonly position: AvailabilityFocusedCell;
+  }>({ position: FIRST_CELL, signature: cellsSignature });
 
-  const keyboardAnchorRef = useRef<CalendarAvailabilityCell | null>(
-    columns[0]?.cells[0] ?? null
-  );
+  const keyboardAnchorRef = useRef<{
+    readonly signature: string;
+    readonly cell: CalendarAvailabilityCell;
+  } | null>(null);
 
   const paintAnchorRef = useRef<CalendarAvailabilityCell | null>(null);
   const paintRef = useRef<CalendarSelectionRange | null>(null);
   const paintSignatureRef = useRef(cellsSignature);
 
-  const rowKeys = useMemo(() => {
-    const keys = new Set<string>();
+  const rows = useMemo(() => buildAvailabilityRows(columns), [columns]);
 
-    for (const column of columns) {
-      for (const cell of column.cells) {
-        keys.add(cell.startTime);
-      }
-    }
-
-    return sortCopy([...keys]);
-  }, [columns]);
-
-  const cellIndexes = useMemo(
-    () =>
-      columns.map((column) => {
-        const index = new Map<string, CalendarAvailabilityCell>();
-
-        for (const cell of column.cells) {
-          if (!index.has(cell.startTime)) {
-            index.set(cell.startTime, cell);
-          }
-        }
-
-        return index;
-      }),
-    [columns]
-  );
+  const focusedCell =
+    focusState.signature === cellsSignature ? focusState.position : FIRST_CELL;
 
   const paint =
     interactionMode === "read-only" || paintState.signature !== cellsSignature
@@ -155,31 +130,65 @@ export const useAvailabilityGridController = (
   const getCell = (
     rowIndex: number,
     columnIndex: number
-  ): CalendarAvailabilityCell | undefined => {
-    const startTime = arrayAt(rowKeys, rowIndex);
+  ): CalendarAvailabilityCell | undefined =>
+    rows[rowIndex]?.cells[columnIndex];
 
-    if (startTime === undefined) {
+  const focusCell = (
+    position: AvailabilityFocusedCell,
+    cell: CalendarAvailabilityCell
+  ): void => {
+    setFocusState({ position, signature: cellsSignature });
+    keyboardAnchorRef.current = { cell, signature: cellsSignature };
+  };
+
+  const setFocusedCell = (position: AvailabilityFocusedCell): void => {
+    const cell = getCell(position.rowIndex, position.columnIndex);
+
+    if (cell !== undefined) {
+      focusCell(position, cell);
+    }
+  };
+
+  /**
+   * The cell a key moves to. Up and down skip slots the column has no cell for (the
+   * spring-forward hour, sparse days); a sideways move lands on the nearest row the
+   * target column has, preferring the later one.
+   */
+  const findMoveTarget = (
+    key: string,
+    from: AvailabilityFocusedCell
+  ): AvailabilityFocusedCell | undefined => {
+    const step = stepGridPosition(key, direction, from, columns.length);
+
+    if (step.columnIndex < 0 || step.columnIndex >= columns.length) {
       return undefined;
     }
 
-    return cellIndexes[columnIndex]?.get(startTime);
-  };
+    if (step.rowIndex !== from.rowIndex) {
+      const rowStep = step.rowIndex - from.rowIndex;
 
-  const isValidPosition = (position: AvailabilityFocusedCell): boolean =>
-    position.rowIndex >= 0 &&
-    position.rowIndex < rowKeys.length &&
-    position.columnIndex >= 0 &&
-    position.columnIndex < columns.length;
+      for (
+        let rowIndex = step.rowIndex;
+        rowIndex >= 0 && rowIndex < rows.length;
+        rowIndex += rowStep
+      ) {
+        if (getCell(rowIndex, step.columnIndex) !== undefined) {
+          return { columnIndex: step.columnIndex, rowIndex };
+        }
+      }
 
-  const setFocusedCell = (position: AvailabilityFocusedCell): void => {
-    const cell = isValidPosition(position)
-      ? getCell(position.rowIndex, position.columnIndex)
-      : undefined;
-
-    if (cell !== undefined) {
-      setFocusedCellState(position);
-      keyboardAnchorRef.current = cell;
+      return undefined;
     }
+
+    for (let distance = 0; distance < rows.length; distance += 1) {
+      for (const rowIndex of [from.rowIndex + distance, from.rowIndex - distance]) {
+        if (getCell(rowIndex, step.columnIndex) !== undefined) {
+          return { columnIndex: step.columnIndex, rowIndex };
+        }
+      }
+    }
+
+    return undefined;
   };
 
   const commitRange = (range: CalendarSelectionRange): void => {
@@ -253,39 +262,34 @@ export const useAvailabilityGridController = (
     rowIndex: number,
     columnIndex: number
   ): void => {
-    const step = stepGridPosition(
-      event.key,
-      direction,
-      { columnIndex, rowIndex },
-      columns.length
-    );
-
-    const nextPosition = {
-      columnIndex: Math.max(0, Math.min(columns.length - 1, step.columnIndex)),
-      rowIndex:
-        event.key === "ArrowDown"
-          ? Math.min(step.rowIndex, Math.max(rowKeys.length - 1, 0))
-          : Math.max(step.rowIndex, 0),
-    };
-
-    const nextCell = getCell(nextPosition.rowIndex, nextPosition.columnIndex);
     event.preventDefault();
 
-    if (nextCell === undefined) {
+    const from = { columnIndex, rowIndex };
+    const target = findMoveTarget(event.key, from);
+    const nextCell =
+      target === undefined
+        ? undefined
+        : getCell(target.rowIndex, target.columnIndex);
+
+    if (target === undefined || nextCell === undefined) {
       return;
     }
 
-    setFocusedCellState(nextPosition);
+    const storedAnchor = keyboardAnchorRef.current;
+    const anchor =
+      storedAnchor?.signature === cellsSignature
+        ? storedAnchor.cell
+        : (getCell(rowIndex, columnIndex) ?? nextCell);
+
+    setFocusState({ position: target, signature: cellsSignature });
 
     if (!event.shiftKey || interactionMode !== "paint") {
-      keyboardAnchorRef.current = nextCell;
+      keyboardAnchorRef.current = { cell: nextCell, signature: cellsSignature };
 
       return;
     }
 
-    const anchor =
-      keyboardAnchorRef.current ?? getCell(rowIndex, columnIndex) ?? nextCell;
-    keyboardAnchorRef.current = anchor;
+    keyboardAnchorRef.current = { cell: anchor, signature: cellsSignature };
 
     // An unpaintable span keeps the previous selection.
     const range = buildAvailabilityRange(options.cells, anchor, nextCell);
@@ -336,23 +340,18 @@ export const useAvailabilityGridController = (
     }
   };
 
-  const getInternals = (): Readonly<AvailabilityGridControllerInternals> => ({
-    keyboardAnchor: keyboardAnchorRef.current,
-    paintAnchor: paintAnchorRef.current,
-  });
-
   return {
     beginPaint,
     cancelPaint,
     clearSelection,
     columns,
     endPaint,
-    focusedCell: focusedCellState,
+    focusedCell,
     getCell,
-    getInternals,
     handleGridKeyDown,
     interactionMode,
     paint,
+    rows,
     selectedRange: selectedState.value,
     setFocusedCell,
     updatePaint,

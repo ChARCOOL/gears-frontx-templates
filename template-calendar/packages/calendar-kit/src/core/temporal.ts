@@ -236,9 +236,10 @@ export const fromViewerDateTime = (input: LocalDateTimeInput): UtcInstant => {
   const validTime = parseLocalTime(String(input.time));
   const validTimeZone = parseIanaTimeZone(input.timeZone);
 
+  // The raw time, so seconds and milliseconds survive; `validTime` is `HH:mm` only.
   const parts = localDateTimeParts({
     date: validDate,
-    time: validTime,
+    time: input.time,
     timeZone: validTimeZone,
   });
 
@@ -503,6 +504,11 @@ export const assertTimeWindow = (
   }
 };
 
+/**
+ * The window's nominal slot count in wall-clock time, for a time axis that has no date.
+ * A DST day has one slot fewer or more than this; `buildSlotStarts(...).length` gives
+ * the real count for one day.
+ */
 export const countWindowSlots = (
   window: CalendarTimeWindow,
   slotMinutes: CalendarSlotMinutes

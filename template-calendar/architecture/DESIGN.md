@@ -263,7 +263,7 @@ Branding overrides must be predictable: one documented token surface instead of 
 ##### Responsibility scope
 
 - Declares every semantic `--cal-*` token with host-token fallbacks, the nine enumerated calendar-owned tokens with literal defaults, the light/explicit-dark/media/forced-colors blocks, and the reduced-motion override.
-- Is imported exactly once by the consumer; it also defines the seams the wrapped ui-kit controls read, so no `@gears-frontx/ui-kit/theme.css` import is required or permitted.
+- Is imported exactly once by the consumer. Inside a shadow root, where ui-kit's own `:root` theme does not reach, it also defines the seams the wrapped ui-kit controls read; it does not redefine ui-kit tokens outside that scope, so a host that imports `@gears-frontx/ui-kit/theme.css` keeps its own values.
 
 ##### Responsibility boundaries
 

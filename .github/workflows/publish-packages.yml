@@ -146,12 +146,18 @@ jobs:
           npm run build:package
           npm run build:packages
 
-      - name: Install + build template-calendar
-        if: contains(needs.detect-template.outputs.packages, '"template-calendar/')
-        working-directory: template-calendar
+      - name: Install + build the other templates with a changed package
+        env:
+          PACKAGES: ${{ needs.detect-template.outputs.packages }}
         run: |
-          npm ci
-          npm run build
+          # Every template root that owns a changed package, so a new template is
+          # built here without a workflow edit, the same way detection picks it
+          # up. template-shell is built above with its own scripts.
+          for root in $(jq -r '.[].path | split("/")[0]' <<< "$PACKAGES" | sort -u); do
+            [ "$root" = "template-shell" ] && continue
+            echo "Building $root"
+            (cd "$root" && npm ci && npm run build)
+          done
 
       - name: Publish template packages
         id: publish

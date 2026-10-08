@@ -402,3 +402,15 @@ describe("calendar temporal algorithms", () => {
     );
   });
 });
+
+describe("fromViewerDateTime precision", () => {
+  it("keeps the seconds and milliseconds of the local time", () => {
+    assert(
+      fromViewerDateTime({
+        date: calendarDate("2026-08-24"),
+        time: "09:05:30.250",
+        timeZone: parseIanaTimeZone("Europe/Berlin"),
+      })
+    ).toBe("2026-08-24T07:05:30.250Z");
+  });
+});

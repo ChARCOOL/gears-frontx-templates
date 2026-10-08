@@ -1,4 +1,8 @@
-import { numberFormatter, pluralRules } from "../core/intl-cache";
+import {
+  canonicalLocale,
+  numberFormatter,
+  pluralRules,
+} from "../core/intl-cache";
 import type { CalendarLocale } from "../core/model";
 
 /**
@@ -94,16 +98,6 @@ export const readTranslation = (
   }
 
   return undefined;
-};
-
-const canonicalLocale = (locale: CalendarLocale): string => {
-  const tag = locale.replaceAll("_", "-");
-
-  try {
-    return new Intl.Locale(tag).baseName;
-  } catch {
-    return tag;
-  }
 };
 
 /** Most to least specific, then English: `zh-Hant-TW` reads `zh-Hant-TW`, `zh-Hant`, `zh`, `en`. */

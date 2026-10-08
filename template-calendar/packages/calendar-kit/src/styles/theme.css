@@ -1,12 +1,18 @@
+/*
+ * ui-kit reads these directly, and its :root does not reach into a shadow root. Outside one,
+ * ui-kit's own theme owns them, so they are set only on the host and the scopes inside it.
+ */
+:host,
+:host [data-theme] {
+  --popover-foreground: var(--foreground, #0f172a);
+  --secondary: var(--muted, #f1f5f9);
+  --secondary-foreground: var(--foreground, #0f172a);
+}
+
 /* Each data-theme scope restates the mapping, so tokens resolve against its own seams. */
 :root,
 :host,
 [data-theme] {
-  /* ui-kit reads these directly, and its :root does not reach into the shadow root. */
-  --popover-foreground: var(--foreground, #0f172a);
-  --secondary: var(--muted, #f1f5f9);
-  --secondary-foreground: var(--foreground, #0f172a);
-
   --cal-color-surface: var(--surface, #ffffff);
   --cal-color-raised: var(--surface-elevated, #ffffff);
   --cal-color-text: var(--foreground, #0f172a);
@@ -152,6 +158,12 @@
   --cal-layer-day-number-band: 31;
   --cal-layer-overlay: 40;
   --cal-layer-alert: 50;
+}
+
+/* An explicit light scope inside a dark page keeps light form controls and scrollbars. */
+[data-theme="light"],
+:host([data-theme="light"]) {
+  color-scheme: light;
 }
 
 [data-theme="dark"],

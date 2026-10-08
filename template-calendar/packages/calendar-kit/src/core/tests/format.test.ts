@@ -95,21 +95,47 @@ describe("calendar formatting and time-input algorithms", () => {
         REFERENCE,
         "en-US"
       )
-    ).toContain("30");
+    ).toBe("in 30 minutes");
     assert(
       formatRelativeHint(
         utcInstant("2026-08-24T08:00:00.000Z"),
         REFERENCE,
         "en-US"
       )
-    ).toContain("2");
+    ).toBe("2 hours ago");
     assert(
       formatRelativeHint(
         utcInstant("2026-08-26T10:00:00.000Z"),
         REFERENCE,
         "en-US"
       )
-    ).toContain("2");
+    ).toBe("in 2 days");
+  });
+
+  it("accepts a locale written with an underscore", () => {
+    const march15 = utcInstant("2026-03-15T12:00:00.000Z");
+    const utc = parseIanaTimeZone("UTC");
+
+    assert(formatViewerDate(march15, utc, "pt_BR")).toBe(
+      formatViewerDate(march15, utc, "pt-BR")
+    );
+    assert(
+      formatDuration(march15, utcInstant("2026-03-15T13:30:00.000Z"), "pt_BR")
+    ).toBe(
+      formatDuration(march15, utcInstant("2026-03-15T13:30:00.000Z"), "pt-BR")
+    );
+  });
+
+  it("labels dates in the Gregorian calendar the grid counts in", () => {
+    const utc = parseIanaTimeZone("UTC");
+    const march15 = utcInstant("2026-03-15T12:00:00.000Z");
+
+    assert(formatViewerMonthYear(march15, utc, "fa-IR")).toBe("مارس ۲۰۲۶");
+    assert(
+      formatViewerDayNumber(utcInstant("2026-03-01T12:00:00.000Z"), utc, "fa-IR")
+    ).toBe("۰۱");
+    assert(formatViewerMonthYear(march15, utc, "th-TH")).toBe("มีนาคม 2026");
+    assert(formatViewerDate(march15, utc, "th-TH")).toBe("15 มี.ค. 2026");
   });
 
   it("converts local-time values to minutes and formats both clock conventions", () => {

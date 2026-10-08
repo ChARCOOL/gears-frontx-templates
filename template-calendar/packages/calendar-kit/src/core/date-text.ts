@@ -27,9 +27,19 @@ export interface ParseDateInputOptions {
 const ISO_DATE_PATTERN =
   /^(?<group1>\d{4})-(?<group2>\d{1,2})-(?<group3>\d{1,2})$/u;
 
-const DATE_SEPARATOR_PATTERN = /[^\p{L}\p{Nd}]+/gu;
+// Digit runs and word runs; everything else separates. Splitting on non-letters alone kept
+// `2026年3月5日` as one token, because CJK unit suffixes are letters.
+const DATE_TOKEN_PATTERN = /\p{Nd}+|[\p{L}\p{M}]+/gu;
 
 const DIGITS_ONLY_PATTERN = /^\d+$/u;
+
+const WORD_PATTERN = /[\p{L}\p{M}]+/gu;
+
+// th `ก.พ.` and ru `г.` abbreviate with dots; dropped after a letter they read as one word,
+// while dots between digits (`22.9.2026`) still separate.
+const ABBREVIATION_DOT_PATTERN = /(?<=[\p{L}\p{M}])\./gu;
+
+const DAYS_PER_WEEK = 7;
 
 const MONTHS_PER_YEAR = 12;
 
@@ -49,57 +59,139 @@ interface DateInputParts {
   readonly year?: number;
 }
 
-const monthNamesByLocale = new Map<string, readonly string[]>();
+interface DateVocabulary {
+  /** A word that names exactly one month, in any form the locale writes it. */
+  readonly months: ReadonlyMap<string, number>;
+  /** Weekdays, suffixes such as 年 or г., and words shared by several month names. */
+  readonly ignored: ReadonlySet<string>;
+}
+
+// Gregorian words only: a locale's own calendar (fa, -u-ca-islamic) would map its month
+// names onto the wrong Gregorian month numbers.
+const GREGORIAN_UTC = {
+  calendar: "gregory",
+  numberingSystem: "latn",
+  timeZone: "UTC",
+} as const;
+
+// Standalone and format-form month names, plus the words full dates put around them.
+const MONTH_FORMATS: readonly Intl.DateTimeFormatOptions[] = [
+  { month: "long" },
+  { month: "short" },
+  { day: "numeric", month: "long" },
+  { day: "numeric", month: "short" },
+  { dateStyle: "medium" },
+  { dateStyle: "long" },
+  { dateStyle: "full" },
+];
+
+const WEEKDAY_FORMATS: readonly Intl.DateTimeFormatOptions[] = [
+  { weekday: "long" },
+  { weekday: "short" },
+];
+
+const vocabularies = new Map<string, DateVocabulary>();
 
 const dateFieldOrders = new Map<string, readonly DateFieldName[]>();
 
-/** Month names of one arbitrary year, long and short, lowercased for matching. */
-const monthNames = (locale: string): readonly string[] => {
-  const cached = monthNamesByLocale.get(locale);
+const withoutAbbreviationDots = (text: string): string =>
+  text.replaceAll(ABBREVIATION_DOT_PATTERN, "");
+
+const words = (text: string): readonly string[] =>
+  withoutAbbreviationDots(text.toLowerCase()).match(WORD_PATTERN) ?? [];
+
+/**
+ * The words the locale itself writes around a date, read from its formatter output.
+ * Month names come in both the standalone form and the format form a date is written
+ * with (ru `сентябрь` and `сентября`), so the kit's own output parses back.
+ */
+const dateVocabulary = (locale: string): DateVocabulary => {
+  const cached = vocabularies.get(locale);
 
   if (cached) {
     return cached;
   }
 
-  // Gregorian month names only: a locale's own calendar (fa, -u-ca-islamic) would map
-  // its month names onto the wrong Gregorian month numbers.
-  const options = {
-    calendar: "gregory",
-    numberingSystem: "latn",
-    timeZone: "UTC",
-  } as const;
-  const long = dateTimeFormatter(locale, { ...options, month: "long" });
-  const short = dateTimeFormatter(locale, { ...options, month: "short" });
+  const monthsByWord = new Map<string, Set<number>>();
+  const ignored = new Set<string>();
 
-  const names: string[] = [];
+  // `month` 0 marks a sample read only for its other words.
+  const collect = (
+    options: Intl.DateTimeFormatOptions,
+    sample: Date,
+    month: number
+  ): void => {
+    const formatter = dateTimeFormatter(locale, {
+      ...GREGORIAN_UTC,
+      ...options,
+    });
 
-  for (let month = 0; month < MONTHS_PER_YEAR; month += 1) {
-    const sample = new Date(Date.UTC(2021, month, 15, 12));
+    for (const part of formatter.formatToParts(sample)) {
+      for (const word of words(part.value)) {
+        if (part.type === "month") {
+          monthsByWord.set(
+            word,
+            (monthsByWord.get(word) ?? new Set()).add(month)
+          );
+        } else {
+          ignored.add(word);
+        }
+      }
+    }
+  };
 
-    names.push(
-      `${long.format(sample)}\u0000${short.format(sample)}`.toLowerCase()
-    );
+  for (let month = 1; month <= MONTHS_PER_YEAR; month += 1) {
+    const sample = new Date(Date.UTC(2021, month - 1, 15, 12));
+
+    for (const options of MONTH_FORMATS) {
+      collect(options, sample, month);
+    }
   }
 
-  monthNamesByLocale.set(locale, names);
+  for (let day = 0; day < DAYS_PER_WEEK; day += 1) {
+    const sample = new Date(Date.UTC(2021, 0, 4 + day, 12));
 
-  return names;
+    for (const options of WEEKDAY_FORMATS) {
+      collect(options, sample, 0);
+    }
+  }
+
+  const months = new Map<string, number>();
+
+  // A word in several month names (vi `tháng`, ca `de`) identifies none of them.
+  for (const [word, found] of monthsByWord) {
+    if (found.size === 1) {
+      months.set(word, [...found][0]);
+    } else {
+      ignored.add(word);
+    }
+  }
+
+  const vocabulary = { ignored, months };
+  vocabularies.set(locale, vocabulary);
+
+  return vocabulary;
 };
 
-/** The order in which the locale writes a numeric date, e.g. month, day, year for en-US. */
-const dateFieldOrder = (locale: string): readonly DateFieldName[] => {
-  const cached = dateFieldOrders.get(locale);
+/**
+ * The order in which the locale writes a date, e.g. month, day, year for en-US. A named
+ * month can reorder the rest: fa writes `1404/1/2` but `22 ژانویه 2026`.
+ */
+const dateFieldOrder = (
+  locale: string,
+  month: "long" | "numeric"
+): readonly DateFieldName[] => {
+  const key = `${locale}\u0000${month}`;
+  const cached = dateFieldOrders.get(key);
 
   if (cached) {
     return cached;
   }
 
   const order = dateTimeFormatter(locale, {
-    calendar: "gregory",
+    ...GREGORIAN_UTC,
     day: "numeric",
-    month: "numeric",
-    numberingSystem: "latn",
-    timeZone: "UTC",
+    month,
     year: "numeric",
   })
     .formatToParts(new Date(Date.UTC(2021, 0, 2, 12)))
@@ -109,23 +201,96 @@ const dateFieldOrder = (locale: string): readonly DateFieldName[] => {
         : []
     );
 
-  dateFieldOrders.set(locale, order);
+  dateFieldOrders.set(key, order);
 
   return order;
 };
 
-const matchMonthName = (token: string, locale: string): number | undefined => {
-  const candidate = token.toLowerCase();
+type WordMatch =
+  | { readonly kind: "month"; readonly month: number }
+  | { readonly kind: "ignored" }
+  | { readonly kind: "unknown" };
 
-  if (candidate.length < MIN_MONTH_NAME_LENGTH) {
-    return undefined;
+/** The lowest month whose name starts with a typed prefix such as `sept`. */
+const matchMonthPrefix = (
+  word: string,
+  months: ReadonlyMap<string, number>
+): number | undefined => {
+  let found: number | undefined;
+
+  if (word.length >= MIN_MONTH_NAME_LENGTH) {
+    for (const [name, month] of months) {
+      if (name.startsWith(word) && (found === undefined || month < found)) {
+        found = month;
+      }
+    }
   }
 
-  const index = monthNames(locale).findIndex((names) =>
-    names.split("\u0000").some((name) => name.startsWith(candidate))
-  );
+  return found;
+};
 
-  return index === -1 ? undefined : index + 1;
+/**
+ * Splits a run of letters into known words, longest first. Scripts without spaces glue
+ * words together: ja `日木曜日` is `日` + `木曜日`, he `בינו` is `ב` + `ינו`.
+ */
+const splitIntoKnownWords = (
+  run: string,
+  { ignored, months }: DateVocabulary
+): readonly string[] | null => {
+  const splits: (readonly string[] | null)[] = [[]];
+
+  for (let end = 1; end <= run.length; end += 1) {
+    splits.push(null);
+
+    for (let start = 0; start < end; start += 1) {
+      const head = splits[start];
+      const word = run.slice(start, end);
+
+      if (head && (months.has(word) || ignored.has(word))) {
+        splits[end] = [...head, word];
+
+        break;
+      }
+    }
+  }
+
+  return splits[run.length] ?? null;
+};
+
+/**
+ * Exact words win over prefixes, so fr `mar.` (mardi) is a weekday, not `mars`. A typed
+ * prefix of a month name (`sept`) still reads as that month; any other word makes the
+ * text unreadable rather than letting the reference month fill in.
+ */
+const matchWord = (word: string, locale: string): WordMatch => {
+  const vocabulary = dateVocabulary(locale);
+  const exact = vocabulary.months.get(word);
+
+  if (exact !== undefined) {
+    return { kind: "month", month: exact };
+  }
+
+  if (vocabulary.ignored.has(word)) {
+    return { kind: "ignored" };
+  }
+
+  const prefixed = matchMonthPrefix(word, vocabulary.months);
+
+  if (prefixed !== undefined) {
+    return { kind: "month", month: prefixed };
+  }
+
+  const split = splitIntoKnownWords(word, vocabulary);
+
+  if (!split) {
+    return { kind: "unknown" };
+  }
+
+  const month = split
+    .map((part) => vocabulary.months.get(part))
+    .find((candidate) => candidate !== undefined);
+
+  return month === undefined ? { kind: "ignored" } : { kind: "month", month };
 };
 
 const expandYear = (year: number): number =>
@@ -153,9 +318,10 @@ const readDateParts = (
   namedMonth: number | undefined,
   locale: string
 ): DateInputParts | null => {
-  const slots = dateFieldOrder(locale).filter(
-    (field) => namedMonth === undefined || field !== "month"
-  );
+  const slots =
+    namedMonth === undefined
+      ? dateFieldOrder(locale, "numeric")
+      : dateFieldOrder(locale, "long").filter((field) => field !== "month");
 
   if (numbers.length === 0 || numbers.length > slots.length) {
     return null;
@@ -237,18 +403,24 @@ export const parseDateInput = (
 
   let namedMonth: number | undefined;
 
-  for (const token of normalised.split(DATE_SEPARATOR_PATTERN)) {
-    if (!token) {
-      continue;
-    }
-
+  for (const [token] of withoutAbbreviationDots(normalised).matchAll(
+    DATE_TOKEN_PATTERN
+  )) {
     if (DIGITS_ONLY_PATTERN.test(token)) {
       numbers.push(Number(token));
 
       continue;
     }
 
-    namedMonth ??= matchMonthName(token, locale);
+    const match = matchWord(token.toLowerCase(), locale);
+
+    if (match.kind === "unknown") {
+      return { kind: DATE_INPUT.invalid };
+    }
+
+    if (match.kind === "month") {
+      namedMonth ??= match.month;
+    }
   }
 
   const referenceYear = Number(reference.slice(0, 4));

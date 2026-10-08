@@ -108,7 +108,9 @@ The host application declares a dependency on `@gears-frontx/calendar-kit`, impo
 
 The system **MUST** be distributed as an installable, independently versioned npm artifact that a host application adopts by declaring a dependency and upgrading by bumping the version, and **MUST** allow applying the template to copy the calendar source into a consuming repository as a starting point owned by that consumer. Package versions published from this template repo are the shared source.
 
-**Rationale**: Applying the template establishes a consumer-owned starting point, while package versions published from this template repo remain the shared source; the consumer upgrades by bumping a version, and the repository's bump-on-change gate makes the package boundary the release boundary (member packaging ADR).
+The two paths do not mix. Installing the published package is the primary path: the host upgrades by bumping the version. Applying the template is for a team that wants to own and change the calendar source; its copy no longer upgrades by a version bump, and taking later changes means merging them by hand.
+
+**Rationale**: Package versions published from this template repo remain the shared source, and the repository's bump-on-change gate makes the package boundary the release boundary (member packaging ADR). A consumer-owned copy trades that upgrade path for full control of the source.
 
 **Actors**: `cpt-template-calendar-calendar-kit-actor-consumer-developer`
 

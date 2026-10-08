@@ -247,7 +247,12 @@ describe("core interaction state machine", () => {
 
     const malformedCell = { ...third };
     Object.defineProperty(malformedCell, "start", { value: "not-utc" });
-    const malformed = transitionInteraction(state, {
+    // A paint must be under way, or the update returns before it reads the cell.
+    const painting = transitionInteraction(state, {
+      cell: first,
+      type: "paint-start",
+    });
+    const malformed = transitionInteraction(painting, {
       cell: malformedCell,
       type: "paint-update",
     });
@@ -257,7 +262,8 @@ describe("core interaction state machine", () => {
       { to: undefined, type: "move-target" }
     );
 
-    assert(malformed.paint).toBeNull();
+    assert(painting.paint).not.toBeNull();
+    assert(malformed.paint).toStrictEqual(painting.paint);
     assert(missingTarget.pendingMove).toBeNull();
   });
 });
