@@ -66,7 +66,6 @@ const availabilityElement = (
   overrides: Partial<AvailabilityGridProps> = {}
 ): ReactElement => (
   <AvailabilityGrid
-    date={calendarDate(MONDAY)}
     cells={cells}
     timeZone={UTC}
     locale="en-US"
@@ -362,4 +361,25 @@ describe(AvailabilityGrid, () => {
     expect(screen.getByRole("grid")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
+
+  it("draws both cells of the repeated fall-back hour", () => {
+    // America/New_York, 2026-11-01: 01:00 happens twice, first in EDT, then in EST.
+    const fallBack = [
+      ["01:00", "01:00", "05:00", "06:00"],
+      ["01:00", "02:00", "06:00", "07:00"],
+      ["02:00", "03:00", "07:00", "08:00"],
+    ].map(([startTime, endTime, start, end]) => ({
+      available: true,
+      date: calendarDate("2026-11-01"),
+      end: utcInstant(`2026-11-01T${end}:00.000Z`),
+      endTime: parseLocalTime(endTime),
+      start: utcInstant(`2026-11-01T${start}:00.000Z`),
+      startTime: parseLocalTime(startTime),
+    }));
+
+    renderAvailability({ cells: fallBack });
+
+    expect(screen.getAllByText("2026-11-01 01:00")).toHaveLength(2);
+  });
 });
+

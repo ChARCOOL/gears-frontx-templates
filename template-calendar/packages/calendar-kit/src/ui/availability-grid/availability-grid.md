@@ -4,7 +4,6 @@
 
 ```tsx
 <AvailabilityGrid
-  date={date}
   cells={cells}
   locale="en-US"
   timeZone={timeZone}
@@ -31,7 +30,6 @@ The root accepts `className`; styles use the calendar theme aliases and include 
 | Prop | Type | Required | Description |
 | --- | --- | --- | --- |
 | `cells` | `readonly CalendarAvailabilityCell[]` | yes | Host availability decisions, one per slot. |
-| `date` | `CalendarDate` | yes | Day the cells belong to, used for the grid's label. |
 | `className` | `string` |  | Class added to the component root. |
 | `defaultSelectedRange` | `CalendarSelectionRange` |  | Initial painted range when uncontrolled. |
 | `interactionMode` | `"paint" \| "read-only"` |  | `read-only` keeps navigation but disables painting. Default `paint`. |

@@ -4,7 +4,6 @@ import { clsx } from "clsx";
 import { useMemo } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 
-import { sortCopy } from "../../core/array";
 import { dateTimeFormatter } from "../../core/intl-cache";
 import type {
   CalendarAvailabilityCell,
@@ -33,8 +32,6 @@ import styles from "./availability-grid.module.css";
 export interface AvailabilityGridProps extends CalendarContextProps {
   /** Class added to the component root. */
   readonly className?: string;
-  /** Day the cells belong to, used for the grid's label. */
-  readonly date: CalendarAvailabilityCell["date"];
   /** Host availability decisions, one per slot. */
   readonly cells: readonly CalendarAvailabilityCell[];
   /** Controlled painted range. */
@@ -98,7 +95,6 @@ const formatCellLabel = (
 const AvailabilityGridContent = ({
   cells,
   className,
-  date,
   defaultSelectedRange,
   interactionMode = DEFAULT_MODE,
   onPaintSelect,
@@ -111,27 +107,13 @@ const AvailabilityGridContent = ({
 
   const controller = useAvailabilityGridController({
     cells,
-    date,
     defaultSelectedRange,
     direction,
     interactionMode,
     onPaintSelect,
     onSelectedRangeChange,
     selectedRange,
-    timeZone,
   });
-
-  const rowKeys = useMemo(
-    () =>
-      sortCopy([
-        ...new Set(
-          controller.columns.flatMap((column) =>
-            column.cells.map((cell) => cell.startTime)
-          )
-        ),
-      ]),
-    [controller.columns]
-  );
 
   const gridColumns = useMemo<readonly CalendarGridColumn[]>(
     () =>
@@ -142,28 +124,15 @@ const AvailabilityGridContent = ({
     [controller.columns, locale, timeZone]
   );
 
-  const gridRows = useMemo<readonly CalendarGridRow[]>(() => {
-    const cellsByColumn = controller.columns.map((column) => {
-      const columnCells = new Map<string, CalendarCell>();
-
-      for (const cell of column.cells) {
-        if (!columnCells.has(cell.startTime)) {
-          columnCells.set(cell.startTime, cell);
-        }
-      }
-
-      return columnCells;
-    });
-
-    return rowKeys.map((startTime, rowIndex) => ({
-      cells: cellsByColumn.flatMap((columnCells) => {
-        const cell = columnCells.get(startTime);
-
-        return cell === undefined ? [] : [cell];
-      }),
-      key: `availability-row-${rowIndex}`,
-    }));
-  }, [controller.columns, rowKeys]);
+  // The controller's rows, so the fall-back hour's second 01:00 is drawn and reachable.
+  const gridRows = useMemo<readonly CalendarGridRow[]>(
+    () =>
+      controller.rows.map((row, rowIndex) => ({
+        cells: row.cells.flatMap((cell) => (cell === undefined ? [] : [cell])),
+        key: `availability-row-${rowIndex}`,
+      })),
+    [controller.rows]
+  );
 
   const cellsByKey = useMemo(
     () =>
@@ -248,11 +217,15 @@ const AvailabilityGridContent = ({
       return;
     }
 
-    const rowIndex = rowKeys.indexOf(context.cell.startTime);
+    const isContextCell = (cell: CalendarCell | undefined): boolean =>
+      cell === context.cell;
 
-    const columnIndex = controller.columns.findIndex((column) =>
-      column.cells.some((cell) => cell === context.cell)
+    const rowIndex = controller.rows.findIndex((row) =>
+      row.cells.some(isContextCell)
     );
+
+    const columnIndex =
+      controller.rows[rowIndex]?.cells.findIndex(isContextCell) ?? -1;
 
     if (rowIndex !== -1 && columnIndex !== -1) {
       controller.handleGridKeyDown(event, rowIndex, columnIndex);
