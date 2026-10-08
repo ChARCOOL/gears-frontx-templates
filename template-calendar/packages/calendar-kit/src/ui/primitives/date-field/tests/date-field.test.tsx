@@ -199,6 +199,29 @@ describe(DateField, () => {
     assert(onValueChange).toHaveBeenLastCalledWith("2026-09-23");
   });
 
+  it("fills the mask from a pasted run of digits", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn<(value: CalendarDate | "") => void>();
+    renderField({ onValueChange, value: "" });
+
+    await user.click(field());
+    await user.paste("09232026");
+
+    assert(onValueChange).toHaveBeenLastCalledWith("2026-09-23");
+  });
+
+  it("ignores pasted text that is not a date instead of spreading its digits", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn<(value: CalendarDate | "") => void>();
+    renderField({ onValueChange, value: "" });
+
+    await user.click(field());
+    await user.paste("1/12/2026 10:00");
+
+    assert(onValueChange).not.toHaveBeenCalled();
+    assert(field().value).toBe("mm/dd/yyyy");
+  });
+
   it("clears an optional value from the field", async () => {
     const user = userEvent.setup();
     const onValueChange = vi.fn<(value: CalendarDate | "") => void>();

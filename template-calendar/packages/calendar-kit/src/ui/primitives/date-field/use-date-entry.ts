@@ -22,9 +22,12 @@ import {
   typeDigit,
 } from "../../../core/date-input";
 import { DATE_INPUT, parseDateInput } from "../../../core/date-text";
+import { toAsciiDigits } from "../../../core/digits";
 import type { CalendarDate } from "../../../core/model";
 
 const DIGIT_PATTERN = /^\d$/u;
+
+const DIGIT_RUN_PATTERN = /^\d+$/u;
 
 /** Tab walks the mask's segments; past the first or last one it belongs to the form. */
 const tabStep = (
@@ -219,7 +222,9 @@ export const useDateEntry = ({
   );
 
   /* Pasted text is rarely the bare mask: `Sep 30, 2026` and `2026-09-30` parse
-   * through the text reader, and anything else falls back to its digits. */
+   * through the text reader. Only a bare digit run (`09232026`) fills the mask
+   * digit by digit; anything else the reader rejects (`1/12/2026 10:00`) is
+   * ignored rather than spread across the segments. */
   const handlePaste = useCallback(
     (event: ClipboardEvent<HTMLInputElement>): void => {
       event.preventDefault();
@@ -228,11 +233,11 @@ export const useDateEntry = ({
       const pasted = event.clipboardData.getData("text");
       const parsed = parseDateInput(pasted, { locale, reference });
 
-      commit(
-        parsed.kind === DATE_INPUT.value
-          ? maskedText(parsed.value, mask)
-          : fillDigits(mask, pasted)
-      );
+      if (parsed.kind === DATE_INPUT.value) {
+        commit(maskedText(parsed.value, mask));
+      } else if (DIGIT_RUN_PATTERN.test(toAsciiDigits(pasted).trim())) {
+        commit(fillDigits(mask, pasted));
+      }
     },
     [commit, locale, mask, reference]
   );
