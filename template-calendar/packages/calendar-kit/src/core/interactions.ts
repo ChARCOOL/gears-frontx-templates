@@ -4,6 +4,8 @@
 // @cpt-state:cpt-template-calendar-calendar-kit-state-week-grid-interaction-mode:p2
 // @cpt-state:cpt-template-calendar-calendar-kit-state-week-grid-pending-move:p2
 // @cpt-dod:cpt-template-calendar-calendar-kit-dod-week-grid-mode-callbacks:p1
+import { eventActionBlocker } from "./actionability";
+import type { EventActionBlocker } from "./actionability";
 import { arrayAt } from "./array";
 import { compareCalendarCells, normalizeCalendarCell } from "./calendar-cell";
 import type {
@@ -62,19 +64,17 @@ export type InteractionValidationResult =
   | { readonly valid: true }
   | {
       readonly valid: false;
-      readonly reason: "busy-access" | "unavailable" | "missing-id";
+      readonly reason: EventActionBlocker | "missing-id";
     };
 
 export const validateInteractionEvent = (
   event: CalendarEvent
 ): InteractionValidationResult => {
   // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-mode-gating:p1:inst-gate-return
-  if (event.access === "busy") {
-    return { reason: "busy-access", valid: false };
-  }
+  const blocker = eventActionBlocker(event);
 
-  if (event.available === false) {
-    return { reason: "unavailable", valid: false };
+  if (blocker !== null) {
+    return { reason: blocker, valid: false };
   }
 
   if (!event.id.trim()) {

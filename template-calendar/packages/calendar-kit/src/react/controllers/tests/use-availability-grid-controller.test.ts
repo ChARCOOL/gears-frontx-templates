@@ -4,13 +4,16 @@ import { describe, expect, it, vi } from "vitest";
 import {
   availabilityCell as cell,
   keyboardEvent as keyDownEvent,
-  UTC,
 } from "../../../__test-utils__/fixtures";
 import type {
   CalendarAvailabilityCell,
   CalendarSelectionRange,
 } from "../../../core/model";
-import { calendarDate } from "../../../core/model";
+import {
+  calendarDate,
+  parseLocalTime,
+  utcInstant,
+} from "../../../core/model";
 import { useAvailabilityGridController } from "../use-availability-grid-controller";
 import type { UseAvailabilityGridControllerOptions } from "../use-availability-grid-controller";
 
@@ -57,9 +60,23 @@ const baseOptions = (
   overrides: Partial<UseAvailabilityGridControllerOptions> = {}
 ) => ({
   cells: availabilityCells(),
-  date: calendarDate(MONDAY),
-  timeZone: UTC,
   ...overrides,
+});
+
+/** A cell given in wall-clock and UTC terms, for days whose hours are not uniform. */
+const zonedCell = (
+  date: string,
+  startTime: string,
+  endTime: string,
+  start: string,
+  end: string
+): CalendarAvailabilityCell => ({
+  available: true,
+  date: calendarDate(date),
+  end: utcInstant(end),
+  endTime: parseLocalTime(endTime),
+  start: utcInstant(start),
+  startTime: parseLocalTime(startTime),
 });
 
 describe(useAvailabilityGridController, () => {
@@ -424,8 +441,15 @@ describe(useAvailabilityGridController, () => {
 
   it("keeps the previous selection when a keyboard extension lands on a fully blocked span", () => {
     const onPaintSelect = vi.fn<() => void>();
+    const previous = { cells: [mon08, mon09], end: mon09, start: mon08 };
     const { result } = renderHook(() =>
-      useAvailabilityGridController(baseOptions({ onPaintSelect }))
+      useAvailabilityGridController(
+        baseOptions({
+          cells: [mon08, mon09, mon10Blocked, cell(MONDAY, "11:00", false)],
+          defaultSelectedRange: previous,
+          onPaintSelect,
+        })
+      )
     );
 
     act(() => {
@@ -442,9 +466,8 @@ describe(useAvailabilityGridController, () => {
       rowIndex: 3,
     });
 
-    expect(result.current.selectedRange).toBeNull();
+    expect(result.current.selectedRange).toStrictEqual(previous);
     expect(onPaintSelect).not.toHaveBeenCalled();
-
   });
 
   it("commits a single-cell paint on Enter", () => {
@@ -695,6 +718,12 @@ describe(useAvailabilityGridController, () => {
     rerender({
       selectedRange: { cells: [mon08, mon09], end: mon09, start: mon08 },
     });
+
+    expect(result.current.paint).toStrictEqual({
+      cells: [wed10, wed11],
+      end: wed11,
+      start: wed10,
+    });
     expect(result.current.selectedRange).toStrictEqual({
       cells: [mon08, mon09],
       end: mon09,
@@ -788,5 +817,147 @@ describe(useAvailabilityGridController, () => {
     rerender([mon08, mon09]);
 
     expect(result.current.paint).toBeNull();
+  });
+
+  it("drops the keyboard anchor and focus when the host cell list changes", () => {
+    const NEXT_MONDAY = "2026-08-31";
+    const NEXT_TUESDAY = "2026-09-01";
+    const nextWeek = [NEXT_MONDAY, NEXT_TUESDAY].flatMap((day) =>
+      ["08:00", "09:00", "10:00", "11:00"].map((hour) => cell(day, hour))
+    );
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    const { result, rerender } = renderHook(
+      (cells: readonly CalendarAvailabilityCell[]) =>
+        useAvailabilityGridController(baseOptions({ cells, onPaintSelect })),
+      { initialProps: availabilityCells() }
+    );
+
+    act(() => {
+      result.current.handleGridKeyDown(keyEvent("ArrowDown").event, 1, 0);
+    });
+    expect(result.current.focusedCell).toStrictEqual({
+      columnIndex: 0,
+      rowIndex: 2,
+    });
+
+    rerender(nextWeek);
+
+    expect(result.current.focusedCell).toStrictEqual({
+      columnIndex: 0,
+      rowIndex: 0,
+    });
+
+    act(() => {
+      result.current.handleGridKeyDown(keyEvent("ArrowRight", true).event, 2, 0);
+    });
+
+    expect(onPaintSelect).toHaveBeenCalledExactlyOnceWith({
+      cells: [
+        cell(NEXT_MONDAY, "10:00"),
+        cell(NEXT_MONDAY, "11:00"),
+        cell(NEXT_TUESDAY, "08:00"),
+        cell(NEXT_TUESDAY, "09:00"),
+        cell(NEXT_TUESDAY, "10:00"),
+      ],
+      end: cell(NEXT_TUESDAY, "10:00"),
+      start: cell(NEXT_MONDAY, "10:00"),
+    });
+  });
+
+  it("gives the repeated fall-back hour its own row", () => {
+    // America/New_York, 2026-11-01: 01:00 happens twice, first in EDT, then in EST.
+    const firstOne = zonedCell(
+      "2026-11-01",
+      "01:00",
+      "01:00",
+      "2026-11-01T05:00:00.000Z",
+      "2026-11-01T06:00:00.000Z"
+    );
+    const secondOne = zonedCell(
+      "2026-11-01",
+      "01:00",
+      "02:00",
+      "2026-11-01T06:00:00.000Z",
+      "2026-11-01T07:00:00.000Z"
+    );
+    const two = zonedCell(
+      "2026-11-01",
+      "02:00",
+      "03:00",
+      "2026-11-01T07:00:00.000Z",
+      "2026-11-01T08:00:00.000Z"
+    );
+    const { result } = renderHook(() =>
+      useAvailabilityGridController(
+        baseOptions({ cells: [two, secondOne, firstOne] })
+      )
+    );
+
+    expect(result.current.rows.map((row) => row.cells[0])).toStrictEqual([
+      firstOne,
+      secondOne,
+      two,
+    ]);
+
+    act(() => {
+      result.current.handleGridKeyDown(keyEvent("ArrowDown").event, 0, 0);
+    });
+
+    expect(result.current.focusedCell).toStrictEqual({
+      columnIndex: 0,
+      rowIndex: 1,
+    });
+  });
+
+  it("moves past a wall-clock hour a column does not have", () => {
+    // America/New_York, 2026-03-08 has no 02:00; the next day does.
+    const one = zonedCell(
+      "2026-03-08",
+      "01:00",
+      "03:00",
+      "2026-03-08T06:00:00.000Z",
+      "2026-03-08T07:00:00.000Z"
+    );
+    const three = zonedCell(
+      "2026-03-08",
+      "03:00",
+      "04:00",
+      "2026-03-08T07:00:00.000Z",
+      "2026-03-08T08:00:00.000Z"
+    );
+    const nextDay = ["01:00", "02:00", "03:00"].map((hour, index) =>
+      zonedCell(
+        "2026-03-09",
+        hour,
+        `0${index + 2}:00`,
+        `2026-03-09T0${index + 5}:00:00.000Z`,
+        `2026-03-09T0${index + 6}:00:00.000Z`
+      )
+    );
+    const { result } = renderHook(() =>
+      useAvailabilityGridController(
+        baseOptions({ cells: [one, three, ...nextDay] })
+      )
+    );
+    const down = keyEvent("ArrowDown");
+
+    act(() => {
+      result.current.handleGridKeyDown(down.event, 0, 0);
+    });
+
+    expect(down.preventDefault).toHaveBeenCalledOnce();
+    expect(result.current.focusedCell).toStrictEqual({
+      columnIndex: 0,
+      rowIndex: 2,
+    });
+
+    act(() => {
+      result.current.handleGridKeyDown(keyEvent("ArrowLeft").event, 1, 1);
+    });
+
+    expect(result.current.focusedCell).toStrictEqual({
+      columnIndex: 0,
+      rowIndex: 2,
+    });
   });
 });

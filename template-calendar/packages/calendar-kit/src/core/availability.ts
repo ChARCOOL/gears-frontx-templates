@@ -41,6 +41,55 @@ export const buildAvailabilityColumns = (
   }));
 };
 
+export interface AvailabilityRow {
+  readonly key: string;
+  /** One slot per column; `undefined` where that day has no cell at this wall-clock time. */
+  readonly cells: readonly (CalendarAvailabilityCell | undefined)[];
+}
+
+/**
+ * Lines the columns up by wall-clock start. A wall-clock time that repeats within a day
+ * (the fall-back hour) gets a row per occurrence, so every cell has exactly one row.
+ */
+export const buildAvailabilityRows = (
+  columns: readonly AvailabilityColumn[]
+): readonly AvailabilityRow[] => {
+  const rows = new Map<
+    string,
+    {
+      readonly startTime: string;
+      readonly occurrence: number;
+      readonly cells: (CalendarAvailabilityCell | undefined)[];
+    }
+  >();
+
+  for (const [columnIndex, column] of columns.entries()) {
+    const occurrences = new Map<string, number>();
+
+    for (const cell of column.cells) {
+      const occurrence = occurrences.get(cell.startTime) ?? 0;
+      occurrences.set(cell.startTime, occurrence + 1);
+
+      const key = `${cell.startTime}#${occurrence}`;
+      const row = rows.get(key) ?? {
+        cells: Array.from({ length: columns.length }, () => undefined),
+        occurrence,
+        startTime: cell.startTime,
+      };
+
+      row.cells[columnIndex] = cell;
+      rows.set(key, row);
+    }
+  }
+
+  return sortCopy(
+    [...rows.entries()],
+    ([, left], [, right]) =>
+      left.startTime.localeCompare(right.startTime) ||
+      left.occurrence - right.occurrence
+  ).map(([key, row]) => ({ cells: row.cells, key }));
+};
+
 export const buildAvailabilityRange = (
   cells: readonly CalendarAvailabilityCell[],
   anchor: CalendarAvailabilityCell,

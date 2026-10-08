@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo } from "react";
 import type { ReactNode } from "react";
 
 import type {
@@ -9,29 +9,12 @@ import type {
   CalendarTranslate,
 } from "../core/model";
 import type { CalendarViewerProps } from "./calendar-context";
-import { getLocaleDirection } from "./direction";
-import {
-  FALLBACK_TRANSLATION,
-  FALLBACK_TRANSLATION_ID,
-  englishTranslate,
-  englishTranslationFor,
-} from "./english";
-import {
-  isUsableTranslation,
-  localeChain,
-  readTranslation,
-} from "./translations";
+import { englishTranslate } from "./english";
 import type {
   CalendarMessages,
   CalendarMissingTranslation,
-  CalendarTranslationValues,
   CalendarTranslations,
 } from "./translations";
-
-type CalendarLookup = (
-  id: string,
-  values: CalendarTranslationValues | undefined
-) => string | undefined;
 
 /** Everything a calendar needs to speak: locale, direction, translator and the text behind it. */
 export interface CalendarLocalizationProps {
@@ -103,105 +86,6 @@ export const CalendarLocalizationContext =
     missingIds: new Set<string>(),
     t: englishTranslate,
   });
-
-/**
- * A component's `translations` outrank the host translator so one component can be retexted in
- * place; the provider's catalogues lose to it so a host that translates everything keeps
- * ownership.
- */
-const buildTranslate = (
-  state: Omit<CalendarLocalizationState, "t">,
-  instanceTranslations: CalendarTranslations | undefined
-): CalendarTranslate => {
-  const { hostT, locale, messages, missingIds, onMissingTranslation } = state;
-
-  const readCatalogues: CalendarLookup = (id, values) => {
-    for (const candidate of localeChain(locale)) {
-      const resolved = readTranslation(
-        messages[candidate],
-        id,
-        values,
-        locale,
-        candidate
-      );
-
-      if (resolved !== undefined) {
-        return resolved;
-      }
-    }
-
-    return englishTranslationFor(id, values, locale);
-  };
-
-  const readHost: CalendarLookup = (id, values) => {
-    const value = hostT?.(id, values);
-
-    return isUsableTranslation(value, id) ? value : undefined;
-  };
-
-  return (id, values) => {
-    const resolved =
-      readTranslation(instanceTranslations, id, values, locale) ??
-      readHost(id, values) ??
-      readCatalogues(id, values);
-
-    if (resolved !== undefined) {
-      return resolved;
-    }
-
-    if (onMissingTranslation !== undefined && !missingIds.has(id)) {
-      missingIds.add(id);
-      onMissingTranslation(id);
-    }
-
-    return (
-      englishTranslationFor(FALLBACK_TRANSLATION_ID, values, locale) ??
-      FALLBACK_TRANSLATION
-    );
-  };
-};
-
-export const useLocalizationState = (
-  { direction, locale, messages, t, translations }: CalendarContextProps,
-  provider?: { readonly onMissingTranslation?: CalendarMissingTranslation }
-): CalendarLocalizationState => {
-  const parent = useContext(CalendarLocalizationContext);
-  const isProvider = provider !== undefined;
-  const onMissingTranslation = provider?.onMissingTranslation;
-
-  const instanceTranslations = isProvider ? undefined : translations;
-
-  // One set for the provider's lifetime, so a new `messages` object or an inline
-  // callback does not report an id twice.
-  const [providerMissingIds] = useState(() => new Set<string>());
-
-  return useMemo(() => {
-    const resolvedLocale = locale ?? parent.locale;
-    const explicitDirection = direction ?? parent.explicitDirection;
-
-    const state = {
-      direction: explicitDirection ?? getLocaleDirection(resolvedLocale),
-      explicitDirection,
-      hostT: t ?? parent.hostT,
-      locale: resolvedLocale,
-      messages: messages ?? parent.messages,
-      missingIds: isProvider ? providerMissingIds : parent.missingIds,
-      onMissingTranslation: onMissingTranslation ?? parent.onMissingTranslation,
-    };
-
-    return { ...state, t: buildTranslate(state, instanceTranslations) };
-  }, [
-    direction,
-    instanceTranslations,
-    isProvider,
-    locale,
-    messages,
-    onMissingTranslation,
-    parent,
-    providerMissingIds,
-    t,
-  ]);
-};
 
 export const useCalendarLocalization = (): CalendarLocalizationValue => {
   const { direction, locale, t } = useContext(CalendarLocalizationContext);

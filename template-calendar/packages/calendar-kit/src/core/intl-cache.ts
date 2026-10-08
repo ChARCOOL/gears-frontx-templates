@@ -7,6 +7,17 @@ export const assertLocale = (locale: string): void => {
   }
 };
 
+/** `pt_BR` is a common host spelling that every Intl constructor rejects. */
+export const canonicalLocale = (locale: string): string => {
+  const tag = locale.replaceAll("_", "-");
+
+  try {
+    return new Intl.Locale(tag).baseName;
+  } catch {
+    return tag;
+  }
+};
+
 const cacheKey = (locale: string, options: object | undefined): string => {
   if (options === undefined) {
     return locale;
@@ -36,7 +47,7 @@ const cachedByLocale = <Options extends object, Value>(
     }
 
     const Formatter = getFormatter();
-    const formatter = new Formatter(locale, options);
+    const formatter = new Formatter(canonicalLocale(locale), options);
     cache.set(key, formatter);
 
     return formatter;

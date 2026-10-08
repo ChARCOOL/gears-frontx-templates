@@ -40,8 +40,11 @@ const formatInViewerZone = <Result>(
 ): Result => {
   const validInstant = utcInstant(instant);
   const validTimeZone = parseIanaTimeZone(timeZone);
+  // The grid, the parsers and validation all count in Gregorian dates, so the labels must
+  // too: fa or th-TH would otherwise title a Gregorian month with Persian or Buddhist dates.
   const formatter = dateTimeFormatter(locale, {
     ...options,
+    calendar: "gregory",
     timeZone: validTimeZone,
   });
 
