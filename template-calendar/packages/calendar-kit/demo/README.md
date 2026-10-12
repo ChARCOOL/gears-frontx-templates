@@ -18,7 +18,7 @@ npm run demo
 
 ## Layout
 
-- `main.tsx` imports `theme.css`, owns the Theme (light, dark, system) and Direction (LTR, RTL) switches, holds the shared sample data and a small host translation table, and lazy-loads one screen.
+- `main.tsx` imports ui-kit's `theme.css` and then the kit's, owns the Theme (light, dark, system) and Direction (LTR, RTL) switches, holds the shared sample data and a small host translation table, and lazy-loads one screen.
 - `examples/week-grid.tsx`: the three interaction modes, 5- and 7-day widths, loading, empty and error states, a custom `renderEvent`, and the create and detail shells.
 - `examples/calendar-suite.tsx`: day, week, month and agenda under one `CalendarToolbar`, plus the paintable `AvailabilityGrid`.
 - `examples/sidebar-suite.tsx`: `CalendarSidePanel` and each side-panel widget on its own.

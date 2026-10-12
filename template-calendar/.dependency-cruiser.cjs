@@ -13,8 +13,11 @@
 const ecosystemTarget = (pattern) => [`(^|/)node_modules/@gears-frontx/${pattern}`, `^@gears-frontx/${pattern}`];
 
 // Type-only edges are erased before emit; a cycle only counts when every edge
-// survives to runtime. Mirrors template-shell's `no-circular`.
+// survives to runtime. Mirrors template-shell's `no-circular`. A lazy
+// `import()` edge runs after the importer has loaded, so it closes no
+// load-order cycle: the demo's lazy screens read the entry's shared data.
 const TYPE_ONLY_DEPENDENCY_TYPES = ['type-only', 'type-import'];
+const CYCLE_FREE_DEPENDENCY_TYPES = [...TYPE_ONLY_DEPENDENCY_TYPES, 'dynamic-import'];
 
 module.exports = {
   forbidden: [
@@ -22,7 +25,7 @@ module.exports = {
       name: 'no-circular',
       severity: 'error',
       from: { path: '^(?!.*node_modules)' },
-      to: { circular: true, viaOnly: { dependencyTypesNot: TYPE_ONLY_DEPENDENCY_TYPES } },
+      to: { circular: true, viaOnly: { dependencyTypesNot: CYCLE_FREE_DEPENDENCY_TYPES } },
       comment: 'Circular dependencies create tight coupling and make code harder to reason about.',
     },
     {

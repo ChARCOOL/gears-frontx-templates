@@ -1,3 +1,4 @@
+import "@gears-frontx/ui-kit/theme.css";
 import "@gears-frontx/calendar-kit/theme.css";
 import {
   calendarDate,

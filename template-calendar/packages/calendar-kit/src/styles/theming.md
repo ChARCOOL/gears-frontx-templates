@@ -2,7 +2,7 @@
 
 ## Style ownership
 
-`@gears-frontx/calendar-kit` owns its `@gears-frontx/ui-kit` runtime dependency. Consumers should import only calendar-kit styles — `theme.css`, the optional `reset.css`, and any calendar-kit preset — and must not import `@gears-frontx/ui-kit/theme.css` directly. The kit's component imports bring the ui-kit-derived component CSS with them, so that CSS arrives through the calendar-kit package and stays within the calendar mount.
+`@gears-frontx/calendar-kit` owns its `@gears-frontx/ui-kit` runtime dependency, and the kit's component imports bring the ui-kit component CSS with them. The tokens those controls read (`--secondary`, `--popover-foreground`, …) come from ui-kit's own theme, so the host imports `@gears-frontx/ui-kit/theme.css` once, then calendar-kit's `theme.css`, the optional `reset.css` and any calendar-kit preset. calendar-kit's `theme.css` defines no ui-kit token. Custom properties inherit across a shadow boundary, so the same document-level import also reaches a kit rendered inside an MFE.
 
 `theme.css` does not hard-code the calendar's appearance. It maps the kit's internal `--cal-*` properties from **upstream seam names** — `--surface`, `--foreground`, `--primary`, `--border`, `--font-sans`, and so on — each with a kit fallback:
 
