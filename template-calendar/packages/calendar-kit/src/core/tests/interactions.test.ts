@@ -20,6 +20,7 @@ import type {
   CalendarEvent,
   WeekGridInteractionMode,
 } from "../model";
+import type { InteractionAction, InteractionState } from "../interactions";
 
 const cell = (
   date: string,
@@ -49,6 +50,13 @@ const first = cell("2026-08-24", "09:00");
 const second = cell("2026-08-24", "10:00");
 
 const third = cell("2026-08-24", "11:00");
+
+const fourth = cell("2026-08-24", "12:00");
+
+const run = (
+  state: InteractionState,
+  ...actions: readonly InteractionAction[]
+): InteractionState => actions.reduce(transitionInteraction, state);
 
 const event: CalendarEvent = {
   allDay: false,
@@ -121,71 +129,108 @@ describe("core interaction state machine", () => {
     assert(finished.pendingMove).toBeNull();
   });
 
-  it("keeps a move pending until confirm and makes cancel discard it", () => {
+  it("keeps a move pending from its drop until confirm and makes cancel discard it", () => {
     const state = createInteractionState("paint-and-move");
-    const pending = transitionInteraction(state, {
-      event,
-      from: first,
-      type: "move-start",
-    });
-    const requested = transitionInteraction(pending, {
-      to: second,
-      type: "move-target",
-    });
+    const dragging = run(
+      state,
+      { event, from: first, type: "move-start" },
+      { to: second, type: "move-target" }
+    );
+    const move = { event, from: first, to: second };
 
-    assert(requested.pendingMove).toStrictEqual({
-      event,
-      from: first,
-      to: second,
-    });
+    assert(dragging.drag).toStrictEqual(move);
+    assert(dragging.pendingMove).toBeNull();
+
+    const requested = run(dragging, { type: "move-drop" });
+
+    assert(requested.drag).toBeNull();
+    assert(requested.pendingMove).toStrictEqual(move);
     assert(requested.committedMove).toBeNull();
 
-    const canceled = transitionInteraction(requested, { type: "move-cancel" });
+    const canceled = run(requested, { move, type: "move-cancel" });
 
     assert(canceled.pendingMove).toBeNull();
     assert(canceled.committedMove).toBeNull();
 
-    const pendingAgain = transitionInteraction(state, {
-      event,
-      from: first,
-      type: "move-start",
-    });
-    const requestedAgain = transitionInteraction(pendingAgain, {
-      to: second,
-      type: "move-target",
-    });
-    const confirmed = transitionInteraction(requestedAgain, {
-      type: "move-confirm",
-    });
+    const confirmed = run(requested, { move, type: "move-confirm" });
 
     assert(confirmed.pendingMove).toBeNull();
+    assert(confirmed.committedMove).toStrictEqual(move);
+  });
+
+  it("does not request a move dropped on its origin", () => {
+    const dropped = run(
+      createInteractionState("paint-and-move"),
+      { event, from: first, type: "move-start" },
+      { type: "move-drop" }
+    );
+    const move = { event, from: first, to: first };
+
+    assert(dropped.drag).toBeNull();
+    assert(dropped.pendingMove).toBeNull();
+    assert(
+      run(dropped, { move, type: "move-confirm" }).committedMove
+    ).toBeNull();
+  });
+
+  it("keeps a drag that passes back over its origin", () => {
+    const confirmed = run(
+      createInteractionState("paint-and-move"),
+      { event, from: first, type: "move-start" },
+      { to: second, type: "move-target" },
+      { to: first, type: "move-target" },
+      { type: "move-target" },
+      { to: fourth, type: "move-target" },
+      { type: "move-drop" },
+      { move: { event, from: first, to: fourth }, type: "move-confirm" }
+    );
+
     assert(confirmed.committedMove).toStrictEqual({
       event,
       from: first,
-      to: second,
+      to: fourth,
     });
   });
 
-  it("does not commit a move confirmed before it leaves its origin", () => {
-    const pending = transitionInteraction(
+  it("starts no paint or move while a move waits for the host", () => {
+    const other = { ...event, id: "event-2" };
+    const moveA = { event, from: first, to: second };
+    const pending = run(
       createInteractionState("paint-and-move"),
-      { event, from: first, type: "move-start" }
+      { event, from: first, type: "move-start" },
+      { to: second, type: "move-target" },
+      { type: "move-drop" }
     );
-    const confirmed = transitionInteraction(pending, { type: "move-confirm" });
 
-    assert(confirmed.pendingMove).toBeNull();
-    assert(confirmed.committedMove).toBeNull();
+    const draggedB = run(
+      pending,
+      { event: other, from: third, type: "move-start" },
+      { to: fourth, type: "move-target" },
+      { type: "move-drop" }
+    );
+
+    assert(draggedB).toStrictEqual(pending);
+    assert(run(pending, { cell: third, type: "paint-start" })).toStrictEqual(
+      pending
+    );
+    assert(
+      run(pending, {
+        move: { event: other, from: third, to: fourth },
+        type: "move-confirm",
+      })
+    ).toStrictEqual(pending);
+    assert(
+      run(pending, { move: moveA, type: "move-confirm" }).committedMove
+    ).toStrictEqual(moveA);
   });
 
   it("clears the last committed move when the next paint or move starts", () => {
-    const committed = [
+    const committed = run(
+      createInteractionState("paint-and-move"),
       { event, from: first, type: "move-start" },
       { to: second, type: "move-target" },
-      { type: "move-confirm" },
-    ].reduce(
-      (state, action) =>
-        transitionInteraction(state, action as Parameters<typeof transitionInteraction>[1]),
-      createInteractionState("paint-and-move")
+      { type: "move-drop" },
+      { move: { event, from: first, to: second }, type: "move-confirm" }
     );
 
     assert(committed.committedMove).not.toBeNull();
@@ -264,6 +309,7 @@ describe("core interaction state machine", () => {
 
     assert(painting.paint).not.toBeNull();
     assert(malformed.paint).toStrictEqual(painting.paint);
+    assert(missingTarget.drag?.to).toStrictEqual(first);
     assert(missingTarget.pendingMove).toBeNull();
   });
 });
@@ -321,46 +367,25 @@ describe("additional calendar interaction contracts", () => {
     assert(buildSelectionRange(first, malformed)).toBeNull();
   });
 
-  it("keeps move requests pending until confirmation and handles cancellation or no-op targets", () => {
+  it("ignores confirm and cancel for another move or with nothing pending", () => {
     const initial = createInteractionState("paint-and-move");
-    const pending = transitionInteraction(initial, {
-      event,
-      from: first,
-      type: "move-start",
-    });
-    const targeted = transitionInteraction(pending, {
-      to: second,
-      type: "move-target",
-    });
+    const move = { event, from: first, to: second };
+    const dragging = run(
+      initial,
+      { event, from: first, type: "move-start" },
+      { to: second, type: "move-target" }
+    );
 
-    assert(targeted.pendingMove).toStrictEqual({
-      event,
-      from: first,
-      to: second,
-    });
+    assert(run(dragging, { move, type: "move-confirm" })).toStrictEqual(
+      dragging
+    );
+    assert(run(dragging, { move, type: "move-cancel" }).drag).toBeNull();
     assert(
-      transitionInteraction(targeted, { type: "move-cancel" }).committedMove
-    ).toBeNull();
-    assert(
-      transitionInteraction(targeted, { type: "move-confirm" }).committedMove
-    ).toStrictEqual({
-      event,
-      from: first,
-      to: second,
-    });
-    assert(
-      transitionInteraction(pending, { to: first, type: "move-target" })
-        .pendingMove
-    ).toBeNull();
-    assert(
-      transitionInteraction(pending, { type: "move-target" }).pendingMove
-    ).toBeNull();
-    assert(
-      transitionInteraction(initial, { type: "move-cancel" })
-    ).toStrictEqual(initial);
-    assert(
-      transitionInteraction(initial, { type: "move-confirm" })
-    ).toStrictEqual(initial);
+      run(dragging, { move: { ...move, to: third }, type: "move-cancel" })
+    ).toStrictEqual(dragging);
+    assert(run(initial, { move, type: "move-cancel" })).toStrictEqual(initial);
+    assert(run(initial, { move, type: "move-confirm" })).toStrictEqual(initial);
+    assert(run(initial, { type: "move-drop" })).toStrictEqual(initial);
   });
 
   it("does not move unavailable or unidentified events and does not permit moves outside the mode", () => {

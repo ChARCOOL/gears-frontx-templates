@@ -47,47 +47,68 @@ export interface AvailabilityRow {
   readonly cells: readonly (CalendarAvailabilityCell | undefined)[];
 }
 
+interface RowDraft {
+  readonly key: string;
+  readonly startTime: string;
+  readonly occurrence: number;
+  readonly cells: (CalendarAvailabilityCell | undefined)[];
+}
+
+const compareRowDrafts = (left: RowDraft, right: RowDraft): number =>
+  left.startTime.localeCompare(right.startTime) ||
+  left.occurrence - right.occurrence;
+
 /**
  * Lines the columns up by wall-clock start. A wall-clock time that repeats within a day
  * (the fall-back hour) gets a row per occurrence, so every cell has exactly one row.
+ * Rows keep each column's chronological order: a new row goes after that column's previous
+ * row, past any earlier wall-clock rows, so on a fall-back day the second 01:00 and 01:30
+ * follow the first 01:30.
  */
 export const buildAvailabilityRows = (
   columns: readonly AvailabilityColumn[]
 ): readonly AvailabilityRow[] => {
-  const rows = new Map<
-    string,
-    {
-      readonly startTime: string;
-      readonly occurrence: number;
-      readonly cells: (CalendarAvailabilityCell | undefined)[];
-    }
-  >();
+  const rows = new Map<string, RowDraft>();
+  const order: RowDraft[] = [];
 
   for (const [columnIndex, column] of columns.entries()) {
     const occurrences = new Map<string, number>();
+    let previousIndex = -1;
 
     for (const cell of column.cells) {
       const occurrence = occurrences.get(cell.startTime) ?? 0;
       occurrences.set(cell.startTime, occurrence + 1);
 
       const key = `${cell.startTime}#${occurrence}`;
-      const row = rows.get(key) ?? {
-        cells: Array.from({ length: columns.length }, () => undefined),
-        occurrence,
-        startTime: cell.startTime,
-      };
+      let row = rows.get(key);
+
+      if (row === undefined) {
+        row = {
+          cells: Array.from({ length: columns.length }, () => undefined),
+          key,
+          occurrence,
+          startTime: cell.startTime,
+        };
+        previousIndex += 1;
+
+        while (
+          previousIndex < order.length &&
+          compareRowDrafts(order[previousIndex], row) < 0
+        ) {
+          previousIndex += 1;
+        }
+
+        order.splice(previousIndex, 0, row);
+        rows.set(key, row);
+      } else {
+        previousIndex = order.indexOf(row);
+      }
 
       row.cells[columnIndex] = cell;
-      rows.set(key, row);
     }
   }
 
-  return sortCopy(
-    [...rows.entries()],
-    ([, left], [, right]) =>
-      left.startTime.localeCompare(right.startTime) ||
-      left.occurrence - right.occurrence
-  ).map(([key, row]) => ({ cells: row.cells, key }));
+  return order.map(({ cells, key }) => ({ cells, key }));
 };
 
 export const buildAvailabilityRange = (

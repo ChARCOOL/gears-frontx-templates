@@ -13,6 +13,7 @@ import {
   formatViewerTimeZoneOffset,
   formatViewerWeekdayShort,
 } from "../format";
+import { canonicalLocale, localeBaseName } from "../intl-cache";
 import { parseIanaTimeZone, parseLocalTime, utcInstant } from "../model";
 import {
   TIME_INPUT,
@@ -126,6 +127,22 @@ describe("calendar formatting and time-input algorithms", () => {
     );
   });
 
+  it("keeps the host's Unicode extensions on a canonicalized locale", () => {
+    assert(canonicalLocale("en_US-u-hc-h23")).toBe("en-US-u-hc-h23");
+    assert(localeBaseName("en_US-u-hc-h23")).toBe("en-US");
+    assert(formatTimeOfDay(parseLocalTime("15:00"), "en-US-u-hc-h23")).toBe(
+      "15:00"
+    );
+    assert(
+      formatViewerDate(
+        utcInstant("2026-03-15T12:00:00.000Z"),
+        parseIanaTimeZone("UTC"),
+        "hi-IN-u-nu-deva",
+        { dateStyle: "short" }
+      )
+    ).toMatch(/[०-९]/u);
+  });
+
   it("labels dates in the Gregorian calendar the grid counts in", () => {
     const utc = parseIanaTimeZone("UTC");
     const march15 = utcInstant("2026-03-15T12:00:00.000Z");
@@ -190,7 +207,25 @@ describe("calendar formatting and time-input algorithms", () => {
     ).toThrow(RangeError);
   });
 
-  it.each(["en-US", "ko-KR", "zh-TW", "ar-EG", "de-DE"])(
+  it.each([
+    "en-US",
+    "en-CA",
+    "en-AU",
+    "ko-KR",
+    "zh-TW",
+    "ar-EG",
+    "de-DE",
+    "fr-CA",
+    "es-ES",
+    "es-MX",
+    "pt-PT",
+    "fi-FI",
+    "da-DK",
+    "hi-IN",
+    "ja-JP",
+    "vi-VN",
+    "bg-BG",
+  ])(
     "parses its own %s time-of-day output",
     (locale) => {
       for (const time of ["00:30", "09:05", "12:00", "15:00", "23:45"]) {
@@ -260,6 +295,25 @@ describe("calendar formatting and time-input algorithms", () => {
     });
     assert(parseTimeInput("not a time", { locale: "en-US" })).toStrictEqual({
       kind: TIME_INPUT.invalid,
+    });
+  });
+
+  it("reads dotted day periods and the locale's own hour-minute text", () => {
+    assert(parseTimeInput("3 p.m.", { locale: "en-US" })).toStrictEqual({
+      kind: TIME_INPUT.value,
+      value: "15:00",
+    });
+    assert(parseTimeInput("3:15 P.M.", { locale: "en-US" })).toStrictEqual({
+      kind: TIME_INPUT.value,
+      value: "15:15",
+    });
+    assert(parseTimeInput("13 h 30", { locale: "fr-CA" })).toStrictEqual({
+      kind: TIME_INPUT.value,
+      value: "13:30",
+    });
+    assert(parseTimeInput("13.30", { locale: "fi-FI" })).toStrictEqual({
+      kind: TIME_INPUT.value,
+      value: "13:30",
     });
   });
 });

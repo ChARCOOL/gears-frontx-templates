@@ -128,7 +128,8 @@ const layoutGroup = (
       id: event.id,
       left,
       width,
-      zIndex: BASE_Z_INDEX + eventIndex,
+      // Deep overlap groups share the top event layer instead of rising past the now-line.
+      zIndex: Math.min(BASE_Z_INDEX + eventIndex, NOW_LINE_Z_INDEX - 1),
     };
   });
 };

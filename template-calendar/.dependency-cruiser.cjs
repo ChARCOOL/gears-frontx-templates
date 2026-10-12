@@ -53,9 +53,6 @@ module.exports = {
     doNotFollow: {
       path: ['(^|/)node_modules/', '^packages/[^/]+/dist'],
     },
-    exclude: {
-      dynamic: true,
-    },
     tsPreCompilationDeps: true,
   },
 };

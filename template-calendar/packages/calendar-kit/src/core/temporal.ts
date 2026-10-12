@@ -484,10 +484,23 @@ const windowEndMinutes = (window: CalendarTimeWindow): number => {
   return end === 0 ? MINUTES_PER_DAY : end;
 };
 
+const SLOT_MINUTES: ReadonlySet<number> = new Set<CalendarSlotMinutes>([
+  15, 20, 30, 60,
+]);
+
+// The type is the only other guard, and a zero or negative slot never ends the slot loops.
+const assertSlotMinutes = (slotMinutes: CalendarSlotMinutes): void => {
+  if (!SLOT_MINUTES.has(slotMinutes)) {
+    throw invalidTemporalValue(`Invalid slot length: ${String(slotMinutes)}`);
+  }
+};
+
 export const assertTimeWindow = (
   window: CalendarTimeWindow,
   slotMinutes: CalendarSlotMinutes
 ): void => {
+  assertSlotMinutes(slotMinutes);
+
   const start = minutesOfDay(window.start);
   const end = windowEndMinutes(window);
 
@@ -512,8 +525,11 @@ export const assertTimeWindow = (
 export const countWindowSlots = (
   window: CalendarTimeWindow,
   slotMinutes: CalendarSlotMinutes
-): number =>
-  (windowEndMinutes(window) - minutesOfDay(window.start)) / slotMinutes;
+): number => {
+  assertSlotMinutes(slotMinutes);
+
+  return (windowEndMinutes(window) - minutesOfDay(window.start)) / slotMinutes;
+};
 
 export const isWithinTimeWindow = (
   time: LocalTime,
@@ -561,6 +577,8 @@ export const buildSlotStarts = (
   if (endEpoch <= startEpoch) {
     throw invalidTemporalValue("UTC range must end after it starts");
   }
+
+  assertSlotMinutes(slotMinutes);
 
   const slotMilliseconds = slotMinutes * MINUTE_IN_MILLISECONDS;
 

@@ -1,3 +1,10 @@
+---
+type: FEATURE
+system: calendar-kit
+status: draft
+description: How the week grid renders host events and turns quick-create, paint and move gestures into host callbacks, gated by the host-selected interaction mode.
+---
+
 # Feature: Week Grid With Host-Owned Interaction Modes
 
 - [ ] `p1` - **ID**: `cpt-template-calendar-calendar-kit-featstatus-week-grid`
@@ -127,7 +134,7 @@ Pure core transition logic over `WeekGridInteractionMode`, adapted to React stat
 
 1. [ ] - `p1` - On drag end over a valid target cell, enter the pending state and call `onMoveRequest` with the event, `from`, `to`, and `confirm`/`cancel` - `inst-move-request`
 2. [ ] - `p1` - **IF** the host calls `confirm`, commit the pending move; **IF** the host calls `cancel`, discard it and restore the pre-drag render state - `inst-move-resolve`
-3. [ ] - `p1` - **RETURN** without committing when neither function is called; the grid performs no backend mutation itself - `inst-move-return`
+3. [ ] - `p1` - **RETURN** without committing while the host has called neither `confirm` nor `cancel`; the grid performs no backend mutation itself - `inst-move-return`
 
 ## 4. States (CDSL)
 

@@ -2,6 +2,7 @@
 status: accepted
 date: 2026-09-24
 decision-makers: calendar-kit maintainers
+description: Why @gears-frontx/calendar-kit depends on @gears-frontx/ui-kit at an exact pin, imported only by its primitives, with a React-free core.
 ---
 
 # Calendar Kit Packaging
@@ -30,7 +31,7 @@ decision-makers: calendar-kit maintainers
 
 ## Decision Drivers
 
-* Exact-pinned intra-ecosystem edge — `@gears-frontx/ui-kit` stays a runtime dependency at the exact registry pin (`0.4.0-alpha.5`), so a ui-kit upgrade is a calendar-kit change the bump-on-change gate sees, never a silent drift.
+* Exact-pinned intra-ecosystem edge — `@gears-frontx/ui-kit` stays a runtime dependency at the exact registry pin (`0.4.0-alpha.5`), so a ui-kit upgrade is a change in the calendar-kit diff, never a silent drift. Once the package is non-private, `policy:version-bump-on-change` also requires the version bump that goes with it; while it is private the gate skips it.
 * Primitives-only import boundary — only `src/ui/primitives/` imports `@gears-frontx/ui-kit`; family units, the React layer and the core never do, so the depended surface is the wrapped set, not the whole kit.
 * React-free core as a directory boundary — the pure model and algorithms stay in `src/core` with no React, no ui-kit and no JSX, deferring a separate core package while the property holds.
 * ESM-only, source maps shipped — following the ui-kit precedent: ECMAScript-module output only, `sourcemap: true`, with `dist/docs` and the agent index shipping inside the artifact.
@@ -49,7 +50,7 @@ Chosen option: **One installable artifact with a pinned ui-kit dependency behind
 
 * Good, because the package renders controls whose behaviour and accessibility already hold, instead of owning a parallel control set.
 * Good, because the primitives boundary keeps the depended surface minimal and greppable — one directory to audit for the whole edge.
-* Good, because the exact pin plus the bump-on-change gate makes every ui-kit upgrade a visible calendar-kit release decision.
+* Good, because the exact pin makes every ui-kit upgrade a visible calendar-kit change, and from the first public release on the bump-on-change gate makes it a release decision.
 * Bad, because a host on a different ui-kit line receives two ui-kit copies; hosts align on the pinned line or accept the duplication.
 * Bad, because the package is not standalone: it cannot release independently of ui-kit's availability on the registry.
 

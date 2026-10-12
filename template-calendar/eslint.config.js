@@ -130,9 +130,10 @@ export default [
               message:
                 'ECOSYSTEM VIOLATION: src/ui/primitives/ imports exactly one ecosystem package — @gears-frontx/ui-kit — and no other.',
             },
-            // The negation above re-allows every ui-kit subpath, CSS included.
+            // The negation above re-allows every ui-kit subpath, CSS included, also with
+            // a Vite query such as `?inline`.
             {
-              group: ['@gears-frontx/ui-kit/**/*.css'],
+              regex: '^@gears-frontx/ui-kit/.*\\.css(\\?.*)?$',
               message:
                 'ECOSYSTEM VIOLATION: calendar-kit ships its own theme.css; do not import ui-kit styles.',
             },

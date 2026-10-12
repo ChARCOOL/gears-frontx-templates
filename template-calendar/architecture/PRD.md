@@ -1,3 +1,10 @@
+---
+type: PRD
+system: calendar-kit
+status: draft
+description: Requirements for @gears-frontx/calendar-kit, the calendar UI package of template-calendar that renders host data and reports user intent through typed callbacks.
+---
+
 # PRD — Calendar Kit (`@gears-frontx/calendar-kit`)
 
 <!-- toc -->
@@ -24,6 +31,7 @@
   - [7.1 Public API Surface](#71-public-api-surface)
   - [7.2 External Integration Contracts](#72-external-integration-contracts)
 - [8. Use Cases](#8-use-cases)
+  - [8.1 A host embeds the week grid with its own data and receives typed callbacks](#81-a-host-embeds-the-week-grid-with-its-own-data-and-receives-typed-callbacks)
 - [9. Acceptance Criteria](#9-acceptance-criteria)
 - [10. Dependencies](#10-dependencies)
 - [11. Assumptions](#11-assumptions)
@@ -110,7 +118,7 @@ The system **MUST** be distributed as an installable, independently versioned np
 
 The two paths do not mix. Installing the published package is the primary path: the host upgrades by bumping the version. Applying the template is for a team that wants to own and change the calendar source; its copy no longer upgrades by a version bump, and taking later changes means merging them by hand.
 
-**Rationale**: Package versions published from this template repo remain the shared source, and the repository's bump-on-change gate makes the package boundary the release boundary (member packaging ADR). A consumer-owned copy trades that upgrade path for full control of the source.
+**Rationale**: Package versions published from this template repo remain the shared source, and the repository's bump-on-change gate, which covers every non-private template workspace member, makes the package boundary the release boundary from the first public release on (member packaging ADR). A consumer-owned copy trades that upgrade path for full control of the source.
 
 **Actors**: `cpt-template-calendar-calendar-kit-actor-consumer-developer`
 
@@ -246,7 +254,7 @@ No external ecosystem edge is owned here. The package is distributed under the r
 
 ## 8. Use Cases
 
-#### A host embeds the week grid with its own data and receives typed callbacks
+### 8.1 A host embeds the week grid with its own data and receives typed callbacks
 
 - [ ] `p2` - **ID**: `cpt-template-calendar-calendar-kit-usecase-embed-week-grid`
 
@@ -281,14 +289,14 @@ No external ecosystem edge is owned here. The package is distributed under the r
 - [ ] Any pre-existing date/range picker entry outside this package remains distinct from the calendar-kit public names — verifiable via the package export names.
 - [ ] Calendar creation ships as generic UI only (`CreateEventPopover` driven by host callbacks); persistence, backend and scheduling rules stay with the host — verifiable via the member packaging ADR and the package source scan.
 - [ ] Every file under `src/core` carries no React, ui-kit, or browser-global import — verifiable via `cpt-template-calendar-calendar-kit-nfr-react-free-core` and the template's dependency-cruiser rules.
-- [ ] A calendar-only source change bumps only this package — verifiable via `cpt-template-calendar-calendar-kit-nfr-independent-versioning` and the bump-on-change gate.
+- [ ] A calendar-only source change bumps only this package — verifiable via `cpt-template-calendar-calendar-kit-nfr-independent-versioning` and `policy:version-bump-on-change`, which governs the package once it is no longer private.
 
 ## 10. Dependencies
 
 | Dependency | Description | Criticality |
 | --- | --- | --- |
 | React / react-dom (peer dependencies, `^19.0.0`) | The UI framework the host supplies and versions; the library declares no hard runtime coupling. | p1 |
-| `@gears-frontx/ui-kit` | Exact-pinned dependency, imported only by `src/ui/primitives/`; the calendar theme defines the seams its controls read. | p1 |
+| `@gears-frontx/ui-kit` | Exact-pinned dependency, imported only by `src/ui/primitives/`; the host loads ui-kit's theme, which defines the tokens its controls read. | p1 |
 | Browser `Intl` | The primitive under locale-aware temporal formatting. | p1 |
 | npm-compatible package registry | Distribution channel per the root package-registry contract. | p1 |
 
@@ -303,7 +311,7 @@ No external ecosystem edge is owned here. The package is distributed under the r
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| UI-kit leaking past the primitives. | Family units or hosts would couple to ui-kit's API and styles. | Only `src/ui/primitives/` imports `@gears-frontx/ui-kit`; hosts import `theme.css` and never ui-kit's stylesheet. |
+| UI-kit leaking past the primitives. | Family units or hosts would couple to ui-kit's API and styles. | Only `src/ui/primitives/` imports `@gears-frontx/ui-kit`. Hosts import ui-kit's `theme.css` for its tokens and calendar-kit's `theme.css` for the `--cal-*` tokens; no family unit reads a ui-kit token directly. |
 | Thin evidence for drag/time-zone/virtualization dependencies. | Late dependency additions change the manifest. | Each addition requires a written reason and an exact pin; the first alpha ships with the minimal inventory. |
-| Workspace registration cost before first delivery. | Boundary or fan-out gaps fail gates late. | Registration is a named lane step with its own gates (classification, allowlists, version-policy enumeration, CI consumer step). |
+| Workspace registration cost before first delivery. | Boundary or fan-out gaps fail gates late. | Registration is a named lane step with its own gates (classification, allowlists, the bump-on-change gate's discovery of non-private members, CI consumer step). |
 | Theme-token drift beyond the documented contract. | Consumers override tokens that do not exist. | The token test rejects a raw palette value, a non-alias absent from the owned table, or fixed geometry exposed as a public token. |

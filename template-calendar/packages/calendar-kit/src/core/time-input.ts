@@ -16,6 +16,15 @@ const HOUR_ONLY_PATTERN = /^(?<group1>\d{1,2})$/u;
 
 const COMPACT_PATTERN = /^(?<group1>\d{1,2})(?<group2>\d{2})$/u;
 
+// `p.m.` and es `p. m.` read as `pm` and `p m`; a dot between digits still separates.
+const ABBREVIATION_DOT_PATTERN = /(?<=\p{L})\./gu;
+
+// Empty, or a separator HOUR_MINUTE_PATTERN already reads.
+const PLAIN_SEPARATOR_PATTERN = /^[:.,]?$/u;
+
+const withoutAbbreviationDots = (text: string): string =>
+  text.replaceAll(ABBREVIATION_DOT_PATTERN, "");
+
 interface TimeFormatters {
   readonly twelveHourDetector: Intl.DateTimeFormat;
   readonly twelveHour: Intl.DateTimeFormat;
@@ -29,7 +38,7 @@ const localeDayPeriod = (locale: string, hour: number): string => {
     timeZone: "UTC",
   }).formatToParts(new Date(Date.UTC(1970, 0, 1, hour)));
 
-  return (
+  return withoutAbbreviationDots(
     parts.find((part) => part.type === "dayPeriod")?.value.toLowerCase() ?? ""
   );
 };
@@ -121,6 +130,27 @@ const getTimeFormatters = (locale: string): TimeFormatters => ({
     timeZone: "UTC",
   }),
 });
+
+/**
+ * The text the locale writes between hour and minute when it is not a plain separator,
+ * such as fr-CA `13 h 30`, so the kit's own output parses back.
+ */
+const hourMinuteLiterals = (locale: string): readonly string[] => {
+  const sample = new Date(Date.UTC(1970, 0, 1, 13, 30));
+  const { twelveHour, twentyFourHour } = getTimeFormatters(locale);
+
+  return [twelveHour, twentyFourHour].flatMap((formatter) => {
+    const parts = formatter.formatToParts(sample);
+    const hourIndex = parts.findIndex((part) => part.type === "hour");
+    const between = parts[hourIndex + 1];
+    const literal =
+      between?.type === "literal" && parts[hourIndex + 2]?.type === "minute"
+        ? between.value.trim().toLowerCase()
+        : "";
+
+    return PLAIN_SEPARATOR_PATTERN.test(literal) ? [] : [literal];
+  });
+};
 
 export const usesTwelveHourClock = (locale: string): boolean => {
   const parts = getTimeFormatters(locale).twelveHourDetector.formatToParts(
@@ -277,8 +307,16 @@ export const parseTimeInput = (
     return { kind: TIME_INPUT.empty };
   }
 
-  const { rest, period } = splitMeridiem(normalised, locale);
-  const parts = readHourMinute(rest);
+  const { rest, period } = splitMeridiem(
+    withoutAbbreviationDots(normalised),
+    locale
+  );
+  const parts = readHourMinute(
+    hourMinuteLiterals(locale).reduce(
+      (text, literal) => text.replaceAll(literal, ":"),
+      rest.toLowerCase()
+    )
+  );
 
   if (!parts) {
     return { kind: TIME_INPUT.invalid };

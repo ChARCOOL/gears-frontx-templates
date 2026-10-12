@@ -151,6 +151,51 @@ describe("calendar date-text parsing", () => {
   });
 
   it.each([
+    ["March 5th", "en-US", "2026-03-05"],
+    ["22nd Sep", "en-US", "2026-09-22"],
+    ["Sept 1st, 2027", "en-US", "2027-09-01"],
+    ["Tues Mar 3", "en-US", "2026-03-03"],
+    ["Thurs Mar 5", "en-US", "2026-03-05"],
+    ["1er mars", "fr-FR", "2026-03-01"],
+    ["5º de marzo", "es-ES", "2026-03-05"],
+  ])("reads ordinal days and weekday prefixes: %s (%s)", (text, locale, value) => {
+    assert(parse(text, locale)).toStrictEqual({ kind: DATE_INPUT.value, value });
+  });
+
+  it("reads a month name that is also a weekday as the month only when no other month is named", () => {
+    // cy `Mawrth` is March and, in `Dydd Mawrth`, Tuesday.
+    assert(parse("Dydd Mawrth, 22 Medi 2026", "cy")).toStrictEqual({
+      kind: DATE_INPUT.value,
+      value: "2026-09-22",
+    });
+    assert(parse("5 Mawrth", "cy")).toStrictEqual({
+      kind: DATE_INPUT.value,
+      value: "2026-03-05",
+    });
+  });
+
+  it("rejects text that names two different months", () => {
+    assert(parse("March April 5")).toStrictEqual({ kind: DATE_INPUT.invalid });
+    assert(parse("Sep September 5")).toStrictEqual({
+      kind: DATE_INPUT.value,
+      value: "2026-09-05",
+    });
+  });
+
+  it("rejects overlong text without splitting it into words", () => {
+    const started = performance.now();
+
+    assert(parse("日".repeat(4000), "ja")).toStrictEqual({
+      kind: DATE_INPUT.invalid,
+    });
+    assert(parse(`${"日".repeat(95)}5日`, "ja")).toStrictEqual({
+      kind: DATE_INPUT.value,
+      value: "2026-08-05",
+    });
+    assert(performance.now() - started).toBeLessThan(500);
+  });
+
+  it.each([
     "en-US",
     "en-GB",
     "de-DE",
@@ -172,6 +217,7 @@ describe("calendar date-text parsing", () => {
     "he-IL",
     "hi-IN",
     "th-TH",
+    "cy",
   ])("reads back what formatViewerDate writes in %s", (locale) => {
     const timeZone = parseIanaTimeZone("UTC");
 

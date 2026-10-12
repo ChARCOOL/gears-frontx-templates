@@ -4,8 +4,10 @@ import { availabilityCell as cell } from "../../__test-utils__/fixtures";
 import {
   buildAvailabilityColumns,
   buildAvailabilityRange,
+  buildAvailabilityRows,
 } from "../availability";
-import { calendarDate, utcInstant } from "../model";
+import { calendarDate, parseLocalTime, utcInstant } from "../model";
+import type { CalendarAvailabilityCell } from "../model";
 
 const mon08 = cell("2026-08-24", "08:00");
 const mon09 = cell("2026-08-24", "09:00");
@@ -65,6 +67,71 @@ describe(buildAvailabilityColumns, () => {
 
     assert(columns).toHaveLength(1);
     assert(columns[0].cells).toStrictEqual([cell("2026-08-24", "08:00")]);
+  });
+});
+
+describe(buildAvailabilityRows, () => {
+  const halfHour = (
+    date: string,
+    time: string,
+    start: string
+  ): CalendarAvailabilityCell => ({
+    available: true,
+    date: calendarDate(date),
+    end: utcInstant(new Date(Date.parse(start) + 30 * 60_000).toISOString()),
+    endTime: parseLocalTime(time),
+    start: utcInstant(start),
+    startTime: parseLocalTime(time),
+  });
+
+  it("orders the repeated fall-back half hours after the first pass through that hour", () => {
+    // America/New_York: 2026-10-31 is EDT all day; on 2026-11-01 01:00 and 01:30 repeat in EST.
+    const saturday = [
+      halfHour("2026-10-31", "00:30", "2026-10-31T04:30:00.000Z"),
+      halfHour("2026-10-31", "01:00", "2026-10-31T05:00:00.000Z"),
+      halfHour("2026-10-31", "01:30", "2026-10-31T05:30:00.000Z"),
+      halfHour("2026-10-31", "02:00", "2026-10-31T06:00:00.000Z"),
+    ];
+    const sunday = [
+      halfHour("2026-11-01", "00:30", "2026-11-01T04:30:00.000Z"),
+      halfHour("2026-11-01", "01:00", "2026-11-01T05:00:00.000Z"),
+      halfHour("2026-11-01", "01:30", "2026-11-01T05:30:00.000Z"),
+      halfHour("2026-11-01", "01:00", "2026-11-01T06:00:00.000Z"),
+      halfHour("2026-11-01", "01:30", "2026-11-01T06:30:00.000Z"),
+      halfHour("2026-11-01", "02:00", "2026-11-01T07:00:00.000Z"),
+    ];
+    const rows = buildAvailabilityRows(
+      buildAvailabilityColumns([...sunday, ...saturday])
+    );
+
+    assert(rows.map((row) => row.key)).toStrictEqual([
+      "00:30#0",
+      "01:00#0",
+      "01:30#0",
+      "01:00#1",
+      "01:30#1",
+      "02:00#0",
+    ]);
+    assert(rows.map((row) => row.cells[1])).toStrictEqual(sunday);
+    assert(rows.map((row) => row.cells[0])).toStrictEqual([
+      ...saturday.slice(0, 3),
+      undefined,
+      undefined,
+      saturday[3],
+    ]);
+  });
+
+  it("orders rows by wall clock when columns cover different hours", () => {
+    const rows = buildAvailabilityRows(
+      buildAvailabilityColumns([mon10, mon11, tue09, cell("2026-08-26", "08:00")])
+    );
+
+    assert(rows.map((row) => row.key)).toStrictEqual([
+      "08:00#0",
+      "09:00#0",
+      "10:00#0",
+      "11:00#0",
+    ]);
   });
 });
 

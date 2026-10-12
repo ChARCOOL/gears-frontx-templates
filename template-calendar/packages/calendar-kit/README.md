@@ -18,15 +18,18 @@ The kit renders what the host gives it and reports what the user did. It never f
 npm install @gears-frontx/calendar-kit
 ```
 
-`react` and `react-dom` 19 are peer dependencies. `@gears-frontx/ui-kit` is a regular dependency and installs with the kit: import calendar-kit styles only, never ui-kit's.
+`react` and `react-dom` 19 are peer dependencies. `@gears-frontx/ui-kit` is a regular dependency and installs with the kit.
 
 ## Styles
 
-Import the tokens once, in your entry module:
+Import ui-kit's theme and the calendar tokens once, in your entry module:
 
 ```ts
+import "@gears-frontx/ui-kit/theme.css";
 import "@gears-frontx/calendar-kit/theme.css";
 ```
+
+The kit's buttons, fields and popovers are ui-kit controls, and they read ui-kit's own tokens (`--secondary`, `--popover-foreground`, …) from ui-kit's theme. `theme.css` does not define those. Custom properties inherit into a shadow root, so the same import also themes a kit rendered inside an MFE.
 
 `theme.css` maps the `--cal-*` tokens from upstream seams (`--surface`, `--foreground`, `--primary`, `--font-sans`, …) with kit fallbacks, so a host that defines none of them gets the neutral default palette. The default path is `theme.css` plus the host's own tokens; the optional example preset below only shows how to map every seam:
 

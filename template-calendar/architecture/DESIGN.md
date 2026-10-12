@@ -2,6 +2,7 @@
 type: DESIGN
 system: calendar-kit
 status: draft
+description: Technical design of @gears-frontx/calendar-kit, its React-free core, React layer, UI family units and theme contract, and how a host embeds them.
 ---
 
 # Technical Design — Calendar Kit
@@ -60,8 +61,8 @@ The package's requirements are owned by its own [PRD](./PRD.md). The surface sit
 
 | NFR ID | NFR Summary | Allocated To | Design Response | Verification Approach |
 | --- | --- | --- | --- | --- |
-| `cpt-template-calendar-calendar-kit-nfr-react-free-core` | No React/ui-kit/backend/browser imports in the core | The `src/core` directory boundary | The core is type-checked separately (`type-check:core`, no `.tsx` under `src/core`), and the template's dependency-cruiser rules hold every `src/**` import to the single allowed ecosystem edge. | The named gates fail on any forbidden import from `src/core/**`. |
-| `cpt-template-calendar-calendar-kit-nfr-independent-versioning` | Calendar-only changes bump only this package | The published package | The package owns its version line and changelog. `@gears-frontx/ui-kit` is an exact-pinned dependency consumed only inside `src/ui/primitives/`, so a ui-kit upgrade is a calendar-kit change, never the reverse. | The bump-on-change gate and the version-policy enumeration name the package; a calendar-only diff requires no UI-kit change. |
+| `cpt-template-calendar-calendar-kit-nfr-react-free-core` | No React/ui-kit/backend/browser imports in the core | The `src/core` directory boundary | `type-check:core` checks every `.ts` and `.tsx` file under `src/core` against the ES2022 library alone, with no DOM lib and no React types, so a browser global or JSX fails it. The template's dependency-cruiser rules, which follow static and dynamic `import()` edges alike, hold `src/core` to `src/core` and every `src/**` import to the single allowed ecosystem edge. | The named gates fail on any forbidden import from `src/core/**`. |
+| `cpt-template-calendar-calendar-kit-nfr-independent-versioning` | Calendar-only changes bump only this package | The published package | The package owns its version line and changelog. `@gears-frontx/ui-kit` is an exact-pinned dependency consumed only inside `src/ui/primitives/`, so a ui-kit upgrade is a calendar-kit change, never the reverse. | Once the package is non-private, `policy:version-bump-on-change` discovers it structurally and fails a PR that changes its `src/` or dependency fields without a version bump; while it is private the gate skips it. A calendar-only diff requires no UI-kit change. |
 | `cpt-template-calendar-calendar-kit-nfr-tree-shakeable-units` | Unimported families contribute no JS/CSS | The build entry model | Each family unit is an explicit flat entry with injected component CSS and CSS-only side effects. | The consumer-bundle gate asserts an unimported family's JS and CSS are absent. |
 
 ### 1.3 Architecture Layers
@@ -263,7 +264,7 @@ Branding overrides must be predictable: one documented token surface instead of 
 ##### Responsibility scope
 
 - Declares every semantic `--cal-*` token with host-token fallbacks, the nine enumerated calendar-owned tokens with literal defaults, the light/explicit-dark/media/forced-colors blocks, and the reduced-motion override.
-- Is imported exactly once by the consumer. Inside a shadow root, where ui-kit's own `:root` theme does not reach, it also defines the seams the wrapped ui-kit controls read; it does not redefine ui-kit tokens outside that scope, so a host that imports `@gears-frontx/ui-kit/theme.css` keeps its own values.
+- Is imported exactly once by the consumer, after `@gears-frontx/ui-kit/theme.css`. It defines no ui-kit token: the wrapped ui-kit controls read theirs from ui-kit's theme, and because custom properties inherit across a shadow boundary, the host's values reach them inside an MFE too.
 
 ##### Responsibility boundaries
 

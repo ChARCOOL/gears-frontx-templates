@@ -41,6 +41,9 @@ export type CommittedMove = PendingMove;
 export interface InteractionState {
   readonly mode: WeekGridInteractionMode;
   readonly paint: CalendarSelectionRange | null;
+  /** The move being dragged; `to` equals `from` while no other cell is targeted. */
+  readonly drag: PendingMove | null;
+  /** A dropped move waiting for the host to confirm or cancel it. */
   readonly pendingMove: PendingMove | null;
   readonly committedMove: CommittedMove | null;
   readonly paintAnchor: CalendarCell | null;
@@ -57,8 +60,9 @@ export type InteractionAction =
       readonly from: CalendarCell;
     }
   | { readonly type: "move-target"; readonly to?: CalendarCell }
-  | { readonly type: "move-confirm" }
-  | { readonly type: "move-cancel" };
+  | { readonly type: "move-drop" }
+  | { readonly type: "move-confirm"; readonly move: PendingMove }
+  | { readonly type: "move-cancel"; readonly move: PendingMove };
 
 export type InteractionValidationResult =
   | { readonly valid: true }
@@ -253,6 +257,7 @@ export const createInteractionState = (
 
   return {
     committedMove: null,
+    drag: null,
     mode,
     paint: null,
     paintAnchor: null,
@@ -266,12 +271,22 @@ type PaintStartAction = Extract<InteractionAction, { type: "paint-start" }>;
 type PaintUpdateAction = Extract<InteractionAction, { type: "paint-update" }>;
 type MoveStartAction = Extract<InteractionAction, { type: "move-start" }>;
 type MoveTargetAction = Extract<InteractionAction, { type: "move-target" }>;
+type MoveCancelAction = Extract<InteractionAction, { type: "move-cancel" }>;
+
+const isSameMove = (first: PendingMove, second: PendingMove): boolean =>
+  first.event.id === second.event.id &&
+  first.from.start === second.from.start &&
+  first.to.start === second.to.start;
+
+// A paint or a drag starts only while no move is dragged or waiting for the host.
+const isMoveIdle = (state: InteractionState): boolean =>
+  state.drag === null && state.pendingMove === null;
 
 const transitionPaintStart = (
   state: InteractionState,
   action: PaintStartAction
 ): InteractionState => {
-  if (state.mode !== "paint-and-move") {
+  if (state.mode !== "paint-and-move" || !isMoveIdle(state)) {
     return state;
   }
 
@@ -311,7 +326,7 @@ const transitionMoveStart = (
   state: InteractionState,
   action: MoveStartAction
 ): InteractionState => {
-  if (state.mode !== "paint-and-move") {
+  if (state.mode !== "paint-and-move" || !isMoveIdle(state)) {
     return state;
   }
 
@@ -329,24 +344,52 @@ const transitionMoveStart = (
   return {
     ...state,
     committedMove: null,
-    pendingMove: { event: action.event, from, to: from },
+    drag: { event: action.event, from, to: from },
   };
 };
 
+// A target outside the grid, or one that is not a valid cell, points the drag back at
+// its origin, so a later target can still pick it up and a drop there commits nothing.
 const transitionMoveTarget = (
   state: InteractionState,
   action: MoveTargetAction
 ): InteractionState => {
-  if (!state.pendingMove || !action.to) {
-    return state.pendingMove ? { ...state, pendingMove: null } : state;
+  if (!state.drag) {
+    return state;
   }
 
-  const to = normalizeCalendarCell(action.to);
+  const to = action.to ? normalizeCalendarCell(action.to) : null;
 
-  if (!to || compareCalendarCells(state.pendingMove.from, to) === 0) {
+  return { ...state, drag: { ...state.drag, to: to ?? state.drag.from } };
+};
+
+// @cpt-begin:cpt-template-calendar-calendar-kit-state-week-grid-pending-move:p2:inst-pm-idle-to-pending
+const transitionMoveDrop = (state: InteractionState): InteractionState => {
+  if (!state.drag) {
+    return state;
+  }
+
+  const { drag } = state;
+
+  return compareCalendarCells(drag.from, drag.to) === 0
+    ? { ...state, drag: null }
+    : { ...state, drag: null, pendingMove: drag };
+};
+// @cpt-end:cpt-template-calendar-calendar-kit-state-week-grid-pending-move:p2:inst-pm-idle-to-pending
+
+const transitionMoveCancel = (
+  state: InteractionState,
+  action: MoveCancelAction
+): InteractionState => {
+  if (state.pendingMove && isSameMove(state.pendingMove, action.move)) {
     return { ...state, pendingMove: null };
   }
-  return { ...state, pendingMove: { ...state.pendingMove, to } };
+
+  if (state.drag && isSameMove(state.drag, action.move)) {
+    return { ...state, drag: null };
+  }
+
+  return state;
 };
 
 export const transitionInteraction = (
@@ -374,20 +417,20 @@ export const transitionInteraction = (
     case "move-target": {
       return transitionMoveTarget(state, action);
     }
+    case "move-drop": {
+      return transitionMoveDrop(state);
+    }
     case "move-confirm": {
-      if (!state.pendingMove) {
-        return state;
-      }
-
-      // A drag that never left its origin has no target to commit.
-      const { from, to } = state.pendingMove;
-
-      return compareCalendarCells(from, to) === 0
-        ? { ...state, pendingMove: null }
-        : { ...state, committedMove: state.pendingMove, pendingMove: null };
+      // @cpt-begin:cpt-template-calendar-calendar-kit-state-week-grid-pending-move:p2:inst-pm-confirm
+      return state.pendingMove && isSameMove(state.pendingMove, action.move)
+        ? { ...state, committedMove: state.pendingMove, pendingMove: null }
+        : state;
+      // @cpt-end:cpt-template-calendar-calendar-kit-state-week-grid-pending-move:p2:inst-pm-confirm
     }
     case "move-cancel": {
-      return state.pendingMove ? { ...state, pendingMove: null } : state;
+      // @cpt-begin:cpt-template-calendar-calendar-kit-state-week-grid-pending-move:p2:inst-pm-cancel
+      return transitionMoveCancel(state, action);
+      // @cpt-end:cpt-template-calendar-calendar-kit-state-week-grid-pending-move:p2:inst-pm-cancel
     }
     default: {
       return state;

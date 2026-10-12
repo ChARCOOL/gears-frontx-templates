@@ -1,3 +1,4 @@
+import { canonicalLocale } from "../core/intl-cache";
 import type { CalendarDirection, CalendarLocale } from "../core/model";
 
 // `getTextInfo` is newer than the ES2022 lib, so it is read defensively.
@@ -33,7 +34,9 @@ export const getLocaleDirection = (
   locale: CalendarLocale
 ): CalendarDirection => {
   try {
-    return directionOf(new Intl.Locale(locale)) === "rtl" ? "rtl" : "ltr";
+    return directionOf(new Intl.Locale(canonicalLocale(locale))) === "rtl"
+      ? "rtl"
+      : "ltr";
   } catch {
     return "ltr";
   }

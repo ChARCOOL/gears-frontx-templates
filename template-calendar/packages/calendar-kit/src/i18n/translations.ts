@@ -1,5 +1,5 @@
 import {
-  canonicalLocale,
+  localeBaseName,
   numberFormatter,
   pluralRules,
 } from "../core/intl-cache";
@@ -102,7 +102,7 @@ export const readTranslation = (
 
 /** Most to least specific, then English: `zh-Hant-TW` reads `zh-Hant-TW`, `zh-Hant`, `zh`, `en`. */
 export const localeChain = (locale: CalendarLocale): readonly string[] => {
-  const parts = canonicalLocale(locale).split("-");
+  const parts = localeBaseName(locale).split("-");
   const chain = parts.map((_, index) =>
     parts.slice(0, parts.length - index).join("-")
   );

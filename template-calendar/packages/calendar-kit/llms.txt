@@ -6,7 +6,7 @@
 
 Rules an assistant should follow when writing code against this package:
 
-- Import `@gears-frontx/calendar-kit/theme.css` once and map the `--cal-*` seams to your own tokens (`themes/example.css` is an optional example preset showing one complete mapping). Do not import `@gears-frontx/ui-kit` styles.
+- Import `@gears-frontx/ui-kit/theme.css` and then `@gears-frontx/calendar-kit/theme.css` once, and map the `--cal-*` seams to your own tokens (`themes/example.css` is an optional example preset showing one complete mapping). The wrapped ui-kit controls read their tokens from ui-kit's theme; calendar-kit's does not define them.
 - Import a family subpath (`@gears-frontx/calendar-kit/week-grid`) instead of the root when bundle size matters: the root entry keeps every family's CSS reachable, a subpath only that family's.
 - Build values with the parsers: `calendarDate("2026-09-23")`, `parseLocalTime("09:30")`, `utcInstant(...)`, `parseIanaTimeZone("Europe/Istanbul")`. They throw `RangeError` on bad input. Never cast strings to these branded types.
 - A timed `CalendarEvent` needs `startDate`, `startTime`, `endDate`, `endTime` in its own zone and `start`/`end` instants from `fromViewerDateTime`. An all-day event has an exclusive `endDate` and `null` times.

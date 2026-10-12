@@ -33,6 +33,12 @@ const DATE_TOKEN_PATTERN = /\p{Nd}+|[\p{L}\p{M}]+/gu;
 
 const DIGITS_ONLY_PATTERN = /^\d+$/u;
 
+// en `5th`, `22nd`, fr `1er`, es `5º`: a suffix glued to the day number.
+const ORDINAL_SUFFIX_PATTERN = /(?<=\d)(?:st|nd|rd|th|er|º|ª)(?![\p{L}\p{M}])/giu;
+
+// Far longer than any written date; it bounds the word splitting below.
+const MAX_DATE_TEXT_LENGTH = 100;
+
 const WORD_PATTERN = /[\p{L}\p{M}]+/gu;
 
 // th `ก.พ.` and ru `г.` abbreviate with dots; dropped after a letter they read as one word,
@@ -49,7 +55,7 @@ const TWO_DIGIT_YEAR_LIMIT = 100;
 
 const CENTURY = 2000;
 
-const MIN_MONTH_NAME_LENGTH = 3;
+const MIN_PREFIX_LENGTH = 3;
 
 type DateFieldName = "day" | "month" | "year";
 
@@ -64,6 +70,8 @@ interface DateVocabulary {
   readonly months: ReadonlyMap<string, number>;
   /** Weekdays, suffixes such as 年 or г., and words shared by several month names. */
   readonly ignored: ReadonlySet<string>;
+  readonly weekdays: ReadonlySet<string>;
+  readonly longestWord: number;
 }
 
 // Gregorian words only: a locale's own calendar (fa, -u-ca-islamic) would map its month
@@ -114,6 +122,7 @@ const dateVocabulary = (locale: string): DateVocabulary => {
 
   const monthsByWord = new Map<string, Set<number>>();
   const ignored = new Set<string>();
+  const weekdays = new Set<string>();
 
   // `month` 0 marks a sample read only for its other words.
   const collect = (
@@ -135,6 +144,10 @@ const dateVocabulary = (locale: string): DateVocabulary => {
           );
         } else {
           ignored.add(word);
+        }
+
+        if (part.type === "weekday") {
+          weekdays.add(word);
         }
       }
     }
@@ -167,7 +180,11 @@ const dateVocabulary = (locale: string): DateVocabulary => {
     }
   }
 
-  const vocabulary = { ignored, months };
+  const longestWord = Math.max(
+    0,
+    ...[...months.keys(), ...ignored].map((word) => word.length)
+  );
+  const vocabulary = { ignored, longestWord, months, weekdays };
   vocabularies.set(locale, vocabulary);
 
   return vocabulary;
@@ -206,8 +223,12 @@ const dateFieldOrder = (
   return order;
 };
 
+/**
+ * `weekday` marks a month name the locale also uses for a weekday: cy `Mawrth` is both
+ * March and Tuesday (`Dydd Mawrth`), so it names the month only when nothing else does.
+ */
 type WordMatch =
-  | { readonly kind: "month"; readonly month: number }
+  | { readonly kind: "month"; readonly month: number; readonly weekday: boolean }
   | { readonly kind: "ignored" }
   | { readonly kind: "unknown" };
 
@@ -218,7 +239,7 @@ const matchMonthPrefix = (
 ): number | undefined => {
   let found: number | undefined;
 
-  if (word.length >= MIN_MONTH_NAME_LENGTH) {
+  if (word.length >= MIN_PREFIX_LENGTH) {
     for (const [name, month] of months) {
       if (name.startsWith(word) && (found === undefined || month < found)) {
         found = month;
@@ -229,20 +250,25 @@ const matchMonthPrefix = (
   return found;
 };
 
+/** A typed weekday prefix such as `tues` or `thurs`. */
+const isWeekdayPrefix = (word: string, weekdays: ReadonlySet<string>): boolean =>
+  word.length >= MIN_PREFIX_LENGTH &&
+  [...weekdays].some((weekday) => weekday.startsWith(word));
+
 /**
  * Splits a run of letters into known words, longest first. Scripts without spaces glue
  * words together: ja `日木曜日` is `日` + `木曜日`, he `בינו` is `ב` + `ינו`.
  */
 const splitIntoKnownWords = (
   run: string,
-  { ignored, months }: DateVocabulary
+  { ignored, longestWord, months }: DateVocabulary
 ): readonly string[] | null => {
   const splits: (readonly string[] | null)[] = [[]];
 
   for (let end = 1; end <= run.length; end += 1) {
     splits.push(null);
 
-    for (let start = 0; start < end; start += 1) {
+    for (let start = Math.max(0, end - longestWord); start < end; start += 1) {
       const head = splits[start];
       const word = run.slice(start, end);
 
@@ -267,7 +293,7 @@ const matchWord = (word: string, locale: string): WordMatch => {
   const exact = vocabulary.months.get(word);
 
   if (exact !== undefined) {
-    return { kind: "month", month: exact };
+    return { kind: "month", month: exact, weekday: vocabulary.weekdays.has(word) };
   }
 
   if (vocabulary.ignored.has(word)) {
@@ -277,7 +303,11 @@ const matchWord = (word: string, locale: string): WordMatch => {
   const prefixed = matchMonthPrefix(word, vocabulary.months);
 
   if (prefixed !== undefined) {
-    return { kind: "month", month: prefixed };
+    return { kind: "month", month: prefixed, weekday: false };
+  }
+
+  if (isWeekdayPrefix(word, vocabulary.weekdays)) {
+    return { kind: "ignored" };
   }
 
   const split = splitIntoKnownWords(word, vocabulary);
@@ -286,11 +316,15 @@ const matchWord = (word: string, locale: string): WordMatch => {
     return { kind: "unknown" };
   }
 
-  const month = split
-    .map((part) => vocabulary.months.get(part))
-    .find((candidate) => candidate !== undefined);
+  for (const part of split) {
+    const month = vocabulary.months.get(part);
 
-  return month === undefined ? { kind: "ignored" } : { kind: "month", month };
+    if (month !== undefined) {
+      return { kind: "month", month, weekday: vocabulary.weekdays.has(part) };
+    }
+  }
+
+  return { kind: "ignored" };
 };
 
 const expandYear = (year: number): number =>
@@ -389,6 +423,10 @@ export const parseDateInput = (
     return { kind: DATE_INPUT.empty };
   }
 
+  if (normalised.length > MAX_DATE_TEXT_LENGTH) {
+    return { kind: DATE_INPUT.invalid };
+  }
+
   const isoMatch = ISO_DATE_PATTERN.exec(normalised);
 
   if (isoMatch) {
@@ -402,10 +440,11 @@ export const parseDateInput = (
   const numbers: number[] = [];
 
   let namedMonth: number | undefined;
+  let weekdayMonth: number | undefined;
 
-  for (const [token] of withoutAbbreviationDots(normalised).matchAll(
-    DATE_TOKEN_PATTERN
-  )) {
+  for (const [token] of withoutAbbreviationDots(
+    normalised.replaceAll(ORDINAL_SUFFIX_PATTERN, "")
+  ).matchAll(DATE_TOKEN_PATTERN)) {
     if (DIGITS_ONLY_PATTERN.test(token)) {
       numbers.push(Number(token));
 
@@ -418,14 +457,22 @@ export const parseDateInput = (
       return { kind: DATE_INPUT.invalid };
     }
 
-    if (match.kind === "month") {
-      namedMonth ??= match.month;
+    if (match.kind !== "month") {
+      continue;
+    }
+
+    if (match.weekday) {
+      weekdayMonth ??= match.month;
+    } else if (namedMonth !== undefined && namedMonth !== match.month) {
+      return { kind: DATE_INPUT.invalid };
+    } else {
+      namedMonth = match.month;
     }
   }
 
   const referenceYear = Number(reference.slice(0, 4));
   const referenceMonth = Number(reference.slice(5, 7));
-  const parts = readDateParts(numbers, namedMonth, locale);
+  const parts = readDateParts(numbers, namedMonth ?? weekdayMonth, locale);
 
   if (!parts) {
     return { kind: DATE_INPUT.invalid };

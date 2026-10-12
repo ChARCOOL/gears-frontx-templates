@@ -9,7 +9,7 @@ import {
   parseLocalTime,
   utcInstant,
 } from "../model";
-import type { ViewerDateRange } from "../model";
+import type { CalendarSlotMinutes, ViewerDateRange } from "../model";
 import {
   addCalendarDays,
   addCalendarMonths,
@@ -297,6 +297,25 @@ describe("calendar temporal algorithms", () => {
       buildSlotStarts({ end: ordinary.start, start: ordinary.end }, 60)
     ).toThrow(RangeError);
   });
+
+  it.each([0, -15, 45, Number.NaN])(
+    "rejects a %s-minute slot instead of looping on it",
+    (minutes) => {
+      const slotMinutes = minutes as CalendarSlotMinutes;
+      const range = {
+        end: utcInstant("2026-08-25T00:00:00.000Z"),
+        start: utcInstant("2026-08-24T00:00:00.000Z"),
+      };
+
+      assert(() => buildSlotStarts(range, slotMinutes)).toThrow(RangeError);
+      assert(() => countWindowSlots(FULL_DAY_TIME_WINDOW, slotMinutes)).toThrow(
+        RangeError
+      );
+      assert(() => assertTimeWindow(FULL_DAY_TIME_WINDOW, slotMinutes)).toThrow(
+        RangeError
+      );
+    }
+  );
 
   it("resolves a visible time window on a viewer date", () => {
     const date = calendarDate("2026-08-24");

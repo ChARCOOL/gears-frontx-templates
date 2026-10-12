@@ -7,16 +7,27 @@ export const assertLocale = (locale: string): void => {
   }
 };
 
-/** `pt_BR` is a common host spelling that every Intl constructor rejects. */
-export const canonicalLocale = (locale: string): string => {
+const readLocale = (
+  locale: string,
+  read: (parsed: Intl.Locale) => string
+): string => {
+  // `pt_BR` is a common host spelling that every Intl constructor rejects.
   const tag = locale.replaceAll("_", "-");
 
   try {
-    return new Intl.Locale(tag).baseName;
+    return read(new Intl.Locale(tag));
   } catch {
     return tag;
   }
 };
+
+/** The canonical tag, keeping the host's `-u-` extensions such as `-u-hc-h23` or `-u-nu-arab`. */
+export const canonicalLocale = (locale: string): string =>
+  readLocale(locale, (parsed) => parsed.toString());
+
+/** The tag without extensions, as message catalogues are keyed. */
+export const localeBaseName = (locale: string): string =>
+  readLocale(locale, (parsed) => parsed.baseName);
 
 const cacheKey = (locale: string, options: object | undefined): string => {
   if (options === undefined) {

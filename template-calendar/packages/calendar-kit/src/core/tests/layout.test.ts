@@ -1,7 +1,7 @@
 import { describe, expect as assert, it, vi } from "vitest";
 
 import { instant } from "../../__test-utils__/fixtures";
-import { layoutTimedEvents } from "../layout";
+import { NOW_LINE_Z_INDEX, layoutTimedEvents } from "../layout";
 import type { TimedLayoutInput } from "../layout";
 
 describe("timed event overlap layout", () => {
@@ -71,6 +71,18 @@ describe("timed event overlap layout", () => {
     ).toBeTruthy();
     assert(result[0]?.width).toBeGreaterThanOrEqual(result[1]?.width ?? 0);
     assert(result.map(({ groupIndex }) => groupIndex)).toStrictEqual([0, 0, 0]);
+  });
+
+  it("keeps every card of a deep overlap group below the now-line", () => {
+    const events = Array.from({ length: 30 }, (_, index) => ({
+      end: instant("2026-08-24", "10:00"),
+      id: `event-${index}`,
+      start: instant("2026-08-24", "09:00"),
+    }));
+    const zIndexes = layoutTimedEvents(events).map((item) => item.zIndex);
+
+    assert(zIndexes.slice(0, 3)).toStrictEqual([10, 11, 12]);
+    assert(Math.max(...zIndexes)).toBe(NOW_LINE_Z_INDEX - 1);
   });
 
   it("reuses columns for touching intervals and starts a new overlap group afterward", () => {

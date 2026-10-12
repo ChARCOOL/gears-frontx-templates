@@ -1,14 +1,3 @@
-/*
- * ui-kit reads these directly, and its :root does not reach into a shadow root. Outside one,
- * ui-kit's own theme owns them, so they are set only on the host and the scopes inside it.
- */
-:host,
-:host [data-theme] {
-  --popover-foreground: var(--foreground, #0f172a);
-  --secondary: var(--muted, #f1f5f9);
-  --secondary-foreground: var(--foreground, #0f172a);
-}
-
 /* Each data-theme scope restates the mapping, so tokens resolve against its own seams. */
 :root,
 :host,
