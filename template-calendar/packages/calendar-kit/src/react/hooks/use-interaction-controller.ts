@@ -48,6 +48,7 @@ export interface UseInteractionControllerResult {
   readonly state: InteractionState;
   readonly setInteractionMode: (mode: WeekGridInteractionMode) => void;
   readonly paint: CalendarSelectionRange | null;
+  readonly drag: PendingMove | null;
   readonly pendingMove: PendingMove | null;
   readonly committedMove: PendingMove | null;
   readonly beginPaint: (cell: CalendarCell) => void;
@@ -174,7 +175,7 @@ export const useInteractionController = (
   const beginPaint = useCallback(
     (cell: CalendarCell): void => {
       // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-paint-range:p1:inst-paint-anchor
-      if (mode !== "paint-and-move" || stateRef.current.pendingMove) {
+      if (mode !== "paint-and-move") {
         return;
       }
 
@@ -252,7 +253,7 @@ export const useInteractionController = (
     }
 
     if (!onMoveRequest) {
-      apply({ type: "move-cancel" });
+      apply({ move: pendingMove, type: "move-cancel" });
       clearActiveMove();
       return;
     }
@@ -261,24 +262,17 @@ export const useInteractionController = (
     requestSequenceRef.current = requestId;
     activeMoveRequestIdRef.current = requestId;
 
-    const isActive = (): boolean => {
-      const currentMove = stateRef.current.pendingMove;
-
-      return (
-        activeMoveRequestIdRef.current === requestId &&
-        currentMove !== null &&
-        currentMove.event.id === pendingMove.event.id &&
-        currentMove.from.start === pendingMove.from.start &&
-        currentMove.to.start === pendingMove.to.start
-      );
-    };
+    // The core ignores a confirm or cancel for any other move; the id also retires these
+    // two functions once the move is resolved or reset.
+    const isActive = (): boolean =>
+      activeMoveRequestIdRef.current === requestId;
 
     const confirm = (): void => {
       if (!isActive()) {
         return;
       }
 
-      apply({ type: "move-confirm" });
+      apply({ move: pendingMove, type: "move-confirm" });
       clearActiveMove();
     };
 
@@ -287,7 +281,7 @@ export const useInteractionController = (
         return;
       }
 
-      apply({ type: "move-cancel" });
+      apply({ move: pendingMove, type: "move-cancel" });
       clearActiveMove();
     };
 
@@ -304,11 +298,7 @@ export const useInteractionController = (
   const beginMove = useCallback(
     (event: CalendarEvent, from: CalendarCell, to?: CalendarCell): void => {
       // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-request
-      if (
-        mode !== "paint-and-move" ||
-        stateRef.current.pendingMove ||
-        !isEventActionable(event)
-      ) {
+      if (mode !== "paint-and-move" || !isEventActionable(event)) {
         return;
       }
 
@@ -317,6 +307,7 @@ export const useInteractionController = (
 
       if (to) {
         apply({ to, type: "move-target" });
+        apply({ type: "move-drop" });
         emitMoveRequest();
       }
       // @cpt-end:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-request
@@ -326,10 +317,7 @@ export const useInteractionController = (
 
   const updateMove = useCallback(
     (cell: CalendarCell): void => {
-      if (
-        mode !== "paint-and-move" ||
-        activeMoveRequestIdRef.current !== null
-      ) {
+      if (mode !== "paint-and-move") {
         return;
       }
 
@@ -344,9 +332,10 @@ export const useInteractionController = (
       return;
     }
 
+    apply({ type: "move-drop" });
     emitMoveRequest();
     // @cpt-end:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-return
-  }, [emitMoveRequest, mode]);
+  }, [apply, emitMoveRequest, mode]);
 
   const confirmMove = useCallback((): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-resolve
@@ -361,22 +350,24 @@ export const useInteractionController = (
         return;
       }
 
-      apply({ type: "move-confirm" });
+      apply({ move: pendingMove, type: "move-confirm" });
       return;
     }
 
-    apply({ type: "move-confirm" });
+    apply({ move: pendingMove, type: "move-confirm" });
     clearActiveMove();
     // @cpt-end:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-resolve
   }, [apply, clearActiveMove]);
 
   const cancelMove = useCallback((): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-resolve
-    if (!stateRef.current.pendingMove) {
+    const move = stateRef.current.pendingMove ?? stateRef.current.drag;
+
+    if (!move) {
       return;
     }
 
-    apply({ type: "move-cancel" });
+    apply({ move, type: "move-cancel" });
     clearActiveMove();
     // @cpt-end:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-resolve
   }, [apply, clearActiveMove]);
@@ -396,6 +387,7 @@ export const useInteractionController = (
       beginPaint,
       cancelMove,
       committedMove: renderState.committedMove,
+      drag: renderState.drag,
       confirmMove,
       endMove,
       endPaint,

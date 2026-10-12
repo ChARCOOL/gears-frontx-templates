@@ -371,17 +371,17 @@ export const useWeekGridController = <Payload = unknown>(
   const shouldInvalidateInteraction = useCallback(
     (state: InteractionState): boolean => {
       const gridChanged = previousGridIdentityRef.current !== gridIdentity;
-      const { pendingMove } = state;
+      const move = state.pendingMove ?? state.drag;
 
-      if (!pendingMove) {
+      if (!move) {
         return false;
       }
 
-      const currentEvent = eventById.get(pendingMove.event.id);
+      const currentEvent = eventById.get(move.event.id);
       const invalid =
         gridChanged ||
         !currentEvent ||
-        !isSameMoveEvent(currentEvent, pendingMove.event) ||
+        !isSameMoveEvent(currentEvent, move.event) ||
         !isEventActionable(currentEvent);
 
       if (invalid) {
@@ -555,7 +555,9 @@ export const useWeekGridController = <Payload = unknown>(
     };
     interaction.beginMove(event, from, to);
 
-    if (!interaction.getInternals().state.pendingMove) {
+    const { drag, pendingMove } = interaction.getInternals().state;
+
+    if (!drag && !pendingMove) {
       originFocusRef.current = null;
     }
     // @cpt-end:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-request
@@ -592,12 +594,13 @@ export const useWeekGridController = <Payload = unknown>(
   useEffect(() => {
     if (
       interactionInvalidationRef.current &&
+      interaction.drag === null &&
       interaction.pendingMove === null
     ) {
       interactionInvalidationRef.current = false;
       restoreOriginFocus();
     }
-  }, [interaction.pendingMove, restoreOriginFocus]);
+  }, [interaction.drag, interaction.pendingMove, restoreOriginFocus]);
 
   useEffect(() => {
     const modeChanged = previousModeRef.current !== modeState.value;

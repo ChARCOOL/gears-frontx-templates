@@ -151,6 +151,43 @@ describe(useInteractionController, () => {
     expect(result.current.committedMove).toBeNull();
   });
 
+  it("requests the move at the drop target after the drag passes back over its origin", () => {
+    const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
+    const { result } = renderHook(() =>
+      useInteractionController({
+        interactionMode: "paint-and-move",
+        onMoveRequest,
+      })
+    );
+
+    act(() => {
+      result.current.beginMove(event, first);
+      result.current.updateMove(second);
+      result.current.updateMove(first);
+    });
+
+    expect(result.current.drag?.to).toStrictEqual(first);
+    expect(result.current.pendingMove).toBeNull();
+
+    act(() => {
+      result.current.updateMove(third);
+      result.current.endMove();
+    });
+
+    expect(onMoveRequest).toHaveBeenCalledOnce();
+
+    const [[request]] = onMoveRequest.mock.calls;
+    act(() => {
+      request.confirm();
+    });
+
+    expect(result.current.committedMove).toStrictEqual({
+      event,
+      from: first,
+      to: third,
+    });
+  });
+
   it("commits a confirmed move and ignores a later cancel", () => {
     const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
     const { result } = renderHook(() =>

@@ -22,6 +22,11 @@ describe("translation lookup", () => {
   it("canonicalises the locale and steps through its script", () => {
     expect(localeChain("pt_BR")).toStrictEqual(["pt-BR", "pt", ENGLISH_LOCALE]);
     expect(localeChain("pt-br")).toStrictEqual(["pt-BR", "pt", ENGLISH_LOCALE]);
+    expect(localeChain("de-DE-u-hc-h12")).toStrictEqual([
+      "de-DE",
+      "de",
+      ENGLISH_LOCALE,
+    ]);
     expect(localeChain("zh-Hant-TW")).toStrictEqual([
       "zh-Hant-TW",
       "zh-Hant",

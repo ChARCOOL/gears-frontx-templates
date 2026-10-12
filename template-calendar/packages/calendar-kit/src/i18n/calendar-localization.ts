@@ -8,7 +8,7 @@ import type {
   CalendarLocale,
   CalendarTranslate,
 } from "../core/model";
-import { canonicalLocale } from "../core/intl-cache";
+import { localeBaseName } from "../core/intl-cache";
 import type { CalendarViewerProps } from "./calendar-context";
 import { getLocaleDirection } from "./direction";
 import {
@@ -116,10 +116,10 @@ const buildTranslate = (
 ): CalendarTranslate => {
   const { hostT, locale, messages, missingIds, onMissingTranslation } = state;
 
-  // Keys canonicalised like the locale itself, so a host's `pt_BR` catalogue is found.
+  // Keys reduced to base names like the locale chain, so a host's `pt_BR` catalogue is found.
   const catalogues = new Map(
     Object.entries(messages).map(([key, translations]) => [
-      canonicalLocale(key),
+      localeBaseName(key),
       translations,
     ])
   );
