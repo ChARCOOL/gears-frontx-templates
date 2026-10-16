@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
 
 import type {
@@ -176,13 +183,31 @@ export const useLocalizationState = (
 ): CalendarLocalizationState => {
   const parent = useContext(CalendarLocalizationContext);
   const isProvider = provider !== undefined;
-  const onMissingTranslation = provider?.onMissingTranslation;
+  const hostOnMissingTranslation = provider?.onMissingTranslation;
+  const hasOnMissingTranslation = hostOnMissingTranslation !== undefined;
 
   const instanceTranslations = isProvider ? undefined : translations;
 
   // One set for the provider's lifetime, so a new `messages` object or an inline
   // callback does not report an id twice.
   const [providerMissingIds] = useState(() => new Set<string>());
+
+  // An inline callback must not rebuild `t` and re-render every consumer, so `t`
+  // calls a stable wrapper that reads the host's latest callback.
+  const onMissingTranslationRef = useRef(hostOnMissingTranslation);
+
+  useLayoutEffect(() => {
+    onMissingTranslationRef.current = hostOnMissingTranslation;
+  });
+
+  const [reportMissingTranslation] = useState(
+    (): CalendarMissingTranslation => (id) =>
+      onMissingTranslationRef.current?.(id)
+  );
+
+  const onMissingTranslation = hasOnMissingTranslation
+    ? reportMissingTranslation
+    : undefined;
 
   return useMemo(() => {
     const resolvedLocale = locale ?? parent.locale;

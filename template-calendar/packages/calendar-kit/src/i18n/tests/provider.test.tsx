@@ -8,6 +8,7 @@ import {
   providerTranslate,
 } from "../../__test-utils__/fixtures";
 import { parseIanaTimeZone } from "../../core/model";
+import type { CalendarTranslate } from "../../core/model";
 import { CalendarProvider, useCalendarContext } from "../calendar-context";
 import { useCalendarLocalization } from "../calendar-localization";
 import type { CalendarLocalizationProps } from "../calendar-localization";
@@ -212,6 +213,37 @@ describe("CalendarLocalizationProvider and useCalendarLocalization", () => {
     );
 
     expect(nestedChildRender).toHaveBeenCalledOnce();
+  });
+
+  it("keeps t stable for an inline missing-translation callback and reports to the latest one", () => {
+    const seen = new Set<CalendarTranslate>();
+
+    const MissingProbe = ({ id }: { readonly id: string }) => {
+      const { t } = useCalendarLocalization();
+      seen.add(t);
+
+      return <output>{t(id)}</output>;
+    };
+
+    const first = vi.fn<(id: string) => void>();
+    const second = vi.fn<(id: string) => void>();
+
+    const view = (report: (id: string) => void, id: string) => (
+      <CalendarLocalizationProvider
+        onMissingTranslation={(missing) => report(missing)}
+      >
+        <MissingProbe id={id} />
+      </CalendarLocalizationProvider>
+    );
+
+    const { rerender } = render(view(first, "calendar.missing.first"));
+
+    rerender(view(second, "calendar.missing.first"));
+    rerender(view(second, "calendar.missing.second"));
+
+    expect(seen.size).toBe(1);
+    expect(first).toHaveBeenCalledExactlyOnceWith("calendar.missing.first");
+    expect(second).toHaveBeenCalledExactlyOnceWith("calendar.missing.second");
   });
 
   it("falls back to built-in English for an untranslated key", () => {
