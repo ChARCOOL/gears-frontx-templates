@@ -86,12 +86,13 @@ const assertA9Calls = (
 
 // The host receives the base id and the count, so it picks the form itself.
 const assertA11Calls = (calls: readonly TranslationCall[]): void => {
-  for (const status of ["awaiting", "invited", "maybe", "no", "yes"]) {
+  for (const status of ["awaiting", "maybe", "no", "yes"]) {
     expect(calls).toContainEqual([
       `calendar.detail.rsvp.${status}`,
       { count: 2 },
     ]);
   }
+  expect(calls).toContainEqual(["calendar.detail.guests", { count: 2 }]);
 
   for (const call of calls) {
     expect(call[0]).not.toMatch(/\.(?<category>zero|one|two|few|many|other)$/u);
