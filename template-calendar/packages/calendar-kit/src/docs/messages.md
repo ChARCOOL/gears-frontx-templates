@@ -191,34 +191,40 @@ Event state words shared by the views.
 
 <!-- generated:messages calendar.detail -->
 
-| Translation ID                      | English            | Values  |
-| ----------------------------------- | ------------------ | ------- |
-| `calendar.detail.close`             | Close              |         |
-| `calendar.detail.collapse`          | Collapse           |         |
-| `calendar.detail.conferencing`      | Conferencing       |         |
-| `calendar.detail.conflicts`         | Conflicts          |         |
-| `calendar.detail.copy.copied`       | Copied             |         |
-| `calendar.detail.copy.failed`       | Copy failed        |         |
-| `calendar.detail.copy.link`         | Copy link          |         |
-| `calendar.detail.dateTime`          | Date & time        |         |
-| `calendar.detail.delete`            | Delete             |         |
-| `calendar.detail.description`       | Description        |         |
-| `calendar.detail.edit`              | Edit               |         |
-| `calendar.detail.expand`            | Expand             |         |
-| `calendar.detail.join`              | Join               |         |
-| `calendar.detail.location`          | Location           |         |
-| `calendar.detail.organizer`         | Organizer          |         |
-| `calendar.detail.participants`      | Participants       |         |
-| `calendar.detail.participants.more` | more               |         |
-| `calendar.detail.recurrence`        | Repeats {{rule}}   | `rule`  |
-| `calendar.detail.restricted`        | Restricted         |         |
-| `calendar.detail.rsvp.awaiting`     | {{count}} awaiting | `count` |
-| `calendar.detail.rsvp.invited`      | {{count}} invited  | `count` |
-| `calendar.detail.rsvp.maybe`        | {{count}} maybe    | `count` |
-| `calendar.detail.rsvp.no`           | {{count}} no       | `count` |
-| `calendar.detail.rsvp.yes`          | {{count}} yes      | `count` |
-| `calendar.detail.timeZone`          | Time zone          |         |
-| `calendar.detail.title`             | Event details      |         |
+| Translation ID                      | English               | Values  |
+| ----------------------------------- | --------------------- | ------- |
+| `calendar.detail.close`             | Close                 |         |
+| `calendar.detail.collapse`          | Collapse              |         |
+| `calendar.detail.conferencing`      | Conferencing          |         |
+| `calendar.detail.conflicts`         | Conflicts             |         |
+| `calendar.detail.copy.copied`       | Copied                |         |
+| `calendar.detail.copy.failed`       | Copy failed           |         |
+| `calendar.detail.copy.link`         | Copy link             |         |
+| `calendar.detail.dateTime`          | Date & time           |         |
+| `calendar.detail.delete`            | Delete                |         |
+| `calendar.detail.description`       | Description           |         |
+| `calendar.detail.edit`              | Edit                  |         |
+| `calendar.detail.expand`            | Expand                |         |
+| `calendar.detail.group.awaiting`    | Awaiting · {{count}}  | `count` |
+| `calendar.detail.group.maybe`       | Maybe · {{count}}     | `count` |
+| `calendar.detail.group.no`          | Not going · {{count}} | `count` |
+| `calendar.detail.group.unknown`     | Invited · {{count}}   | `count` |
+| `calendar.detail.group.yes`         | Going · {{count}}     | `count` |
+| `calendar.detail.guests_one`        | {{count}} guest       | `count` |
+| `calendar.detail.guests_other`      | {{count}} guests      | `count` |
+| `calendar.detail.join`              | Join                  |         |
+| `calendar.detail.location`          | Location              |         |
+| `calendar.detail.organizer`         | Organizer             |         |
+| `calendar.detail.participants`      | Participants          |         |
+| `calendar.detail.participants.more` | more                  |         |
+| `calendar.detail.recurrence`        | Repeats {{rule}}      | `rule`  |
+| `calendar.detail.restricted`        | Restricted            |         |
+| `calendar.detail.rsvp.awaiting`     | {{count}} awaiting    | `count` |
+| `calendar.detail.rsvp.maybe`        | {{count}} maybe       | `count` |
+| `calendar.detail.rsvp.no`           | {{count}} no          | `count` |
+| `calendar.detail.rsvp.yes`          | {{count}} yes         | `count` |
+| `calendar.detail.timeZone`          | Time zone             |         |
+| `calendar.detail.title`             | Event details         |         |
 
 <!-- /generated -->
 
