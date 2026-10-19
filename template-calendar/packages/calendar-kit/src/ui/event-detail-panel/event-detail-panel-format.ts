@@ -13,53 +13,41 @@ import { formatTimeOfDay } from "../../core/time-input";
 import type { CalendarTranslate } from "../../i18n/calendar-localization";
 import type { EventDetailPanelCopyStatus } from "../../react/public";
 
-export interface RsvpSegment {
-  readonly labelKey: string;
-  readonly count: number;
-}
+// The responses in reading order; a zero count says nothing, so it is left out.
+const RSVP_LABEL_KEYS = [
+  ["yes", "calendar.detail.rsvp.yes"],
+  ["no", "calendar.detail.rsvp.no"],
+  ["maybe", "calendar.detail.rsvp.maybe"],
+  ["awaiting", "calendar.detail.rsvp.awaiting"],
+] as const;
 
-const RSVP_LABEL_KEYS = {
-  awaiting: "calendar.detail.rsvp.awaiting",
-  invited: "calendar.detail.rsvp.invited",
-  maybe: "calendar.detail.rsvp.maybe",
-  no: "calendar.detail.rsvp.no",
-  yes: "calendar.detail.rsvp.yes",
-} as const;
+/** Invited guests: the host's RSVP total when it has one, otherwise the attendee list. */
+export const guestCount = (event: CalendarEvent): number =>
+  event.rsvp?.invited ?? event.attendees?.length ?? 0;
 
-export const buildRsvpSegments = (
-  event: CalendarEvent
-): readonly RsvpSegment[] => {
-  const { rsvp } = event;
-
-  if (!rsvp) {
-    return [];
-  }
-  return [
-    { count: rsvp.invited, labelKey: RSVP_LABEL_KEYS.invited },
-    { count: rsvp.yes, labelKey: RSVP_LABEL_KEYS.yes },
-    { count: rsvp.no, labelKey: RSVP_LABEL_KEYS.no },
-    { count: rsvp.awaiting, labelKey: RSVP_LABEL_KEYS.awaiting },
-    { count: rsvp.maybe, labelKey: RSVP_LABEL_KEYS.maybe },
-  ];
-};
-
-export const formatRsvpSegment = (
-  segment: RsvpSegment,
+export const formatRsvpResponses = (
+  event: CalendarEvent,
   t: CalendarTranslate
-): string => t(segment.labelKey, { count: segment.count });
+): string =>
+  RSVP_LABEL_KEYS.map(([response, labelKey]) => ({
+    count: event.rsvp?.[response] ?? 0,
+    labelKey,
+  }))
+    .filter(({ count }) => count > 0)
+    .map(({ count, labelKey }) => t(labelKey, { count }))
+    .join(", ");
+
+// The copy button names the result for a moment, as calendar apps do; the status region says it.
+export const COPY_STATUS_KEYS = {
+  idle: "calendar.detail.copy.link",
+  copied: "calendar.detail.copy.copied",
+  error: "calendar.detail.copy.failed",
+} as const;
 
 export const resolveCopyAnnouncement = (
   copyStatus: EventDetailPanelCopyStatus,
   t: CalendarTranslate
-): string => {
-  if (copyStatus === "copied") {
-    return t("calendar.detail.copy.copied");
-  }
-  if (copyStatus === "error") {
-    return t("calendar.detail.copy.failed");
-  }
-  return "";
-};
+): string => (copyStatus === "idle" ? "" : t(COPY_STATUS_KEYS[copyStatus]));
 
 export const formatRecurrenceSummary = (
   event: CalendarEvent,

@@ -918,12 +918,15 @@ describe("MonthGrid strip layout", () => {
     assert(within(monthCell(0, 3)).queryByText(/hidden/u)).toBeNull();
   });
 
-  it("lets week rows fill the view height above the minimum row height", () => {
+  it("lets week rows fill the view and shrink in a short one, scrolling only inside it", () => {
     const monthGrid = declarations(monthGridStyles, ".monthGrid");
 
-    assert(monthGrid.get("flex")).toBe("1 0 auto");
+    assert(monthGrid.get("flex")).toBe("1 1 auto");
     assert(monthGrid.get("grid-auto-rows")).toBe(
-      "minmax(calc(135.2px + var(--cal-border-width-1)), 1fr)"
+      "minmax(calc(var(--grid-chip-height) * 3 + var(--cal-border-width-1)), 1fr)"
+    );
+    assert(declarations(monthGridStyles, ".container").get("overflow-y")).toBe(
+      "auto"
     );
     assert(declarations(monthGridStyles, ".weekRow").has("block-size")).toBe(
       false

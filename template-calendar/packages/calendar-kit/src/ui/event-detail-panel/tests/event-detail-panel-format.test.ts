@@ -10,11 +10,11 @@ import {
 import type { CalendarEvent } from "../../../core/model";
 import type { CalendarTranslate } from "../../../i18n/calendar-localization";
 import {
-  buildRsvpSegments,
   formatComparisonLine,
   formatEventRange,
   formatRecurrenceSummary,
-  formatRsvpSegment,
+  formatRsvpResponses,
+  guestCount,
 } from "../event-detail-panel-format";
 
 const BERLIN = parseIanaTimeZone("Europe/Berlin");
@@ -100,57 +100,66 @@ describe(formatComparisonLine, () => {
   });
 });
 
-describe(buildRsvpSegments, () => {
-  it("emits one segment per supplied count in fixed order", () => {
-    const segments = buildRsvpSegments(
-      makeTimedEvent({
-        rsvp: { awaiting: 8, invited: 31, maybe: 3, no: 3, yes: 17 },
-      })
-    );
-
-    expect(segments).toStrictEqual([
-      { count: 31, labelKey: "calendar.detail.rsvp.invited" },
-      { count: 17, labelKey: "calendar.detail.rsvp.yes" },
-      { count: 3, labelKey: "calendar.detail.rsvp.no" },
-      { count: 8, labelKey: "calendar.detail.rsvp.awaiting" },
-      { count: 3, labelKey: "calendar.detail.rsvp.maybe" },
-    ]);
-  });
-
-  it("yields no segments for absent or null RSVP", () => {
-    expect(buildRsvpSegments(makeTimedEvent())).toStrictEqual([]);
-    expect(buildRsvpSegments(makeTimedEvent({ rsvp: null }))).toStrictEqual([]);
-  });
-});
-
-describe(formatRsvpSegment, () => {
-  it("resolves the count's plural category for the active locale", () => {
+describe(formatRsvpResponses, () => {
+  it("lists only the responses guests gave, in reading order and plain words", () => {
     expect(
-      formatRsvpSegment(
-        { count: 2, labelKey: "calendar.detail.rsvp.yes" },
+      formatRsvpResponses(
+        makeTimedEvent({
+          rsvp: { awaiting: 8, invited: 31, maybe: 0, no: 3, yes: 17 },
+        }),
+        englishMessage("en-US")
+      )
+    ).toBe("17 yes, 3 no, 8 awaiting");
+  });
+
+  it("says nothing for absent or null RSVP", () => {
+    const t = englishMessage("en-US");
+
+    expect(formatRsvpResponses(makeTimedEvent(), t)).toBe("");
+    expect(formatRsvpResponses(makeTimedEvent({ rsvp: null }), t)).toBe("");
+  });
+
+  it("formats each count for the active locale", () => {
+    expect(
+      formatRsvpResponses(
+        makeTimedEvent({
+          rsvp: { awaiting: 0, invited: 2, maybe: 0, no: 0, yes: 2 },
+        }),
         englishMessage("ar-EG")
       )
     ).toBe("٢ yes");
-    expect(
-      formatRsvpSegment(
-        { count: 17, labelKey: "calendar.detail.rsvp.yes" },
-        englishMessage("en-US")
-      )
-    ).toBe("17 yes");
   });
 
   it("passes the raw count as the plural count", () => {
     const message = vi.fn<CalendarTranslate>(() => "count");
 
-    expect(
-      formatRsvpSegment(
-        { count: 3, labelKey: "calendar.detail.rsvp.maybe" },
-        message
-      )
-    ).toBe("count");
+    formatRsvpResponses(
+      makeTimedEvent({
+        rsvp: { awaiting: 0, invited: 3, maybe: 3, no: 0, yes: 0 },
+      }),
+      message
+    );
     expect(message).toHaveBeenCalledWith("calendar.detail.rsvp.maybe", {
       count: 3,
     });
+  });
+});
+
+describe(guestCount, () => {
+  it("prefers the RSVP total and falls back to the attendee list", () => {
+    expect(
+      guestCount(
+        makeTimedEvent({
+          rsvp: { awaiting: 0, invited: 9, maybe: 0, no: 0, yes: 9 },
+        })
+      )
+    ).toBe(9);
+    expect(
+      guestCount(
+        makeTimedEvent({ attendees: [{ displayName: "Ada", id: "ada" }] })
+      )
+    ).toBe(1);
+    expect(guestCount(makeTimedEvent())).toBe(0);
   });
 });
 
