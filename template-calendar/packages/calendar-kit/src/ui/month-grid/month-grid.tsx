@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { memo, useMemo, useState } from "react";
+import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type {
   CSSProperties,
   FocusEvent as ReactFocusEvent,
@@ -53,6 +53,7 @@ import type { CalendarEventRenderer } from "../../react/slots";
 import { ConflictIndicator } from "../conflict-indicator/conflict-indicator";
 import { EventCard } from "../event-card/event-card";
 import { Button } from "../primitives/button/button";
+import { noopCleanup } from "../primitives/global-event-listener";
 import { Tag } from "../primitives/tag/tag";
 import {
   buildLiveAnnouncement,
@@ -1056,10 +1057,40 @@ const MonthGridContent = (props: MonthGridContentProps) => {
     className
   );
   const weeksHeading = t("calendar.month.weeks").toUpperCase();
+  const gridRef = useRef<HTMLDivElement>(null);
+  const { setMeasuredCellHeight } = controller;
+  const rowCount = controller.rows.length;
+
+  // Rows stretch to the view's height, so the chip capacity follows the rendered cell, not a constant.
+  useLayoutEffect(() => {
+    const grid = gridRef.current;
+
+    if (grid === null) {
+      return noopCleanup;
+    }
+
+    const measure = (): void => {
+      const cell = grid.querySelector<HTMLElement>('[role="gridcell"]');
+
+      if (cell !== null) {
+        setMeasuredCellHeight(cell.getBoundingClientRect().height);
+      }
+    };
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(grid);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [setMeasuredCellHeight, rowCount]);
 
   return (
     <div className={styles.container}>
       <div
+        ref={gridRef}
         className={rootClassName}
         role="grid"
         aria-label={t("calendar.month.label")}
