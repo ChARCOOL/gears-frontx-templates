@@ -2,6 +2,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { declarations } from "../../../__test-utils__/css-declarations";
+
 import {
   AGENDA_WINDOW_DAYS,
   addCalendarDays,
@@ -14,6 +16,7 @@ import { CalendarToolbar } from "../calendar-toolbar";
 import type { CalendarToolbarProps } from "../calendar-toolbar";
 
 import toolbarStyles from "../calendar-toolbar.module.css";
+import toolbarCss from "../calendar-toolbar.module.css?raw";
 
 const missingTranslation: CalendarTranslate = (key) => key;
 
@@ -574,5 +577,14 @@ describe("CalendarToolbar title runs and stepper labels", () => {
     expect(previous).toHaveAttribute("aria-label", "Previous week");
     expect(previous.textContent).toBe("");
     expect(screen.queryByText("Previous week")).toBeNull();
+  });
+});
+
+// A host narrower than the viewport, as beside an open side panel, never meets the breakpoints.
+describe("CalendarToolbar in a narrow host", () => {
+  it("wraps the actions under a title that keeps its width", () => {
+    expect(declarations(toolbarCss, ".root").get("flex-wrap")).toBe("wrap");
+    expect(declarations(toolbarCss, ".title").get("flex")).toBe("none");
+    expect(declarations(toolbarCss, ".actions").get("flex")).toBe("1 1 auto");
   });
 });
