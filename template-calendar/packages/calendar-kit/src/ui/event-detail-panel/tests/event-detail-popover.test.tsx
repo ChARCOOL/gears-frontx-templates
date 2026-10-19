@@ -238,6 +238,19 @@ describe("EventDetailPanel anchored preview", () => {
     assert(declarations(panelCss, ".content").get("min-block-size")).toBe("0");
   });
 
+  // Only Delete is red; a header icon sized with the row icons keeps the muted button colour.
+  it("sizes the header icons without the delete colour, and only outlines a focused join", () => {
+    const headerIcon = declarations(panelCss, ".headerAction svg");
+    const joinFocus = declarations(panelCss, ".joinButton:focus-visible");
+
+    assert(headerIcon.get("block-size")).toBe("var(--cal-icon-size-sm)");
+    assert(headerIcon.has("color")).toBe(false);
+    assert(joinFocus.get("outline")).toBe(
+      "2px solid var(--cal-color-focus-ring-strong)"
+    );
+    assert(joinFocus.has("display")).toBe(false);
+  });
+
   it("keeps the delete action alone in the error colour", () => {
     assert([...declarations(panelCss, ".deleteAction").keys()]).toStrictEqual([
       "--button-fg",
