@@ -77,7 +77,7 @@ export interface EventCardProps<
   readonly selected?: boolean;
   /** Override for `event.available`. */
   readonly available?: boolean;
-  /** Past state: muted surface, named in the accessible description. */
+  /** Past state, named in the accessible description. */
   readonly past?: boolean;
   /** Read-only state, named in the accessible description. The card stays selectable. */
   readonly readOnly?: boolean;

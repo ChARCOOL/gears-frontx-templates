@@ -751,4 +751,22 @@ describe("EventCard styles", () => {
       )
     ).toBe("var(--button-bg-hover)");
   });
+
+  it("keeps family colours on past and busy cards and hovers at 90%", () => {
+    const hover = declarations(cardCss, "button.card:not(.unavailable):hover");
+
+    expect([...declarations(cardCss, ".card.past").keys()]).toStrictEqual([]);
+    expect([...declarations(cardCss, ".card.unavailable").keys()]).toStrictEqual(
+      ["background-image"]
+    );
+    expect(
+      declarations(cardCss, ".card.unavailable").get("background-image")
+    ).toBe(
+      "repeating-linear-gradient(-45deg, var(--cal-slot-busy-stripe) 0 31px, transparent 31px 45px)"
+    );
+    expect(hover.get("opacity")).toBe("var(--cal-state-hover-opacity)");
+    expect(declarations(cardCss, "button.card").get("transition")).toContain(
+      "opacity var(--cal-motion-duration-short) ease"
+    );
+  });
 });

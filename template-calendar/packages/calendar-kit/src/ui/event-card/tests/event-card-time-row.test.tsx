@@ -79,7 +79,7 @@ describe("EventCard default timed time row", () => {
     expect(container.querySelector('[data-event-card-bar="true"]')).toBeNull();
   });
 
-  it("uses the muted state for a past event", () => {
+  it("marks a past event with the past class", () => {
     renderCard({ past: true });
 
     expect(screen.getByRole("button", { name: /Chemistry lab/u })).toHaveClass(

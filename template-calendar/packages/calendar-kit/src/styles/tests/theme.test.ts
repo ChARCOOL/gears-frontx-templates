@@ -229,6 +229,9 @@ const OWNED = {
   "--cal-motion-duration-medium": "200ms",
   "--cal-motion-duration-short": "120ms",
   "--cal-radius-pill": "9999px",
+  "--cal-slot-busy-stripe":
+    "color-mix(in srgb, var(--cal-color-text) 4%, transparent)",
+  "--cal-state-hover-opacity": "0.9",
 } as const;
 
 const FORBIDDEN_GEOMETRY =
