@@ -1,17 +1,26 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect as assert, it } from "vitest";
+import { describe, expect as assert, it, vi } from "vitest";
 
 import {
   timedEvent,
   UTC,
   identityTranslate as t,
 } from "../../../__test-utils__/fixtures";
-import { calendarDate } from "../../../core/model";
-import type { CalendarEvent } from "../../../core/model";
+import { calendarDate, utcInstant } from "../../../core/model";
+import type { CalendarEvent, UtcInstant } from "../../../core/model";
 import { AgendaView } from "../agenda-view";
 import type { AgendaViewProps } from "../agenda-view";
 
-const renderAgenda = (events: readonly CalendarEvent[]) => {
+// Before every event below, so none of them is past unless a test moves the clock.
+const MORNING = utcInstant("2026-08-24T08:00:00.000Z");
+
+const renderAgenda = (
+  events: readonly CalendarEvent[],
+  now: UtcInstant = MORNING
+) => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(now));
+
   const props: AgendaViewProps = {
     date: calendarDate("2026-08-24"),
     direction: "ltr",
@@ -94,6 +103,24 @@ describe("agenda event slot", () => {
 
     assert(join).toHaveAttribute("href", "https://meet.example.com/call");
     assert(join.closest("button")).toBeNull();
+  });
+
+  it("leaves out the join action once the event has ended", () => {
+    renderAgenda(
+      [
+        {
+          ...timedEvent(
+            "call",
+            "2026-08-24T09:00:00.000Z",
+            "2026-08-24T10:30:00.000Z"
+          ),
+          joinUrl: "https://meet.example.com/call",
+        },
+      ],
+      utcInstant("2026-08-24T11:00:00.000Z")
+    );
+
+    assert(screen.queryByRole("link")).toBeNull();
   });
 
   it("leaves out the join action when the event carries no safe link", () => {
