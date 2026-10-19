@@ -2,7 +2,7 @@
 
 `CreateEventPopover` is a host-neutral create-event form. It accepts a neutral `CreateEventDraft`, injected calendar/resource options, a translation callback, an optional `now?: UtcInstant` reference instant, and an `onSubmit` callback; it does not call application APIs or create adapters.
 
-The compact shell is an inline, shadow-root-safe dialog. `expanded` renders the same form as a centered window without a backdrop, with the title across the top and people in a side column, without replacing the controller or draft. Use `defaultDraft`/`defaultOpen`/`defaultExpanded` for uncontrolled usage, or pair the controlled props with their change callbacks.
+The compact shell is an inline, shadow-root-safe dialog. `expanded` renders the same form as a centered window over a dimmed backdrop, with the title across the top and people in a side column, without replacing the controller or draft. Use `defaultDraft`/`defaultOpen`/`defaultExpanded` for uncontrolled usage, or pair the controlled props with their change callbacks.
 
 ## Props
 
