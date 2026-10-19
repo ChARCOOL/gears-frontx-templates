@@ -1,4 +1,6 @@
-.card {
+/* The card is a ui-kit Button. Element-qualified so its layout beats the button's single-class
+   rules whichever stylesheet the host loads last. */
+button.card {
   position: absolute;
   box-sizing: border-box;
   display: flex;
@@ -29,11 +31,12 @@
   transition:
     background-color var(--cal-motion-duration-short) ease,
     border-color var(--cal-motion-duration-short) ease,
-    box-shadow var(--cal-motion-duration-short) ease;
+    box-shadow var(--cal-motion-duration-short) ease,
+    opacity var(--cal-motion-duration-short) ease;
 }
 
 /* box-shadow: none drops the Button primitive's inset ring. */
-.card:focus-visible {
+button.card:focus-visible {
   outline: var(--cal-focus-ring-width) solid var(--cal-color-focus-ring);
   outline-offset: var(--cal-border-width-1);
   box-shadow: none;
@@ -132,9 +135,11 @@
   border-color: var(--cal-color-orange-border);
 }
 
-.card:not(.unavailable):hover {
+/* The design's hover keeps the card's own colours at 90%; family cards set no other hover fill. */
+button.card:not(.unavailable):hover {
   background-color: var(--button-bg-hover);
   color: var(--button-fg-hover);
+  opacity: var(--cal-state-hover-opacity);
 }
 
 .card.selected {
@@ -143,25 +148,19 @@
   box-shadow: 0 0 0 var(--cal-border-width-1) var(--cal-slot-selected-ring);
 }
 
+/* Past cards keep their colours in the grids, as in the design; the accessible description
+   still says "Past". */
 .card.past {
-  --button-bg: var(--cal-slot-unavailable);
-  --button-fg: var(--cal-color-muted);
-  --button-border: transparent;
-  --event-card-bar-color: var(--cal-color-muted);
-  background-color: var(--button-bg);
-  border: 0;
-  color: var(--button-fg);
+  /* Intentional empty state marker. */
 }
 
+/* Busy keeps the family colours under the design's diagonal stripes. */
 .card.unavailable {
-  --button-bg: var(--cal-slot-unavailable);
-  --button-fg: var(--cal-slot-unavailable-foreground);
-  --button-bg-hover: var(--cal-slot-unavailable);
-  --button-fg-hover: var(--cal-slot-unavailable-foreground);
-  --button-border: var(--cal-slot-unavailable-ring);
-  background-color: var(--button-bg);
-  color: var(--button-fg);
-  border-color: var(--cal-slot-unavailable-ring);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--cal-slot-busy-stripe) 0 31px,
+    transparent 31px 45px
+  );
 }
 
 .card.readOnly {

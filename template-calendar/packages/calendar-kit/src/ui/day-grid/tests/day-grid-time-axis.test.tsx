@@ -7,6 +7,8 @@ import { englishTranslate as t } from "../../../i18n/english";
 import { DayGrid } from "../day-grid";
 import type { DayGridProps } from "../day-grid";
 
+import styles from "../day-grid.module.css";
+
 const DATE = calendarDate("2026-08-24");
 
 const timeWindow = (start: string, end: string) => ({
@@ -105,5 +107,17 @@ describe("DayGrid time axis", () => {
 
     assert((container.textContent ?? "").match(/10:00/gu)).toHaveLength(2);
     assert(timedCells()).toHaveLength(2);
+  });
+
+  it("hides the hour label that the now label covers", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-24T10:20:00.000Z"));
+    renderDay({ visibleHours: timeWindow("09:00", "12:00") });
+
+    const labels = [
+      ...document.querySelectorAll(`.${styles.gutterHour}`),
+    ].map((label) => label.textContent);
+
+    assert(labels).toStrictEqual(["09:00", "", "11:00"]);
   });
 });

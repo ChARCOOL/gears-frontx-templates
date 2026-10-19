@@ -24,8 +24,6 @@ import { EventCard } from "@gears-frontx/calendar-kit/event-card";
 | Prop | Type | Required | Description |
 | --- | --- | --- | --- |
 | `event` | `CalendarEvent<Payload>` | yes | The event to show. |
-| `aria-colspan` | `number` |  | Set by the owning grid for spanning all-day events. |
-| `aria-rowindex` | `number` |  | Set by the owning grid. |
 | `available` | `boolean` |  | Override for `event.available`. |
 | `className` | `string` |  | Class added to the component root. |
 | `conflicts` | `readonly CalendarConflict[]` |  | Conflicts to show. Default `event.conflicts`. |
@@ -35,7 +33,7 @@ import { EventCard } from "@gears-frontx/calendar-kit/event-card";
 | `geometry` | `CalendarEventGeometry` |  | Placement and size. The height also picks the card's density tier. |
 | `onKeyDown` | `CalendarEventKeyDownHandler<Payload>` |  | Called before the card's own Enter/Space handling. |
 | `onSelect` | `(event: CalendarEvent<Payload>, context: CalendarEventRenderContext<Payload>, anchor: HTM…` |  | `anchor` is the card element, so a host can open a preview beside it. |
-| `past` | `boolean` |  | Past state: muted surface, named in the accessible description. |
+| `past` | `boolean` |  | Past state, named in the accessible description. |
 | `positioned` | `boolean` |  | Apply `geometry` inline; `false` when a host wrapper positions the card. Default `true`. |
 | `readOnly` | `boolean` |  | Read-only state, named in the accessible description. The card stays selectable. |
 | `renderConflict` | `(conflict: CalendarConflict, context: CalendarEventRenderContext<Payload>) => ReactNode` |  | Replaces how each conflict renders. |
@@ -79,7 +77,7 @@ Unavailable and busy events are disabled but stay in the tab order, so they rema
 
 Token-only CSS Module: every value resolves through a `--cal-*` alias from `@gears-frontx/calendar-kit/theme.css`. The 3px leading color-bar width is fixed implementation geometry owned by this module (not a theme token).
 
-Past cards use the existing muted surface and muted foreground tokens with a solid border. All-day cards use their color-family tint as a flat band and remove the card border. Timed metadata rows use the existing metadata typography and icon-size tokens. Short cards use a two-row title/time stack, a one-line title/time strip, or a title-only strip according to their geometry; default metadata is hidden in those compact tiers while a consumer `renderMetadata` slot is never hidden by this density treatment. Layout resolution applies the same 24px effective compact floor used by the card's one-line treatment, so a short host slot still retains its time row. The `data-event-card-compact` hook remains derived from the raw supplied `geometry.height` (`<110px`) for compatibility; the card does not require a ResizeObserver or imperatively measure its rendered box.
+Past cards keep their color-family paint; the accessible description names them past. Unavailable and busy cards keep it too, under faint diagonal stripes (`--cal-slot-busy-stripe`). Hover keeps the card's colors at `--cal-state-hover-opacity` (90%). All-day cards use their color-family tint as a flat band and remove the card border. Timed metadata rows use the existing metadata typography and icon-size tokens. Short cards use a two-row title/time stack, a one-line title/time strip, or a title-only strip according to their geometry; default metadata is hidden in those compact tiers while a consumer `renderMetadata` slot is never hidden by this density treatment. Layout resolution applies the same 24px effective compact floor used by the card's one-line treatment, so a short host slot still retains its time row. The `data-event-card-compact` hook remains derived from the raw supplied `geometry.height` (`<110px`) for compatibility; the card does not require a ResizeObserver or imperatively measure its rendered box.
 
 Transitions use `--cal-motion-duration-short`, which the theme zeroes under reduced motion; forced-colors mode is handled by the theme's token remap.
 

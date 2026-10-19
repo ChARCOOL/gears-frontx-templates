@@ -101,9 +101,9 @@ const MonthNavigatorContent = ({
         />
 
         {renderHeader === undefined ? (
-          <h3 className={styles.title}>
+          <h2 className={styles.title}>
             {titleMonth} <span className={styles.titleYear}>{titleYear}</span>
-          </h3>
+          </h2>
         ) : (
           renderHeader(monthStart)
         )}

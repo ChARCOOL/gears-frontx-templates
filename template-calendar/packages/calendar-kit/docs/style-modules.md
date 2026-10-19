@@ -33,5 +33,5 @@ Each module in `src/styles/modules/` holds CSS that two or more components compo
 - `.chevron` — field disclosure chevron; select, combobox.
 - `.actionRow` — right-aligned row of header actions; subheader, event-detail-panel.
 - `.iconBox` — centred 16px icon slot; list, subheader, `.fieldIcon`.
-- `.viewRoot` — full-height flex column that roots a calendar view; week-grid, agenda-view.
+- `.viewRoot` — full-height flex column that roots a calendar view; week-grid, month-grid, agenda-view.
 - `.expandedDialog` — footprint of an expanded popover dialog; create-event, event-detail-panel.

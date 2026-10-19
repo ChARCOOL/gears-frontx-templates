@@ -138,6 +138,14 @@
   --cal-slot-unavailable-ring: var(--border-strong, #475569);
 
   --cal-radius-pill: 9999px;
+  --cal-state-hover-opacity: 0.9;
+
+  /* 4% of the text colour, so the stripes stay faint on a dark surface too. */
+  --cal-slot-busy-stripe: color-mix(
+    in srgb,
+    var(--cal-color-text) 4%,
+    transparent
+  );
   --cal-motion-duration-short: 120ms;
   --cal-motion-duration-medium: 200ms;
   --cal-motion-duration-long: 320ms;

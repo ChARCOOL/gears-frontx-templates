@@ -41,7 +41,9 @@ describe(MonthNavigator, () => {
     assert(
       screen.getByRole("region", { name: "Month navigator" })
     ).toBeVisible();
-    assert(screen.getByRole("heading", { name: "August 2026" })).toBeVisible();
+    assert(
+      screen.getByRole("heading", { level: 2, name: "August 2026" })
+    ).toBeVisible();
     assert(screen.getAllByRole("columnheader")).toHaveLength(7);
 
     assert(cell("Monday, August 24, 2026")).toHaveAttribute(
