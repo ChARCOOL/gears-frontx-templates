@@ -11,6 +11,7 @@ import type {
   SearchResultContext,
   SearchResultsProps,
 } from "../search-results";
+import styles from "../search-results.module.css";
 
 const NOW = utcInstant("2026-08-24T08:00:00.000Z");
 
@@ -111,12 +112,22 @@ describe(SearchResults, () => {
     ).toBeVisible();
   });
 
+  it("draws each result as a flat row with its event's colour bar", () => {
+    vi.useFakeTimers();
+    renderResults("chemistry");
+    settle();
+
+    expect(
+      screen.getByRole("button", { name: /Introduction to Chemistry/iu })
+    ).toHaveClass(styles.result, styles.colorPurple);
+  });
+
   it("uses absolute headers beyond the relative day labels", () => {
     vi.useFakeTimers();
     renderResults("history");
     settle();
 
-    expect(screen.getByText("Aug 26, 2026")).toBeVisible();
+    expect(screen.getByText("Wed, Aug 26")).toBeVisible();
   });
 
   it("matches organizer and location and folds accents", () => {

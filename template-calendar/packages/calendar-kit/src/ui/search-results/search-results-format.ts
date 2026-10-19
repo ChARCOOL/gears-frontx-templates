@@ -131,11 +131,6 @@ const buildGroups = (
 const foldDiacritics = (value: string): string =>
   value.normalize("NFD").replaceAll(DIACRITIC_MARKS, "");
 
-const findPart = (
-  parts: readonly Intl.DateTimeFormatPart[],
-  type: Intl.DateTimeFormatPartTypes
-): string => parts.find((part) => part.type === type)?.value ?? "";
-
 export const normalizeQuery = (query: string): string =>
   foldDiacritics(query.trim().toLowerCase());
 
@@ -214,18 +209,14 @@ export const formatSearchDayHeader = (
     return relative;
   }
 
-  const parts = dateTimeFormatter(locale, {
+  // Calendar apps head other days "Sat, Oct 18", adding the year only outside the current one.
+  return dateTimeFormatter(locale, {
     day: "numeric",
     month: "short",
     timeZone,
-    year: "numeric",
-  }).formatToParts(new Date(dayStart));
-
-  const month = findPart(parts, "month");
-  const day = findPart(parts, "day");
-  const year = findPart(parts, "year");
-
-  return `${month} ${day}, ${year}`;
+    weekday: "short",
+    year: date.slice(0, 4) === todayDate.slice(0, 4) ? undefined : "numeric",
+  }).format(new Date(dayStart));
 };
 
 export const formatSearchResultDetails = (
