@@ -6,7 +6,9 @@
   );
   position: relative;
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
+  block-size: 100%;
   min-inline-size: 0;
   min-block-size: 0;
   overflow: hidden;
@@ -119,10 +121,11 @@
   line-height: var(--cal-text-meta-line-height);
 }
 
+/* Fills the height the host gives the grid, as the week grid does. */
 .timedLayout {
   display: grid;
+  flex: 1 1 auto;
   grid-template-columns: var(--grid-gutter-width) minmax(0, 1fr);
-  max-block-size: min(70vh, calc(var(--grid-hour-height) * 16));
   min-block-size: 0;
   min-inline-size: 0;
   overflow: auto;

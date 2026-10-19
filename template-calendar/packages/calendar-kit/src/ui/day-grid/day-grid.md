@@ -19,6 +19,7 @@ The component is controlled by neutral calendar-kit data. Provide `t`, `locale`,
 | `defaultSelectedEventId` | `string` |  | Initial selected event when uncontrolled. |
 | `gutterClassName` | `string` |  | Class added to every gutter label. |
 | `interactionMode` | `"quick-create" \| "read-only"` |  | Controlled mode. `read-only` disables quick-create. Default `quick-create`. |
+| `now` | `UtcInstant` |  | Reference instant for the now line and past styling. Default: the wall clock. |
 | `onEventSelect` | `(event: CalendarEvent, context: CalendarEventRenderContext<unknown>, anchor?: HTMLElement…` |  | An available event was activated. `anchor` is the card element. |
 | `onInteractionModeChange` | `(mode: "quick-create" \| "read-only") => void` |  | Called when the grid asks to change mode. |
 | `onQuickCreate` | `(payload: CalendarQuickCreatePayload) => void` |  | An empty slot was activated in `quick-create` mode. |
@@ -41,9 +42,9 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 `slotMinutes?: 15 | 20 | 30 | 60` sets the length of one row; the default is `60`. The gutter labels only rows that start on the hour. `visibleHours` must start and end on a slot boundary; otherwise the component throws a `RangeError`.
 
-`workingHours?: CalendarTimeWindow` sets the shaded business part of the day; the default is 08:00–18:00. It is independent of `visibleHours` and also sets where the grid first scrolls to.
+`workingHours?: CalendarTimeWindow` sets the shaded business part of the day; the default is 08:00–18:00. It is independent of `visibleHours` and also sets where the grid first scrolls to. The grid fills the height its container gives it, like the week grid.
 
-Events are clipped to the visible hours, and events wholly outside them are not rendered. The now line is hidden while the current time is outside them. Slots follow elapsed time, so a daylight-saving day has one slot fewer or more.
+Events are clipped to the visible hours, and events wholly outside them are not rendered. The now line is hidden while the current time is outside them. `now?: UtcInstant` sets the current time for the now line and past styling; when omitted, the grid follows the wall clock. Slots follow elapsed time, so a daylight-saving day has one slot fewer or more.
 
 ## Trailing gutter and part classes
 

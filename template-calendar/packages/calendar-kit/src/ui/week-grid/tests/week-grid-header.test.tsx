@@ -44,4 +44,30 @@ describe("WeekGrid headers", () => {
       "today"
     );
   });
+
+  it("pads day numbers to two digits, as the design and the day view show them", () => {
+    render(
+      <WeekGrid
+        date={calendarDate("2025-09-01")}
+        events={[]}
+        timeZone={UTC}
+        locale="en-US"
+        t={t}
+        direction="ltr"
+        visibleDays={5}
+      />
+    );
+
+    const headers = within(screen.getByRole("grid")).getAllByRole(
+      "columnheader"
+    );
+
+    assert(headers.slice(1).map((header) => header.textContent)).toEqual([
+      "MON01",
+      "TUE02",
+      "WED03",
+      "THU04",
+      "FRI05",
+    ]);
+  });
 });

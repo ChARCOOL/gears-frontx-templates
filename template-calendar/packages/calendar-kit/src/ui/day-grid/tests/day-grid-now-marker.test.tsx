@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect as assert, it, vi } from "vitest";
 
 import { timedEvent, UTC } from "../../../__test-utils__/fixtures";
-import { calendarDate } from "../../../core/model";
+import { calendarDate, utcInstant } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
 import { DayGrid } from "../day-grid";
 
@@ -69,5 +69,23 @@ describe("DayGrid now marker", () => {
     assert(
       screen.getByRole("status", { name: /Current time/iu })
     ).toBeInTheDocument();
+  });
+
+  it("places the now marker at the injected instant instead of the wall clock", () => {
+    render(
+      <DayGrid
+        date={calendarDate("2026-08-24")}
+        now={utcInstant("2026-08-24T12:00:00.000Z")}
+        timeZone={UTC}
+        locale="en-US"
+        t={t}
+        direction="ltr"
+        events={[]}
+      />
+    );
+
+    assert(
+      screen.getByRole("status", { name: /Current time/iu })
+    ).toHaveTextContent("12:00");
   });
 });

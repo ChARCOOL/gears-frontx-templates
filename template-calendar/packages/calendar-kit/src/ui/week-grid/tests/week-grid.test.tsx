@@ -25,6 +25,7 @@ import { englishTranslate as t } from "../../../i18n/english";
 import type { CalendarQuickCreatePayload } from "../../../react/slots";
 import { WeekGrid } from "../week-grid";
 import type { WeekGridProps } from "../week-grid";
+import styles from "../week-grid.module.css";
 
 const DATE = calendarDate("2026-08-24");
 
@@ -508,6 +509,15 @@ describe("WeekGrid unit behaviour", () => {
 
     assert(onEventSelect).not.toHaveBeenCalled();
     assert(onUnavailable).toHaveBeenCalledWith(assert.anything());
+  });
+
+  it("leaves the busy event card to draw the busy state over its slot", () => {
+    renderWeek({ events: [event({ available: false })], t: (key) => key });
+
+    const slot = getTimedCell("09:00").querySelector(`.${styles.cellContent}`);
+
+    assert(slot).toHaveClass(styles.unavailableSlot);
+    assert(slot).not.toHaveClass(styles.unavailable);
   });
 
   it("renders a deterministic now marker from the injected instant", () => {

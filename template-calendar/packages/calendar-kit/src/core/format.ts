@@ -141,14 +141,18 @@ export const formatViewerTimeZoneOffset = (
   instant: UtcInstant,
   timeZone: IanaTimeZone,
   locale: string
-): string =>
-  formatWithPart(
+): string => {
+  const label = formatWithPart(
     instant,
     timeZone,
     locale,
     { timeZoneName: "shortOffset" },
     "timeZoneName"
   );
+
+  // ICU 77 returns "GMT" for UTC while ICU 78 returns "GMT+0".
+  return label === "GMT" ? "GMT+0" : label;
+};
 
 export const formatDuration = (
   start: UtcInstant,
