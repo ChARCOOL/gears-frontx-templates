@@ -1,5 +1,8 @@
+/* Below the grid's 44rem floor, as beside an open side panel, the view scrolls sideways instead
+   of spilling over whatever sits next to it. */
 .container {
   composes: viewRoot from "../../styles/modules/layout.module.css";
+  overflow-x: auto;
 }
 
 .interactionSurface {
