@@ -87,7 +87,7 @@ export interface EventCardProps<
   readonly renderTitle?: (
     context: CalendarEventRenderContext<Payload>
   ) => ReactNode;
-  /** Replaces the time row, clock icon included. */
+  /** Replaces the time text beside the clock icon. Returning nothing removes the row, icon included. */
   readonly renderTime?: (
     context: CalendarEventRenderContext<Payload>
   ) => ReactNode;
