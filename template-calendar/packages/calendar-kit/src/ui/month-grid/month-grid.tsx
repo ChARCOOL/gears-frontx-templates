@@ -950,7 +950,6 @@ const MonthDayCell = ({
       className={clsx(
         styles.dayCell,
         cell.isOutsideMonth && styles.outsideMonth,
-        isToday && styles.today,
         rangeClassName(cell.date, inRange ? selectedRange : null),
         cellClassName
       )}
