@@ -397,6 +397,12 @@
   block-size: var(--repeat-row-height);
 }
 
+/* The field primitive's wrapper spans its row; here each control keeps its own width. */
+.repeatIntervalRow > div {
+  flex: none;
+  inline-size: auto;
+}
+
 /* Two digits wide; the arrow keys still step it, so the native spin buttons go. */
 .repeatInterval {
   block-size: var(--repeat-row-height);
