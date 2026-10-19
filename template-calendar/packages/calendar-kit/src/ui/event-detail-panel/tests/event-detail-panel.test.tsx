@@ -30,7 +30,8 @@ const SAFE_JOIN_URL = "https://meet.example.com/chemistry";
 
 const SAFE_HTTP_JOIN_URL = "http://meet.example.com/chemistry";
 
-const RAW_RECURRENCE_RULE = "FREQ=WEEKLY;BYDAY=MO,WE";
+// A rule the kit cannot describe, so the host translation names it.
+const RAW_RECURRENCE_RULE = "FREQ=WEEKLY;BYDAY=MO,WE;COUNT=6";
 
 // Joined so the no-script-url lint ignores the fixture.
 const SCRIPT_JOIN_URL = ["java", "script:alert(1)"].join("");

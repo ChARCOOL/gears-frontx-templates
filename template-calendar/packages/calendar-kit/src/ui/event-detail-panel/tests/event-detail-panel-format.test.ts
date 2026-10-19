@@ -16,6 +16,7 @@ import {
   formatRsvpResponses,
   guestCount,
 } from "../event-detail-panel-format";
+import { englishTranslate } from "../../../i18n/english";
 
 const BERLIN = parseIanaTimeZone("Europe/Berlin");
 
@@ -164,32 +165,50 @@ describe(guestCount, () => {
 });
 
 describe(formatRecurrenceSummary, () => {
-  it("hands the raw rule to the consumer translation without echoing it", () => {
-    const t = vi.fn<CalendarTranslate>(() => "Repeats weekly");
+  it("describes a rule it reads in words, as the create form does", () => {
+    const summary = (recurrenceRule: string): string | undefined =>
+      formatRecurrenceSummary(
+        makeTimedEvent({ recurrenceRule }),
+        englishTranslate,
+        "en-US"
+      );
+
+    expect(summary("FREQ=WEEKLY;BYDAY=MO,WE")).toBe(
+      "Repeats every week on Monday and Wednesday"
+    );
+    expect(summary("FREQ=WEEKLY;WKST=SU;INTERVAL=2;BYDAY=TU")).toBe(
+      "Repeats every 2 weeks on Tuesday"
+    );
+    expect(summary("FREQ=DAILY")).toBe("Repeats every day");
+  });
+
+  it("hands a rule it cannot read to the consumer translation", () => {
+    const t = vi.fn<CalendarTranslate>(() => "Repeats five times");
 
     const summary = formatRecurrenceSummary(
-      makeTimedEvent({ recurrenceRule: "FREQ=WEEKLY;BYDAY=MO" }),
-      t
+      makeTimedEvent({ recurrenceRule: "FREQ=WEEKLY;COUNT=5" }),
+      t,
+      "en-US"
     );
 
-    expect(summary).toBe("Repeats weekly");
+    expect(summary).toBe("Repeats five times");
     expect(t).toHaveBeenCalledWith("calendar.detail.recurrence", {
-      rule: "FREQ=WEEKLY;BYDAY=MO",
+      rule: "FREQ=WEEKLY;COUNT=5",
     });
   });
 
   it("yields no summary for missing, empty, or blank rules", () => {
     const t = vi.fn<CalendarTranslate>(() => "Repeats weekly");
 
-    expect(formatRecurrenceSummary(makeTimedEvent(), t)).toBeUndefined();
+    expect(formatRecurrenceSummary(makeTimedEvent(), t, "en-US")).toBeUndefined();
     expect(
-      formatRecurrenceSummary(makeTimedEvent({ recurrenceRule: null }), t)
+      formatRecurrenceSummary(makeTimedEvent({ recurrenceRule: null }), t, "en-US")
     ).toBeUndefined();
     expect(
-      formatRecurrenceSummary(makeTimedEvent({ recurrenceRule: "" }), t)
+      formatRecurrenceSummary(makeTimedEvent({ recurrenceRule: "" }), t, "en-US")
     ).toBeUndefined();
     expect(
-      formatRecurrenceSummary(makeTimedEvent({ recurrenceRule: "   " }), t)
+      formatRecurrenceSummary(makeTimedEvent({ recurrenceRule: "   " }), t, "en-US")
     ).toBeUndefined();
     expect(t).not.toHaveBeenCalled();
   });

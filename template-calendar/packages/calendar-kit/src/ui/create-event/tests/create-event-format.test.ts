@@ -174,13 +174,13 @@ describe("create-event-format", () => {
       name: /custom|repeat/iu,
     });
     const unit = within(repeatDialog).getByRole("combobox", {
-      name: "every 1 week(s)",
+      name: "every 1 week",
     });
     act(() => {
       fireEvent.click(unit);
     });
     act(() => {
-      fireEvent.click(screen.getByRole("option", { name: "day(s)" }));
+      fireEvent.click(screen.getByRole("option", { name: "day" }));
     });
 
     assert(repeatDialog).toBeInTheDocument();
@@ -198,7 +198,7 @@ describe("create-event-format", () => {
     const repeatDialog = screen.getByRole("dialog", {
       name: /custom|repeat/iu,
     });
-    const unit = within(repeatDialog).getByLabelText("every 1 week(s)");
+    const unit = within(repeatDialog).getByLabelText("every 1 week");
     act(() => {
       fireEvent.change(unit, { target: { value: "day" } });
     });
