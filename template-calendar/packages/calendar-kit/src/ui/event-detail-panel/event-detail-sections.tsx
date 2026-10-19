@@ -1,7 +1,19 @@
 "use client";
 
-import { CopyIcon } from "lucide-react";
-import { useState } from "react";
+import {
+  CheckIcon,
+  ClockIcon,
+  CopyIcon,
+  GlobeIcon,
+  LockIcon,
+  MapPinIcon,
+  TextAlignStartIcon,
+  TriangleAlertIcon,
+  UserIcon,
+  UsersIcon,
+  VideoIcon,
+} from "lucide-react";
+import type { ReactNode } from "react";
 
 import type {
   CalendarAttendee,
@@ -11,19 +23,41 @@ import type {
 } from "../../core/model";
 import { useCalendarContext } from "../../i18n/calendar-context";
 import { useCalendarLocalization } from "../../i18n/calendar-localization";
+import type { EventDetailPanelCopyStatus } from "../../react/public";
 import { ConflictIndicator } from "../conflict-indicator/conflict-indicator";
 import { Avatar } from "../primitives/avatar/avatar";
 import { Button } from "../primitives/button/button";
 import { activationKeyDown } from "./event-detail-activation";
 import {
-  buildRsvpSegments,
+  COPY_STATUS_KEYS,
   formatEventRange,
   formatRecurrenceSummary,
-  formatRsvpSegment,
+  formatRsvpResponses,
   formatZoneLine,
+  guestCount,
 } from "./event-detail-panel-format";
 
 import styles from "./event-detail-panel.module.css";
+
+interface DetailRowProps {
+  readonly children: ReactNode;
+  readonly icon: ReactNode;
+  /** Names the row for screen readers; the icon stands in for it on screen. Omit when the row's
+   * text already says what it is. */
+  readonly label?: string;
+}
+
+const DetailRow = ({ children, icon, label }: DetailRowProps) => (
+  <section className={styles.row}>
+    {label === undefined ? null : (
+      <h3 className={styles.sectionLabel}>{label}</h3>
+    )}
+    <span aria-hidden="true" className={styles.rowIcon}>
+      {icon}
+    </span>
+    <div className={styles.rowContent}>{children}</div>
+  </section>
+);
 
 export const RestrictedSection = ({
   event,
@@ -34,13 +68,16 @@ export const RestrictedSection = ({
   const { timeZone } = useCalendarContext();
 
   return (
-    <section className={styles.section} role="note">
-      <h3 className={styles.sectionLabel}>{t("calendar.detail.dateTime")}</h3>
-      <p className={styles.mutedText}>
-        {formatEventRange(event, timeZone, locale)}
-      </p>
-      <p className={styles.mutedText}>{t("calendar.detail.restricted")}</p>
-    </section>
+    <div className={styles.group} role="note">
+      <DetailRow icon={<ClockIcon />} label={t("calendar.detail.dateTime")}>
+        <p className={styles.text}>
+          {formatEventRange(event, timeZone, locale)}
+        </p>
+      </DetailRow>
+      <DetailRow icon={<LockIcon />}>
+        <p className={styles.mutedText}>{t("calendar.detail.restricted")}</p>
+      </DetailRow>
+    </div>
   );
 };
 
@@ -54,41 +91,33 @@ const OrganizerSection = ({ event }: { readonly event: CalendarEvent }) => {
   }
 
   return (
-    <section className={styles.section}>
-      <h3 className={styles.sectionLabel}>{t("calendar.detail.organizer")}</h3>
-      <div className={styles.person}>
-        <Avatar
-          className={styles.organizerAvatar}
-          decorative
-          name={organizer}
-        />
-        <div className={styles.personText}>
-          <p className={styles.text}>{organizer}</p>
-          {email === "" ? null : <p className={styles.caption}>{email}</p>}
-        </div>
-      </div>
-    </section>
+    // Avatars belong to the guest list; here the row keeps the grey icon every other row has.
+    <DetailRow icon={<UserIcon />} label={t("calendar.detail.organizer")}>
+      <p className={styles.text}>{organizer}</p>
+      <p className={styles.personMeta}>
+        {email === "" ? t("calendar.detail.organizer") : email}
+      </p>
+    </DetailRow>
   );
 };
 
 interface ConferencingSectionProps {
   readonly canCopyJoinLink: boolean;
   readonly copyLink: () => void;
+  readonly copyStatus: EventDetailPanelCopyStatus;
   readonly joinUrl: string;
 }
 
 const ConferencingSection = ({
   canCopyJoinLink,
   copyLink,
+  copyStatus,
   joinUrl,
 }: ConferencingSectionProps) => {
   const { t } = useCalendarLocalization();
 
   return (
-    <section className={styles.section}>
-      <h3 className={styles.sectionLabel}>
-        {t("calendar.detail.conferencing")}
-      </h3>
+    <DetailRow icon={<VideoIcon />} label={t("calendar.detail.conferencing")}>
       {canCopyJoinLink ? (
         <div className={styles.conferencingRow}>
           <a
@@ -101,94 +130,94 @@ const ConferencingSection = ({
           </a>
           <Button
             variant="tertiary"
-            size="l"
-            leftIcon={<CopyIcon />}
+            size="m"
+            leftIcon={copyStatus === "copied" ? <CheckIcon /> : <CopyIcon />}
             onClick={copyLink}
             onKeyDown={activationKeyDown(copyLink)}
           >
-            {t("calendar.detail.copy.link")}
+            {t(COPY_STATUS_KEYS[copyStatus])}
           </Button>
         </div>
       ) : (
         <p className={styles.mutedText}>{joinUrl}</p>
       )}
-    </section>
+    </DetailRow>
+  );
+};
+
+// "7 guests" over the responses given, as calendar apps summarise attendance.
+const GuestSummary = ({ event }: { readonly event: CalendarEvent }) => {
+  const { t } = useCalendarLocalization();
+  const responses = formatRsvpResponses(event, t);
+
+  return (
+    <>
+      <p className={styles.text}>
+        {t("calendar.detail.guests", { count: guestCount(event) })}
+      </p>
+      {responses === "" ? null : (
+        <p className={styles.mutedText}>{responses}</p>
+      )}
+    </>
   );
 };
 
 interface ParticipantsSectionProps {
-  readonly attendees: readonly CalendarAttendee[];
   readonly event: CalendarEvent;
+  /** Lists every guest by response in place of the avatar stack. */
+  readonly expanded: boolean;
+  readonly onShowAllGuests: () => void;
   readonly participantOverflowCount: number;
   readonly visibleParticipants: readonly CalendarAttendee[];
 }
 
+// The stack shows a few faces; +N opens the expanded view, whose guest list has names and
+// scrolls on its own, so a lecture-sized invite never fills the popover with avatars.
 const ParticipantsSection = ({
-  attendees,
   event,
+  expanded,
+  onShowAllGuests,
   participantOverflowCount,
   visibleParticipants,
 }: ParticipantsSectionProps) => {
   const { t } = useCalendarLocalization();
 
-  const [showAll, setShowAll] = useState(false);
-
-  const rsvpSegments = buildRsvpSegments(event);
-
-  const participants = showAll ? attendees : visibleParticipants;
-
-  const handleShowAll = (): void => {
-    setShowAll(true);
-  };
-
-  if (attendees.length === 0 && rsvpSegments.length === 0) {
+  if (guestCount(event) === 0) {
     return null;
   }
 
   return (
-    <section className={styles.section}>
-      <h3 className={styles.sectionLabel}>
-        {t("calendar.detail.participants")}
-      </h3>
-      {participants.length > 0 && (
-        <ul className={styles.avatarStack}>
-          {participants.map((participant) => (
-            <li key={participant.id} title={participant.displayName}>
-              <Avatar
-                className={styles.stackAvatar}
-                name={participant.displayName}
-              />
-            </li>
-          ))}
-          {!showAll && participantOverflowCount > 0 && (
-            <li>
-              <button
-                type="button"
-                className={styles.stackOverflow}
-                aria-label={`+${participantOverflowCount} ${t("calendar.detail.participants.more")}`}
-                onClick={handleShowAll}
-              >
-                +{participantOverflowCount}
-              </button>
-            </li>
-          )}
-        </ul>
+    <DetailRow icon={<UsersIcon />} label={t("calendar.detail.participants")}>
+      <GuestSummary event={event} />
+      {expanded ? (
+        <GuestGroups attendees={event.attendees ?? []} />
+      ) : (
+        visibleParticipants.length > 0 && (
+          <ul className={styles.avatarStack}>
+            {visibleParticipants.map((participant) => (
+              <li key={participant.id} title={participant.displayName}>
+                <Avatar
+                  className={styles.stackAvatar}
+                  name={participant.displayName}
+                />
+              </li>
+            ))}
+            {participantOverflowCount > 0 && (
+              <li>
+                <button
+                  type="button"
+                  className={styles.stackOverflow}
+                  aria-label={`+${participantOverflowCount} ${t("calendar.detail.participants.more")}`}
+                  onClick={onShowAllGuests}
+                >
+                  +{participantOverflowCount}
+                </button>
+              </li>
+            )}
+          </ul>
+        )
       )}
-      {rsvpSegments.length > 0 && (
-        <p className={styles.rsvp}>
-          {rsvpSegments.map((segment, index) => (
-            <span key={segment.labelKey} className={styles.rsvpSegment}>
-              {index > 0 && (
-                <span aria-hidden="true" className={styles.rsvpSeparator}>
-                  ●
-                </span>
-              )}
-              {formatRsvpSegment(segment, t)}
-            </span>
-          ))}
-        </p>
-      )}
-    </section>
+    </DetailRow>
   );
 };
 
@@ -212,110 +241,98 @@ const TimeZoneSection = ({
       : [timeZone, comparisonTimeZone];
 
   return (
-    <section className={styles.section}>
-      <h3 className={styles.sectionLabel}>{t("calendar.detail.timeZone")}</h3>
+    <DetailRow icon={<GlobeIcon />} label={t("calendar.detail.timeZone")}>
       {zones.map((zone) => (
         <p key={zone} className={styles.mutedText}>
           {formatZoneLine(event, zone, locale)}
         </p>
       ))}
-    </section>
+    </DetailRow>
   );
 };
 
-type ResponseGroup = "yes" | "maybe" | "no" | "awaiting";
+// An attendee without a response is only invited; "awaiting" is a response the host reported.
+type ResponseGroup = "yes" | "maybe" | "no" | "awaiting" | "unknown";
 
 const RESPONSE_GROUPS: readonly ResponseGroup[] = [
   "yes",
-  "maybe",
   "no",
+  "maybe",
   "awaiting",
+  "unknown",
 ];
 
-const responseGroup = (attendee: CalendarAttendee): ResponseGroup => {
-  switch (attendee.response) {
-    case "accepted": {
-      return "yes";
-    }
-    case "tentative": {
-      return "maybe";
-    }
-    case "declined": {
-      return "no";
-    }
-    case "needs-action":
-    case null:
-    case undefined: {
-      return "awaiting";
-    }
-    default: {
-      return "awaiting";
-    }
-  }
+const GROUP_OF_RESPONSE: Readonly<
+  Record<NonNullable<CalendarAttendee["response"]>, ResponseGroup>
+> = {
+  accepted: "yes",
+  declined: "no",
+  "needs-action": "awaiting",
+  tentative: "maybe",
 };
 
-const InviteeList = ({ event }: { readonly event: CalendarEvent }) => {
-  const { t } = useCalendarLocalization();
-  const attendees = event.attendees ?? [];
-  const rsvpSegments = buildRsvpSegments(event);
+const responseGroup = ({ response }: CalendarAttendee): ResponseGroup =>
+  response === null || response === undefined
+    ? "unknown"
+    : GROUP_OF_RESPONSE[response];
 
-  if (attendees.length === 0 && rsvpSegments.length === 0) {
-    return null;
-  }
+const GuestGroups = ({
+  attendees,
+}: {
+  readonly attendees: readonly CalendarAttendee[];
+}) => {
+  const { t } = useCalendarLocalization();
+
+  return RESPONSE_GROUPS.map((group) => {
+    const members = attendees.filter(
+      (attendee) => responseGroup(attendee) === group
+    );
+
+    if (members.length === 0) {
+      return null;
+    }
+
+    return (
+      <div key={group} className={styles.inviteeGroup}>
+        <p className={styles.groupLabel}>
+          {t(`calendar.detail.group.${group}`, { count: members.length })}
+        </p>
+        <ul className={styles.invitees}>
+          {members.map((attendee) => (
+            <li key={attendee.id} className={styles.person}>
+              <Avatar
+                className={styles.stackAvatar}
+                decorative
+                name={attendee.displayName}
+              />
+              <div className={styles.personText}>
+                <p className={styles.text}>{attendee.displayName}</p>
+                {(attendee.email ?? "") === "" ? null : (
+                  <p className={styles.personMeta}>{attendee.email}</p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  });
+};
+
+// Expanded with many guests: a column of its own, with no icon so the list keeps one edge.
+const InviteeColumn = ({ event }: { readonly event: CalendarEvent }) => {
+  const { t } = useCalendarLocalization();
 
   return (
-    <section className={styles.section}>
-      <h3 className={styles.sectionLabel}>
-        {t("calendar.detail.participants")}
-      </h3>
-      {attendees.length === 0 && (
-        <p className={styles.rsvp}>
-          {rsvpSegments
-            .map((segment) => formatRsvpSegment(segment, t))
-            .join(" · ")}
-        </p>
-      )}
-      {RESPONSE_GROUPS.map((group) => {
-        const members = attendees.filter(
-          (attendee) => responseGroup(attendee) === group
-        );
-
-        if (members.length === 0) {
-          return null;
-        }
-
-        return (
-          <div key={group} className={styles.inviteeGroup}>
-            <p className={styles.caption}>
-              {formatRsvpSegment(
-                {
-                  count: members.length,
-                  labelKey: `calendar.detail.rsvp.${group}`,
-                },
-                t
-              )}
-            </p>
-            <ul className={styles.invitees}>
-              {members.map((attendee) => (
-                <li key={attendee.id} className={styles.person}>
-                  <Avatar
-                    className={styles.stackAvatar}
-                    decorative
-                    name={attendee.displayName}
-                  />
-                  <div className={styles.personText}>
-                    <p className={styles.text}>{attendee.displayName}</p>
-                    {(attendee.email ?? "") === "" ? null : (
-                      <p className={styles.caption}>{attendee.email}</p>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      })}
-    </section>
+    <aside
+      aria-label={t("calendar.detail.participants")}
+      className={styles.sideColumn}
+    >
+      <div className={styles.rowContent}>
+        <GuestSummary event={event} />
+        <GuestGroups attendees={event.attendees ?? []} />
+      </div>
+    </aside>
   );
 };
 
@@ -329,14 +346,23 @@ const renderConflictDetail = (conflict: CalendarConflict) => (
   </>
 );
 
+// A few guests fit in the people group; a column of their own would leave most of it empty.
+const GUEST_COLUMN_THRESHOLD = 3;
+
+const hasGuestColumn = (event: CalendarEvent): boolean =>
+  (event.attendees ?? []).length > GUEST_COLUMN_THRESHOLD;
+
 export interface DefaultDetailProps {
   readonly canCopyJoinLink: boolean;
-  /** Two columns: details on the start side, the full invitee list on the end side. */
+  /** Lists every guest; with more than three, in a column on the end side. */
   readonly expanded: boolean;
   readonly comparisonTimeZone: IanaTimeZone | null;
   readonly copyLink: () => void;
+  readonly copyStatus: EventDetailPanelCopyStatus;
   readonly event: CalendarEvent;
   readonly joinUrl: string | undefined;
+  /** Opens the expanded view from the avatar stack's +N. */
+  readonly onShowAllGuests: () => void;
   readonly participantOverflowCount: number;
   readonly visibleParticipants: readonly CalendarAttendee[];
 }
@@ -345,9 +371,11 @@ const DetailSections = ({
   canCopyJoinLink,
   comparisonTimeZone,
   copyLink,
+  copyStatus,
   event,
   expanded,
   joinUrl,
+  onShowAllGuests,
   participantOverflowCount,
   visibleParticipants,
 }: DefaultDetailProps) => {
@@ -358,70 +386,82 @@ const DetailSections = ({
   const location = event.location ?? "";
   const description = event.description ?? "";
 
+  // Groups render even when every row in them is empty; the stylesheet hides empty groups and
+  // draws a rule only between groups that have content.
   return (
     <>
-      <section className={styles.section}>
-        <h3 className={styles.sectionLabel}>{t("calendar.detail.dateTime")}</h3>
-        <p className={styles.mutedText}>
-          {formatEventRange(event, timeZone, locale)}
-        </p>
-        {recurrenceSummary !== undefined && (
-          <p className={styles.mutedText}>{recurrenceSummary}</p>
-        )}
-      </section>
-      {location !== "" && (
-        <section className={styles.section}>
-          <h3 className={styles.sectionLabel}>
-            {t("calendar.detail.location")}
-          </h3>
-          <p className={styles.mutedText}>{location}</p>
-        </section>
-      )}
-      <OrganizerSection event={event} />
-      {joinUrl !== undefined && (
-        <ConferencingSection
-          canCopyJoinLink={canCopyJoinLink}
-          copyLink={copyLink}
-          joinUrl={joinUrl}
-        />
-      )}
-      {expanded ? null : (
-        <ParticipantsSection
-          key={event.id}
-          attendees={event.attendees ?? []}
+      <div className={styles.group}>
+        <DetailRow icon={<ClockIcon />} label={t("calendar.detail.dateTime")}>
+          <p className={styles.text}>
+            {formatEventRange(event, timeZone, locale)}
+          </p>
+          {recurrenceSummary !== undefined && (
+            <p className={styles.mutedText}>{recurrenceSummary}</p>
+          )}
+        </DetailRow>
+        <TimeZoneSection
+          comparisonTimeZone={comparisonTimeZone}
           event={event}
-          participantOverflowCount={participantOverflowCount}
-          visibleParticipants={visibleParticipants}
         />
-      )}
-      {conflicts.length > 0 && (
-        <section className={styles.section}>
-          <h3 className={styles.sectionLabel}>
-            {t("calendar.detail.conflicts")}
-          </h3>
-          <ConflictIndicator
-            className={styles.conflicts}
-            conflicts={conflicts}
-            renderConflict={renderConflictDetail}
+        {joinUrl !== undefined && (
+          <ConferencingSection
+            canCopyJoinLink={canCopyJoinLink}
+            copyLink={copyLink}
+            copyStatus={copyStatus}
+            joinUrl={joinUrl}
           />
-        </section>
-      )}
-      <hr className={styles.divider} />
-      <TimeZoneSection comparisonTimeZone={comparisonTimeZone} event={event} />
+        )}
+      </div>
+      <div className={styles.group}>
+        {location !== "" && (
+          <DetailRow
+            icon={<MapPinIcon />}
+            label={t("calendar.detail.location")}
+          >
+            <p className={styles.text}>{location}</p>
+          </DetailRow>
+        )}
+        {conflicts.length > 0 && (
+          <DetailRow
+            icon={<TriangleAlertIcon />}
+            label={t("calendar.detail.conflicts")}
+          >
+            <ConflictIndicator
+              className={styles.conflicts}
+              conflicts={conflicts}
+              renderConflict={renderConflictDetail}
+            />
+          </DetailRow>
+        )}
+      </div>
+      <div className={styles.group}>
+        <OrganizerSection event={event} />
+        {(!expanded || !hasGuestColumn(event)) && (
+          <ParticipantsSection
+            event={event}
+            expanded={expanded}
+            onShowAllGuests={onShowAllGuests}
+            participantOverflowCount={participantOverflowCount}
+            visibleParticipants={visibleParticipants}
+          />
+        )}
+      </div>
       {description !== "" && (
-        <section className={styles.section}>
-          <h3 className={styles.sectionLabel}>
-            {t("calendar.detail.description")}
-          </h3>
-          <p className={styles.mutedText}>{description}</p>
-        </section>
+        <div className={styles.group}>
+          <DetailRow
+            icon={<TextAlignStartIcon />}
+            label={t("calendar.detail.description")}
+          >
+            <p className={styles.description}>{description}</p>
+          </DetailRow>
+        </div>
       )}
     </>
   );
 };
 
 export const DefaultDetail = (props: DefaultDetailProps) => {
-  if (!props.expanded) {
+  if (!props.expanded || !hasGuestColumn(props.event)) {
     return <DetailSections {...props} />;
   }
 
@@ -430,9 +470,7 @@ export const DefaultDetail = (props: DefaultDetailProps) => {
       <div className={styles.mainColumn}>
         <DetailSections {...props} />
       </div>
-      <aside className={styles.sideColumn}>
-        <InviteeList event={props.event} />
-      </aside>
+      <InviteeColumn event={props.event} />
     </div>
   );
 };

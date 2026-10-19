@@ -316,10 +316,13 @@ describe("CreateEventPopover public shell", () => {
 });
 
 describe("CreateEventPopover date and time row fidelity", () => {
-  it("shows the day count for a zero-day range", () => {
+  it("shows no day count until the dates span a day, as in the design", () => {
     renderPopover();
 
-    assert(screen.getByText("0 days")).toBeInTheDocument();
+    assert(screen.queryByText(/\d+ days?/u)).toBeNull();
+
+    pickDate(/end date/iu, /august 26, 2026/iu);
+    assert(screen.getByText("2 days")).toBeInTheDocument();
   });
 });
 
@@ -409,12 +412,6 @@ describe("CreateEventPopover draft and validation behaviour", () => {
     assert(repeatDialogs).toHaveLength(2);
     const repeatView = screen.getByRole("dialog", { name: /repeat/iu });
 
-    const interval =
-      within(repeatView).getByLabelText(/^(?:every|interval)$/iu);
-    act(() => {
-      fireEvent.change(interval, { target: { value: "1" } });
-    });
-
     assert(
       within(repeatView).queryByRole("checkbox", { name: /monday/iu })
     ).toBeNull();
@@ -429,6 +426,13 @@ describe("CreateEventPopover draft and validation behaviour", () => {
     });
     assert(monday).toHaveAttribute("aria-pressed", "true");
     assert(wednesday).toHaveAttribute("aria-pressed", "true");
+
+    const interval = within(repeatView).getByRole("spinbutton", {
+      name: /^(?:every|interval)$/iu,
+    });
+    act(() => {
+      fireEvent.change(interval, { target: { value: "2" } });
+    });
 
     act(() => {
       fireEvent.click(
@@ -448,7 +452,7 @@ describe("CreateEventPopover draft and validation behaviour", () => {
 
     assert(onSubmit).toHaveBeenCalledExactlyOnceWith({
       ...BASE_DRAFT,
-      recurrenceRule: "FREQ=WEEKLY;BYDAY=MO,WE",
+      recurrenceRule: "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE",
     });
   });
 
@@ -750,11 +754,24 @@ describe("CreateEventPopover coverage paths", () => {
     const repeatDialogs = screen.getAllByRole("dialog");
     assert(repeatDialogs).toHaveLength(2);
     const repeatView = screen.getByRole("dialog", { name: /repeat/iu });
-    const interval =
-      within(repeatView).getByLabelText(/^(?:every|interval)$/iu);
-    act(() => {
-      fireEvent.change(interval, { target: { value: "not-a-number" } });
+    const interval = within(repeatView).getByRole("spinbutton", {
+      name: /^(?:every|interval)$/iu,
     });
+    // An empty field keeps the applied interval; below 1 falls back to 1, above 30 stops at 30.
+    const enter = (value: string): void => {
+      act(() => {
+        fireEvent.change(interval, { target: { value } });
+      });
+      act(() => {
+        fireEvent.blur(interval);
+      });
+    };
+    enter("");
+    assert(interval).toHaveValue(1);
+    enter("45");
+    assert(interval).toHaveValue(30);
+    enter("0");
+    assert(interval).toHaveValue(1);
 
     const monday = within(repeatView).getByRole("button", { name: /monday/iu });
     assert(monday).toHaveAttribute("aria-pressed", "true");
@@ -1003,7 +1020,6 @@ describe("CreateEventPopover discard and submit behaviour", () => {
 
     const endDate = screen.getByLabelText(/end date/iu);
     assert(endDate).toHaveValue("mm/dd/yyyy");
-    assert(screen.getByText("0 days")).toBeInTheDocument();
 
     pickDate(/end date/iu, /august 25, 2026/iu);
     assert(screen.getByLabelText(/end date/iu)).toHaveValue("08/25/2026");
@@ -1038,7 +1054,12 @@ describe("CreateEventPopover discard and submit behaviour", () => {
     const repeatDialog = screen.getByRole("dialog", { name: /repeat/iu });
     const repeatView = repeatDialog;
 
-    assert(within(repeatView).getAllByRole("combobox")).toHaveLength(2);
+    assert(within(repeatView).getAllByRole("combobox")).toHaveLength(1);
+    assert(
+      within(repeatView).getByRole("spinbutton", {
+        name: /^(?:every|interval)$/iu,
+      })
+    ).toHaveValue(1);
     assert(within(repeatView).getByText("Ends")).toBeInTheDocument();
 
     const never = within(repeatView).getByRole("radio", { name: /never/iu });

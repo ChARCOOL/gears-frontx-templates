@@ -42,7 +42,7 @@ export interface CalendarAttendee {
   readonly displayName: string;
   /** Shown under the name in the expanded invitee list. */
   readonly email?: string | null;
-  /** RSVP state. `null` and `needs-action` both group under "awaiting". */
+  /** RSVP state. `needs-action` groups under "awaiting"; `null` lists the guest as invited. */
   readonly response?:
     | "accepted"
     | "declined"

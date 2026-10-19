@@ -1,15 +1,21 @@
 .container {
   composes: viewRoot from "../../styles/modules/layout.module.css";
+  overflow-y: auto;
 }
 
-/* Week rows share the view's height and never shrink below the minimum row height. */
+/* Week rows share the view's height. In a short view they shrink, down to the day number and one
+   chip, and the chip capacity follows the measured cell, so the rest go to "+N"; only below that
+   floor does the view scroll, inside its own frame rather than the host page. */
 .monthGrid {
   position: relative;
   display: grid;
-  flex: 1 0 auto;
+  flex: 1 1 auto;
   grid-template-columns: minmax(42px, auto) repeat(7, minmax(0, 1fr));
   grid-template-rows: auto;
-  grid-auto-rows: minmax(calc(135.2px + var(--cal-border-width-1)), 1fr);
+  grid-auto-rows: minmax(
+    calc(var(--grid-chip-height) * 3 + var(--cal-border-width-1)),
+    1fr
+  );
   overflow: hidden;
   background: var(--cal-color-surface);
   border: var(--cal-border-width-1) solid var(--cal-color-grid-line-strong);

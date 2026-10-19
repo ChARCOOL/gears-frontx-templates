@@ -14,28 +14,41 @@
   gap: var(--cal-space-4);
 }
 
+/* The label sits close to its rows; each row's own padding spaces the rows. */
 .group,
 .rows {
   display: flex;
   min-inline-size: 0;
   flex-direction: column;
-  gap: var(--cal-space-2);
 }
 
+.group {
+  gap: var(--cal-space-1);
+}
+
+/* Sentence case: "Wed, Aug 26" read as shouting in capitals. */
 .day {
   composes: sectionLabel from "../../styles/modules/text.module.css";
+  font-weight: var(--cal-text-label-weight);
+  text-transform: none;
 }
 
 .dayToday {
   color: var(--cal-color-now);
 }
 
+/* Results line up with the search field above them, so the list item adds no inset of its own. */
+.resultItem {
+  padding-inline: 0;
+}
+
 .result {
   composes: focusRing from "../../styles/modules/focus-ring.module.css";
+  position: relative;
   align-items: flex-start;
   appearance: none;
   background: transparent;
-  border: var(--cal-border-width-1) solid var(--cal-color-grid-line);
+  border: 0;
   border-radius: var(--cal-radius-md);
   color: var(--cal-color-text);
   cursor: pointer;
@@ -47,7 +60,8 @@
   margin: 0;
   min-inline-size: 0;
   outline: none;
-  padding: var(--cal-space-2);
+  padding: var(--cal-space-2) var(--cal-space-2) var(--cal-space-2)
+    var(--cal-space-3);
   text-align: start;
   transition:
     background-color var(--cal-motion-duration-short) ease,
@@ -60,6 +74,29 @@
 
 .result:hover {
   background: var(--cal-state-hover);
+}
+
+/* A flat row with the event's colour bar, as in the agenda; a bordered box per result was heavy. */
+.result::before {
+  position: absolute;
+  inset-block: var(--cal-space-2);
+  inset-inline-start: 0;
+  inline-size: 3px;
+  background: var(--search-result-bar, var(--cal-color-muted));
+  border-radius: var(--cal-radius-pill);
+  content: "";
+}
+
+.colorTurquoise {
+  --search-result-bar: var(--cal-color-turquoise-accent);
+}
+
+.colorPurple {
+  --search-result-bar: var(--cal-color-purple-accent);
+}
+
+.colorOrange {
+  --search-result-bar: var(--cal-color-orange-accent);
 }
 
 .content {

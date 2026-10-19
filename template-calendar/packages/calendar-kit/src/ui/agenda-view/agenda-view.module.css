@@ -410,7 +410,7 @@ button.agendaEvent:not(.unavailable):hover {
 .metadataRow {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--cal-space-1);
   min-inline-size: 0;
   max-inline-size: 100%;
   white-space: nowrap;
@@ -424,7 +424,7 @@ button.agendaEvent:not(.unavailable):hover {
   display: inline-flex;
   align-items: center;
   min-inline-size: 0;
-  gap: 2px;
+  gap: var(--cal-space-1);
 }
 
 .metadataGroup > span {

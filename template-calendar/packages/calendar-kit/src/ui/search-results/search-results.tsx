@@ -79,6 +79,13 @@ const useSearchResultsControllerContext = (): SearchResultsControllerValue => {
   return value;
 };
 
+// The row's colour bar takes the event's family, as in the agenda.
+const COLOR_CLASSES: ReadonlyMap<string, string> = new Map([
+  ["turquoise", styles.colorTurquoise],
+  ["purple", styles.colorPurple],
+  ["orange", styles.colorOrange],
+]);
+
 const isUnnamed = (row: SearchResultRow): boolean =>
   row.event.title.trim() === "";
 
@@ -120,7 +127,10 @@ const SearchResultItemImpl = ({
           aria-label={
             isUnnamed(row) ? t("calendar.eventCard.unnamed") : undefined
           }
-          className={styles.result}
+          className={clsx(
+            styles.result,
+            COLOR_CLASSES.get(row.event.colorFamily)
+          )}
           data-event-id={row.event.id}
           onClick={() => {
             controller.revealRow(row.focusIndex);
@@ -140,6 +150,7 @@ const SearchResultItemImpl = ({
           )}
         </button>
       }
+      className={styles.resultItem}
       interactive={false}
       size="xs"
     />

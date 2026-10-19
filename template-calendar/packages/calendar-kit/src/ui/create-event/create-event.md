@@ -42,7 +42,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 ## Behaviour
 
 - The header shows an event-type title (`Event` by default), a slot for host header content, expand/collapse and close icon actions with their accessible labels, and a divider.
-- Title, schedule, time range, all-day switch, dates/day count, recurrence, timezone, people, conferencing, location, and description fields update one draft.
+- Title, schedule, time range, all-day switch, dates with a day count once they span a day, recurrence, timezone, people, conferencing, location, and description fields update one draft.
 - Dates and times use the large icon-left field treatment; the schedule shows its calendar colour as a dot in the selected value and each option, and people tags use stroke tags with dismiss and clear-all actions.
 - Timed events leave the end date empty when it is the same as the start date; the day-span indicator is shown only for a positive span.
 - Date rows are masked date inputs: the locale's date mask is typed segment by segment and commits as soon as it parses, the calendar button ahead of the value (or `Alt+ArrowDown`) opens a picker whose selection writes the row directly, and the optional end date clears from the trailing clear button.
@@ -50,7 +50,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 - The people and location comboboxes use the shared 36px form-field skin; selected people use 24px removable chips inside the same form-layer frame.
 - Timed and all-day ranges are validated by the React-free core helper before `onSubmit` runs. The Save action is disabled while the draft is invalid or submitting.
 - Repeat offers Does not repeat, Daily, Weekly, Biweekly, Monthly, Yearly and Custom. The Custom option's label never changes, whatever rule it holds.
-- Custom opens an anchored 406×325 card beside the Repeat field. Every change is written to the draft immediately as an RFC 5545 rule body such as `FREQ=WEEKLY;BYDAY=MO,WE`; Back or the close button only closes the card. Weekday choices are toggle buttons in display order; `Ends: Never` omits an end and `Ends: On` appends `UNTIL=YYYYMMDD`.
+- Custom opens an anchored 406×325 card beside the Repeat field; the interval is a number field from 1 to 30. Every change is written to the draft immediately as an RFC 5545 rule body such as `FREQ=WEEKLY;BYDAY=MO,WE`; Back or the close button only closes the card. Weekday choices are toggle buttons in display order; `Ends: Never` omits an end and `Ends: On` appends `UNTIL=YYYYMMDD`.
 - A one-line summary under the Repeat field describes the current rule for every choice, for example "Repeats every 2 weeks on Tuesday and Thursday until Wed, Sep 30, 2026". "Does not repeat" shows no summary.
 - A pending submit disables duplicate attempts. A host error is rendered without closing the form.
 - A clean cancel closes immediately. A dirty cancel opens an alert dialog with keep-editing and discard actions; the confirmation and custom-repeat layer are mounted in the active create shell so they overlay that popover, and confirmed discard closes the parent form.

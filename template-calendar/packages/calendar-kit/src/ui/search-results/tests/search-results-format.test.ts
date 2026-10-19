@@ -186,7 +186,16 @@ describe("search-results-format", () => {
     ).toBe("Tomorrow");
     assert(
       formatSearchDayHeader(later, laterStart, today, UTC, "en-US", t)
-    ).toBe("Aug 26, 2026");
+    ).toBe("Wed, Aug 26");
+    const nextYear = calendarDate("2027-01-06");
+    const nextYearStart = fromViewerDateTime({
+      date: nextYear,
+      time: "00:00",
+      timeZone: UTC,
+    });
+    assert(
+      formatSearchDayHeader(nextYear, nextYearStart, today, UTC, "en-US", t)
+    ).toBe("Wed, Jan 6, 2027");
     assert(formatSearchCount(1, englishMessage("en-US"))).toBe("1 result");
     assert(formatSearchCount(2, englishMessage("en-US"))).toBe("2 results");
     assert(formatSearchResultDetails(row, UTC, "en-US", t)).toBe(
