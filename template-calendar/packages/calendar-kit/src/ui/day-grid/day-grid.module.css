@@ -219,8 +219,10 @@
   block-size: auto;
 }
 
+/* The card's own colour, like its other rows; the muted grey read as a different event. */
 .eventTime {
   composes: metaText from "../../styles/modules/text.module.css";
+  color: inherit;
 }
 
 .nowLine {

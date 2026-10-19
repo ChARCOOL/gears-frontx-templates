@@ -163,6 +163,12 @@ button.card:not(.unavailable):hover {
   );
 }
 
+/* ui-kit's hover only swaps the fill, so the stripes stay; the fill stays the card's own too. */
+button.card.unavailable {
+  --button-bg-hover: var(--button-bg);
+  --button-fg-hover: var(--button-fg);
+}
+
 .card.readOnly {
   --button-border: var(--cal-state-read-only);
   border-color: var(--cal-state-read-only);
@@ -224,7 +230,7 @@ button.card:not(.unavailable):hover {
   padding-inline: var(--cal-space-1);
 }
 
-.card[data-event-card-layout="stacked"] .body > span {
+.card[data-event-card-layout="stacked"] .body > span:not(.timedRow) {
   gap: 0;
 }
 
@@ -281,10 +287,11 @@ button.card:not(.unavailable):hover {
   line-height: var(--cal-text-meta-line-height);
 }
 
+/* Icons sit 4px from their text, as in the agenda and the detail rows. */
 .timedRow {
   display: inline-flex;
   align-items: center;
-  gap: calc(var(--cal-space-1) / 2);
+  gap: var(--cal-space-1);
   min-inline-size: 0;
 }
 
@@ -307,7 +314,7 @@ button.card:not(.unavailable):hover {
 .metadataRow {
   display: inline-flex;
   align-items: center;
-  gap: calc(var(--cal-space-1) / 2);
+  gap: var(--cal-space-1);
   min-inline-size: 0;
   max-inline-size: 100%;
   overflow: hidden;
