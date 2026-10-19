@@ -12,6 +12,7 @@ import { addCalendarDays, fromViewerDateTime } from "../../core/temporal";
 import { formatTimeOfDay } from "../../core/time-input";
 import type { CalendarTranslate } from "../../i18n/calendar-localization";
 import type { EventDetailPanelCopyStatus } from "../../react/public";
+import { formatRepeatHint } from "../create-event/create-event-format";
 
 // The responses in reading order; a zero count says nothing, so it is left out.
 const RSVP_LABEL_KEYS = [
@@ -49,14 +50,46 @@ export const resolveCopyAnnouncement = (
   t: CalendarTranslate
 ): string => (copyStatus === "idle" ? "" : t(COPY_STATUS_KEYS[copyStatus]));
 
+// The rule parts the create form's summary reads. WKST only names the week's first day, which
+// the words never mention; saved rules carry it.
+const DESCRIBED_REPEAT_KEYS: ReadonlySet<string> = new Set([
+  "BYDAY",
+  "FREQ",
+  "INTERVAL",
+  "UNTIL",
+  "WKST",
+]);
+const DESCRIBED_FREQUENCIES: ReadonlySet<string> = new Set([
+  "DAILY",
+  "MONTHLY",
+  "WEEKLY",
+]);
+
+const describesRule = (rule: string): boolean =>
+  rule.split(";").every((part) => {
+    const [key = "", value = ""] = part.split("=");
+
+    return (
+      DESCRIBED_REPEAT_KEYS.has(key) &&
+      (key !== "FREQ" || DESCRIBED_FREQUENCIES.has(value))
+    );
+  });
+
+/** "Repeats every week on Monday", as the create form says it. A rule with parts the summary does
+ * not read (COUNT, BYMONTHDAY, YEARLY, ...) goes to the consumer's translation as raw text rather
+ * than lose them. */
 export const formatRecurrenceSummary = (
   event: CalendarEvent,
-  t: CalendarTranslate
+  t: CalendarTranslate,
+  locale: string
 ): string | undefined => {
-  const rule = event.recurrenceRule ?? "";
+  const rule = (event.recurrenceRule ?? "").trim();
 
-  if (rule === "" || rule.trim() === "") {
+  if (rule === "") {
     return undefined;
+  }
+  if (describesRule(rule)) {
+    return formatRepeatHint(rule, event.startDate, t, locale);
   }
   return t("calendar.detail.recurrence", { rule });
 };

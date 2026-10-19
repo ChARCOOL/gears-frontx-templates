@@ -267,17 +267,21 @@ const MAX_REPEAT_INTERVAL = 30;
 const resolveRepeatEndKind = (value: string): RepeatEndKind =>
   value === "on" ? "on" : "never";
 
-const repeatUnitOptions = (t: CalendarTranslate): readonly ResourceItem[] => [
+// The unit reads with the interval, as in "every 1 week" or "every 2 weeks".
+const repeatUnitOptions = (
+  t: CalendarTranslate,
+  count: number
+): readonly ResourceItem[] => [
   {
-    label: t("calendar.create_event.repeat.unit.day"),
+    label: t("calendar.create_event.repeat.unit.day", { count }),
     value: REPEAT_UNIT.day,
   },
   {
-    label: t("calendar.create_event.repeat.unit.week"),
+    label: t("calendar.create_event.repeat.unit.week", { count }),
     value: REPEAT_UNIT.week,
   },
   {
-    label: t("calendar.create_event.repeat.unit.month"),
+    label: t("calendar.create_event.repeat.unit.month", { count }),
     value: REPEAT_UNIT.month,
   },
 ];
@@ -538,7 +542,7 @@ const CustomRepeatView = ({
   const intervalId = `${idPrefix}-repeat-interval`;
   const unitId = `${idPrefix}-repeat-unit`;
   const endGroupName = `${idPrefix}-repeat-end`;
-  const unitItems = repeatUnitOptions(t);
+  const unitItems = repeatUnitOptions(t, state.interval);
   // The field may be empty while a number is typed over; it shows the applied interval on blur.
   const [intervalText, setIntervalText] = useState(String(state.interval));
   const endsLabel = t("calendar.create_event.repeat.ends");
@@ -622,7 +626,9 @@ const CustomRepeatView = ({
             id={unitId}
             aria-label={t("calendar.create_event.repeat.unit_label", {
               count: state.interval,
-              unit: t(`calendar.create_event.repeat.unit.${state.unit}`),
+              unit: t(`calendar.create_event.repeat.unit.${state.unit}`, {
+                count: state.interval,
+              }),
             })}
             options={unitItems}
             value={state.unit}
