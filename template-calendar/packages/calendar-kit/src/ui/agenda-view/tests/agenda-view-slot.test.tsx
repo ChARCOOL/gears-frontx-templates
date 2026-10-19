@@ -155,4 +155,24 @@ describe("agenda event slot", () => {
       ).get("background")
     ).toBe("var(--cal-state-hover)");
   });
+
+  it("greys out a past slot's times and metadata along with the row", () => {
+    const rowColor = declarations(agendaViewCss, ".agendaEvent.past").get(
+      "color"
+    );
+
+    assert(rowColor).toBe("var(--cal-color-muted)");
+
+    for (const part of [
+      ".slotTimes",
+      ".slotTimeStart",
+      ".slotTimeAllDay",
+      ".slotTimeEnd",
+      ".eventMetadata",
+    ]) {
+      assert(
+        declarations(agendaViewCss, `.agendaEvent.past ${part}`).get("color")
+      ).toBe(rowColor);
+    }
+  });
 });

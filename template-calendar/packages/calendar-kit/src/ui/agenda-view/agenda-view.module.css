@@ -309,6 +309,15 @@ button.agendaEvent:not(.unavailable):hover {
   background: var(--cal-color-muted);
 }
 
+/* A past slot greys out entirely, times included. */
+.agendaEvent.past .slotTimes,
+.agendaEvent.past .eventMetadata,
+.agendaEvent.past .slotTimeStart,
+.agendaEvent.past .slotTimeAllDay,
+.agendaEvent.past .slotTimeEnd {
+  color: var(--cal-color-muted);
+}
+
 .segmentStart {
   composes: segmentStart from "../../styles/modules/state.module.css";
 }
