@@ -106,7 +106,7 @@ const getWeekGridFormatters = (
   locale: string,
   timeZone: IanaTimeZone
 ): WeekGridFormatters => ({
-  dayNumber: dateTimeFormatter(locale, { day: "numeric", timeZone }),
+  dayNumber: dateTimeFormatter(locale, { day: "2-digit", timeZone }),
   fullDate: dateTimeFormatter(locale, { dateStyle: "full", timeZone }),
   time: dateTimeFormatter(locale, {
     hour12: false,
