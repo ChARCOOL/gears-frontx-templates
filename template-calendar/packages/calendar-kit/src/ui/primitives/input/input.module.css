@@ -176,3 +176,8 @@
 .messageInvalid {
   color: var(--cal-color-error);
 }
+
+/* The browser's own clear button doubled the field's clear action. */
+.shell input[type="search"]::-webkit-search-cancel-button {
+  appearance: none;
+}
