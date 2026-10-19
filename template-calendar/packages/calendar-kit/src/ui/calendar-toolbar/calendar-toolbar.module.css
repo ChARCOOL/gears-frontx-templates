@@ -1,5 +1,9 @@
+/* The toolbar's width is its host's, not the viewport's: beside a side panel it can be narrow
+   on a wide screen, where the breakpoints below never fire. So the row wraps on its own: the
+   title keeps its width, and the actions move to a row of their own when they do not fit. */
 .root {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--cal-space-4);
@@ -20,8 +24,8 @@
 
 .title {
   composes: heading from "../../styles/modules/text.module.css";
+  flex: none;
   margin: 0;
-  min-inline-size: 0;
 }
 
 .titleText,
@@ -35,6 +39,7 @@
 
 .actions {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--cal-space-3);
