@@ -1,10 +1,10 @@
 "use client";
 
-import { Calendar } from "@gears-frontx/ui-kit/calendar";
+import { Calendar, CalendarDayButton } from "@gears-frontx/ui-kit/calendar";
 import { clsx } from "clsx";
 import { CalendarDaysIcon, XIcon } from "lucide-react";
 import { useCallback, useId, useMemo, useRef, useState } from "react";
-import type { Ref } from "react";
+import type { ComponentProps, Ref } from "react";
 
 import type { CalendarDate } from "../../../core/model";
 import { calendarDate } from "../../../core/validation";
@@ -46,6 +46,16 @@ const toCalendarDate = (date: Date): CalendarDate => {
 
   return calendarDate(`${year}-${month}-${day}`);
 };
+
+// The day labels are the kit's own, so they no longer say "Today"; aria-current marks it instead.
+const DayButton = (props: ComponentProps<typeof CalendarDayButton>) => (
+  <CalendarDayButton
+    {...props}
+    aria-current={props.modifiers.today ? "date" : undefined}
+  />
+);
+
+const CALENDAR_COMPONENTS = { DayButton };
 
 type FieldTranslate = CalendarTranslate;
 
@@ -274,6 +284,7 @@ const DateField = ({
             autoFocus
             mode="single"
             className={styles.calendar}
+            components={CALENDAR_COMPONENTS}
             formatters={formatters}
             labels={labels}
             month={visibleMonth}
