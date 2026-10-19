@@ -3,7 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { declarations } from "../../../../__test-utils__/css-declarations";
 import { Textarea } from "../textarea";
+import textareaCss from "../textarea.module.css?raw";
 
 const getTextarea = (name: string): HTMLTextAreaElement => {
   const textarea = screen.getByRole("textbox", { name });
@@ -153,5 +155,16 @@ describe(Textarea, () => {
     expect(textarea).toHaveProperty("value", "before");
     expect(onChange).not.toHaveBeenCalled();
     expect(textarea).toHaveProperty("disabled", true);
+  });
+
+  it("splits the inset between the shell and the textarea", () => {
+    const shell = declarations(textareaCss, ".shell");
+    const control = declarations(textareaCss, ".control");
+
+    // Scrolled lines stop inside the border; text clears an overlay scrollbar.
+    expect(shell.get("padding-block")).toBe("var(--cal-space-2)");
+    expect(shell.get("padding-inline-end")).toBe("var(--cal-space-1)");
+    expect(control.get("padding-block")).toBe("var(--cal-space-1)");
+    expect(control.get("padding-inline")).toBe("0 var(--cal-space-3)");
   });
 });

@@ -387,16 +387,43 @@
   inline-size: 40px;
 }
 
-.repeatInterval,
 .repeatUnit {
   box-sizing: border-box;
   flex: none;
   inline-size: 88px;
 }
 
-.repeatInterval :global(button),
 .repeatUnit :global(button) {
   block-size: var(--repeat-row-height);
+}
+
+/* Two digits wide; the arrow keys still step it, so the native spin buttons go. */
+.repeatInterval {
+  block-size: var(--repeat-row-height);
+  box-sizing: border-box;
+  flex: none;
+  inline-size: 56px;
+  padding-inline: var(--cal-space-1);
+}
+
+/* The input primitive puts the class on its shell and on the control inside it; the control fills
+   the shell. */
+.repeatInterval .repeatInterval {
+  block-size: auto;
+  flex: 1 1 auto;
+  inline-size: 100%;
+  padding-inline: 0;
+}
+
+.repeatInterval input {
+  appearance: textfield;
+  text-align: center;
+}
+
+.repeatInterval input::-webkit-inner-spin-button,
+.repeatInterval input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
 }
 
 .weekdays {

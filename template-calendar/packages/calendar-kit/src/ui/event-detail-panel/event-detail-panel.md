@@ -1,6 +1,6 @@
 # EventDetailPanel
 
-Event detail shell. With `anchorElement` it opens as a popover beside the event card, the way calendar apps preview an event. Its expand control grows it into a two-column dialog the size of the expanded create-event popover, with the details on the start side and every invitee, grouped by response, on the end side. Collapse shrinks it back. Without an anchor it opens as that dialog. The body shows date and time, location, organizer with email, conferencing (Join and Copy link), participants as overlapping avatars with RSVP counts, conflicts, a divider, time zones, and description. Edit and delete sit in the header and are left to the host through `onEdit`/`onDelete` or `renderActions`.
+Event detail shell. With `anchorElement` it opens as a 400px popover beside the event card, the way calendar apps preview an event. The header is one row: the title, clamped to three lines (five expanded), then icon buttons with tooltips (edit, delete, a divider, expand or collapse, close); the header stays put while the body scrolls inside the panel, so the panel never grows the host page. The body is icon-led rows in groups split by a rule: time with recurrence, time zones and conferencing (Join and Copy link); location and conflicts; organizer with email and participants with the guest count, the responses that have guests and up to five avatars, whose +N opens the expanded detail; description. Row names are screen-reader headings, not visible labels. Expand grows the detail into a centred dialog up to 640px wide and 80% of the viewport tall, sized to its content; every invitee is listed, grouped by response, in a 220px column on the end side when there are more than three. Collapse shrinks it back. Without an anchor it opens as that dialog. Edit and delete are left to the host through `onEdit`/`onDelete` or `renderActions`.
 
 Import it from its own entry; the stylesheet arrives with the component:
 
@@ -24,7 +24,7 @@ import {
 | `container` | `Element \| DocumentFragment` |  | Portal target for the popover or dialog, for example a node inside a shadow root. |
 | `defaultOpen` | `boolean` |  | Initial open state when uncontrolled. |
 | `event` | `CalendarEvent` |  | The event to show. |
-| `maxVisibleParticipants` | `number` |  | Avatars shown before the `+N` control. Default `6`. |
+| `maxVisibleParticipants` | `number` |  | Avatars shown before the `+N` control. Default `5`. |
 | `onDelete` | `(event: CalendarEvent) => void` |  | Shows the delete button. Hidden when `readOnly` or the event is busy. |
 | `onEdit` | `(event: CalendarEvent) => void` |  | Shows the edit button. Hidden when `readOnly` or the event is busy. |
 | `onOpenChange` | `(open: boolean) => void` |  | Called when the panel opens or closes. |
@@ -46,13 +46,13 @@ The preview opens beside the card, on whichever side has room, with an arrow poi
 
 ## Composition
 
-The shell supplies the dialog semantics, Escape handling, outside-close handling, and the focus trap. Participant rows show a decorative avatar beside the attendee's name and email. The default copy action is a low-emphasis text button; the icon-only close button carries an accessible label.
+The shell supplies the dialog semantics, Escape handling, outside-close handling, and the focus trap. Participant rows show a decorative avatar beside the attendee's name and email. The default copy action is a low-emphasis text button that shows Copied, with a check, for a moment after a copy; every icon-only header button carries an accessible label and a tooltip.
 
 ## Safety and announcements
 
 - Only `http(s)` join URLs become a link or a copy target; anything else fails closed (no link, no copy button, and no clipboard access).
-- Copy success/failure is announced through a `role="status"` region using the resolved translator's `calendar.detail.copy.copied` and `calendar.detail.copy.failed` messages; the status returns to idle after `COPY_STATUS_RESET_MS`.
-- Busy-access events hide details, participants, RSVP, join/copy, and terminal actions, showing only the range plus a restricted note.
+- Copy success/failure is announced through a visually hidden `role="status"` region using the resolved translator's `calendar.detail.copy.copied` and `calendar.detail.copy.failed` messages; the status returns to idle after `COPY_STATUS_RESET_MS`.
+- Busy-access events hide details, participants, RSVP, join/copy, and terminal actions: a compact card with the title, the range and a restricted note, and no expand control.
 - The panel renders the supplied event directly. It does not create loading, error, or empty-state shells; fetching and failure presentation remain host concerns.
 - On close, focus returns to the element that was active when the panel opened, including an opener inside the supplied shadow root. The popover or dialog stays in the current tree unless an explicit `container` is supplied.
 
@@ -66,34 +66,40 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 
 <!-- generated:messages calendar.detail -->
 
-| Translation ID                      | English            | Values  |
-| ----------------------------------- | ------------------ | ------- |
-| `calendar.detail.close`             | Close              |         |
-| `calendar.detail.collapse`          | Collapse           |         |
-| `calendar.detail.conferencing`      | Conferencing       |         |
-| `calendar.detail.conflicts`         | Conflicts          |         |
-| `calendar.detail.copy.copied`       | Copied             |         |
-| `calendar.detail.copy.failed`       | Copy failed        |         |
-| `calendar.detail.copy.link`         | Copy link          |         |
-| `calendar.detail.dateTime`          | Date & time        |         |
-| `calendar.detail.delete`            | Delete             |         |
-| `calendar.detail.description`       | Description        |         |
-| `calendar.detail.edit`              | Edit               |         |
-| `calendar.detail.expand`            | Expand             |         |
-| `calendar.detail.join`              | Join               |         |
-| `calendar.detail.location`          | Location           |         |
-| `calendar.detail.organizer`         | Organizer          |         |
-| `calendar.detail.participants`      | Participants       |         |
-| `calendar.detail.participants.more` | more               |         |
-| `calendar.detail.recurrence`        | Repeats {{rule}}   | `rule`  |
-| `calendar.detail.restricted`        | Restricted         |         |
-| `calendar.detail.rsvp.awaiting`     | {{count}} awaiting | `count` |
-| `calendar.detail.rsvp.invited`      | {{count}} invited  | `count` |
-| `calendar.detail.rsvp.maybe`        | {{count}} maybe    | `count` |
-| `calendar.detail.rsvp.no`           | {{count}} no       | `count` |
-| `calendar.detail.rsvp.yes`          | {{count}} yes      | `count` |
-| `calendar.detail.timeZone`          | Time zone          |         |
-| `calendar.detail.title`             | Event details      |         |
+| Translation ID                      | English               | Values  |
+| ----------------------------------- | --------------------- | ------- |
+| `calendar.detail.close`             | Close                 |         |
+| `calendar.detail.collapse`          | Collapse              |         |
+| `calendar.detail.conferencing`      | Conferencing          |         |
+| `calendar.detail.conflicts`         | Conflicts             |         |
+| `calendar.detail.copy.copied`       | Copied                |         |
+| `calendar.detail.copy.failed`       | Copy failed           |         |
+| `calendar.detail.copy.link`         | Copy link             |         |
+| `calendar.detail.dateTime`          | Date & time           |         |
+| `calendar.detail.delete`            | Delete                |         |
+| `calendar.detail.description`       | Description           |         |
+| `calendar.detail.edit`              | Edit                  |         |
+| `calendar.detail.expand`            | Expand                |         |
+| `calendar.detail.group.awaiting`    | Awaiting · {{count}}  | `count` |
+| `calendar.detail.group.maybe`       | Maybe · {{count}}     | `count` |
+| `calendar.detail.group.no`          | Not going · {{count}} | `count` |
+| `calendar.detail.group.unknown`     | Invited · {{count}}   | `count` |
+| `calendar.detail.group.yes`         | Going · {{count}}     | `count` |
+| `calendar.detail.guests_one`        | {{count}} guest       | `count` |
+| `calendar.detail.guests_other`      | {{count}} guests      | `count` |
+| `calendar.detail.join`              | Join                  |         |
+| `calendar.detail.location`          | Location              |         |
+| `calendar.detail.organizer`         | Organizer             |         |
+| `calendar.detail.participants`      | Participants          |         |
+| `calendar.detail.participants.more` | more                  |         |
+| `calendar.detail.recurrence`        | Repeats {{rule}}      | `rule`  |
+| `calendar.detail.restricted`        | Restricted            |         |
+| `calendar.detail.rsvp.awaiting`     | {{count}} awaiting    | `count` |
+| `calendar.detail.rsvp.maybe`        | {{count}} maybe       | `count` |
+| `calendar.detail.rsvp.no`           | {{count}} no          | `count` |
+| `calendar.detail.rsvp.yes`          | {{count}} yes         | `count` |
+| `calendar.detail.timeZone`          | Time zone             |         |
+| `calendar.detail.title`             | Event details         |         |
 
 <!-- /generated -->
 

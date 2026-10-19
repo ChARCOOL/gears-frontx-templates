@@ -82,6 +82,24 @@ describe(DateField, () => {
     assert(screen.queryByRole("dialog")).toBeNull();
   });
 
+  it("marks today in the calendar as the current date", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true, toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 7, 20, 12));
+    const user = userEvent.setup();
+    renderField();
+
+    await user.click(screen.getByRole("button", { name: "Open calendar" }));
+    const dialog = screen.getByRole("dialog", { name: "Choose date" });
+
+    assert(
+      within(dialog).getByRole("button", { name: /august 20, 2026/iu })
+    ).toHaveAttribute("aria-current", "date");
+    assert(
+      within(dialog).getByRole("button", { name: /august 24, 2026/iu })
+    ).not.toHaveAttribute("aria-current");
+    vi.useRealTimers();
+  });
+
   it("opens the calendar with Alt+ArrowDown", async () => {
     const user = userEvent.setup();
     renderField();

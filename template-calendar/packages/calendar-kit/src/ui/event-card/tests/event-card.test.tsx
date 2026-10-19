@@ -765,6 +765,9 @@ describe("EventCard styles", () => {
       "repeating-linear-gradient(-45deg, var(--cal-slot-busy-stripe) 0 31px, transparent 31px 45px)"
     );
     expect(hover.get("opacity")).toBe("var(--cal-state-hover-opacity)");
+    expect(
+      declarations(cardCss, "button.card.unavailable").get("--button-bg-hover")
+    ).toBe("var(--button-bg)");
     expect(declarations(cardCss, "button.card").get("transition")).toContain(
       "opacity var(--cal-motion-duration-short) ease"
     );

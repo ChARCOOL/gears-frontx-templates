@@ -214,7 +214,7 @@ describe(EventDetailPanel, () => {
 
     expect(screen.queryByRole("link", { name: /join/iu })).toBeNull();
     expect(screen.queryByText("Person 0")).toBeNull();
-    expect(screen.queryByText(`${RSVP.invited} invited`)).toBeNull();
+    expect(screen.queryByText(`${RSVP.invited} guests`)).toBeNull();
     expect(screen.queryByRole("button", { name: /edit/iu })).toBeNull();
     expect(screen.queryByRole("button", { name: /delete/iu })).toBeNull();
   });
@@ -255,17 +255,32 @@ describe(EventDetailPanel, () => {
     expect(screen.getByText(SCRIPT_JOIN_URL)).toBeInTheDocument();
   });
 
-  it("renders RSVP counts from the supplied CalendarRsvp values", () => {
+  it("summarises the supplied CalendarRsvp as guests and the responses given", () => {
     renderPanel({
       anchorElement: document.body,
       event: timedEvent({ ...BASE_EVENT, rsvp: RSVP }),
     });
 
-    expect(screen.getByText(`${RSVP.invited} invited`)).toBeTruthy();
-    expect(screen.getByText(`${RSVP.yes} yes`)).toBeTruthy();
-    expect(screen.getByText(`${RSVP.no} no`)).toBeTruthy();
-    expect(screen.getByText(`${RSVP.awaiting} awaiting`)).toBeTruthy();
-    expect(screen.getByText(`${RSVP.maybe} maybe`)).toBeTruthy();
+    expect(screen.getByText(`${RSVP.invited} guests`)).toBeTruthy();
+    expect(
+      screen.getByText(
+        `${RSVP.yes} yes, ${RSVP.no} no, ${RSVP.maybe} maybe, ${RSVP.awaiting} awaiting`
+      )
+    ).toBeTruthy();
+  });
+
+  it("leaves zero counts out of the response line", () => {
+    renderPanel({
+      anchorElement: document.body,
+      event: timedEvent({
+        ...BASE_EVENT,
+        rsvp: { awaiting: 0, invited: 1, maybe: 0, no: 0, yes: 1 },
+      }),
+    });
+
+    expect(screen.getByText("1 guest")).toBeTruthy();
+    expect(screen.getByText("1 yes")).toBeTruthy();
+    expect(screen.queryByText(/\b0 (?:yes|no|maybe|awaiting)/u)).toBeNull();
   });
 
   it("renders nothing RSVP-related when RSVP is absent or null", () => {
@@ -274,7 +289,7 @@ describe(EventDetailPanel, () => {
     });
 
     expect(
-      screen.queryByText(/^\d+ (?:invited|yes|no|awaiting|maybe)$/u)
+      screen.queryByText(/\d+ (?:guests?|yes|no|awaiting|maybe)/u)
     ).toBeNull();
 
     rerender(
@@ -286,7 +301,7 @@ describe(EventDetailPanel, () => {
     );
 
     expect(
-      screen.queryByText(/^\d+ (?:invited|yes|no|awaiting|maybe)$/u)
+      screen.queryByText(/\d+ (?:guests?|yes|no|awaiting|maybe)/u)
     ).toBeNull();
   });
 
@@ -395,7 +410,7 @@ describe(EventDetailPanel, () => {
     );
     await activateWithKeyboard(
       user,
-      screen.getByRole("button", { name: /copy/iu }),
+      screen.getByRole("button", { name: /cop(?:y|ied)/iu }),
       "Enter"
     );
     await activateWithKeyboard(
@@ -405,7 +420,7 @@ describe(EventDetailPanel, () => {
     );
     await activateWithKeyboard(
       user,
-      screen.getByRole("button", { name: /copy/iu }),
+      screen.getByRole("button", { name: /cop(?:y|ied)/iu }),
       " "
     );
 
@@ -429,7 +444,7 @@ describe(EventDetailPanel, () => {
 
     await activateWithKeyboard(
       user,
-      screen.getByRole("button", { name: /copy/iu }),
+      screen.getByRole("button", { name: /cop(?:y|ied)/iu }),
       "Enter"
     );
     await activateWithKeyboard(
@@ -444,7 +459,7 @@ describe(EventDetailPanel, () => {
     );
     await activateWithKeyboard(
       user,
-      screen.getByRole("button", { name: /copy/iu }),
+      screen.getByRole("button", { name: /cop(?:y|ied)/iu }),
       " "
     );
     await activateWithKeyboard(
@@ -464,6 +479,8 @@ describe(EventDetailPanel, () => {
     await expect(
       screen.findByRole("status", { name: /copied/iu })
     ).resolves.toHaveTextContent("Copied");
+    // The button confirms the copy itself, in place of its label.
+    expect(screen.getByRole("button", { name: "Copied" })).toBeVisible();
   });
 
   it("announces a clipboard rejection through a status region", async () => {
@@ -475,7 +492,7 @@ describe(EventDetailPanel, () => {
     });
     await activateWithKeyboard(
       user,
-      screen.getByRole("button", { name: /copy/iu }),
+      screen.getByRole("button", { name: /cop(?:y|ied)/iu }),
       "Enter"
     );
 
@@ -592,7 +609,7 @@ const richEvent = (): CalendarEvent =>
   });
 
 describe("EventDetailPanel default presentation", () => {
-  it("caps participants at six by default and reveals the rest on show-all", async () => {
+  it("caps participants at maxVisibleParticipants and lists every guest in the expanded view", async () => {
     const user = userEvent.setup();
     const attendees = makeAttendees(8);
 
@@ -606,8 +623,9 @@ describe("EventDetailPanel default presentation", () => {
 
     await user.click(screen.getByRole("button", { name: /\+2/u }));
 
-    expect(screen.getAllByText(/^Person \d+$/u)).toHaveLength(8);
-    expect(screen.getByText("Person 7")).toBeTruthy();
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getAllByText(/^Person \d+$/u)).toHaveLength(8);
+    expect(within(dialog).getByText("Person 7")).toBeTruthy();
   });
 
   it("renders the populated location, organizer, and description sections", () => {
