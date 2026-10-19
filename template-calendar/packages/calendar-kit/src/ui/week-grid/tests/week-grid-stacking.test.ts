@@ -90,4 +90,20 @@ describe("week surface stacking acceptance pins", () => {
       declarations(weekGridCss, ".nowLine::after").get("inline-size")
     ).toBe("var(--cal-now-segment-inline-size, 0)");
   });
+
+  it("centres the all-day gutter label and insets timed cards 1px", () => {
+    const gutter = declarations(weekGridCss, ".gutter.allDayGutter");
+    const card = declarations(weekGridCss, ".eventFrame.timedFrame > *");
+
+    assert(gutter.get("display")).toBe("flex");
+    assert(gutter.get("align-items")).toBe("center");
+    assert(gutter.get("block-size")).toBe("100%");
+    assert(
+      declarations(weekGridCss, ".timedFrame").get("margin-inline")
+    ).toBe("0 2px");
+    assert(card.get("inset-block")).toBe("var(--cal-border-width-1)");
+    assert(card.get("inset-inline")).toBe("var(--cal-border-width-1) 0");
+    assert(card.get("block-size")).toBe("auto");
+    assert(card.get("inline-size")).toBe("auto");
+  });
 });

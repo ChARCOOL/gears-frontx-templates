@@ -122,13 +122,13 @@
 .dayNumber {
   /* One line, so the label fits the today pill. */
   white-space: nowrap;
-  font-weight: var(--cal-text-grid-weight);
+  font-weight: var(--cal-text-label-weight);
 }
 
 .dayNumber.dayNumberNoFill {
   background: transparent;
   border: 0;
-  color: inherit;
+  color: var(--cal-color-muted);
 }
 
 .dayNumber.dayNumberToday {

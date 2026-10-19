@@ -127,8 +127,14 @@ export interface MonthGridProps extends CalendarContextProps {
     context: CalendarEventRenderContext,
     anchor?: HTMLElement
   ) => void;
-  /** An empty part of a day was activated (in `selectionMode="none"`). */
-  readonly onEmptyCellSelect?: (cell: CalendarCell) => void;
+  /**
+   * An empty part of a day was activated (in `selectionMode="none"`). `anchorRect` is the day
+   * cell's rectangle, for a popover.
+   */
+  readonly onEmptyCellSelect?: (
+    cell: CalendarCell,
+    anchorRect: DOMRectReadOnly
+  ) => void;
   /** The overflow chip was activated. `anchorRect` is the chip's rectangle, for a popover. */
   readonly onOverflowSelect?: (payload: {
     readonly date: CalendarDate;
@@ -742,7 +748,10 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     event.currentTarget.focus();
 
     if (!rangeMode) {
-      onEmptyCellSelect?.(cell.cell);
+      onEmptyCellSelect?.(
+        cell.cell,
+        event.currentTarget.getBoundingClientRect()
+      );
     }
   };
 
@@ -772,7 +781,10 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
       if (rangeMode) {
         rangeSelection.activate(cell.date);
       } else {
-        onEmptyCellSelect?.(cell.cell);
+        onEmptyCellSelect?.(
+          cell.cell,
+          event.currentTarget.getBoundingClientRect()
+        );
       }
     }
   };

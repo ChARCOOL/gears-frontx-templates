@@ -587,4 +587,16 @@ describe("DayGrid styles", () => {
     assert(event.get("block-size")).toBe("var(--grid-chip-height)");
     assert(event.get("inline-size")).toBe("100%");
   });
+
+  it("centres the all-day gutter label and insets timed cards 1px", () => {
+    const gutter = declarations(dayGridCss, ".allDayGutter");
+    const card = declarations(dayGridCss, ".eventLayer > .event > *");
+
+    assert(gutter.get("display")).toBe("flex");
+    assert(gutter.get("align-items")).toBe("center");
+    assert(card.get("inset-block")).toBe("var(--cal-border-width-1)");
+    assert(card.get("inset-inline")).toBe("var(--cal-border-width-1) 0");
+    assert(card.get("block-size")).toBe("auto");
+    assert(card.get("inline-size")).toBe("auto");
+  });
 });

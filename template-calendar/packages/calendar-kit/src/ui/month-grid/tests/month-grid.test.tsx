@@ -668,7 +668,8 @@ describe(MonthGrid, () => {
   });
 
   it("moves the roving tab stop when opening an empty month cell", () => {
-    const onEmptyCellSelect = vi.fn<(cell: CalendarCell) => void>();
+    const onEmptyCellSelect =
+      vi.fn<(cell: CalendarCell, anchorRect: DOMRectReadOnly) => void>();
     renderMonth({
       onEmptyCellSelect,
     });
@@ -676,8 +677,10 @@ describe(MonthGrid, () => {
     const cell = monthCell(0, 1);
     fireEvent.click(cell);
 
+    // The cell's own rectangle, so a host can anchor its create popover to the day.
     assert(onEmptyCellSelect).toHaveBeenCalledWith(
-      assert.objectContaining({ date: calendarDate("2025-09-02") })
+      assert.objectContaining({ date: calendarDate("2025-09-02") }),
+      cell.getBoundingClientRect()
     );
     assert(monthCell(0, 0).getAttribute("tabindex")).toBe("-1");
     assert(cell.getAttribute("tabindex")).toBe("0");
@@ -774,7 +777,8 @@ describe(MonthGrid, () => {
   });
 
   it("opens an empty month cell from the existing keyboard interaction", () => {
-    const onEmptyCellSelect = vi.fn<(cell: CalendarCell) => void>();
+    const onEmptyCellSelect =
+      vi.fn<(cell: CalendarCell, anchorRect: DOMRectReadOnly) => void>();
     renderMonth({
       onEmptyCellSelect,
     });
@@ -783,7 +787,8 @@ describe(MonthGrid, () => {
     fireEvent.keyDown(cell, { key: "Enter" });
 
     assert(onEmptyCellSelect).toHaveBeenCalledWith(
-      assert.objectContaining({ date: calendarDate("2025-09-01") })
+      assert.objectContaining({ date: calendarDate("2025-09-01") }),
+      cell.getBoundingClientRect()
     );
   });
 
@@ -926,6 +931,15 @@ describe("MonthGrid strip layout", () => {
     assert(
       declarations(monthGridStyles, ".weekNumber, .dayCell").has("block-size")
     ).toBe(false);
+  });
+
+  it("draws ordinary day numbers in the muted label style", () => {
+    assert(declarations(monthGridStyles, ".dayNumber").get("font-weight")).toBe(
+      "var(--cal-text-label-weight)"
+    );
+    assert(
+      declarations(monthGridStyles, ".dayNumber.dayNumberNoFill").get("color")
+    ).toBe("var(--cal-color-muted)");
   });
 
   it("insets month chips and all-day bars inside the day cells", () => {

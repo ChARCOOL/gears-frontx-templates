@@ -54,6 +54,7 @@ import { buildEventPresentation } from "../event-card/event-presentation";
 import type { CalendarGridProps } from "../grid/calendar-grid";
 import { baseCellContext, navigateGrid } from "../grid/grid-navigation";
 import type { GridCellRecord } from "../grid/grid-navigation";
+import { nowCoversHourLabel } from "../grid/now-label";
 import { useGridCells } from "../grid/use-grid-cells";
 import { Button } from "../primitives/button/button";
 import { ScrollRegion } from "../primitives/scroll-region/scroll-region";
@@ -703,10 +704,19 @@ interface WeekGridCellContentProps<Payload> {
   readonly unavailableCellKeys: ReadonlySet<string>;
 }
 
-const visibleGutterLabel = (meta: CellMeta): string | null =>
-  meta.slotIndex === null || meta.cell.startTime.endsWith(":00")
-    ? meta.label
-    : null;
+/** `now` is passed only where the now label is drawn: the leading gutter. */
+const visibleGutterLabel = (
+  meta: CellMeta,
+  now?: UtcInstant
+): string | null => {
+  if (meta.slotIndex === null) {
+    return meta.label;
+  }
+
+  const covered = now !== undefined && nowCoversHourLabel(meta.cell.start, now);
+
+  return meta.cell.startTime.endsWith(":00") && !covered ? meta.label : null;
+};
 
 const WeekGridCellContent = <Payload,>(
   props: WeekGridCellContentProps<Payload>
@@ -739,8 +749,14 @@ const WeekGridCellContent = <Payload,>(
 
   if (meta.kind === "gutter") {
     return (
-      <span className={clsx(styles.gutter, gutterClassName)}>
-        {visibleGutterLabel(meta)}
+      <span
+        className={clsx(
+          styles.gutter,
+          meta.slotIndex === null && styles.allDayGutter,
+          gutterClassName
+        )}
+      >
+        {visibleGutterLabel(meta, currentInstant)}
       </span>
     );
   }
