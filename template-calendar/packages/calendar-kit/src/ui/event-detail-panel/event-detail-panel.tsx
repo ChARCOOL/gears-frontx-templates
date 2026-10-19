@@ -392,7 +392,6 @@ const EventDetailPanelContent = (props: EventDetailPanelContentProps) => {
         container={container}
         dir={direction}
         label={title}
-        showBackdrop={false}
         showCloseButton={false}
         className={clsx(styles.expanded, className)}
       >

@@ -42,7 +42,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 ## Anchored preview
 
-The preview opens beside the card, on whichever side has room, with an arrow pointing at it; when neither side fits it opens below or above the card. Expand moves the same content into a dialog panel without a backdrop, and collapse returns it to the anchored preview. A newly selected event opens as the anchored preview again.
+The preview opens beside the card, on whichever side has room, with an arrow pointing at it; when neither side fits it opens below or above the card. Expand moves the same content into a centred dialog over a dimmed backdrop, where a press outside closes it without reaching the page, and collapse returns it to the anchored preview. A newly selected event opens as the anchored preview again.
 
 ## Composition
 

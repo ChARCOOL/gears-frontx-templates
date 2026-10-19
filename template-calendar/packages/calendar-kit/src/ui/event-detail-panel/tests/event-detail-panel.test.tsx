@@ -20,6 +20,8 @@ import { englishTranslate as t } from "../../../i18n/english";
 import { EventDetailPanel } from "../event-detail-panel";
 import type { EventDetailPanelProps } from "../event-detail-panel";
 
+import dialogStyles from "../../primitives/dialog/dialog.module.css";
+
 const BERLIN = parseIanaTimeZone("Europe/Berlin");
 
 const DATE = calendarDate("2026-08-24");
@@ -146,6 +148,38 @@ describe(EventDetailPanel, () => {
 
     rerender(<EventDetailPanel {...panelProps({ open: false })} />);
 
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("closes the expanded panel from its backdrop without pressing the control behind it", async () => {
+    const onClose = vi.fn<() => void>();
+    const onOutsidePress = vi.fn<() => void>();
+    render(
+      <>
+        <button onClick={onOutsidePress} type="button">
+          Outside control
+        </button>
+        <EventDetailPanel
+          {...panelProps({ defaultOpen: true, onClose, open: undefined })}
+        />
+      </>
+    );
+
+    expect(screen.getByRole("dialog", { name: EVENT_TITLE })).toBeVisible();
+
+    // The modal hides the page from assistive tech; the press lands on the backdrop above it.
+    const backdrop = document.querySelector<HTMLElement>(
+      `.${dialogStyles.backdrop}`
+    );
+
+    if (backdrop === null) {
+      throw new Error("Expected the dialog backdrop");
+    }
+
+    await userEvent.setup().click(backdrop);
+
+    expect(onOutsidePress).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
