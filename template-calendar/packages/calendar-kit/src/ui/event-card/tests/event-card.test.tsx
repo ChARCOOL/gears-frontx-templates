@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { declarations } from "../../../__test-utils__/css-declarations";
 import {
   allDayEvent,
   timedEvent,
@@ -22,6 +23,7 @@ import { EventCard } from "../event-card";
 import type { EventCardProps } from "../event-card";
 
 import cardStyles from "../event-card.module.css";
+import cardCss from "../event-card.module.css?raw";
 
 const DATE = calendarDate("2026-08-24");
 
@@ -732,5 +734,21 @@ describe("EventCard unit behaviour beyond the acceptance suite", () => {
 
     expect(card.textContent).toContain("All day");
     expect(card.textContent).not.toMatch(/\d{1,2}:\d{2}/u);
+  });
+});
+
+describe("EventCard styles", () => {
+  it("element-qualifies the card rules that tie with the ui-kit button", () => {
+    expect(declarations(cardCss, "button.card").get("position")).toBe(
+      "absolute"
+    );
+    expect(
+      declarations(cardCss, "button.card:focus-visible").get("box-shadow")
+    ).toBe("none");
+    expect(
+      declarations(cardCss, "button.card:not(.unavailable):hover").get(
+        "background-color"
+      )
+    ).toBe("var(--button-bg-hover)");
   });
 });

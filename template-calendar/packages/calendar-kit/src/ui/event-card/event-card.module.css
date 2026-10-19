@@ -1,4 +1,6 @@
-.card {
+/* The card is a ui-kit Button. Element-qualified so its layout beats the button's single-class
+   rules whichever stylesheet the host loads last. */
+button.card {
   position: absolute;
   box-sizing: border-box;
   display: flex;
@@ -33,7 +35,7 @@
 }
 
 /* box-shadow: none drops the Button primitive's inset ring. */
-.card:focus-visible {
+button.card:focus-visible {
   outline: var(--cal-focus-ring-width) solid var(--cal-color-focus-ring);
   outline-offset: var(--cal-border-width-1);
   box-shadow: none;
@@ -132,7 +134,7 @@
   border-color: var(--cal-color-orange-border);
 }
 
-.card:not(.unavailable):hover {
+button.card:not(.unavailable):hover {
   background-color: var(--button-bg-hover);
   color: var(--button-fg-hover);
 }
