@@ -72,6 +72,7 @@
 
 .allDay {
   display: grid;
+  flex-shrink: 0;
   grid-template-columns: var(--grid-gutter-width) minmax(0, 1fr);
   min-block-size: 44px;
   background: var(--cal-color-raised);
@@ -89,19 +90,26 @@
 
 .allDayGutter {
   composes: gutterBase;
+  display: flex;
+  align-items: center;
 }
 
 .allDayTrack {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-block-size: var(--grid-hour-height);
   padding: var(--cal-space-1);
   border-block-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
 }
 
-.allDayEvent {
-  inset-block-start: var(--cal-space-1);
-  inset-inline-start: var(--cal-space-1);
-  inline-size: calc(100% - var(--cal-space-2));
+/* One day has no lanes to compute, so all-day events stack in flow instead of sharing one spot.
+   Scoped to the track so it outranks the absolute .event below. */
+.allDayTrack > .allDayEvent {
+  position: relative;
+  flex: none;
+  inline-size: 100%;
   block-size: var(--grid-chip-height);
 }
 
@@ -200,6 +208,15 @@
 .dayEvent {
   inline-size: 100%;
   block-size: 100%;
+}
+
+/* Timed cards keep 1px off the hour line above and the column line before them, as in the
+   design; the 2px end gap is the wrapper's --calendar-event-inset. */
+.eventLayer > .event > * {
+  inset-block: var(--cal-border-width-1);
+  inset-inline: var(--cal-border-width-1) 0;
+  inline-size: auto;
+  block-size: auto;
 }
 
 .eventTime {

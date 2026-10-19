@@ -166,7 +166,8 @@
   line-height: var(--cal-text-meta-line-height);
 }
 
-.agendaEvent {
+/* Element-qualified so the slot keeps its layout whichever dependency stylesheet loads last. */
+button.agendaEvent {
   --agenda-slot-accent: #7498f8;
   display: block;
   inline-size: 100%;
@@ -189,13 +190,6 @@
 
 .agendaEvent {
   composes: focusRing from "../../styles/modules/focus-ring.module.css";
-}
-
-/* Element-qualified so the slot keeps its chrome regardless of dependency CSS order. */
-button.agendaEvent {
-  background: var(--cal-color-raised);
-  border: 0;
-  border-radius: 0;
 }
 
 /* Button wraps children in spans; keep them transparent to the slot grid. */
@@ -251,7 +245,7 @@ button.agendaEvent {
   outline-offset: var(--cal-border-width-1);
 }
 
-.agendaEvent:not(.unavailable):hover {
+button.agendaEvent:not(.unavailable):hover {
   background: var(--cal-state-hover);
 }
 
@@ -313,6 +307,15 @@ button.agendaEvent {
 /* Outranks the family rules above. */
 .agendaEvent.past .slotBar {
   background: var(--cal-color-muted);
+}
+
+/* A past slot greys out entirely, times included. */
+.agendaEvent.past .slotTimes,
+.agendaEvent.past .eventMetadata,
+.agendaEvent.past .slotTimeStart,
+.agendaEvent.past .slotTimeAllDay,
+.agendaEvent.past .slotTimeEnd {
+  color: var(--cal-color-muted);
 }
 
 .segmentStart {

@@ -272,7 +272,9 @@ const AgendaEventButtonImpl = ({ row }: AgendaEventButtonProps) => {
     <AgendaEventContent relativeHint={relativeHint} row={row} />
   );
 
-  const joinUrl = isSafeHttpUrl(row.event.joinUrl) ? row.event.joinUrl : null;
+  // A finished event has nothing left to join.
+  const joinUrl =
+    !row.past && isSafeHttpUrl(row.event.joinUrl) ? row.event.joinUrl : null;
 
   return (
     <span className={clsx(styles.slotRow, "slotRow")}>

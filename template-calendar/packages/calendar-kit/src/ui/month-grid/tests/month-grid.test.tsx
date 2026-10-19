@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import { describe, expect as assert, it, vi } from "vitest";
 
+import { declarations } from "../../../__test-utils__/css-declarations";
 import {
   instant,
   timedEvent as fixtureTimedEvent,
@@ -158,7 +159,9 @@ const expectAttribute = (
 };
 
 const monthCell = (rowIndex: number, columnIndex: number): HTMLElement => {
-  const cells = within(screen.getByRole("grid")).getAllByRole("gridcell");
+  const cells = within(screen.getByRole("grid"))
+    .getAllByRole("gridcell")
+    .filter((element) => element.hasAttribute("data-cell-key"));
   const cell = cells[rowIndex * 7 + columnIndex];
 
   if (cell === undefined) {
@@ -306,8 +309,13 @@ describe(MonthGrid, () => {
     fireEvent.keyDown(spanChips[0], { key: "Enter" });
 
     assert(spanChips).toHaveLength(2);
-    assert(spanChips[0]?.getAttribute("aria-colspan")).toBe("4");
-    assert(spanChips[1]?.getAttribute("aria-colspan")).toBe("2");
+    const spanCells = spanChips.map((chip) =>
+      chip.closest('[role="gridcell"]')
+    );
+    assert(spanCells[0]?.getAttribute("aria-colspan")).toBe("4");
+    assert(spanCells[1]?.getAttribute("aria-colspan")).toBe("2");
+    assert(spanCells[0]?.getAttribute("aria-colindex")).toBe("5");
+    assert(spanChips[0]?.hasAttribute("aria-colspan")).toBeFalsy();
     assert(spanChips[0]?.dataset.continuesAfter).toBe("true");
     assert(spanChips[1]?.dataset.continuesBefore).toBe("true");
     assert(spanChips[0]?.getAttribute("style")).toContain("grid-column: 4 / 8");
@@ -638,7 +646,9 @@ describe(MonthGrid, () => {
     const chips = screen.getAllByRole("button", { name: /Six week span/u });
     assert(chips).toHaveLength(2);
     assert(
-      chips.map((chip) => chip.getAttribute("aria-rowindex"))
+      chips.map((chip) =>
+        chip.closest('[role="gridcell"]')?.getAttribute("aria-rowindex")
+      )
     ).toStrictEqual(["2", "3"]);
     assert(dayNumberOf(0, 0)).toBe("24");
     assert(dayNumberOf(5, 6)).toBe("6");
@@ -658,7 +668,8 @@ describe(MonthGrid, () => {
   });
 
   it("moves the roving tab stop when opening an empty month cell", () => {
-    const onEmptyCellSelect = vi.fn<(cell: CalendarCell) => void>();
+    const onEmptyCellSelect =
+      vi.fn<(cell: CalendarCell, anchorRect: DOMRectReadOnly) => void>();
     renderMonth({
       onEmptyCellSelect,
     });
@@ -666,8 +677,10 @@ describe(MonthGrid, () => {
     const cell = monthCell(0, 1);
     fireEvent.click(cell);
 
+    // The cell's own rectangle, so a host can anchor its create popover to the day.
     assert(onEmptyCellSelect).toHaveBeenCalledWith(
-      assert.objectContaining({ date: calendarDate("2025-09-02") })
+      assert.objectContaining({ date: calendarDate("2025-09-02") }),
+      cell.getBoundingClientRect()
     );
     assert(monthCell(0, 0).getAttribute("tabindex")).toBe("-1");
     assert(cell.getAttribute("tabindex")).toBe("0");
@@ -764,7 +777,8 @@ describe(MonthGrid, () => {
   });
 
   it("opens an empty month cell from the existing keyboard interaction", () => {
-    const onEmptyCellSelect = vi.fn<(cell: CalendarCell) => void>();
+    const onEmptyCellSelect =
+      vi.fn<(cell: CalendarCell, anchorRect: DOMRectReadOnly) => void>();
     renderMonth({
       onEmptyCellSelect,
     });
@@ -773,7 +787,8 @@ describe(MonthGrid, () => {
     fireEvent.keyDown(cell, { key: "Enter" });
 
     assert(onEmptyCellSelect).toHaveBeenCalledWith(
-      assert.objectContaining({ date: calendarDate("2025-09-01") })
+      assert.objectContaining({ date: calendarDate("2025-09-01") }),
+      cell.getBoundingClientRect()
     );
   });
 
@@ -876,6 +891,81 @@ describe("MonthGrid strip layout", () => {
         "--cal-month-all-day-row-count"
       )
     ).toBe("1");
+  });
+
+  it("fits the chip capacity to the measured cell height", () => {
+    const date = calendarDate("2025-09-04");
+    const allDay = eventFixture({
+      allDay: true,
+      end: instant(calendarDate("2025-09-05"), "00:00"),
+      id: "measured-all-day",
+      start: instant(date, "00:00"),
+      title: "All-day band",
+    });
+    const timedEvents = Array.from({ length: 4 }, (_, index) =>
+      eventFixture({
+        end: instant(date, `${String(11 + index).padStart(2, "0")}:00`),
+        id: `measured-timed-${index + 1}`,
+        start: instant(date, `${String(10 + index).padStart(2, "0")}:00`),
+      })
+    );
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+      DOMRect.fromRect({ height: 270, width: 120 })
+    );
+
+    renderMonth({ events: [allDay, ...timedEvents] });
+
+    assert(within(monthCell(0, 3)).queryByText(/hidden/u)).toBeNull();
+  });
+
+  it("lets week rows fill the view height above the minimum row height", () => {
+    const monthGrid = declarations(monthGridStyles, ".monthGrid");
+
+    assert(monthGrid.get("flex")).toBe("1 0 auto");
+    assert(monthGrid.get("grid-auto-rows")).toBe(
+      "minmax(calc(135.2px + var(--cal-border-width-1)), 1fr)"
+    );
+    assert(declarations(monthGridStyles, ".weekRow").has("block-size")).toBe(
+      false
+    );
+    assert(
+      declarations(monthGridStyles, ".weekNumber, .dayCell").has("block-size")
+    ).toBe(false);
+  });
+
+  it("draws ordinary day numbers in the muted label style", () => {
+    assert(declarations(monthGridStyles, ".dayNumber").get("font-weight")).toBe(
+      "var(--cal-text-label-weight)"
+    );
+    assert(
+      declarations(monthGridStyles, ".dayNumber.dayNumberNoFill").get("color")
+    ).toBe("var(--cal-color-muted)");
+  });
+
+  it("insets month chips and all-day bars inside the day cells", () => {
+    assert(declarations(monthGridStyles, ".dayCell").get("padding")).toBe(
+      "6px"
+    );
+    assert(
+      declarations(monthGridStyles, ".eventSlot > button").get(
+        "padding-inline-start"
+      )
+    ).toBe("3px");
+    assert(
+      declarations(monthGridStyles, ".allDaySlot").get("margin-inline")
+    ).toBe("6px");
+    assert(
+      declarations(
+        monthGridStyles,
+        '.allDaySlot:has(> [data-continues-before="true"])'
+      ).get("margin-inline-start")
+    ).toBe("0");
+    assert(
+      declarations(
+        monthGridStyles,
+        '.allDaySlot:has(> [data-continues-after="true"])'
+      ).get("margin-inline-end")
+    ).toBe("0");
   });
 
   it("uses the no-fill regular Tag for ordinary dates and the red pill Tag with the full date for today", () => {

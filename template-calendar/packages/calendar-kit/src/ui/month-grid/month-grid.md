@@ -40,7 +40,7 @@ By default the week column labels each row `W1`…`Wn`, the week's index inside 
 | `defaultSelectedEventId` | `string` |  | Initial selected event when uncontrolled. |
 | `monthData` | `MonthGridData` |  | Density cap and host-known hidden counts. |
 | `now` | `UtcInstant` |  | Reference instant for the today marker and past styling. Omit to follow the wall clock. |
-| `onEmptyCellSelect` | `(cell: CalendarCell) => void` |  | An empty part of a day was activated (in `selectionMode="none"`). |
+| `onEmptyCellSelect` | `(cell: CalendarCell, anchorRect: DOMRectReadOnly) => void` |  | An empty part of a day was activated (in `selectionMode="none"`). `anchorRect` is the day cell's rectangle, for a popover. |
 | `onEventSelect` | `(event: CalendarEvent, context: CalendarEventRenderContext<unknown>, anchor?: HTMLElement…` |  | An available event was activated. `anchor` is the strip element. |
 | `onOverflowSelect` | `(payload: { readonly date: CalendarDate; readonly anchorRect?: DOMRectReadOnly \| undefine…` |  | The overflow chip was activated. `anchorRect` is the chip's rectangle, for a popover. |
 | `onSelectedDateRangeChange` | `(range: CalendarDateRange \| null) => void` |  | Called when a range is committed or cleared. |
@@ -75,7 +75,7 @@ Set `selectionMode="date-range"` to let the user pick whole days, as a term or e
 
 ## Accessibility and interaction
 
-The root is an ARIA grid with week row headers and localized column labels. Day cells use roving `tabIndex`; Arrow keys move between rows and columns, Home/End move to row boundaries, and RTL mirrors horizontal movement. Enter/Space on an empty cell calls `onEmptyCellSelect` with its `CalendarCell`.
+The root is an ARIA grid with week row headers and localized column labels. Day cells use roving `tabIndex`; Arrow keys move between rows and columns, Home/End move to row boundaries, and RTL mirrors horizontal movement. Enter/Space on an empty cell calls `onEmptyCellSelect` with its `CalendarCell` and the cell's rectangle, for anchoring a popover.
 
 Event cards reuse `EventCard` and expose `data-event-id`, accessible names, selected/unavailable state, Enter/Space activation, and conflict content through `ConflictIndicator`. The overflow chip is a button that announces the hidden count and calls `onOverflowSelect` with the date and the chip's rectangle.
 

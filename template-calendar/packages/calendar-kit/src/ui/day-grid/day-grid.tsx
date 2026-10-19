@@ -52,6 +52,7 @@ import type {
 import { EventCard } from "../event-card/event-card";
 import { CalendarGrid } from "../grid/calendar-grid";
 import type { CalendarGridProps } from "../grid/calendar-grid";
+import { nowCoversHourLabel } from "../grid/now-label";
 import { buildEventAnnouncement } from "./day-grid-format";
 
 import styles from "./day-grid.module.css";
@@ -715,7 +716,8 @@ const DayGridContent = (props: DayGridContentProps) => {
 
   const gutterLabels = slotStarts.map((slotStart) => (
     <div className={clsx(styles.gutterHour, gutterClassName)} key={slotStart}>
-      {isHourStart(slotStart, timeZone)
+      {isHourStart(slotStart, timeZone) &&
+      !nowCoversHourLabel(slotStart, currentInstant)
         ? formatGridTime(slotStart, timeZone, locale)
         : null}
     </div>

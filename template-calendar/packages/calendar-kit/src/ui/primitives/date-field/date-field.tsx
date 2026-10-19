@@ -26,7 +26,10 @@ import styles from "./date-field.module.css";
 /** Monday-first, as the design system's date picker draws its weeks. */
 const DEFAULT_WEEK_START = 1;
 
-const EMPTY_RECT = new DOMRect(0, 0, 0, 0);
+// Built on demand, not at module load: the package root is imported in Node (SSR, dev mock
+// servers), where DOMRect does not exist.
+const anchorRectOf = (element: HTMLElement | null): DOMRect =>
+  element?.getBoundingClientRect() ?? new DOMRect(0, 0, 0, 0);
 
 /** Local dates keep react-day-picker's own local-time day arithmetic intact. */
 const toLocalDate = (value: CalendarDate): Date =>
@@ -150,7 +153,7 @@ const DateField = ({
   }, []);
 
   const getAnchorRect = useCallback(
-    (): DOMRect => anchorRef.current?.getBoundingClientRect() ?? EMPTY_RECT,
+    (): DOMRect => anchorRectOf(anchorRef.current),
     []
   );
 
@@ -173,7 +176,7 @@ const DateField = ({
     const anchorDate = value === "" ? (defaultMonthDate ?? "") : value;
 
     setVisibleMonth(anchorDate === "" ? new Date() : toLocalDate(anchorDate));
-    setAnchorRect(anchorRef.current?.getBoundingClientRect() ?? EMPTY_RECT);
+    setAnchorRect(anchorRectOf(anchorRef.current));
   }, [defaultMonthDate, value]);
 
   const closeCalendar = useCallback((): void => {
