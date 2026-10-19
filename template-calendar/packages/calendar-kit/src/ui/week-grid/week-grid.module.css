@@ -115,6 +115,12 @@
   line-height: var(--cal-text-meta-line-height);
 }
 
+.gutter.allDayGutter {
+  display: flex;
+  align-items: center;
+  block-size: 100%;
+}
+
 .weekday {
   composes: weekdayLabel from "../../styles/modules/text.module.css";
   display: block;
@@ -149,7 +155,16 @@
 }
 
 .timedFrame {
-  margin-inline: 2px;
+  margin-inline: 0 2px;
+}
+
+/* Timed cards keep 1px off the hour line above and the column line before them, as in the
+   design. Doubled class outranks the card's own size. */
+.eventFrame.timedFrame > * {
+  inset-block: var(--cal-border-width-1);
+  inset-inline: var(--cal-border-width-1) 0;
+  inline-size: auto;
+  block-size: auto;
 }
 
 .allDayFrame {

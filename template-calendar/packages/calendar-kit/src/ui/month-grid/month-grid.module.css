@@ -1,15 +1,15 @@
 .container {
-  composes: gridGeometry from "../../styles/modules/grid-geometry.module.css";
-  position: relative;
-  min-inline-size: 0;
-  color: var(--cal-color-text);
-  font-family: var(--cal-font-family);
+  composes: viewRoot from "../../styles/modules/layout.module.css";
 }
 
+/* Week rows share the view's height and never shrink below the minimum row height. */
 .monthGrid {
   position: relative;
   display: grid;
+  flex: 1 0 auto;
   grid-template-columns: minmax(42px, auto) repeat(7, minmax(0, 1fr));
+  grid-template-rows: auto;
+  grid-auto-rows: minmax(calc(135.2px + var(--cal-border-width-1)), 1fr);
   overflow: hidden;
   background: var(--cal-color-surface);
   border: var(--cal-border-width-1) solid var(--cal-color-grid-line-strong);
@@ -56,7 +56,6 @@
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
-  block-size: calc(135.2px + var(--cal-border-width-1));
   border-block-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
 }
 
@@ -68,7 +67,6 @@
 .dayCell {
   min-inline-size: 0;
   box-sizing: border-box;
-  block-size: 135.2px;
   overflow: hidden;
   border-inline-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
 }
@@ -89,7 +87,7 @@
 .dayCell {
   composes: focusRingInset from "../../styles/modules/focus-ring.module.css";
   position: relative;
-  padding: var(--cal-space-1);
+  padding: 6px;
   outline: none;
   background: var(--cal-color-surface);
 }
@@ -124,13 +122,13 @@
 .dayNumber {
   /* One line, so the label fits the today pill. */
   white-space: nowrap;
-  font-weight: var(--cal-text-grid-weight);
+  font-weight: var(--cal-text-label-weight);
 }
 
 .dayNumber.dayNumberNoFill {
   background: transparent;
   border: 0;
-  color: inherit;
+  color: var(--cal-color-muted);
 }
 
 .dayNumber.dayNumberToday {
@@ -151,7 +149,7 @@
   gap: var(--cal-space-1);
   min-block-size: 0;
   padding-block-start: calc(
-    var(--cal-month-all-day-row-count, 0) *
+    5px + var(--cal-month-all-day-row-count, 0) *
       (var(--grid-chip-height) + var(--cal-space-1))
   );
 }
@@ -165,6 +163,9 @@
 .eventSlot > button {
   min-block-size: var(--grid-chip-height);
   padding-block: 0;
+
+  /* Room for the colour bar; the card body adds its own gap before the text. */
+  padding-inline-start: 3px;
 }
 
 .eventSlot [data-event-card-single-line] > [data-event-card-time] {
@@ -180,13 +181,26 @@
   grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-auto-rows: var(--grid-chip-height);
   align-content: start;
-  gap: var(--cal-space-1);
-  padding: 28px var(--cal-space-1) var(--cal-space-1);
+  row-gap: var(--cal-space-1);
+
+  /* Below the cell padding, the day number tag and the gap above the timed chips. */
+  padding-block: calc(6px + var(--cal-space-5) + 5px) var(--cal-space-1);
   pointer-events: none;
 }
 
+/* Columns match the day cells; a bar is inset only where it starts or ends, not where it continues. */
 .allDaySlot {
+  inline-size: auto;
+  margin-inline: 6px;
   pointer-events: auto;
+}
+
+.allDaySlot:has(> [data-continues-before="true"]) {
+  margin-inline-start: 0;
+}
+
+.allDaySlot:has(> [data-continues-after="true"]) {
+  margin-inline-end: 0;
 }
 
 .overflow.overflow {

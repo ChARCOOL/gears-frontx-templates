@@ -139,4 +139,22 @@ describe("WeekGrid time axis", () => {
       });
     }).toThrow(RangeError);
   });
+
+  it("hides the leading hour label that the now label covers", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-24T10:20:00.000Z"));
+    renderWeek({
+      trailingGutter: true,
+      visibleHours: timeWindow("09:00", "12:00"),
+    });
+
+    const rows = timedRows();
+
+    assert(rows.map((row) => gutterText(row))).toStrictEqual([
+      "09:00",
+      "",
+      "11:00",
+    ]);
+    assert((rows[1]?.textContent ?? "").match(/10:00/gu)).toHaveLength(1);
+  });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { memo, useMemo, useState } from "react";
+import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type {
   CSSProperties,
   FocusEvent as ReactFocusEvent,
@@ -53,6 +53,7 @@ import type { CalendarEventRenderer } from "../../react/slots";
 import { ConflictIndicator } from "../conflict-indicator/conflict-indicator";
 import { EventCard } from "../event-card/event-card";
 import { Button } from "../primitives/button/button";
+import { noopCleanup } from "../primitives/global-event-listener";
 import { Tag } from "../primitives/tag/tag";
 import {
   buildLiveAnnouncement,
@@ -126,8 +127,14 @@ export interface MonthGridProps extends CalendarContextProps {
     context: CalendarEventRenderContext,
     anchor?: HTMLElement
   ) => void;
-  /** An empty part of a day was activated (in `selectionMode="none"`). */
-  readonly onEmptyCellSelect?: (cell: CalendarCell) => void;
+  /**
+   * An empty part of a day was activated (in `selectionMode="none"`). `anchorRect` is the day
+   * cell's rectangle, for a popover.
+   */
+  readonly onEmptyCellSelect?: (
+    cell: CalendarCell,
+    anchorRect: DOMRectReadOnly
+  ) => void;
   /** The overflow chip was activated. `anchorRect` is the chip's rectangle, for a popover. */
   readonly onOverflowSelect?: (payload: {
     readonly date: CalendarDate;
@@ -269,8 +276,6 @@ const MonthEventSlot = ({
       tabIndex={focused ? 0 : -1}
       style={gridStyle}
       data-color-family={event.colorFamily}
-      aria-colspan={allDay ? endColumn - startColumn : undefined}
-      aria-rowindex={allDay ? rowIndex + 2 : undefined}
       data-continues-before={allDay && continuesBefore ? "true" : undefined}
       data-continues-after={allDay && continuesAfter ? "true" : undefined}
       onSelect={onSelect}
@@ -282,7 +287,10 @@ const MonthEventSlot = ({
 
   return (
     <div
-      role="presentation"
+      role={allDay ? "gridcell" : "presentation"}
+      aria-colindex={allDay ? startColumn + 2 : undefined}
+      aria-colspan={allDay ? endColumn - startColumn : undefined}
+      aria-rowindex={allDay ? rowIndex + 2 : undefined}
       className={clsx(styles.eventSlot, "event", allDay && styles.allDaySlot)}
       style={gridStyle}
       onFocus={onFocus}
@@ -740,7 +748,10 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     event.currentTarget.focus();
 
     if (!rangeMode) {
-      onEmptyCellSelect?.(cell.cell);
+      onEmptyCellSelect?.(
+        cell.cell,
+        event.currentTarget.getBoundingClientRect()
+      );
     }
   };
 
@@ -770,7 +781,10 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
       if (rangeMode) {
         rangeSelection.activate(cell.date);
       } else {
-        onEmptyCellSelect?.(cell.cell);
+        onEmptyCellSelect?.(
+          cell.cell,
+          event.currentTarget.getBoundingClientRect()
+        );
       }
     }
   };
@@ -1055,10 +1069,40 @@ const MonthGridContent = (props: MonthGridContentProps) => {
     className
   );
   const weeksHeading = t("calendar.month.weeks").toUpperCase();
+  const gridRef = useRef<HTMLDivElement>(null);
+  const { setMeasuredCellHeight } = controller;
+  const rowCount = controller.rows.length;
+
+  // Rows stretch to the view's height, so the chip capacity follows the rendered cell, not a constant.
+  useLayoutEffect(() => {
+    const grid = gridRef.current;
+
+    if (grid === null) {
+      return noopCleanup;
+    }
+
+    const measure = (): void => {
+      const cell = grid.querySelector<HTMLElement>('[role="gridcell"]');
+
+      if (cell !== null) {
+        setMeasuredCellHeight(cell.getBoundingClientRect().height);
+      }
+    };
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(grid);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [setMeasuredCellHeight, rowCount]);
 
   return (
     <div className={styles.container}>
       <div
+        ref={gridRef}
         className={rootClassName}
         role="grid"
         aria-label={t("calendar.month.label")}

@@ -73,22 +73,37 @@ describe("week surface stacking acceptance pins", () => {
       } satisfies WeekGridProps)
     );
 
-    const nowLine = screen.getByRole("status", {
-      name: /Current time/u,
-    });
+    const nowLine = document.querySelector<HTMLElement>("[data-now-line]");
     assert(nowLine).toBeVisible();
+    assert(document.querySelectorAll("[data-now-line]")).toHaveLength(1);
     assert(
       screen.getAllByRole("status", { name: /Current time/u })
     ).toHaveLength(1);
 
     assert(
-      nowLine.style.getPropertyValue("--cal-now-segment-inline-start")
+      nowLine?.style.getPropertyValue("--cal-now-segment-inline-start")
     ).toBe("0%");
     assert(
-      nowLine.style.getPropertyValue("--cal-now-segment-inline-size")
+      nowLine?.style.getPropertyValue("--cal-now-segment-inline-size")
     ).toBe("20%");
     assert(
       declarations(weekGridCss, ".nowLine::after").get("inline-size")
     ).toBe("var(--cal-now-segment-inline-size, 0)");
+  });
+
+  it("centres the all-day gutter label and insets timed cards 1px", () => {
+    const gutter = declarations(weekGridCss, ".gutter.allDayGutter");
+    const card = declarations(weekGridCss, ".eventFrame.timedFrame > *");
+
+    assert(gutter.get("display")).toBe("flex");
+    assert(gutter.get("align-items")).toBe("center");
+    assert(gutter.get("block-size")).toBe("100%");
+    assert(
+      declarations(weekGridCss, ".timedFrame").get("margin-inline")
+    ).toBe("0 2px");
+    assert(card.get("inset-block")).toBe("var(--cal-border-width-1)");
+    assert(card.get("inset-inline")).toBe("var(--cal-border-width-1) 0");
+    assert(card.get("block-size")).toBe("auto");
+    assert(card.get("inline-size")).toBe("auto");
   });
 });
