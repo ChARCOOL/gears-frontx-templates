@@ -261,14 +261,8 @@ const resolveAnchorRect = (
   anchorRect ??
   createDefaultAnchorRect();
 
-const REPEAT_INTERVAL_OPTIONS: readonly ResourceItem[] = Array.from(
-  { length: 30 },
-  (_, index) => {
-    const value = String(index + 1);
-
-    return { label: value, value };
-  }
-);
+// The interval field takes 1 to 30, the range the custom repeat has always offered.
+const MAX_REPEAT_INTERVAL = 30;
 
 const resolveRepeatEndKind = (value: string): RepeatEndKind =>
   value === "on" ? "on" : "never";
@@ -545,6 +539,8 @@ const CustomRepeatView = ({
   const unitId = `${idPrefix}-repeat-unit`;
   const endGroupName = `${idPrefix}-repeat-end`;
   const unitItems = repeatUnitOptions(t);
+  // The field may be empty while a number is typed over; it shows the applied interval on blur.
+  const [intervalText, setIntervalText] = useState(String(state.interval));
   const endsLabel = t("calendar.create_event.repeat.ends");
   const neverLabel = t("calendar.create_event.repeat.never");
   const onLabel = t("calendar.create_event.repeat.on_date");
@@ -602,15 +598,25 @@ const CustomRepeatView = ({
           <span className={styles.repeatInlineLabel}>
             {t("calendar.create_event.repeat.every")}
           </span>
-          <Select
+          <Input
             id={intervalId}
             aria-label={t("calendar.create_event.repeat.every")}
-            options={REPEAT_INTERVAL_OPTIONS}
-            value={String(state.interval)}
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={MAX_REPEAT_INTERVAL}
+            value={intervalText}
             size="m"
-            showSelectedCheck
             className={styles.repeatInterval}
-            onValueChange={onChangeInterval}
+            onValueChange={(value) => {
+              setIntervalText(value);
+              if (value !== "") {
+                onChangeInterval(value);
+              }
+            }}
+            onBlur={() => {
+              setIntervalText(String(state.interval));
+            }}
           />
           <Select
             id={unitId}
@@ -1421,9 +1427,12 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
           className={styles.rowField}
           onChange={changeEndDate}
         />
-        {/* Always rendered to hold the four columns. */}
+        {/* Always rendered to hold the four columns; as in the design, empty until the dates span
+            a day. */}
         <span className={styles.dayCount}>
-          {t("calendar.create_event.dayCount", { count: dayCount })}
+          {dayCount > 0
+            ? t("calendar.create_event.dayCount", { count: dayCount })
+            : null}
         </span>
       </div>
 
@@ -1721,7 +1730,9 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
 
     changeCustomRepeat((current) => ({
       ...current,
-      interval: Number.isFinite(parsed) ? Math.max(1, parsed) : 1,
+      interval: Number.isFinite(parsed)
+        ? Math.min(MAX_REPEAT_INTERVAL, Math.max(1, parsed))
+        : 1,
     }));
   };
 
