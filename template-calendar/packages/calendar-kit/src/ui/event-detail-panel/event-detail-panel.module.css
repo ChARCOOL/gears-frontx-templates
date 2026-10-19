@@ -1,63 +1,61 @@
+/*
+ * Two type styles only, as in the design's side sheet: the title at 16px semi-bold, every other
+ * line at 14px regular, primary for values and secondary for supporting lines. Icons are the
+ * 16px glyph set in secondary, each on the first line of its row.
+ */
+
 .popover {
-  inline-size: min(420px, calc(100vw - var(--cal-space-4)));
+  inline-size: min(400px, calc(100vw - var(--cal-space-4)));
 }
 
-.expanded {
-  composes: expandedDialog from "../../styles/modules/overlay.module.css";
-}
-
-.expanded .content {
-  block-size: 100%;
-}
-
-.expanded .body {
-  flex: 1;
+/* The shared expanded size is a large fixed window; a detail is often a few rows, so this one is
+   narrower, grows with its content up to 80% of the viewport and scrolls inside. */
+.expanded.expanded {
+  block-size: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  inline-size: min(640px, calc(100vw - var(--cal-space-8)));
+  max-block-size: 80vh;
+  max-inline-size: none;
   overflow: hidden;
-  padding-block-end: 0;
+  padding: 0;
+}
+
+/* With columns, each column scrolls on its own and the body only holds them. */
+.expanded .body:has(> .columns) {
+  overflow: hidden;
 }
 
 .columns {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-rows: minmax(0, 1fr);
   min-block-size: 0;
-  block-size: 100%;
 }
 
 .mainColumn,
 .sideColumn {
   display: flex;
   flex-direction: column;
-  gap: var(--cal-space-4);
   min-block-size: 0;
   overflow-y: auto;
-  padding-block-end: var(--cal-space-6);
 }
 
 .mainColumn {
-  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
-  padding-inline-end: var(--cal-space-5);
+  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-divider);
+  padding-inline-end: var(--cal-space-3);
 }
 
 .sideColumn {
-  padding-inline-start: var(--cal-space-5);
-}
-
-.inviteeGroup {
-  display: flex;
-  flex-direction: column;
-  gap: var(--cal-space-1);
-  margin-block-start: var(--cal-space-2);
-}
-
-.invitees {
-  composes: listReset from "../../styles/modules/list.module.css";
-  display: flex;
-  flex-direction: column;
+  padding-inline-start: var(--cal-space-3);
 }
 
 @media (max-width: 720px) {
   .columns {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
     overflow-y: auto;
   }
 
@@ -72,77 +70,168 @@
   }
 
   .sideColumn {
+    border-block-start: var(--cal-border-width-1) solid
+      var(--cal-color-divider);
+    padding-block-start: var(--cal-space-3);
     padding-inline-start: 0;
   }
 }
 
+/* The header stays put and the body scrolls: the panel caps its height, so the content shrinks
+   to it rather than overflowing as one block. */
 .content {
   background: var(--cal-color-surface);
   color: var(--cal-color-text);
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   font-family: var(--cal-font-family);
   min-block-size: 0;
+  overflow: hidden;
 }
 
+/* One row: the title on the start side, the actions on the end side on its first line. The end
+   inset is half the start one because the close button's own padding makes up the rest. */
 .header {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
   flex-shrink: 0;
-  gap: var(--cal-space-1);
-  justify-content: space-between;
-  min-block-size: 64px;
-  padding: var(--cal-space-2) var(--cal-space-3) var(--cal-space-2)
-    var(--cal-space-5);
+  gap: var(--cal-space-3);
+  padding: var(--cal-space-4) var(--cal-space-2) 0 var(--cal-space-4);
 }
 
+/* A long title would grow the fixed header past the viewport; three lines, then an ellipsis.
+   The heading keeps the full text for screen readers. */
 .title {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
   color: var(--cal-color-text);
-  font-size: var(--cal-text-heading-size);
-  font-weight: var(--cal-text-heading-weight);
-  letter-spacing: var(--cal-text-heading-tracking);
-  line-height: var(--cal-text-heading-line-height);
+  display: -webkit-box;
+  flex: 1 1 auto;
+  font-size: var(--cal-text-title-size);
+  font-weight: var(--cal-text-title-weight);
+  line-height: var(--cal-text-title-line-height);
   margin: 0;
+  min-inline-size: 0;
+  overflow: hidden;
   overflow-wrap: anywhere;
 }
 
+.expanded .title {
+  -webkit-line-clamp: 5;
+}
+
+/* The 32px buttons centre on the title's 24px first line. */
 .headerActions {
-  composes: actionRow from "../../styles/modules/layout.module.css";
+  align-items: center;
+  display: flex;
+  flex: none;
+  gap: var(--cal-space-1);
+  margin-block: calc(
+    (var(--cal-text-title-line-height) - var(--cal-control-height-sm)) / 2
+  );
+}
+
+.headerAction {
+  --button-bg-hover: var(--cal-state-hover);
+  --button-fg: var(--cal-color-muted);
+  --button-fg-hover: var(--cal-color-muted);
+  border-radius: var(--cal-radius-md);
+}
+
+.deleteAction {
+  --button-fg: var(--cal-color-error);
+  --button-fg-hover: var(--cal-color-error);
+}
+
+.headerDivider {
+  align-self: center;
+  block-size: var(--cal-icon-size-sm);
+  margin-inline: var(--cal-space-1);
 }
 
 .headerSlot {
-  padding: 0 var(--cal-space-5) var(--cal-space-3);
+  flex-shrink: 0;
+  padding: var(--cal-space-3) var(--cal-space-4) 0;
 }
 
 .body {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--cal-space-4);
   min-block-size: 0;
   overflow-y: auto;
-  padding: 0 var(--cal-space-5) var(--cal-space-6);
+  padding: var(--cal-space-3) var(--cal-space-4) var(--cal-space-4);
 }
 
-.section {
+/* Groups as in calendar previews: time and joining, place, people, description, with a rule
+   between groups that have something to show. */
+.group {
   display: flex;
   flex-direction: column;
-  gap: var(--cal-space-1);
+  gap: var(--cal-space-2);
+}
+
+.group:empty {
+  display: none;
+}
+
+.group:not(:empty) ~ .group:not(:empty) {
+  border-block-start: var(--cal-border-width-1) solid var(--cal-color-divider);
+  margin-block-start: var(--cal-space-3);
+  padding-block-start: var(--cal-space-3);
+}
+
+.row {
+  align-items: start;
+  column-gap: var(--cal-space-3);
+  display: grid;
+  grid-template-columns: var(--cal-icon-size-sm) minmax(0, 1fr);
+  position: relative;
+}
+
+/* The icon box is one text line tall, so the icon centres on the row's first line. */
+.rowIcon {
+  composes: iconBox from "../../styles/modules/layout.module.css";
+  block-size: var(--cal-text-label-line-height);
+  color: var(--cal-color-muted);
+  inline-size: 100%;
+}
+
+.rowIcon svg,
+.headerAction svg {
+  block-size: var(--cal-icon-size-sm);
+  inline-size: var(--cal-icon-size-sm);
+}
+
+/* Join and Copy link are the row's first line, so the icon centres on the buttons. */
+.row:has(> .rowContent > .conferencingRow:first-child) > .rowIcon {
+  block-size: var(--cal-control-height-sm);
+}
+
+.rowContent {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
 }
 
 .sectionLabel {
-  composes: label from "../../styles/modules/text.module.css";
-  margin: 0;
+  composes: srOnly from "../../styles/modules/sr-only.module.css";
 }
 
 .text,
-.mutedText {
+.mutedText,
+.description {
   font-size: var(--cal-text-label-size);
+  font-weight: var(--cal-text-grid-weight);
   line-height: var(--cal-text-label-line-height);
   margin: 0;
   overflow-wrap: anywhere;
 }
 
-.text {
+.text,
+.description {
   color: var(--cal-color-text);
 }
 
@@ -150,13 +239,8 @@
   color: var(--cal-color-muted);
 }
 
-.caption {
-  color: var(--cal-color-muted);
-  font-size: var(--cal-text-meta-size);
-  font-weight: var(--cal-text-label-weight);
-  line-height: var(--cal-text-meta-line-height);
-  margin: 0;
-  overflow-wrap: anywhere;
+.description {
+  white-space: pre-line;
 }
 
 .slot {
@@ -165,40 +249,47 @@
   gap: var(--cal-space-2);
 }
 
+/* The same 12px from avatar to name as from a row's icon column to its text. */
 .person {
   align-items: center;
   display: flex;
-  gap: var(--cal-space-2);
-  padding-block: var(--cal-space-1);
+  gap: var(--cal-space-3);
 }
 
 .personText {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   min-inline-size: 0;
 }
 
-.organizerAvatar {
-  block-size: var(--cal-icon-size-lg);
-  flex-shrink: 0;
-  inline-size: var(--cal-icon-size-lg);
+/* The email under a person's name, and the label over a guest group, are the 12px medium
+   caption. */
+.personMeta,
+.groupLabel {
+  color: var(--cal-color-muted);
+  font-size: var(--cal-text-meta-size);
+  font-weight: var(--cal-text-label-weight);
+  line-height: var(--cal-text-meta-line-height);
+  margin: 0;
+}
+
+.personMeta {
+  overflow-wrap: anywhere;
 }
 
 .conferencingRow {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--cal-space-2);
-  margin-block-start: var(--cal-space-1);
 }
 
 .joinButton {
   align-items: center;
   background: var(--cal-color-action);
-  block-size: var(--cal-control-height-md);
+  block-size: var(--cal-control-height-sm);
   border-radius: var(--cal-radius-md);
   color: var(--cal-color-action-foreground);
   display: inline-flex;
-  flex: 1;
   font-size: var(--cal-text-label-size);
   font-weight: var(--cal-text-label-weight);
   justify-content: center;
@@ -206,78 +297,57 @@
   text-decoration: none;
 }
 
-.joinButton:focus-visible {
-  outline: 2px solid var(--cal-color-focus-ring-strong);
-  outline-offset: 2px;
-}
-
-.avatarStack {
-  composes: listReset from "../../styles/modules/list.module.css";
-  display: flex;
-  margin-block: var(--cal-space-2);
-}
-
-.avatarStack > li + li {
-  margin-inline-start: -3px;
-}
-
-.stackAvatar,
-.stackOverflow {
-  block-size: 28px;
-  border-radius: var(--cal-radius-pill);
-  box-shadow: 0 0 0 3px var(--cal-color-surface);
-  inline-size: 28px;
-}
-
-.stackOverflow {
-  align-items: center;
-  background: var(--cal-color-raised);
-  border: 0;
-  color: var(--cal-color-text);
-  cursor: pointer;
-  display: inline-flex;
-  font: inherit;
-  font-size: var(--cal-text-meta-size);
-  font-weight: var(--cal-text-title-weight);
-  justify-content: center;
-  padding: 0;
-}
-
+.joinButton:focus-visible,
 .stackOverflow:focus-visible {
   outline: 2px solid var(--cal-color-focus-ring-strong);
   outline-offset: 2px;
 }
 
-.rsvp {
-  color: var(--cal-color-muted);
+/* Side by side rather than overlapped: at 24px an overlap covers half of each avatar's initials. */
+.avatarStack {
+  composes: listReset from "../../styles/modules/list.module.css";
   display: flex;
   flex-wrap: wrap;
-  font-size: var(--cal-text-label-size);
-  font-weight: var(--cal-text-label-weight);
   gap: var(--cal-space-1);
-  line-height: var(--cal-text-label-line-height);
-  margin: 0;
+  margin-block-start: var(--cal-space-2);
 }
 
-.rsvpSegment {
+.stackAvatar,
+.stackOverflow {
+  block-size: var(--cal-icon-size-lg);
+  border-radius: var(--cal-radius-pill);
+  flex-shrink: 0;
+  inline-size: var(--cal-icon-size-lg);
+}
+
+/* The +N chip matches the avatars' initials, not the text lines. It grows into a pill for three
+   digits, and its border keeps it a shape on the near-white surface. */
+.stackOverflow {
   align-items: center;
+  background: var(--cal-color-raised);
+  border: var(--cal-border-width-1) solid var(--cal-color-divider);
+  box-sizing: border-box;
+  color: var(--cal-color-text);
+  cursor: pointer;
   display: inline-flex;
-  gap: var(--cal-space-1);
+  font: inherit;
+  font-size: var(--cal-text-meta-size);
+  font-weight: var(--cal-text-meta-weight);
+  inline-size: auto;
+  justify-content: center;
+  line-height: 1;
+  min-inline-size: var(--cal-icon-size-lg);
+  padding: 0 var(--cal-space-1);
 }
 
-.rsvpSeparator {
-  color: var(--cal-color-subtle);
-  font-size: 4px;
-  user-select: none;
+.inviteeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cal-space-2);
+  margin-block-start: var(--cal-space-3);
 }
 
-.divider {
-  background: var(--cal-color-grid-line);
-  block-size: 1px;
-  border: 0;
-  margin: 0;
-}
-
+.invitees,
 .conflicts {
   composes: listReset from "../../styles/modules/list.module.css";
   display: flex;
@@ -290,14 +360,16 @@
   border-inline-start: var(--cal-border-width-1) solid
     var(--cal-border-conflict);
   border-radius: var(--cal-radius-sm);
+  column-gap: var(--cal-space-2);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--cal-space-2);
+  font-size: var(--cal-text-label-size);
+  line-height: var(--cal-text-label-line-height);
   padding: var(--cal-space-2) var(--cal-space-3);
 }
 
 .conflictDimension {
-  font-weight: var(--cal-text-meta-weight);
+  color: var(--cal-color-muted);
 }
 
 .conflictLabel {
@@ -311,17 +383,10 @@
 }
 
 .footerSlot {
-  padding: 0 var(--cal-space-5) var(--cal-space-5);
+  flex-shrink: 0;
+  padding: 0 var(--cal-space-4) var(--cal-space-4);
 }
 
 .copyStatus {
-  color: var(--cal-color-success);
-  font-size: var(--cal-text-meta-size);
-  line-height: var(--cal-text-meta-line-height);
-  margin: 0;
-  padding: 0 var(--cal-space-5) var(--cal-space-3);
-}
-
-.copyStatusError {
-  color: var(--cal-color-error);
+  composes: srOnly from "../../styles/modules/sr-only.module.css";
 }
