@@ -64,4 +64,19 @@ describe("WeekGrid time display", () => {
     assert(nowLine).toBeVisible();
     assert(nowLine.textContent).toContain("09:58");
   });
+
+  it("names the now line from outside the grid, which may only own rows", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-24T06:58:00.000Z"));
+    renderWeek();
+
+    const nowStatus = screen.getByRole("status", {
+      name: "Current time: 09:58",
+    });
+
+    assert(nowStatus.closest('[role="grid"]')).toBeNull();
+    assert(
+      document.querySelector("[data-now-line]")?.getAttribute("aria-hidden")
+    ).toBe("true");
+  });
 });

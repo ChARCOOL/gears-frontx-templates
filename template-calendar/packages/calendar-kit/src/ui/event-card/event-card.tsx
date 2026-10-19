@@ -67,10 +67,6 @@ export interface EventCardProps<
   readonly style?: CSSProperties;
   /** Roving tab index set by the owning grid. */
   readonly tabIndex?: number;
-  /** Set by the owning grid for spanning all-day events. */
-  readonly "aria-colspan"?: number;
-  /** Set by the owning grid. */
-  readonly "aria-rowindex"?: number;
   /** Set by the owning grid for host CSS. */
   readonly "data-color-family"?: string;
   /** Marks a segment that continues from the previous day. */
@@ -688,8 +684,6 @@ const EventCardContent = <Payload = unknown,>(
     className,
     style,
     tabIndex,
-    "aria-colspan": ariaColspan,
-    "aria-rowindex": ariaRowIndex,
     "data-color-family": dataColorFamily,
     "data-continues-before": dataContinuesBefore,
     "data-continues-after": dataContinuesAfter,
@@ -757,8 +751,6 @@ const EventCardContent = <Payload = unknown,>(
       data-color-family={dataColorFamily}
       data-continues-before={dataContinuesBefore}
       data-continues-after={dataContinuesAfter}
-      aria-colspan={ariaColspan}
-      aria-rowindex={ariaRowIndex}
       data-event-id={event.id}
       aria-pressed={booleanAttribute(selected)}
       aria-describedby={hasDescription ? descriptionId : undefined}

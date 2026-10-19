@@ -24,8 +24,6 @@ import { EventCard } from "@gears-frontx/calendar-kit/event-card";
 | Prop | Type | Required | Description |
 | --- | --- | --- | --- |
 | `event` | `CalendarEvent<Payload>` | yes | The event to show. |
-| `aria-colspan` | `number` |  | Set by the owning grid for spanning all-day events. |
-| `aria-rowindex` | `number` |  | Set by the owning grid. |
 | `available` | `boolean` |  | Override for `event.available`. |
 | `className` | `string` |  | Class added to the component root. |
 | `conflicts` | `readonly CalendarConflict[]` |  | Conflicts to show. Default `event.conflicts`. |

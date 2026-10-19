@@ -73,19 +73,18 @@ describe("week surface stacking acceptance pins", () => {
       } satisfies WeekGridProps)
     );
 
-    const nowLine = screen.getByRole("status", {
-      name: /Current time/u,
-    });
+    const nowLine = document.querySelector<HTMLElement>("[data-now-line]");
     assert(nowLine).toBeVisible();
+    assert(document.querySelectorAll("[data-now-line]")).toHaveLength(1);
     assert(
       screen.getAllByRole("status", { name: /Current time/u })
     ).toHaveLength(1);
 
     assert(
-      nowLine.style.getPropertyValue("--cal-now-segment-inline-start")
+      nowLine?.style.getPropertyValue("--cal-now-segment-inline-start")
     ).toBe("0%");
     assert(
-      nowLine.style.getPropertyValue("--cal-now-segment-inline-size")
+      nowLine?.style.getPropertyValue("--cal-now-segment-inline-size")
     ).toBe("20%");
     assert(
       declarations(weekGridCss, ".nowLine::after").get("inline-size")

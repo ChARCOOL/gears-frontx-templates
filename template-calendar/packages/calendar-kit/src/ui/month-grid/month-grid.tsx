@@ -269,8 +269,6 @@ const MonthEventSlot = ({
       tabIndex={focused ? 0 : -1}
       style={gridStyle}
       data-color-family={event.colorFamily}
-      aria-colspan={allDay ? endColumn - startColumn : undefined}
-      aria-rowindex={allDay ? rowIndex + 2 : undefined}
       data-continues-before={allDay && continuesBefore ? "true" : undefined}
       data-continues-after={allDay && continuesAfter ? "true" : undefined}
       onSelect={onSelect}
@@ -282,7 +280,10 @@ const MonthEventSlot = ({
 
   return (
     <div
-      role="presentation"
+      role={allDay ? "gridcell" : "presentation"}
+      aria-colindex={allDay ? startColumn + 2 : undefined}
+      aria-colspan={allDay ? endColumn - startColumn : undefined}
+      aria-rowindex={allDay ? rowIndex + 2 : undefined}
       className={clsx(styles.eventSlot, "event", allDay && styles.allDaySlot)}
       style={gridStyle}
       onFocus={onFocus}

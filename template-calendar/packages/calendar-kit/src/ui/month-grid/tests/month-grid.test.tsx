@@ -158,7 +158,9 @@ const expectAttribute = (
 };
 
 const monthCell = (rowIndex: number, columnIndex: number): HTMLElement => {
-  const cells = within(screen.getByRole("grid")).getAllByRole("gridcell");
+  const cells = within(screen.getByRole("grid"))
+    .getAllByRole("gridcell")
+    .filter((element) => element.hasAttribute("data-cell-key"));
   const cell = cells[rowIndex * 7 + columnIndex];
 
   if (cell === undefined) {
@@ -306,8 +308,13 @@ describe(MonthGrid, () => {
     fireEvent.keyDown(spanChips[0], { key: "Enter" });
 
     assert(spanChips).toHaveLength(2);
-    assert(spanChips[0]?.getAttribute("aria-colspan")).toBe("4");
-    assert(spanChips[1]?.getAttribute("aria-colspan")).toBe("2");
+    const spanCells = spanChips.map((chip) =>
+      chip.closest('[role="gridcell"]')
+    );
+    assert(spanCells[0]?.getAttribute("aria-colspan")).toBe("4");
+    assert(spanCells[1]?.getAttribute("aria-colspan")).toBe("2");
+    assert(spanCells[0]?.getAttribute("aria-colindex")).toBe("5");
+    assert(spanChips[0]?.hasAttribute("aria-colspan")).toBeFalsy();
     assert(spanChips[0]?.dataset.continuesAfter).toBe("true");
     assert(spanChips[1]?.dataset.continuesBefore).toBe("true");
     assert(spanChips[0]?.getAttribute("style")).toContain("grid-column: 4 / 8");
@@ -638,7 +645,9 @@ describe(MonthGrid, () => {
     const chips = screen.getAllByRole("button", { name: /Six week span/u });
     assert(chips).toHaveLength(2);
     assert(
-      chips.map((chip) => chip.getAttribute("aria-rowindex"))
+      chips.map((chip) =>
+        chip.closest('[role="gridcell"]')?.getAttribute("aria-rowindex")
+      )
     ).toStrictEqual(["2", "3"]);
     assert(dayNumberOf(0, 0)).toBe("24");
     assert(dayNumberOf(5, 6)).toBe("6");

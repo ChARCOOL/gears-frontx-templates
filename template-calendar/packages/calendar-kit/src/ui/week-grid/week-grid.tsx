@@ -171,7 +171,7 @@ const WeekGridInteractionLayer = ({
   ref,
   timedRows,
 }: WeekGridInteractionLayerProps) => {
-  const { locale, t } = useCalendarLocalization();
+  const { locale } = useCalendarLocalization();
   const { timeZone } = useCalendarContext();
 
   const nowTime = formatGridTime(currentInstant, timeZone, locale);
@@ -200,14 +200,35 @@ const WeekGridInteractionLayer = ({
       {nowPosition !== null && (
         <div
           className={styles.nowLine}
-          role="status"
-          aria-label={`${t("calendar.week.currentTime")}: ${nowTime}`}
+          data-now-line
+          aria-hidden="true"
           style={nowLineStyle}
         >
           <span className={styles.nowLabel}>{nowTime}</span>
         </div>
       )}
     </ScrollRegion>
+  );
+};
+
+interface WeekGridNowStatusProps {
+  readonly currentInstant: UtcInstant;
+}
+
+/** Names the now line from outside the grid, because a grid may only own rows. */
+const WeekGridNowStatus = ({ currentInstant }: WeekGridNowStatusProps) => {
+  const { locale, t } = useCalendarLocalization();
+  const { timeZone } = useCalendarContext();
+  const nowTime = formatGridTime(currentInstant, timeZone, locale);
+
+  return (
+    <div
+      className={styles.liveRegion}
+      role="status"
+      aria-label={`${t("calendar.week.currentTime")}: ${nowTime}`}
+    >
+      {nowTime}
+    </div>
   );
 };
 
@@ -941,6 +962,9 @@ const WeekGridContent = <Payload = unknown,>(
         columnHeaderClassName={columnHeaderClassName}
         gutterClassName={gutterClassName}
       />
+      {nowPosition !== null && (
+        <WeekGridNowStatus currentInstant={currentInstant} />
+      )}
       <WeekGridLiveRegion text={liveRegionText} />
       <WeekGridDetail
         event={detailVisible ? selectedEvent : undefined}
