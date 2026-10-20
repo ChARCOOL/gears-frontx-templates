@@ -221,6 +221,15 @@ button.agendaEvent {
   min-inline-size: 0;
 }
 
+/* As designed, Join sits inside the row's band, so the band runs on under it. */
+.slotRow:has(> .joinButton) {
+  background: var(--cal-color-raised);
+}
+
+.slotRow:has(> .joinButton):has(> button.agendaEvent:not(.unavailable):hover) {
+  background: var(--cal-state-hover);
+}
+
 .joinButton {
   display: inline-flex;
   box-sizing: border-box;
