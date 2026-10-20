@@ -327,6 +327,25 @@ describe(AgendaView, () => {
     expect(screen.queryByText("09:58", { exact: true })).toBeNull();
   });
 
+  it("draws the now line at the injected instant instead of the wall clock", () => {
+    renderAgenda({
+      events: [
+        timedEvent(
+          "lunch",
+          "Lunch",
+          "2026-08-24T12:00:00.000Z",
+          "2026-08-24T13:00:00.000Z"
+        ),
+      ],
+      now: utcInstant("2026-08-24T12:30:00.000Z"),
+    });
+
+    expect(
+      requiredElement(document.querySelector("[data-current-time]"))
+        .textContent
+    ).toContain("12:30");
+  });
+
   it("renders the ordinary agenda with no alert region", () => {
     renderAgenda({ events: [] });
 
