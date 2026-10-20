@@ -55,6 +55,8 @@ export interface AgendaViewProps extends CalendarContextProps {
   readonly date: CalendarDate;
   /** Events to list. Days without events still render. */
   readonly events: readonly CalendarEvent[];
+  /** Reference instant for the now line, past rows and the live Join. Default: the wall clock. */
+  readonly now?: UtcInstant;
   /** Controlled selected event. */
   readonly selectedEventId?: string | null;
   /** Initial selected event when uncontrolled. */
@@ -507,6 +509,7 @@ const AgendaViewContent = ({
   date,
   defaultSelectedEventId,
   events,
+  now,
   onEventSelect,
   onSelectedEventIdChange,
   renderDayHeader,
@@ -520,6 +523,7 @@ const AgendaViewContent = ({
     date,
     defaultSelectedEventId,
     events,
+    now,
     onEventSelect,
     onSelectedEventIdChange,
     selectedEventId,

@@ -180,6 +180,7 @@ describe(formatRecurrenceSummary, () => {
       "Repeats every 2 weeks on Tuesday"
     );
     expect(summary("FREQ=DAILY")).toBe("Repeats every day");
+    expect(summary("FREQ=YEARLY")).toMatch(/^Repeats every year on /u);
   });
 
   it("hands a rule it cannot read to the consumer translation", () => {
