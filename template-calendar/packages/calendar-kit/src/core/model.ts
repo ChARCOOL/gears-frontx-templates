@@ -33,6 +33,7 @@ export type CalendarColorFamily =
   | "turquoise"
   | "purple"
   | "orange"
+  | "blue"
   | (string & Record<never, never>);
 
 export interface CalendarAttendee {
