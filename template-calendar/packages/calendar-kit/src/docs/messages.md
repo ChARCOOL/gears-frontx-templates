@@ -287,6 +287,9 @@ Event state words shared by the views.
 | `calendar.create_event.repeat.hint.weekly` | Repeats every week on {{weekdays}} | `weekdays` |
 | `calendar.create_event.repeat.hint.weeklyEvery_one` | Repeats every {{count}} week on {{weekdays}} | `count`, `weekdays` |
 | `calendar.create_event.repeat.hint.weeklyEvery_other` | Repeats every {{count}} weeks on {{weekdays}} | `count`, `weekdays` |
+| `calendar.create_event.repeat.hint.yearly` | Repeats every year on {{date}} | `date` |
+| `calendar.create_event.repeat.hint.yearlyEvery_one` | Repeats every {{count}} year on {{date}} | `count`, `date` |
+| `calendar.create_event.repeat.hint.yearlyEvery_other` | Repeats every {{count}} years on {{date}} | `count`, `date` |
 | `calendar.create_event.repeat.monthly` | Monthly |  |
 | `calendar.create_event.repeat.never` | Never |  |
 | `calendar.create_event.repeat.none` | Does not repeat |  |
@@ -385,9 +388,10 @@ Back and close in nested panels.
 
 <!-- generated:messages calendar.availability -->
 
-| Translation ID                | English      | Values |
-| ----------------------------- | ------------ | ------ |
-| `calendar.availability.label` | Availability |        |
+| Translation ID                | English       | Values |
+| ----------------------------- | ------------- | ------ |
+| `calendar.availability.empty` | No time slots |        |
+| `calendar.availability.label` | Availability  |        |
 
 <!-- /generated -->
 
