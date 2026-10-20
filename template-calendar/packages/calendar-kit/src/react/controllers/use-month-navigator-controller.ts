@@ -103,32 +103,27 @@ const collectEventDates = (
   return dates;
 };
 
+// Every month shows six weeks, the most any month spans, so paging months never changes the
+// navigator's height and moves the panel sections below it.
+const WEEKS_PER_MONTH_VIEW = 6;
+
 const buildNavigatorWeeks = (
   monthStart: CalendarDate,
-  monthEndExclusive: CalendarDate,
   timeZone: IanaTimeZone
 ): readonly MonthNavigatorWeek[] => {
-  const firstWeek = buildWeekRange(monthStart, timeZone);
-  const lastMonthDate = addCalendarDays(monthEndExclusive, -1);
-  const lastWeek = buildWeekRange(lastMonthDate, timeZone);
-  const firstDisplayDate = firstWeek.start;
-  const lastDisplayDateExclusive = lastWeek.endExclusive;
+  const firstDisplayDate = buildWeekRange(monthStart, timeZone).start;
 
-  const weeks: MonthNavigatorWeek[] = [];
-
-  let weekStart = firstDisplayDate;
-
-  while (weekStart < lastDisplayDateExclusive) {
-    const currentWeekStart = weekStart;
-    const dates = Array.from({ length: DAYS_PER_WEEK }, (_, index) =>
-      addCalendarDays(currentWeekStart, index)
+  return Array.from({ length: WEEKS_PER_MONTH_VIEW }, (_week, weekIndex) => {
+    const weekStart = addCalendarDays(
+      firstDisplayDate,
+      weekIndex * DAYS_PER_WEEK
+    );
+    const dates = Array.from({ length: DAYS_PER_WEEK }, (_day, index) =>
+      addCalendarDays(weekStart, index)
     );
 
-    weeks.push({ dates, key: `month-week:${weekStart}` });
-    weekStart = addCalendarDays(weekStart, DAYS_PER_WEEK);
-  }
-
-  return weeks;
+    return { dates, key: `month-week:${weekStart}` };
+  });
 };
 
 const dayStepForKey = (key: string): number | null => {
@@ -208,9 +203,8 @@ export const useMonthNavigatorController = (
   );
 
   const weeks = useMemo(
-    () =>
-      buildNavigatorWeeks(monthRange.start, monthRange.endExclusive, timeZone),
-    [monthRange.start, monthRange.endExclusive, timeZone]
+    () => buildNavigatorWeeks(monthRange.start, timeZone),
+    [monthRange.start, timeZone]
   );
 
   const datesWithEvents = useMemo(
