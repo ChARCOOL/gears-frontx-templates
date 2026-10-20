@@ -61,6 +61,7 @@ const ACCENT_CLASSES = new Map<string, string>([
   ["turquoise", styles.accentTurquoise],
   ["purple", styles.accentPurple],
   ["orange", styles.accentOrange],
+  ["blue", styles.accentBlue],
 ]);
 
 const CalendarListRowImpl = ({
