@@ -225,6 +225,7 @@ const COLOR_CLASSES: ReadonlyMap<string, string> = new Map([
   ["turquoise", styles.colorTurquoise],
   ["purple", styles.colorPurple],
   ["orange", styles.colorOrange],
+  ["blue", styles.colorBlue],
 ]);
 
 const SEGMENT_CLASSES: ReadonlyMap<AgendaEventRow["segment"], string> = new Map(

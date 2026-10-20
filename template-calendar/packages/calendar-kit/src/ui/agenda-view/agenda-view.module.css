@@ -285,6 +285,11 @@ button.agendaEvent:not(.unavailable):hover {
   color: var(--cal-color-orange-foreground);
 }
 
+.agendaEvent.colorBlue {
+  --agenda-slot-accent: var(--cal-color-blue-accent);
+  color: var(--cal-color-blue-foreground);
+}
+
 .slotBar {
   align-self: stretch;
   margin-block: var(--cal-space-1);
