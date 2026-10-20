@@ -6,9 +6,10 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   PencilLineIcon,
+  PlusIcon,
   XIcon,
 } from "lucide-react";
-import { Activity } from "react";
+import { Activity, useState } from "react";
 import type { ReactNode } from "react";
 
 import type {
@@ -136,12 +137,19 @@ const WorldClocksContent = ({
   const showCustomEditor = controller.editing && !!renderEditor;
   const addableIds = new Set(controller.addableTimeZoneIds);
 
+  // The header's add button opens the same picker edit mode shows, without the edit controls.
+  const [adding, setAdding] = useState(false);
+
+  const canAdd = controller.addableTimeZoneIds.length > 0;
+  const showAddPicker = canAdd && (controller.editing || adding);
+
   const handleAddValue = (value: string): void => {
     commitAddPickerValue(
       value,
       controller.addableTimeZoneIds,
       controller.addClock
     );
+    setAdding(false);
   };
 
   return (
@@ -171,9 +179,24 @@ const WorldClocksContent = ({
           size="sm"
           variant="ghost"
           onClick={() => {
+            setAdding(false);
             controller.toggleEditing();
           }}
         />
+        {!controller.editing && canAdd ? (
+          <Button
+            aria-label={t("calendar.panel.worldClocksAdd")}
+            aria-pressed={adding}
+            className={styles.edit}
+            leftIcon={<PlusIcon aria-hidden="true" />}
+            onlyIcon
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setAdding((current) => !current);
+            }}
+          />
+        ) : null}
       </header>
       <Activity mode={showCustomEditor ? "visible" : "hidden"}>
         {renderEditor?.(controller.availableTimeZoneIds, selectedIds)}
@@ -214,10 +237,16 @@ const WorldClocksContent = ({
             ))}
           </ul>
         )}
-        {controller.editing && controller.addableTimeZoneIds.length > 0 && (
+        {showAddPicker && (
           <Select
             aria-label={t("calendar.panel.worldClocksAdd")}
             className={styles.addSelect}
+            defaultOpen={!controller.editing}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) {
+                setAdding(false);
+              }
+            }}
             options={controller.availableTimeZoneIds.map((timeZoneId) => ({
               disabled: !addableIds.has(timeZoneId),
               label: timeZoneLabel(timeZoneId, t),

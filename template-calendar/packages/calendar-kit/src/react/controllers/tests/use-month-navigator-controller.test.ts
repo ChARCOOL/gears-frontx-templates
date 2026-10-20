@@ -89,6 +89,16 @@ describe(useMonthNavigatorController, () => {
     }
   });
 
+  it("shows six weeks even for a month that fits in four", () => {
+    const { result } = renderController({
+      selectedDate: calendarDate("2027-02-10"),
+    });
+
+    expect(result.current.weeks).toHaveLength(6);
+    expect(result.current.weeks[0]?.dates[0]).toBe("2027-02-01");
+    expect(result.current.weeks[5]?.dates[6]).toBe("2027-03-14");
+  });
+
   it("marks all-day dates before the exclusive end and timed viewer-day segments", () => {
     const { result } = renderController({
       events: [

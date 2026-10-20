@@ -18,6 +18,7 @@ Pass neutral `CalendarEvent` values together with the host's `t`, `locale`, `tim
 | `events` | `readonly CalendarEvent[]` | yes | Events to list. Days without events still render. |
 | `className` | `string` |  | Class added to the component root. |
 | `defaultSelectedEventId` | `string` |  | Initial selected event when uncontrolled. |
+| `now` | `UtcInstant` |  | Reference instant for the now line, past rows and the live Join. Default: the wall clock. |
 | `onEventSelect` | `(event: CalendarEvent, context: CalendarEventRenderContext<unknown>, anchor?: HTMLElement…` |  | An available event was activated. `anchor` is the row element. |
 | `onSelectedEventIdChange` | `(eventId: string \| null) => void` |  | Called when an event is selected or deselected. |
 | `renderDayHeader` | `(date: CalendarDate) => ReactNode` |  | Replaces a day's heading. |

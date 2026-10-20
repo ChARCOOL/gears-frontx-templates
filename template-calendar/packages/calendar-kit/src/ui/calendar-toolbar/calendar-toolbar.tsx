@@ -174,31 +174,34 @@ const CalendarToolbarContent = ({
           })}
         </div>
 
-        <div
-          className={styles.stepper}
-          role="group"
-          aria-label={t(activeOption.changeKey)}
-        >
-          <Button
-            size="l"
-            variant="ghost"
-            aria-label={t(activeOption.previousKey)}
-            onlyIcon
-            leftIcon={<ChevronLeft />}
-            onClick={onPrevious}
-          />
-          <Button
-            size="l"
-            variant="ghost"
-            aria-label={t(activeOption.nextKey)}
-            onlyIcon
-            leftIcon={<ChevronRight />}
-            onClick={onNext}
-          />
+        {/* The stepper and a host's trailing control share one 4px-spaced group, as in the design. */}
+        <div className={styles.end}>
+          <div
+            className={styles.stepper}
+            role="group"
+            aria-label={t(activeOption.changeKey)}
+          >
+            <Button
+              size="l"
+              variant="ghost"
+              aria-label={t(activeOption.previousKey)}
+              onlyIcon
+              leftIcon={<ChevronLeft />}
+              onClick={onPrevious}
+            />
+            <Button
+              size="l"
+              variant="ghost"
+              aria-label={t(activeOption.nextKey)}
+              onlyIcon
+              leftIcon={<ChevronRight />}
+              onClick={onNext}
+            />
+          </div>
+          {renderTrailing && (
+            <div className={styles.trailing}>{renderTrailing()}</div>
+          )}
         </div>
-        {renderTrailing && (
-          <div className={styles.trailing}>{renderTrailing()}</div>
-        )}
       </div>
     </header>
   );

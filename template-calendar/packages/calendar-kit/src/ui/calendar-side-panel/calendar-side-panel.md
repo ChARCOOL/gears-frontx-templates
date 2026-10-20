@@ -1,6 +1,6 @@
 # CalendarSidePanel
 
-`CalendarSidePanel` provides a controlled or uncontrolled full-height panel shell with one visible open/close toggle. It is closed by default, exposes the panel id through `aria-controls`, and restores focus to the collapse control when its opening focus origin is no longer connected.
+`CalendarSidePanel` provides a controlled or uncontrolled full-height panel shell with one visible open/close toggle. It is closed by default, exposes the panel id through `aria-controls`, and restores focus to the collapse control when its opening focus origin is no longer connected. To put the expand toggle in the toolbar instead, as the design does, pass `showCollapsedToggle={false}` and render `CalendarSidePanelToggle` with the panel's id, for example through the toolbar's `renderLeading` or `renderTrailing`; the toolbar keeps a trailing control 4px from the previous and next buttons.
 
 ```tsx
 <CalendarSidePanel
@@ -52,6 +52,7 @@ The panel composes its own search field, scroll container and decorative divider
 | `onQueryChange` | `(query: string) => void` |  | Called when the search query changes. |
 | `open` | `boolean` |  | Controlled open state. |
 | `query` | `string` |  | Controlled search query. |
+| `showCollapsedToggle` | `boolean` |  | Renders the expand toggle in the panel's place while collapsed. Default `true`; pass `false` when the host puts `CalendarSidePanelToggle` in its toolbar, as the design does. |
 | `slots` | `CalendarSidePanelSlots` |  | Replacements for individual sections. |
 
 Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`, `translations`; see [Internationalization](../../docs/i18n.md#per-component-overrides).

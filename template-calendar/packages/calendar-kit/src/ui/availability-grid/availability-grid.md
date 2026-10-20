@@ -17,7 +17,7 @@ The host supplies each `CalendarAvailabilityCell`; the kit does not fetch or int
 
 `selectedRange` and `onSelectedRangeChange` form the controlled contract. Use `defaultSelectedRange` for uncontrolled usage. `renderCell` receives the standard `CalendarCellContext` plus `available`.
 
-An empty `cells` collection still renders the ordinary grid structure with no rows. The kit does not create loading, error, or empty-state shells, alerts, or status regions; multi-step-flow and fetch-state presentation remains host-owned.
+An empty `cells` collection renders the grid structure with no rows and says "No time slots" (`calendar.availability.empty`) under it. The kit does not create loading or error shells, alerts, or status regions; multi-step-flow and fetch-state presentation remains host-owned.
 
 The component is intentionally independent of host-flow orchestration: a host that embeds a planning flow owns its steps, permissions, persistence, and any confirmation UI, and may use `onPaintSelect` to map the returned range into its own request model. No host-scheduling imports are required.
 
@@ -47,9 +47,10 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 
 <!-- generated:messages calendar.availability -->
 
-| Translation ID                | English      | Values |
-| ----------------------------- | ------------ | ------ |
-| `calendar.availability.label` | Availability |        |
+| Translation ID                | English       | Values |
+| ----------------------------- | ------------- | ------ |
+| `calendar.availability.empty` | No time slots |        |
+| `calendar.availability.label` | Availability  |        |
 
 <!-- /generated -->
 

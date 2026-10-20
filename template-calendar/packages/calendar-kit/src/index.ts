@@ -92,10 +92,14 @@ export type { ConflictIndicatorProps } from "./ui/conflict-indicator/public";
 export { CalendarToolbar } from "./ui/calendar-toolbar/public";
 export type { CalendarToolbarProps } from "./ui/calendar-toolbar/public";
 
-export { CalendarSidePanel } from "./ui/calendar-side-panel/public";
+export {
+  CalendarSidePanel,
+  CalendarSidePanelToggle,
+} from "./ui/calendar-side-panel/public";
 export type {
   CalendarSidePanelProps,
   CalendarSidePanelSlots,
+  CalendarSidePanelToggleProps,
 } from "./ui/calendar-side-panel/public";
 
 export { CalendarList } from "./ui/calendar-list/public";

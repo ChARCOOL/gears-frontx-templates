@@ -63,6 +63,7 @@ const DESCRIBED_FREQUENCIES: ReadonlySet<string> = new Set([
   "DAILY",
   "MONTHLY",
   "WEEKLY",
+  "YEARLY",
 ]);
 
 const describesRule = (rule: string): boolean =>
@@ -76,7 +77,7 @@ const describesRule = (rule: string): boolean =>
   });
 
 /** "Repeats every week on Monday", as the create form says it. A rule with parts the summary does
- * not read (COUNT, BYMONTHDAY, YEARLY, ...) goes to the consumer's translation as raw text rather
+ * not read (COUNT, BYMONTHDAY, ...) goes to the consumer's translation as raw text rather
  * than lose them. */
 export const formatRecurrenceSummary = (
   event: CalendarEvent,

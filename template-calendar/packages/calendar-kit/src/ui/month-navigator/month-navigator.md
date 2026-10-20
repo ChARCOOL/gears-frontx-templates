@@ -39,7 +39,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 ## Behaviour
 
-- **Weeks** render Sunday-first (US convention), unlike the main month grid's Monday-start rows; outside-month days stay in the grid, dimmed, and remain selectable.
+- **Weeks** render Sunday-first (US convention), unlike the main month grid's Monday-start rows. Every month shows six weeks, so paging months never changes the navigator's height; outside-month days stay in the grid, dimmed, and remain selectable.
 - **Month stepping** — the previous/next buttons and `PageUp`/`PageDown` share one rule: move the visible month by one and land focus on the selected date's day-of-month in the target month, clamped to its length.
 - **Keyboard**: arrows move by day (up/down by a week), `Home`/`End` jump to the focused week's edges, Enter and Space select. Focus moves across month boundaries are deferred until the month that owns the new date has rendered.
 - **Selection follow**: a controlled `selectedDate` change from anywhere (e.g. the main calendar) resets the visible month and focus to it.

@@ -257,6 +257,13 @@ describe(formatRepeatHint, () => {
     assert(hint("FREQ=MONTHLY")).toBe("Repeats every month on day 23");
   });
 
+  it("names the month and day of a yearly rule", () => {
+    assert(hint("FREQ=YEARLY")).toBe("Repeats every year on September 23");
+    assert(hint("FREQ=YEARLY;INTERVAL=2")).toBe(
+      "Repeats every 2 years on September 23"
+    );
+  });
+
   it("says nothing without a rule", () => {
     assert(hint("")).toBeUndefined();
   });

@@ -129,6 +129,12 @@ describe(AvailabilityGrid, () => {
     );
   });
 
+  it("says there are no time slots instead of drawing an empty grid", () => {
+    renderAvailability({ cells: [] });
+
+    expect(screen.getByText("No time slots")).toBeVisible();
+  });
+
   it("keeps the cell label in the accessibility tree without rendering it as visible text", () => {
     renderAvailability({ renderCell: undefined });
 

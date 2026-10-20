@@ -96,7 +96,44 @@ export interface CalendarSidePanelProps extends CalendarContextProps {
   readonly onClose: () => void;
   /** Replacements for individual sections. */
   readonly slots?: CalendarSidePanelSlots;
+  /** Renders the expand toggle in the panel's place while collapsed. Default `true`; pass `false`
+   * when the host puts `CalendarSidePanelToggle` in its toolbar, as the design does. */
+  readonly showCollapsedToggle?: boolean;
 }
+
+export interface CalendarSidePanelToggleProps {
+  /** Class added to the button. */
+  readonly className?: string;
+  /** Id of the panel the toggle opens, for `aria-controls`. */
+  readonly panelId: string;
+  /** Called when the toggle is pressed. */
+  readonly onOpen: () => void;
+}
+
+/** The collapsed panel's expand control, for hosts that place it in their toolbar. */
+export const CalendarSidePanelToggle = ({
+  className,
+  panelId,
+  onOpen,
+}: CalendarSidePanelToggleProps) => {
+  const { direction, t } = useCalendarLocalization();
+
+  return (
+    <Button
+      aria-controls={panelId}
+      aria-expanded={false}
+      aria-label={t("calendar.panel.expand")}
+      className={clsx(styles.toggle, className)}
+      dir={direction}
+      leftIcon={sidePanelToggleIcon}
+      onlyIcon
+      size="sm"
+      type="button"
+      variant="ghost"
+      onClick={onOpen}
+    />
+  );
+};
 
 const PanelSearch = ({ clearQuery, query, setQuery }: PanelSearchProps) => {
   const { t } = useCalendarLocalization();
@@ -188,6 +225,7 @@ const CalendarSidePanelContent = ({
   onQueryChange,
   open,
   query,
+  showCollapsedToggle = true,
   slots,
 }: CalendarSidePanelContentProps) => {
   const { direction, t } = useCalendarLocalization();
@@ -212,21 +250,15 @@ const CalendarSidePanelContent = ({
 
   return (
     <>
-      <Activity mode={isOpen ? "hidden" : "visible"}>
-        <Button
-          aria-controls={id}
-          aria-expanded={false}
-          aria-label={t("calendar.panel.expand")}
-          className={clsx(styles.toggle, className)}
-          dir={direction}
-          leftIcon={sidePanelToggleIcon}
-          onlyIcon
-          size="sm"
-          type="button"
-          variant="ghost"
-          onClick={openPanel}
-        />
-      </Activity>
+      {showCollapsedToggle ? (
+        <Activity mode={isOpen ? "hidden" : "visible"}>
+          <CalendarSidePanelToggle
+            className={className}
+            panelId={id}
+            onOpen={openPanel}
+          />
+        </Activity>
+      ) : null}
       <Activity mode={isOpen ? "visible" : "hidden"}>
         <aside
           aria-label={t("calendar.panel.label")}
