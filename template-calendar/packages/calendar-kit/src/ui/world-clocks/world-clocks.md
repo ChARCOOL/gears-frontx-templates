@@ -1,6 +1,6 @@
 # WorldClocks
 
-A controlled list of world clocks. The host owns persistence and supplies both the ordered selected IDs and the offered directory; the component owns only its transient edit mode.
+A controlled list of world clocks. The host owns persistence and supplies both the ordered selected IDs and the offered directory; the component owns only its transient edit mode. A + button beside Edit opens the add picker straight away, without the edit controls, while any zone is left to add.
 
 ```tsx
 import { WorldClocks } from "@gears-frontx/calendar-kit/world-clocks";

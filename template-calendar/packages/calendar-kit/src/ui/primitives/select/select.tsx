@@ -14,6 +14,7 @@ import {
   useCallback,
   useMemo,
   useEffect,
+  useEffectEvent,
   useId,
   useRef,
   useState,
@@ -114,6 +115,10 @@ interface SelectProps extends Omit<
   readonly disabled?: boolean;
   readonly iconLeft?: ReactNode;
   readonly showSelectedCheck?: boolean;
+  /** Opens the list as soon as the select mounts. */
+  readonly defaultOpen?: boolean;
+  /** Called when the list opens or closes. */
+  readonly onOpenChange?: (open: boolean) => void;
   readonly ref?: Ref<HTMLButtonElement>;
 }
 
@@ -364,6 +369,8 @@ export const Select = ({
   placeholder = "",
   emptyMessage,
   showSelectedCheck = false,
+  defaultOpen = false,
+  onOpenChange,
   label,
   message,
   disabled = false,
@@ -408,6 +415,18 @@ export const Select = ({
     );
   }, []);
 
+  const reportOpenChange = useEffectEvent((nextOpen: boolean): void => {
+    onOpenChange?.(nextOpen);
+  });
+  const reportedOpenRef = useRef(false);
+
+  useEffect(() => {
+    if (reportedOpenRef.current !== open) {
+      reportedOpenRef.current = open;
+      reportOpenChange(open);
+    }
+  }, [open]);
+
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const [triggerElement, setTriggerElement] =
@@ -424,10 +443,18 @@ export const Select = ({
     [options]
   );
 
-  const setRootRef = useCallback((element: HTMLDivElement | null) => {
-    portalContainerRef.current =
-      element === null ? null : resolvePortalContainer(element);
-  }, []);
+  // The list portals into the root's container, so it can only open once the root is attached.
+  const setRootRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      portalContainerRef.current =
+        element === null ? null : resolvePortalContainer(element);
+
+      if (element !== null && defaultOpen) {
+        updateOpen(true);
+      }
+    },
+    [defaultOpen, updateOpen]
+  );
 
   const setTriggerRef = useCallback(
     (element: HTMLButtonElement | null) => {

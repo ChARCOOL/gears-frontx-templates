@@ -168,6 +168,27 @@ describe(WorldClocks, () => {
     expect(onChange).toHaveBeenCalledWith([BERLIN]);
   });
 
+  it("adds a clock from the header's add button without entering edit mode", async () => {
+    const onChange = vi.fn<(timeZoneIds: readonly IanaTimeZone[]) => void>();
+
+    render(<WorldClocks {...baseProps({ onChange })} />);
+
+    const user = userEvent.setup({ delay: null });
+    await user.click(screen.getByRole("button", { name: "Add clock" }));
+    await user.click(await screen.findByRole("option", { name: /London/u }));
+
+    expect(onChange).toHaveBeenCalledWith([BERLIN, SINGAPORE, LONDON]);
+    expect(
+      screen.queryByRole("button", { name: /Remove/u })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("combobox", { name: "Add clock" })
+    ).not.toBeInTheDocument();
+    expect(declarations(worldClocksCss, ".heading").get("flex")).toBe(
+      "1 1 auto"
+    );
+  });
+
   it("passes available and selected ids to the renderEditor slot in edit mode", async () => {
     render(
       <WorldClocks
