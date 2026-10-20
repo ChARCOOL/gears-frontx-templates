@@ -9,15 +9,17 @@
 }
 
 /* The shared expanded size is a large fixed window; a detail is often a few rows, so this one is
-   narrower, grows with its content up to 80% of the viewport and scrolls inside. */
+   narrower. It opens at a reading size, 800 by 520px, grows with its content up to 85% of the
+   viewport and scrolls inside. */
 .expanded.expanded {
   block-size: auto;
   display: flex;
   flex-direction: column;
   gap: 0;
-  inline-size: min(640px, calc(100vw - var(--cal-space-8)));
-  max-block-size: 80vh;
+  inline-size: min(800px, calc(100vw - var(--cal-space-8)));
+  max-block-size: 85vh;
   max-inline-size: none;
+  min-block-size: min(520px, 85vh);
   overflow: hidden;
   padding: 0;
 }
@@ -30,7 +32,7 @@
 .columns {
   display: grid;
   flex: 1 1 auto;
-  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-columns: minmax(0, 1fr) 260px;
   grid-template-rows: minmax(0, 1fr);
   min-block-size: 0;
 }
