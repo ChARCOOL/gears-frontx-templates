@@ -40,6 +40,17 @@
   flex: 0 0 auto;
 }
 
+/* The collapsed toggle keeps the open header's place: the same band offset, row height and
+   end inset, so it does not hop when the panel closes. */
+.collapsed {
+  box-sizing: content-box;
+  display: flex;
+  align-items: center;
+  block-size: var(--cal-control-height-md);
+  padding-block-start: calc((64px - var(--cal-control-height-md)) / 2);
+  padding-inline-end: var(--cal-space-4);
+}
+
 .clear {
   flex: 0 0 auto;
 }
