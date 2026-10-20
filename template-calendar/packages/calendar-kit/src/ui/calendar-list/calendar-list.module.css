@@ -46,7 +46,8 @@
 /* ui-kit stretches the tick to the whole swatch. */
 .accentTurquoise :global(svg),
 .accentPurple :global(svg),
-.accentOrange :global(svg) {
+.accentOrange :global(svg),
+.accentBlue :global(svg) {
   block-size: var(--cal-icon-size-xs);
   inline-size: var(--cal-icon-size-xs);
 }
@@ -54,7 +55,8 @@
 /* A surface-coloured tick contrasts with the accent fill in both themes. */
 .accentTurquoise[data-checked],
 .accentPurple[data-checked],
-.accentOrange[data-checked] {
+.accentOrange[data-checked],
+.accentBlue[data-checked] {
   color: var(--cal-color-surface);
 }
 
@@ -71,6 +73,11 @@
 .accentOrange[data-checked] {
   background-color: var(--cal-color-orange-accent);
   border-color: var(--cal-color-orange-accent);
+}
+
+.accentBlue[data-checked] {
+  background-color: var(--cal-color-blue-accent);
+  border-color: var(--cal-color-blue-accent);
 }
 
 .name {
@@ -94,7 +101,8 @@
 
   .accentTurquoise[data-checked],
   .accentPurple[data-checked],
-  .accentOrange[data-checked] {
+  .accentOrange[data-checked],
+  .accentBlue[data-checked] {
     background-color: Highlight;
     border-color: CanvasText;
   }

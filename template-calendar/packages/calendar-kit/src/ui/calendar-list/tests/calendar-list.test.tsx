@@ -2,10 +2,14 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { declarations } from "../../../__test-utils__/css-declarations";
 import type { CalendarRef } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
 import { CalendarList } from "../calendar-list";
 import type { CalendarListProps } from "../calendar-list";
+
+import styles from "../calendar-list.module.css";
+import calendarListCss from "../calendar-list.module.css?raw";
 
 const CALENDARS: readonly CalendarRef[] = [
   { colorFamily: "turquoise", id: "cal-courses", name: "Courses" },
@@ -120,5 +124,33 @@ describe(CalendarList, () => {
     expect(screen.getByRole("region")).toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).toBeNull();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("fills a checked blue calendar with the blue accent", () => {
+    render(
+      <CalendarList
+        {...baseProps({
+          calendars: [{ colorFamily: "blue", id: "cal-blue", name: "Blue" }],
+        })}
+      />
+    );
+
+    const forcedColors = calendarListCss.slice(
+      calendarListCss.indexOf("@media (forced-colors: active)")
+    );
+
+    expect(screen.getByRole("checkbox", { name: "Blue" })).toHaveClass(
+      styles.accentBlue
+    );
+    expect(
+      declarations(calendarListCss, ".accentBlue[data-checked]").get(
+        "background-color"
+      )
+    ).toBe("var(--cal-color-blue-accent)");
+    expect(
+      declarations(forcedColors, ".accentBlue[data-checked]").get(
+        "background-color"
+      )
+    ).toBe("Highlight");
   });
 });

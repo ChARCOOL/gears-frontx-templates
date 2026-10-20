@@ -2,6 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { declarations } from "../../../__test-utils__/css-declarations";
 import { timedEvent, UTC } from "../../../__test-utils__/fixtures";
 import { utcInstant } from "../../../core/model";
 import type { CalendarEvent } from "../../../core/model";
@@ -12,6 +13,7 @@ import type {
   SearchResultsProps,
 } from "../search-results";
 import styles from "../search-results.module.css";
+import searchResultsCss from "../search-results.module.css?raw";
 
 const NOW = utcInstant("2026-08-24T08:00:00.000Z");
 
@@ -120,6 +122,21 @@ describe(SearchResults, () => {
     expect(
       screen.getByRole("button", { name: /Introduction to Chemistry/iu })
     ).toHaveClass(styles.result, styles.colorPurple);
+  });
+
+  it("draws a blue event's colour bar from the blue accent", () => {
+    vi.useFakeTimers();
+    renderResults("chemistry", {
+      events: EVENTS.map((event) => ({ ...event, colorFamily: "blue" })),
+    });
+    settle();
+
+    expect(
+      screen.getByRole("button", { name: /Introduction to Chemistry/iu })
+    ).toHaveClass(styles.colorBlue);
+    expect(
+      declarations(searchResultsCss, ".colorBlue").get("--search-result-bar")
+    ).toBe("var(--cal-color-blue-accent)");
   });
 
   it("uses absolute headers beyond the relative day labels", () => {

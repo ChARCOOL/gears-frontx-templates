@@ -47,6 +47,10 @@
   --cal-color-orange-border: var(--warning, #d97706);
   --cal-color-orange-accent: var(--warning, #d97706);
   --cal-color-orange-pattern: var(--warning, #d97706);
+  --cal-color-blue-background: var(--blue-soft, #e8eefe);
+  --cal-color-blue-foreground: var(--blue, #37569c);
+  --cal-color-blue-border: var(--blue, #37569c);
+  --cal-color-blue-accent: var(--blue-accent, #7498f8);
 
   --cal-font-family: var(--font-sans, "Inter", sans-serif);
   --cal-text-heading-size: var(--text-heading-1-size, 1.125rem);
@@ -183,6 +187,7 @@
   --cal-slot-selected-foreground: var(--foreground, #f8fafc);
   --cal-color-turquoise-background: var(--info-soft, #06262b);
   --cal-color-orange-background: var(--warning-soft, #2e240a);
+  --cal-color-blue-background: var(--blue-soft, #e8eefe);
   --cal-state-hover: var(--card-hover, #151c29);
   color-scheme: dark;
 }
@@ -209,6 +214,7 @@
     --cal-slot-selected-foreground: var(--foreground, #f8fafc);
     --cal-color-turquoise-background: var(--info-soft, #06262b);
     --cal-color-orange-background: var(--warning-soft, #2e240a);
+    --cal-color-blue-background: var(--blue-soft, #e8eefe);
     --cal-state-hover: var(--card-hover, #151c29);
     color-scheme: dark;
   }
