@@ -99,6 +99,10 @@
   --search-result-bar: var(--cal-color-orange-accent);
 }
 
+.colorBlue {
+  --search-result-bar: var(--cal-color-blue-accent);
+}
+
 .content {
   display: flex;
   min-inline-size: 0;
