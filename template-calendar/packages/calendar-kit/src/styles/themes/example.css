@@ -43,6 +43,9 @@
   --warning-soft: #ffeadb;
   --accent: #f8eaff;
   --accent-foreground: #841dba;
+  --blue: #37569c;
+  --blue-soft: #e8eefe;
+  --blue-accent: #7498f8;
 
   --font-sans: "Inter Variable", Inter, sans-serif;
   --text-heading-1-size: 18px;

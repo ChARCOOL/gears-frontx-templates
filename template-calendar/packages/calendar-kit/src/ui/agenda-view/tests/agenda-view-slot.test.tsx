@@ -12,6 +12,7 @@ import type { CalendarEvent, UtcInstant } from "../../../core/model";
 import { AgendaView } from "../agenda-view";
 import type { AgendaViewProps } from "../agenda-view";
 
+import agendaStyles from "../agenda-view.module.css";
 import agendaViewCss from "../agenda-view.module.css?raw";
 
 // Before every event below, so none of them is past unless a test moves the clock.
@@ -196,5 +197,26 @@ describe("agenda event slot", () => {
         declarations(agendaViewCss, `.agendaEvent.past ${part}`).get("color")
       ).toBe(rowColor);
     }
+  });
+
+  it("paints a blue row from the blue family tokens", () => {
+    renderAgenda([
+      {
+        ...timedEvent(
+          "blue",
+          "2026-08-24T09:00:00.000Z",
+          "2026-08-24T10:30:00.000Z"
+        ),
+        colorFamily: "blue",
+      },
+    ]);
+
+    const blue = declarations(agendaViewCss, ".agendaEvent.colorBlue");
+
+    assert(screen.getByRole("button")).toHaveClass(agendaStyles.colorBlue);
+    assert(blue.get("--agenda-slot-accent")).toBe(
+      "var(--cal-color-blue-accent)"
+    );
+    assert(blue.get("color")).toBe("var(--cal-color-blue-foreground)");
   });
 });

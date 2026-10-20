@@ -705,6 +705,7 @@ describe("EventCard unit behaviour beyond the acceptance suite", () => {
       { className: cardStyles.colorTurquoise, colorFamily: "turquoise" },
       { className: cardStyles.colorPurple, colorFamily: "purple" },
       { className: cardStyles.colorOrange, colorFamily: "orange" },
+      { className: cardStyles.colorBlue, colorFamily: "blue" },
     ] as const;
 
     for (const { colorFamily, className } of colours) {
@@ -759,6 +760,17 @@ describe("EventCard styles", () => {
         "background-color"
       )
     ).toBe("var(--button-bg-hover)");
+  });
+
+  it("paints a blue card from the blue family tokens", () => {
+    const blue = declarations(cardCss, ".card.selected.colorBlue");
+
+    expect(blue.get("--button-bg")).toBe("var(--cal-color-blue-background)");
+    expect(blue.get("--button-fg")).toBe("var(--cal-color-blue-foreground)");
+    expect(blue.get("--event-card-bar-color")).toBe(
+      "var(--cal-color-blue-accent)"
+    );
+    expect(blue.get("border-color")).toBe("var(--cal-color-blue-border)");
   });
 
   it("keeps family colours on past and busy cards and hovers at 90%", () => {
