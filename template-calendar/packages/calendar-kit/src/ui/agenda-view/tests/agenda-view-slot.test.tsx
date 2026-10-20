@@ -16,6 +16,7 @@ import agendaViewCss from "../agenda-view.module.css?raw";
 
 // Before every event below, so none of them is past unless a test moves the clock.
 const MORNING = utcInstant("2026-08-24T08:00:00.000Z");
+const DURING_CALL = utcInstant("2026-08-24T09:30:00.000Z");
 
 const renderAgenda = (
   events: readonly CalendarEvent[],
@@ -82,19 +83,22 @@ describe("agenda event slot", () => {
   });
 
   it("renders the slot grid, the attendee faces and the join action", () => {
-    renderAgenda([
-      {
-        ...timedEvent(
-          "call",
-          "2026-08-24T09:00:00.000Z",
-          "2026-08-24T10:30:00.000Z",
-          {
-            attendees: 8,
-          }
-        ),
-        joinUrl: "https://meet.example.com/call",
-      },
-    ]);
+    renderAgenda(
+      [
+        {
+          ...timedEvent(
+            "call",
+            "2026-08-24T09:00:00.000Z",
+            "2026-08-24T10:30:00.000Z",
+            {
+              attendees: 8,
+            }
+          ),
+          joinUrl: "https://meet.example.com/call",
+        },
+      ],
+      DURING_CALL
+    );
 
     assert(screen.getByRole("button")).toHaveTextContent("call");
     assert(within(screen.getByRole("button")).getByText("09:00")).toBeVisible();
@@ -106,6 +110,21 @@ describe("agenda event slot", () => {
 
     assert(join).toHaveAttribute("href", "https://meet.example.com/call");
     assert(join.closest("button")).toBeNull();
+  });
+
+  it("leaves out the join action before the event starts", () => {
+    renderAgenda([
+      {
+        ...timedEvent(
+          "call",
+          "2026-08-24T09:00:00.000Z",
+          "2026-08-24T10:30:00.000Z"
+        ),
+        joinUrl: "https://meet.example.com/call",
+      },
+    ]);
+
+    assert(screen.queryByRole("link")).toBeNull();
   });
 
   it("leaves out the join action once the event has ended", () => {
@@ -127,16 +146,19 @@ describe("agenda event slot", () => {
   });
 
   it("leaves out the join action when the event carries no safe link", () => {
-    renderAgenda([
-      {
-        ...timedEvent(
-          "unsafe",
-          "2026-08-24T09:00:00.000Z",
-          "2026-08-24T10:30:00.000Z"
-        ),
-        joinUrl: ["java", "script:alert(1)"].join(""),
-      },
-    ]);
+    renderAgenda(
+      [
+        {
+          ...timedEvent(
+            "unsafe",
+            "2026-08-24T09:00:00.000Z",
+            "2026-08-24T10:30:00.000Z"
+          ),
+          joinUrl: ["java", "script:alert(1)"].join(""),
+        },
+      ],
+      DURING_CALL
+    );
 
     assert(screen.queryByRole("link")).toBeNull();
   });
