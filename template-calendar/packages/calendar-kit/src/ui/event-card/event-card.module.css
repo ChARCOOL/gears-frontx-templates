@@ -190,6 +190,12 @@ button.card.unavailable {
   max-inline-size: calc(100% - var(--cal-icon-size-xs) - var(--cal-space-1));
 }
 
+/* One-line cards have no room beside the title. */
+.card[data-event-card-layout="single"] .recurrenceIcon,
+.card[data-event-card-layout="title"] .recurrenceIcon {
+  display: none;
+}
+
 .recurrenceIcon {
   position: absolute;
   inset-block-start: calc(var(--cal-space-1) + var(--cal-space-1) / 2);

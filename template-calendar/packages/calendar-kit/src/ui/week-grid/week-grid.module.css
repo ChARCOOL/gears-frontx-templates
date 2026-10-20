@@ -150,6 +150,12 @@
   composes: unavailable from "../../styles/modules/state.module.css";
 }
 
+/* A slot under a busy event refuses input, but the event card already draws the busy state; a
+   grey fill behind the grey card read as a second, wider block. The day grid draws none either. */
+.unavailableSlot {
+  cursor: not-allowed;
+}
+
 .eventFrame {
   position: absolute;
   z-index: 2;

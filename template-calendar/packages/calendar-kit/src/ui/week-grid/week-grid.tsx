@@ -775,7 +775,7 @@ const WeekGridCellContent = <Payload,>(
       <div
         className={clsx(
           styles.cellContent,
-          unavailable && styles.unavailable,
+          unavailable && styles.unavailableSlot,
           cellClassName
         )}
       >

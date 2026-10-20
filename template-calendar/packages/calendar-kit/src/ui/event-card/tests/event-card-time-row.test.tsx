@@ -87,13 +87,22 @@ describe("EventCard default timed time row", () => {
     );
   });
 
-  it("renders no clock icon when the consumer supplies renderTime", () => {
+  it("keeps the clock icon beside the time a consumer renders", () => {
     const renderTime = vi.fn<() => ReactNode>(() => (
       <span>09:00–10:00 CET</span>
     ));
     const { container } = renderCard({ renderTime });
 
     expect(screen.getByText("09:00–10:00 CET")).toBeVisible();
+    expect(container.querySelector("svg.lucide-clock")).not.toBeNull();
+    expect(renderTime).toHaveBeenCalledOnce();
+  });
+
+  it("removes the whole time row when renderTime returns nothing", () => {
+    const renderTime = vi.fn<() => ReactNode>(() => null);
+    const { container } = renderCard({ renderTime });
+
+    expect(container.querySelector('[data-event-card-time="true"]')).toBeNull();
     expect(container.querySelector("svg.lucide-clock")).toBeNull();
     expect(renderTime).toHaveBeenCalledOnce();
   });

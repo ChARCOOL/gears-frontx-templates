@@ -945,6 +945,10 @@ describe("MonthGrid strip layout", () => {
     ).toBe("var(--cal-color-muted)");
   });
 
+  it("marks today with the day-number pill alone, without a top line on the cell", () => {
+    assert(monthGridStyles).not.toMatch(/\.today\b/u);
+  });
+
   it("insets month chips and all-day bars inside the day cells", () => {
     assert(declarations(monthGridStyles, ".dayCell").get("padding")).toBe(
       "6px"

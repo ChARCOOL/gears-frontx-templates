@@ -479,8 +479,8 @@ describe("EventCard geometry tiers", () => {
       [21, "single"],
       [39, "single"],
       [40, "stacked"],
-      [87, "stacked"],
-      [88, "full"],
+      [55, "stacked"],
+      [56, "full"],
       [126, "full"],
     ];
 
@@ -489,6 +489,15 @@ describe("EventCard geometry tiers", () => {
       expect(getCard()).toHaveAttribute("data-event-card-layout", layout);
       unmount();
     }
+  });
+
+  it("hides the recurrence icon on one-line cards", () => {
+    expect(
+      declarations(
+        cardCss,
+        '.card[data-event-card-layout="single"] .recurrenceIcon, .card[data-event-card-layout="title"] .recurrenceIcon'
+      ).get("display")
+    ).toBe("none");
   });
 
   it("uses the one-line treatment at the 21px compact boundary", () => {
