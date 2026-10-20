@@ -373,6 +373,10 @@ describe("calendar theme contract", () => {
     );
 
     assert(dark.get("--cal-color-text")).toBe("var(--foreground, #f8fafc)");
+    // react-kit's dark blue surface, so a blue card is not a light block on a dark grid.
+    assert(dark.get("--cal-color-blue-background")).toBe(
+      "var(--blue-soft, #262d47)"
+    );
     assert(dark.get("--cal-color-muted")).toBe(
       "var(--muted-foreground, #8d96a8)"
     );
