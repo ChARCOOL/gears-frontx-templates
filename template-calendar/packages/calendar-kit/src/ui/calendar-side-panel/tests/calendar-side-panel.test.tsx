@@ -6,7 +6,10 @@ import { UTC } from "../../../__test-utils__/fixtures";
 import { calendarDate } from "../../../core/model";
 import type { CalendarRef } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
-import { CalendarSidePanel } from "../calendar-side-panel";
+import {
+  CalendarSidePanel,
+  CalendarSidePanelToggle,
+} from "../calendar-side-panel";
 import type { CalendarSidePanelProps } from "../calendar-side-panel";
 
 const PANEL_ID = "calendar-side-panel";
@@ -95,6 +98,33 @@ describe(CalendarSidePanel, () => {
       panelVisible: true,
       toggleAfterOpen: null,
     });
+  });
+
+  it("leaves the collapsed toggle to the host when showCollapsedToggle is false", () => {
+    render(
+      <CalendarSidePanel
+        {...baseProps({ open: false, showCollapsedToggle: false })}
+      />
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Expand panel" })
+    ).not.toBeInTheDocument();
+  });
+
+  it("opens the panel from a CalendarSidePanelToggle placed elsewhere", async () => {
+    const onOpen = vi.fn<() => void>();
+
+    render(
+      <CalendarSidePanelToggle panelId={PANEL_ID} onOpen={onOpen} />
+    );
+
+    const toggle = screen.getByRole("button", { name: "Expand panel" });
+    await userEvent.setup({ delay: null }).click(toggle);
+
+    expect(toggle).toHaveAttribute("aria-controls", PANEL_ID);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(onOpen).toHaveBeenCalledOnce();
   });
 
   it("closes from the panel toggle and reports the close intent", async () => {

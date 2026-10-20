@@ -588,3 +588,16 @@ describe("CalendarToolbar in a narrow host", () => {
     expect(declarations(toolbarCss, ".actions").get("flex")).toBe("1 1 auto");
   });
 });
+
+describe("CalendarToolbar end group", () => {
+  it("keeps the stepper and the trailing slot 4px apart in one group", () => {
+    renderToolbar({ renderTrailing: () => <span>trailing-slot</span> });
+
+    expect(screen.getByRole("group").parentElement).toBe(
+      screen.getByText("trailing-slot").parentElement?.parentElement
+    );
+    expect(declarations(toolbarCss, ".end").get("gap")).toBe(
+      "var(--cal-space-1)"
+    );
+  });
+});

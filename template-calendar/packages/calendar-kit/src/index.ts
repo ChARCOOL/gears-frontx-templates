@@ -312,11 +312,15 @@ export { MonthNavigator } from "./ui/month-navigator/public";
 
 export type { MonthNavigatorProps } from "./ui/month-navigator/public";
 
-export { CalendarSidePanel } from "./ui/calendar-side-panel/public";
+export {
+  CalendarSidePanel,
+  CalendarSidePanelToggle,
+} from "./ui/calendar-side-panel/public";
 
 export type {
   CalendarSidePanelProps,
   CalendarSidePanelSlots,
+  CalendarSidePanelToggleProps,
 } from "./ui/calendar-side-panel/public";
 
 export { CalendarList } from "./ui/calendar-list/public";
