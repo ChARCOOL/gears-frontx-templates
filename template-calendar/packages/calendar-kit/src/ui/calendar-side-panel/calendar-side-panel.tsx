@@ -252,11 +252,13 @@ const CalendarSidePanelContent = ({
     <>
       {showCollapsedToggle ? (
         <Activity mode={isOpen ? "hidden" : "visible"}>
-          <CalendarSidePanelToggle
-            className={className}
-            panelId={id}
-            onOpen={openPanel}
-          />
+          <div className={styles.collapsed}>
+            <CalendarSidePanelToggle
+              className={className}
+              panelId={id}
+              onOpen={openPanel}
+            />
+          </div>
         </Activity>
       ) : null}
       <Activity mode={isOpen ? "visible" : "hidden"}>

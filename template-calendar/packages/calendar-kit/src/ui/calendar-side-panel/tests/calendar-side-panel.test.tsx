@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { declarations } from "../../../__test-utils__/css-declarations";
 import { UTC } from "../../../__test-utils__/fixtures";
 import { calendarDate } from "../../../core/model";
 import type { CalendarRef } from "../../../core/model";
@@ -11,6 +12,8 @@ import {
   CalendarSidePanelToggle,
 } from "../calendar-side-panel";
 import type { CalendarSidePanelProps } from "../calendar-side-panel";
+
+import sidePanelCss from "../calendar-side-panel.module.css?raw";
 
 const PANEL_ID = "calendar-side-panel";
 
@@ -261,6 +264,23 @@ describe(CalendarSidePanel, () => {
     );
 
     expect(onHiddenCalendarIdsChange).toHaveBeenCalledWith([]);
+  });
+
+  it("keeps the collapsed toggle where the open header puts it", () => {
+    const { container } = render(
+      <CalendarSidePanel {...baseProps()} defaultOpen={false} />
+    );
+
+    const collapsed = declarations(sidePanelCss, ".collapsed");
+
+    expect(
+      container.querySelector("[class*='collapsed'] > button")
+    ).not.toBeNull();
+    expect(collapsed.get("padding-block-start")).toBe(
+      "calc((64px - var(--cal-control-height-md)) / 2)"
+    );
+    expect(collapsed.get("block-size")).toBe("var(--cal-control-height-md)");
+    expect(collapsed.get("padding-inline-end")).toBe("var(--cal-space-4)");
   });
 
   it("does not invent a calendar-creation form when no creation slot is supplied", () => {
