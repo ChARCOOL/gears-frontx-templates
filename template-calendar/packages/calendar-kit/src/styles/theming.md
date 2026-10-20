@@ -109,7 +109,7 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 | `--accent` | Purple category background; dragging state | `#f3e8ff` | `#f8eaff` / `#484b5e` |
 | `--accent-foreground` | Purple category foreground, border, accent; dragging text | `#6d28d9` | `#841dba` / `#f3d7bf` |
 | `--blue` | Blue category foreground, border | `#37569c` | `#37569c` |
-| `--blue-soft` | Blue category background | `#e8eefe` | `#e8eefe` |
+| `--blue-soft` | Blue category background · **dark** | `#e8eefe` | `#e8eefe` |
 | `--blue-accent` | Blue category accent | `#7498f8` | `#7498f8` |
 
 ### Typography
