@@ -1011,7 +1011,6 @@ const CreateEventPopoverOverlay = ({
               container={portalContainer}
               label={t("calendar.create_event.create_dialog")}
               ref={setOverlayRef}
-              showBackdrop={false}
               showCloseButton={false}
               className={clsx(styles.dialog, styles.expanded, className)}
             >

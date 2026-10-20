@@ -64,6 +64,8 @@ export interface DayGridProps extends CalendarContextProps {
   readonly date: CalendarDate;
   /** Events to lay out. Only the ones overlapping `date` are drawn. */
   readonly events: readonly CalendarEvent[];
+  /** Reference instant for the now line and past styling. Default: the wall clock. */
+  readonly now?: UtcInstant;
   /** Visible part of the day, on slot boundaries. Default: the whole day. */
   readonly visibleHours?: CalendarTimeWindow;
   /** Length of one row. Default `60`. */
@@ -398,6 +400,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     renderCell,
     onEventSelect,
     onQuickCreate,
+    now,
     slotMinutes,
     visibleHours,
     workingHours,
@@ -428,6 +431,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     defaultSelectedEventId,
     events,
     interactionMode,
+    now,
     onEventSelect,
     onInteractionModeChange,
     onQuickCreate,

@@ -321,7 +321,7 @@ describe("DayGrid boundaries", () => {
     ).toHaveTextContent("CUSTOM:Introduction to Chemistry");
     assert(
       eventLayer.querySelector('[data-event-card-time="true"]')
-    ).toBeEmptyDOMElement();
+    ).toBeNull();
   });
 
   it("renders a custom cell slot that observes unavailable cells", () => {

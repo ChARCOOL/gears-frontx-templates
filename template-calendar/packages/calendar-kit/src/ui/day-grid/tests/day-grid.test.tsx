@@ -574,6 +574,16 @@ describe("DayGrid ordinary grid rendering", () => {
 });
 
 describe("DayGrid styles", () => {
+  it("fills the height its container gives it instead of capping the scroll area", () => {
+    const grid = declarations(dayGridCss, ".dayGrid");
+    const timed = declarations(dayGridCss, ".timedLayout");
+
+    assert(grid.get("flex")).toBe("1 1 auto");
+    assert(grid.get("block-size")).toBe("100%");
+    assert(timed.get("flex")).toBe("1 1 auto");
+    assert(timed.has("max-block-size")).toBe(false);
+  });
+
   it("stacks all-day events in a column inside the all-day row", () => {
     const track = declarations(dayGridCss, ".allDayTrack");
     const event = declarations(dayGridCss, ".allDayTrack > .allDayEvent");

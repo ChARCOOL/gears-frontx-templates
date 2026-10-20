@@ -12,6 +12,8 @@ import { englishTranslate as t } from "../../../i18n/english";
 import { CreateEventPopover } from "../create-event-popover";
 import type { CreateEventPopoverProps } from "../create-event-popover";
 
+import dialogStyles from "../../primitives/dialog/dialog.module.css";
+
 const DATE = calendarDate("2026-08-24");
 const NEXT_DATE = calendarDate("2026-08-25");
 
@@ -75,6 +77,37 @@ describe("CreateEventPopover discard layout", () => {
     assert(screen.queryByRole("dialog", { name: /create/iu })).toBeNull();
     assert(screen.queryByRole("alertdialog")).toBeNull();
     assert(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("closes the expanded dialog from its backdrop without pressing the control behind it", async () => {
+    const onCancel = vi.fn<() => void>();
+    const onOutsidePress = vi.fn<() => void>();
+    render(
+      <>
+        <button onClick={onOutsidePress} type="button">
+          Outside control
+        </button>
+        <CreateEventPopover
+          {...popoverProps({ defaultExpanded: true, onCancel })}
+        />
+      </>
+    );
+
+    assert(getCreateDialog()).toBeInTheDocument();
+
+    const backdrop = document.querySelector<HTMLElement>(
+      `.${dialogStyles.backdrop}`
+    );
+
+    if (backdrop === null) {
+      throw new Error("Expected the dialog backdrop");
+    }
+
+    await userEvent.setup({ delay: null }).click(backdrop);
+
+    assert(onOutsidePress).not.toHaveBeenCalled();
+    assert(onCancel).toHaveBeenCalledOnce();
+    assert(screen.queryByRole("dialog", { name: /create/iu })).toBeNull();
   });
 
   it("closes a pristine draft immediately on Escape without mounting confirmation", async () => {

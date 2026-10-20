@@ -87,7 +87,7 @@ export interface EventCardProps<
   readonly renderTitle?: (
     context: CalendarEventRenderContext<Payload>
   ) => ReactNode;
-  /** Replaces the time row, clock icon included. */
+  /** Replaces the time text beside the clock icon. Returning nothing removes the row, icon included. */
   readonly renderTime?: (
     context: CalendarEventRenderContext<Payload>
   ) => ReactNode;
@@ -121,7 +121,6 @@ const SEGMENT_CLASS = {
   start: styles.segmentStart,
 } as const;
 
-const METADATA_MIN_BLOCK_SIZE = 88;
 // Host CSS relies on this `data-event-card-compact` cutoff.
 const COMPACT_MIN_BLOCK_SIZE = 110;
 const SINGLE_MIN_BLOCK_SIZE = 21;
@@ -130,6 +129,8 @@ const META_LINE_HEIGHT = 16;
 const CARD_BLOCK_INSET = 4;
 const STACKED_MIN_BLOCK_SIZE =
   TITLE_LINE_HEIGHT + META_LINE_HEIGHT + CARD_BLOCK_INSET * 2;
+// Metadata rows show as soon as one fits; the body clips the rest, as in the design.
+const METADATA_MIN_BLOCK_SIZE = STACKED_MIN_BLOCK_SIZE + META_LINE_HEIGHT;
 
 export type EventCardLayout = "full" | "stacked" | "single" | "title";
 
@@ -384,6 +385,15 @@ const EventCardTimeRow = <Payload,>({
   }
 
   const hasRenderTime = isSet(renderTime);
+  const customTime = hasRenderTime ? renderTime(context) : undefined;
+
+  // A renderTime that returns nothing removes the row, icon included.
+  if (
+    hasRenderTime &&
+    (customTime === null || customTime === undefined || customTime === false)
+  ) {
+    return null;
+  }
 
   const compactTimeText =
     layout === "single" && !hasRenderTime && !event.allDay
@@ -394,23 +404,14 @@ const EventCardTimeRow = <Payload,>({
     <span
       className={clsx(
         styles.time,
-        !hasRenderTime &&
-          !event.allDay &&
-          layout !== "single" &&
-          styles.timedRow
+        !event.allDay && layout !== "single" && styles.timedRow
       )}
       data-event-card-time="true"
     >
-      {hasRenderTime ? (
-        renderTime(context)
-      ) : (
-        <>
-          {layout !== "single" && !event.allDay && (
-            <ClockIcon className={styles.timeIcon} aria-hidden="true" />
-          )}
-          {compactTimeText}
-        </>
+      {layout !== "single" && !event.allDay && (
+        <ClockIcon className={styles.timeIcon} aria-hidden="true" />
       )}
+      {hasRenderTime ? customTime : compactTimeText}
     </span>
   );
 };
