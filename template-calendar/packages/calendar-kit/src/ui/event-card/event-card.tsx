@@ -158,6 +158,7 @@ const COLOR_FAMILY_CLASSES: ReadonlyMap<string, string> = new Map([
   ["turquoise", styles.colorTurquoise],
   ["purple", styles.colorPurple],
   ["orange", styles.colorOrange],
+  ["blue", styles.colorBlue],
 ]);
 
 const resolveColorFamilyClassName = (

@@ -135,6 +135,18 @@ button.card:focus-visible {
   border-color: var(--cal-color-orange-border);
 }
 
+.card.colorBlue,
+.card.selected.colorBlue {
+  --button-bg: var(--cal-color-blue-background);
+  --button-fg: var(--cal-color-blue-foreground);
+  --button-bg-hover: var(--cal-color-blue-background);
+  --button-fg-hover: var(--cal-color-blue-foreground);
+  --button-border: var(--cal-color-blue-border);
+  --event-card-bar-color: var(--cal-color-blue-accent);
+  background-color: var(--button-bg);
+  border-color: var(--cal-color-blue-border);
+}
+
 /* The design's hover keeps the card's own colours at 90%; family cards set no other hover fill. */
 button.card:not(.unavailable):hover {
   background-color: var(--button-bg-hover);
