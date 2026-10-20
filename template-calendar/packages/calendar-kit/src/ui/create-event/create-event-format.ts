@@ -323,6 +323,14 @@ const longWeekdayName = (weekday: Weekday, locale: string): string =>
     new Date(Date.UTC(2023, 0, 1 + WEEKDAY_ORDER.indexOf(weekday)))
   );
 
+// "August 24": the month and day a yearly rule repeats on.
+const yearlyDateLabel = (date: CalendarDate, locale: string): string =>
+  dateTimeFormatter(locale, {
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00Z`));
+
 const hintKey = (state: CustomRepeatState): string =>
   state.interval === 1
     ? HINT_KEY_BY_UNIT[state.unit]
@@ -356,11 +364,22 @@ export const formatRepeatHint = (
   }
 
   const state = parseCustomRepeatState(rule);
-  const frequency = t(hintKey(state), {
-    count: state.interval,
-    day: Number(startDate.slice(-2)),
-    weekdays: hintWeekdays(state, startDate, locale),
-  });
+  const frequency =
+    parseRule(rule ?? "").get("FREQ") === "YEARLY"
+      ? t(
+          state.interval === 1
+            ? "calendar.create_event.repeat.hint.yearly"
+            : "calendar.create_event.repeat.hint.yearlyEvery",
+          {
+            count: state.interval,
+            date: yearlyDateLabel(startDate, locale),
+          }
+        )
+      : t(hintKey(state), {
+          count: state.interval,
+          day: Number(startDate.slice(-2)),
+          weekdays: hintWeekdays(state, startDate, locale),
+        });
 
   if (state.endDate === null) {
     return frequency;
