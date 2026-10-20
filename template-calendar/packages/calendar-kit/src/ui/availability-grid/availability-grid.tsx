@@ -268,6 +268,8 @@ const AvailabilityGridContent = ({
     );
   };
 
+  const isEmpty = gridRows.length === 0;
+
   return (
     <div
       className={clsx(styles.root, className)}
@@ -285,9 +287,12 @@ const AvailabilityGridContent = ({
           getCellLabel={(cell) => formatCellLabel(cell, locale, timeZone)}
           onCellKeyDown={handleCellKeyDown}
           renderCell={renderAvailabilityCell}
-          className={styles.grid}
+          className={clsx(styles.grid, isEmpty && styles.emptyGrid)}
         />
       </CalendarScope>
+      {isEmpty ? (
+        <p className={styles.empty}>{t("calendar.availability.empty")}</p>
+      ) : null}
     </div>
   );
 };

@@ -12,6 +12,7 @@
   "calendar.agenda.today": "Today",
   "calendar.agenda.tomorrow": "Tomorrow",
   "calendar.agenda.viewName": "Agenda view",
+  "calendar.availability.empty": "No time slots",
   "calendar.availability.label": "Availability",
   "calendar.combobox.clearSelectedPeople": "Clear selected people",
   "calendar.combobox.toggleOptions": "Toggle options",
