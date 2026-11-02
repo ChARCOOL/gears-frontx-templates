@@ -16,7 +16,7 @@ const HOUR_ONLY_PATTERN = /^(?<group1>\d{1,2})$/u;
 
 const COMPACT_PATTERN = /^(?<group1>\d{1,2})(?<group2>\d{2})$/u;
 
-// `p.m.` and es `p. m.` read as `pm` and `p m`; a dot between digits still separates.
+// Remove abbreviation dots while keeping dots between digits as separators.
 const ABBREVIATION_DOT_PATTERN = /(?<=\p{L})\./gu;
 
 // Empty, or a separator HOUR_MINUTE_PATTERN already reads.
@@ -75,13 +75,19 @@ const splitMeridiem = (text: string, locale: string) => {
   const lowered = text.toLowerCase();
 
   for (const [token, period] of meridiemTokens(locale)) {
-    if (lowered.endsWith(token)) {
-      return { period, rest: text.slice(0, text.length - token.length).trim() };
+    const pattern = Array.from(token.replaceAll(/\s/gu, ""))
+      .map((character) => character.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"))
+      .join("\\s*");
+    const suffix = new RegExp(`${pattern}$`, "u").exec(lowered);
+
+    if (suffix) {
+      return { period, rest: text.slice(0, suffix.index).trim() };
     }
 
     // ko-KR and zh-TW put the day period first ("오후 3:00", "下午3:00").
-    if (lowered.startsWith(token)) {
-      return { period, rest: text.slice(token.length).trim() };
+    const prefix = new RegExp(`^${pattern}`, "u").exec(lowered);
+    if (prefix) {
+      return { period, rest: text.slice(prefix[0].length).trim() };
     }
   }
 
@@ -232,6 +238,7 @@ export type TimeInputResult =
 
 export interface ParseTimeInputOptions {
   readonly locale: string;
+  /** Bare hours without a leading zero inherit the reference period in 12-hour locales. */
   readonly reference?: LocalTime;
 }
 
@@ -322,7 +329,12 @@ export const parseTimeInput = (
     return { kind: TIME_INPUT.invalid };
   }
 
-  const minutes = resolveMinutes(parts, period, locale, reference);
+  const minutes = resolveMinutes(
+    parts,
+    period,
+    locale,
+    /^(?:[1-9]|1[01])$/u.test(rest) ? reference : undefined
+  );
 
   if (minutes === null) {
     return { kind: TIME_INPUT.invalid };
