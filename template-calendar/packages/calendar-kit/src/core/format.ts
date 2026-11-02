@@ -12,6 +12,7 @@ import type {
   ViewerDateTimeFormatOptions,
 } from "./model";
 import { MINUTES_PER_DAY, MINUTES_PER_HOUR } from "./time-input";
+import { toViewerDateTime } from "./temporal";
 import {
   parseIanaTimeZone,
   utcInstant,
@@ -150,8 +151,20 @@ export const formatViewerTimeZoneOffset = (
     "timeZoneName"
   );
 
-  // ICU 77 returns "GMT" for UTC while ICU 78 returns "GMT+0".
-  return label === "GMT" ? "GMT+0" : label;
+  if (toViewerDateTime(instant, timeZone).offsetMinutes !== 0) {
+    return label;
+  }
+
+  // Derive the locale's zero offset from its positive-offset pattern across ICU versions.
+  const positive = formatWithPart(
+    instant,
+    parseIanaTimeZone("Etc/GMT-1"),
+    locale,
+    { timeZoneName: "shortOffset" },
+    "timeZoneName"
+  );
+  const digits = numberFormatter(locale, { useGrouping: false });
+  return positive.replace(digits.format(1), digits.format(0));
 };
 
 export const formatDuration = (
