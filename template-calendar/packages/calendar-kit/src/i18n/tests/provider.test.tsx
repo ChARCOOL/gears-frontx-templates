@@ -28,7 +28,6 @@ const nestedChildRender = vi.fn<() => void>();
 
 const NestedChild = () => {
   nestedChildRender();
-
   return <output data-testid="nested-child">nested child</output>;
 };
 
