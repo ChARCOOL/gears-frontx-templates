@@ -251,6 +251,17 @@ describe(Combobox, () => {
     expect(input.value).toBe("Lena Markovic");
   });
 
+  it("types spaces from the keyboard in multi-word queries", async () => {
+    render(<StatefulCombobox />);
+    const input = getCombobox();
+
+    const user = userEvent.setup();
+    await user.click(input);
+    await user.keyboard("Lena Markovic");
+
+    expect(input.value).toBe("Lena Markovic");
+  });
+
   it("opens from a click without a prior focus event", async () => {
     renderCombobox();
 
