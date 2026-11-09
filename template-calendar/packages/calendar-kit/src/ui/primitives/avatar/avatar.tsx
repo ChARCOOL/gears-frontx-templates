@@ -4,20 +4,16 @@ import type { HTMLAttributes, Ref } from "react";
 import styles from "./avatar.module.css";
 
 const AVATAR_WORD_SEPARATOR = /\s+/u;
-
 const AVATAR_SURFACE_COUNT = 7;
 
 const initialsOf = (name: string, locale: string): string => {
   const words = name.trim().split(AVATAR_WORD_SEPARATOR).filter(Boolean);
-
   if (words.length === 0) {
     return "";
   }
 
   const first = words[0]?.[0] ?? "";
-
   const last = words.length > 1 ? (words.at(-1)?.[0] ?? "") : "";
-
   return `${first}${last}`.toLocaleUpperCase(locale);
 };
 

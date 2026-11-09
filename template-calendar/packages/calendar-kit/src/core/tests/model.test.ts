@@ -75,7 +75,6 @@ describe("calendar core model", () => {
   it("keeps selection ranges serializable and ordered by their cells", () => {
     const start = buildCell(calendarDate("2026-08-24"), "09:00", "10:00");
     const end = buildCell(calendarDate("2026-08-24"), "10:00", "11:00");
-
     const range: CalendarSelectionRange = { cells: [start, end], end, start };
 
     assert(range.cells[0]?.start).toBe(range.start.start);

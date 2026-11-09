@@ -15,7 +15,6 @@ import { calendarDate } from "../validation";
 
 const segmentOf = (mask: DateMask, kind: DateSegmentKind): DateSegment => {
   const found = mask.segments.find((segment) => segment.kind === kind);
-
   if (found === undefined) {
     throw new Error(`Missing ${kind} segment`);
   }

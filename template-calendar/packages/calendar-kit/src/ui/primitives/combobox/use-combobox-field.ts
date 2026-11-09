@@ -611,7 +611,6 @@ export const useComboboxField = ({
         preventBaseUIHandler?: () => void;
       };
       const { key } = event;
-
       if (
         key === "ArrowDown" ||
         key === "ArrowUp" ||
@@ -633,6 +632,7 @@ export const useComboboxField = ({
         }
 
         setOpenAndPortal(false);
+
         return;
       }
 

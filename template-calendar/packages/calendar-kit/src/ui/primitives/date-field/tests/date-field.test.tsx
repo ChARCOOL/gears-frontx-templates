@@ -48,7 +48,6 @@ const StatefulField = ({
 
 const field = (): HTMLInputElement => {
   const input = screen.getByLabelText("Start date");
-
   if (!(input instanceof HTMLInputElement)) {
     throw new Error("Expected a date field input");
   }

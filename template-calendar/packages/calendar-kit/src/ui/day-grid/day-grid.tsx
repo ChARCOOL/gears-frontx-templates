@@ -478,7 +478,6 @@ const useDayGridContent = (props: DayGridContentProps) => {
 
   const currentTimeLabel = formatGridTime(currentInstant, timeZone, locale);
   const defaultActiveCell = arrayAt(gridCells, 8);
-
   const gridLabel = `${displayedDateLabel} ${timeZone}`;
 
   const gridTranslate = useCallback<CalendarTranslate>(
@@ -529,7 +528,6 @@ const useDayGridContent = (props: DayGridContentProps) => {
 
   const handleActiveCellChange = (cell: CalendarCell): void => {
     const index = cellIndexByKey.get(cellKey(cell));
-
     if (index === undefined) {
       return;
     }
@@ -545,7 +543,6 @@ const useDayGridContent = (props: DayGridContentProps) => {
     context: CalendarCellContext
   ): void => {
     const index = cellIndexByKey.get(cellKey(context.cell));
-
     if (index === undefined) {
       return;
     }
@@ -571,7 +568,6 @@ const useDayGridContent = (props: DayGridContentProps) => {
     const cellElement =
       event.target.closest<HTMLDivElement>('[role="gridcell"]');
     const key = cellElement?.dataset.cellKey;
-
     if (!cellElement || key === undefined) {
       return;
     }
@@ -603,13 +599,11 @@ const useDayGridContent = (props: DayGridContentProps) => {
     const cellElement =
       event.target.closest<HTMLDivElement>('[role="gridcell"]');
     const key = cellElement?.dataset.cellKey;
-
     if (!cellElement || key === undefined) {
       return;
     }
 
     const index = cellIndexByKey.get(key);
-
     if (index === undefined) {
       return;
     }

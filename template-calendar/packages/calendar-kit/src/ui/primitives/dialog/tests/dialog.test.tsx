@@ -129,7 +129,6 @@ describe(Dialog, () => {
     const container = document.createElement("div");
     document.body.append(container);
     const objectRef: MutableElementRef = { current: null };
-
     const callbackRef = vi.fn<() => void>();
 
     const { rerender } = render(

@@ -78,7 +78,6 @@ const queryShadowDialog = (
 
 const getShadowDialog = (root: ShadowRoot, name: RegExp): HTMLElement => {
   const dialog = queryShadowDialog(root, name);
-
   if (dialog === null) {
     throw new Error(`Missing shadow-root dialog: ${name}`);
   }
@@ -112,7 +111,6 @@ describe("CreateEventPopover attached shadow-root contract", () => {
 
     const [firstFocusable] = focusable;
     const lastFocusable = focusable.at(-1);
-
     if (firstFocusable === undefined || lastFocusable === undefined) {
       throw new Error("Expected a focusable dialog control");
     }

@@ -67,7 +67,6 @@ const isTopmostModal = (panel: HTMLElement): boolean => {
 
 const eventPath = (event: Event): readonly EventTarget[] => {
   const composedPath = event.composedPath();
-
   if (composedPath.length > 0) {
     return composedPath;
   }
@@ -79,7 +78,6 @@ const eventPath = (event: Event): readonly EventTarget[] => {
 
 const isOwnPress = (event: Event, panel: HTMLElement): boolean => {
   const path = eventPath(event);
-
   return path.includes(panel) || isNestedLayerEvent(panel, path);
 };
 
@@ -140,7 +138,6 @@ export const ModalSurface = ({
 
   useEffect(() => {
     const panel = panelRef.current;
-
     if (!open || !panel) {
       return noopCleanup;
     }
@@ -332,7 +329,6 @@ export const DialogContent = ({
   const { requestClose } = useModalContext();
   const { t } = useCalendarLocalization();
   const resolvedCloseLabel = closeLabel ?? t("calendar.dialog.close");
-
   const contentIds = useModalContentIds(titleId, descriptionId);
 
   const resolvedLabelledBy =

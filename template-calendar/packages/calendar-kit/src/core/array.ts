@@ -14,9 +14,7 @@ export const sortCopy = <T>(
   compareFn?: (left: T, right: T) => number
 ): T[] => {
   const copy = [...values];
-
   const sortMethod = "sort" as const;
-
   // ES2022 has no toSorted; sort a private copy to preserve the readonly input.
   return copy[sortMethod](compareFn);
 };

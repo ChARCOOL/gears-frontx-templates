@@ -43,7 +43,6 @@ const toCalendarDate = (date: Date): CalendarDate => {
   const year = String(date.getFullYear());
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-
   return calendarDate(`${year}-${month}-${day}`);
 };
 
@@ -210,6 +209,16 @@ const DateField = ({
     openCalendarLabel,
   });
 
+  const selectDate = (date: Date | undefined): void => {
+    if (date === undefined) {
+      return;
+    }
+
+    entry.reset();
+    onValueChange(toCalendarDate(date));
+    closeCalendar();
+  };
+
   const showClear = clearable && entry.filled && !disabled;
 
   return (
@@ -292,15 +301,7 @@ const DateField = ({
             showOutsideDays
             weekStartsOn={weekStart}
             onMonthChange={setVisibleMonth}
-            onSelect={(date) => {
-              if (date === undefined) {
-                return;
-              }
-
-              entry.reset();
-              onValueChange(toCalendarDate(date));
-              closeCalendar();
-            }}
+            onSelect={selectDate}
           />
         </Popover>
       )}

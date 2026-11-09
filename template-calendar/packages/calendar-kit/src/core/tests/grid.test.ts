@@ -269,7 +269,6 @@ describe("all-day and month allocation", () => {
     const wide = eventSegments("wide", 0, 7);
     const short = eventSegments("short", 2, 4);
     const later = eventSegments("later", 4, 5);
-
     const first = allocateAllDaySpans([...wide, ...short, ...later], DATES);
     const second = allocateAllDaySpans([...later, ...wide, ...short], DATES);
 
@@ -442,9 +441,7 @@ describe("all-day and month allocation", () => {
     );
 
     const spans = allocateAllDaySpans(segments, DATES.slice(0, 7));
-
     const [span] = spans;
-
     if (span === undefined) {
       throw new Error("expected an all-day span");
     }

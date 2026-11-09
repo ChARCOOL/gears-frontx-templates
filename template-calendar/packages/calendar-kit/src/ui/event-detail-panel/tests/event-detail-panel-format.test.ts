@@ -19,7 +19,6 @@ import {
 import { englishTranslate } from "../../../i18n/english";
 
 const BERLIN = parseIanaTimeZone("Europe/Berlin");
-
 const DATE = calendarDate("2026-08-24");
 
 type TimedEvent = Extract<CalendarEvent, { readonly allDay: false }>;

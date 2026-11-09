@@ -198,7 +198,6 @@ describe(useCreateEventController, () => {
     );
 
     let firstAttempt: Promise<CreateEventResult | undefined> | undefined;
-
     let secondAttempt: Promise<CreateEventResult | undefined> | undefined;
 
     act(() => {

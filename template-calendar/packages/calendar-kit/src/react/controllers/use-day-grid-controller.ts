@@ -326,7 +326,6 @@ export const useDayGridController = (
   );
 
   const isWorkingDay = getWeekday(date) >= 1 && getWeekday(date) <= 5;
-
   const nowElapsed = Date.parse(currentInstant) - axisStartEpoch;
 
   // The marker is the viewer's current day only, and only while now is inside the visible hours.
@@ -383,7 +382,6 @@ export const useDayGridController = (
 
   const { allDaySegments, timedSegments } = useMemo(() => {
     const allDay: AllDaySegment[] = [];
-
     const timed: TimedSegment[] = [];
 
     for (const segment of daySegments) {
@@ -497,7 +495,6 @@ export const useDayGridController = (
   const cellForIndex = useCallback(
     (index: number): CalendarCell | undefined => {
       const start = arrayAt(slotStarts, index);
-
       if (start === undefined) {
         return undefined;
       }
@@ -505,7 +502,6 @@ export const useDayGridController = (
       const end = slotStarts[index + 1] ?? axisRange.end;
       const startTime = toViewerDateTime(start, timeZone).time;
       const endTime = toViewerDateTime(end, timeZone).time;
-
       return { date, end, endTime, start, startTime };
     },
     [axisRange.end, date, slotStarts, timeZone]
@@ -518,13 +514,11 @@ export const useDayGridController = (
       anchor?: HTMLElement
     ): void => {
       const event = eventById.get(eventId);
-
       if (!event || !isEventActionable(event)) {
         return;
       }
 
       const resolvedContext = context ?? dayViewModel.buildEventContext(event);
-
       if (!resolvedContext) {
         return;
       }
@@ -546,13 +540,11 @@ export const useDayGridController = (
       }
 
       const cell = cellForIndex(index);
-
       if (!cell || findTimedEventAtCell(cell)) {
         return;
       }
 
       const range = buildSelectionRange(cell, cell);
-
       if (!range) {
         return;
       }

@@ -89,7 +89,6 @@ describe("public calendar hooks", () => {
 
   it("reads the script where the runtime has no text info", () => {
     const prototype = Reflect.getPrototypeOf(new Intl.Locale("en"));
-
     if (prototype === null) {
       throw new Error("Intl.Locale has no prototype");
     }
@@ -113,6 +112,7 @@ describe("public calendar hooks", () => {
       if (getTextInfo !== undefined) {
         Object.defineProperty(prototype, "getTextInfo", getTextInfo);
       }
+
       if (textInfo !== undefined) {
         Object.defineProperty(prototype, "textInfo", textInfo);
       }
