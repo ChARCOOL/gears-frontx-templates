@@ -21,6 +21,7 @@ export const flattenNodeList = (node: ReactNode): ReactNode[] => {
       for (const nested of child) {
         visit(nested);
       }
+
       return;
     }
 

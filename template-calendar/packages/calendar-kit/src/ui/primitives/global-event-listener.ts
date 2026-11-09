@@ -61,7 +61,6 @@ export const subscribeGlobalEvent = (
   return () => {
     const currentBuckets = bucketsByTarget.get(target);
     const currentBucket = currentBuckets?.get(key);
-
     if (currentBucket === undefined) {
       return;
     }

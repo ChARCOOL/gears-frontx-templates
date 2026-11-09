@@ -42,20 +42,15 @@ import type {
 } from "../calendar-grid";
 
 const DATE = calendarDate("2026-08-24");
-
 const NEXT_DATE = calendarDate("2026-08-25");
-
 const FIRST_INSTANT = utcInstant("2026-08-24T09:00:00.000Z");
-
 const SECOND_INSTANT = utcInstant("2026-08-24T10:00:00.000Z");
-
 const selectedTimeZone: IanaTimeZone = UTC;
 
 const t: CalendarLocalizedProps["t"] = (key, values) =>
   `${key}${values ? JSON.stringify(values) : ""}`;
 
 const customColorFamily: CalendarColorFamily = "consumer-owned-family";
-
 const direction: CalendarDirection = "ltr";
 
 const ignoreCallback = (..._args: unknown[]): void => {

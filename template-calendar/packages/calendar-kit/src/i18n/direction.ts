@@ -26,10 +26,8 @@ const directionOf = (locale: LocaleWithTextInfo): string | undefined =>
   locale.textInfo?.direction ??
   (RTL_SCRIPTS.has(locale.maximize().script ?? "") ? "rtl" : undefined);
 
-/**
- * Direction of a locale, so a host only sets `direction` to force one. Safe on the server and
- * for a locale `Intl` does not know: anything unresolved reads `ltr`.
- */
+/** Direction of a locale, so a host only sets `direction` to force one. Safe on the server
+ * and for locales `Intl` does not know: anything unresolved reads `ltr`. */
 export const getLocaleDirection = (
   locale: CalendarLocale
 ): CalendarDirection => {

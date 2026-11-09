@@ -101,7 +101,6 @@ const formatViewerDay = (
   locale: string
 ): string => {
   const dayStart = fromViewerDateTime({ date, time: "00:00", timeZone });
-
   return formatViewerDate(dayStart, timeZone, locale);
 };
 
@@ -121,7 +120,6 @@ export const formatEventRange = (
 
   const date = formatViewerDate(event.start, timeZone, locale);
   const startTime = formatTimeOfDay(event.startTime, locale);
-
   if (event.endTime === null) {
     return `${date}, ${startTime}`;
   }
@@ -165,6 +163,5 @@ export const formatZoneLine = (
   const city = (timeZone.split("/").at(-1) ?? timeZone).replaceAll("_", " ");
   const start = formatViewerTime(event.start, timeZone, locale, SHORT_24H_TIME);
   const end = formatViewerTime(event.end, timeZone, locale, SHORT_24H_TIME);
-
   return `${offset} ${city}, ${start} - ${end}`;
 };

@@ -24,7 +24,6 @@ const usePopoverLifecycle = ({
 }: PopoverLifecycleOptions): void => {
   useEffect(() => {
     const panel = panelRef.current;
-
     if (!open || !panel) {
       return noopCleanup;
     }

@@ -701,7 +701,6 @@ describe(useMonthGridController, () => {
       })
     );
     const firstCell = sixWeek.result.current.rows[0]?.cells[0]?.cell;
-
     if (firstCell === undefined) {
       throw new Error("Expected a first month cell");
     }

@@ -65,7 +65,6 @@ export type WeekGridContentProps<Payload> = Omit<
 
 const DEFAULT_VISIBLE_DAYS = 5;
 const DEFAULT_MODE: WeekGridInteractionMode = "quick-create";
-
 export const EMPTY_LIST: readonly never[] = [];
 
 const framesScroll = (element: HTMLElement): boolean =>
@@ -376,21 +375,17 @@ export const useWeekGridContent = <Payload = unknown>(
     }
 
     const element = target.closest<HTMLElement>('[role="gridcell"]');
-
     if (!element) {
       return null;
     }
 
     const key = element.dataset.cellKey;
-
     if (key === undefined) {
       return null;
     }
 
     const cell = gridData.cellByKey.get(key);
-
     const meta = cell === undefined ? undefined : gridData.metaByCell.get(cell);
-
     if (cell === undefined || meta === undefined || meta.kind !== "timed") {
       return null;
     }
@@ -430,7 +425,6 @@ export const useWeekGridContent = <Payload = unknown>(
     }
 
     const meta = gridData.metaByCell.get(context.cell);
-
     if (!meta || meta.kind !== "timed" || meta.slotIndex === null) {
       return;
     }
@@ -458,7 +452,6 @@ export const useWeekGridContent = <Payload = unknown>(
     }
 
     const target = cellAtTarget(event.target);
-
     if (
       !target ||
       controller.interactionMode !== "quick-create" ||
@@ -484,7 +477,6 @@ export const useWeekGridContent = <Payload = unknown>(
     }
 
     const target = cellAtTarget(event.target);
-
     if (
       !target ||
       controller.interactionMode !== "paint-and-move" ||
@@ -504,7 +496,6 @@ export const useWeekGridContent = <Payload = unknown>(
     }
 
     const cellTarget = cellAtTarget(target);
-
     if (cellTarget === null || cellTarget.meta.slotIndex === null) {
       return;
     }
@@ -537,7 +528,6 @@ export const useWeekGridContent = <Payload = unknown>(
 
     const eventId = eventIdAtTarget(event.target);
     const target = cellAtTarget(event.target);
-
     if (
       eventId === null ||
       eventId === "" ||
@@ -625,7 +615,6 @@ export const useWeekGridContent = <Payload = unknown>(
   );
 
   const defaultLiveText = `${t("calendar.week.range")} ${firstViewerDateLabel}`;
-
   const liveRegionText = liveText || defaultLiveText;
 
   const getCellLabel = (

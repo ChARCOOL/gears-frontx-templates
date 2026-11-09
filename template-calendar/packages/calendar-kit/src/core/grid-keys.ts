@@ -24,7 +24,6 @@ export const stepGridPosition = (
   rowLength: number
 ): GridPosition => {
   const { columnIndex, rowIndex } = position;
-
   const inlineStep = direction === "rtl" ? -1 : 1;
 
   switch (key) {

@@ -39,7 +39,6 @@ export interface TypedDigit {
 }
 
 const DIGITS_PATTERN = /^\d+$/u;
-
 const NON_DIGIT_PATTERN = /\D/gu;
 
 const SEGMENT_PLACEHOLDER: Readonly<Record<DateSegmentKind, string>> = {
@@ -55,11 +54,8 @@ const SEGMENT_MAX: Readonly<Record<DateSegmentKind, number>> = {
 };
 
 const MONTH_LENGTHS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-
 const FEBRUARY = 2;
-
 const LEAP_DAY = 29;
-
 /** Any date with a two-digit day and month, so every locale pattern shows both. */
 const REFERENCE_DATE = new Date(Date.UTC(2026, 10, 22));
 
@@ -79,7 +75,6 @@ const isSegmentKind = (type: string): type is DateSegmentKind =>
 
 export const dateMask = (locale: string): DateMask => {
   const cached = masks.get(locale);
-
   if (cached !== undefined) {
     return cached;
   }
@@ -128,7 +123,6 @@ export const replaceSegment = (
 
 const daysInMonth = (year: number, month: number): number => {
   const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-
   if (month === FEBRUARY && isLeap) {
     return LEAP_DAY;
   }
@@ -168,7 +162,6 @@ export const parseMaskedText = (
 
   for (const segment of mask.segments) {
     const raw = segmentText(text, segment);
-
     if (!DIGITS_PATTERN.test(raw)) {
       return "";
     }
@@ -179,7 +172,6 @@ export const parseMaskedText = (
   const year = values.get(DATE_SEGMENT.year) ?? 0;
   const month = values.get(DATE_SEGMENT.month) ?? 0;
   const day = values.get(DATE_SEGMENT.day) ?? 0;
-
   if (year === 0 || month < 1 || month > 12 || day < 1) {
     return "";
   }
@@ -209,10 +201,8 @@ export const segmentIndexAt = (mask: DateMask, caret: number): number => {
   return index === -1 ? mask.segments.length - 1 : index;
 };
 
-/**
- * Shifts one digit into the segment the way a native date input does: `1` then
- * `3` in a month cannot mean 13, so it restarts the segment as 03 and moves on.
- */
+/** Shifts one digit into the segment like a native date input: `1` then `3` cannot mean 13,
+ * so the segment restarts as 03 and moves on. */
 export const typeDigit = (
   text: string,
   segment: DateSegment,
@@ -240,7 +230,6 @@ export const stepSegment = (
 ): string => {
   const max = SEGMENT_MAX[segment.kind];
   const raw = segmentText(text, segment);
-
   if (!DIGITS_PATTERN.test(raw)) {
     return replaceSegment(
       text,

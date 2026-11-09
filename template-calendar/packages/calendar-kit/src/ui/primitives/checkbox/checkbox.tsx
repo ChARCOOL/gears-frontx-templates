@@ -27,7 +27,6 @@ export const Checkbox = ({
   ...props
 }: CheckboxProps) => {
   const forwardedProps = isUiCheckboxProps(props) ? props : {};
-
   const resolvedValue = value ?? undefined;
 
   return (

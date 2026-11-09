@@ -8,9 +8,7 @@ import type {
 
 /** Bundled English: the kit renders text with or without a provider. */
 export const ENGLISH_TRANSLATIONS: CalendarTranslations = en;
-
 export const FALLBACK_TRANSLATION_ID = "calendar.common.translationUnavailable";
-
 export const FALLBACK_TRANSLATION = "Translation unavailable";
 
 export const englishTranslationFor = (

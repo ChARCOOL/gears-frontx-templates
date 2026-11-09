@@ -41,7 +41,6 @@ describe("DayGrid event-card geometry seam", () => {
 
   it("uses computed day height for density while positioning the card once", async () => {
     const user = userEvent.setup();
-
     const contexts: CalendarEventRenderContext[] = [];
 
     render(

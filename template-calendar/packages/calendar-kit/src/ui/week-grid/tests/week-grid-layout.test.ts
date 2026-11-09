@@ -22,7 +22,6 @@ import {
 } from "../week-grid-layout";
 
 const DATE = calendarDate("2026-08-24");
-
 const AXIS = { slotRowCount: 3, workingHours: DEFAULT_WORKING_HOURS };
 
 const dayColumns = [
@@ -63,7 +62,6 @@ describe("week-grid-layout", () => {
     const [timedCell] = firstDayColumn.slots;
     const key = `${DATE}:09:00:${timedCell.start}`;
     const meta = grid.metaByCell.get(timedCell);
-
     if (!meta) {
       throw new Error("Expected timed cell metadata");
     }
@@ -186,7 +184,6 @@ describe("week-grid-layout", () => {
 
   it("keeps a move pending when drop is followed by dragend", () => {
     const requests: CalendarMoveRequest[] = [];
-
     const resolutions: string[] = [];
 
     const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>(
@@ -260,9 +257,7 @@ describe("week-grid-layout", () => {
   it("refreshes accessible cell labels when the label callback changes", () => {
     const [firstDayColumn] = dayColumns;
     const [cell] = firstDayColumn.slots;
-
     const columns = [{ key: "day", label: "Day" }] as const;
-
     const rows = [{ cells: [cell], key: "hour" }] as const;
 
     const baseProps = {
