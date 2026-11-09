@@ -12,7 +12,7 @@ const HOUR_MINUTE_PATTERN =
 
 const HOUR_ONLY_PATTERN = /^(?<group1>\d{1,2})$/u;
 const COMPACT_PATTERN = /^(?<group1>\d{1,2})(?<group2>\d{2})$/u;
-// `p.m.` and es `p. m.` read as `pm` and `p m`; a dot between digits still separates.
+// Remove abbreviation dots while keeping dots between digits as separators.
 const ABBREVIATION_DOT_PATTERN = /(?<=\p{L})\./gu;
 // Empty, or a separator HOUR_MINUTE_PATTERN already reads.
 const PLAIN_SEPARATOR_PATTERN = /^[:.,]?$/u;
