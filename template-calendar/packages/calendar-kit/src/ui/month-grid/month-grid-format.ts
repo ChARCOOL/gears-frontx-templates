@@ -83,7 +83,6 @@ export const buildLiveAnnouncement = (
     arrayAt(arrayAt(rows, 0)?.cells ?? [], 0)?.date ??
     monthRange.start;
   const dayStart = toUtcRange(buildDayRange(date, timeZone)).start;
-
   const hiddenCount = announcement.hiddenCount ?? 0;
 
   return formatCalendarList(locale, [

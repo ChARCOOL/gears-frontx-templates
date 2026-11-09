@@ -26,7 +26,6 @@ describe("WeekGrid headers", () => {
       "columnheader"
     );
     const [, todayHeader, followingHeader] = headers;
-
     if (todayHeader === undefined || followingHeader === undefined) {
       throw new Error("Expected weekday column headers");
     }

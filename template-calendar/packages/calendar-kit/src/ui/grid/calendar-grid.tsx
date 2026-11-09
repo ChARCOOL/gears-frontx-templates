@@ -101,7 +101,6 @@ const CalendarGridCell = ({
 }: CalendarGridCellProps) => {
   const { key } = record;
   const isFocused = currentActiveCellKey === key;
-
   const provisionalContext = baseCellContext(cell, key, isFocused);
 
   const label =
@@ -229,7 +228,6 @@ const CalendarGridContent = ({
       event.preventDefault();
 
       const destinationRecord = navigation.destination;
-
       if (destinationRecord === undefined) {
         return;
       }
@@ -294,7 +292,6 @@ const CalendarGridContent = ({
           >
             {row.cells.map((cell) => {
               const record = recordsByKey.get(getCellKey(cell));
-
               if (!record) {
                 return null;
               }

@@ -49,7 +49,6 @@ describe("MonthGrid week numbers", () => {
     renderMonth({ trailingGutter: true, weekNumbering: "iso" });
 
     const [, firstWeek] = within(screen.getByRole("grid")).getAllByRole("row");
-
     if (firstWeek === undefined) {
       throw new Error("Expected a first week row");
     }

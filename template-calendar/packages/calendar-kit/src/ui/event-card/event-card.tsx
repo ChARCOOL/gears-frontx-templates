@@ -203,7 +203,6 @@ const defaultTimeText = (
   }
 
   const start = formatTimeOfDay(event.startTime, locale);
-
   if (event.endTime === null) {
     return start;
   }
@@ -235,7 +234,6 @@ const METADATA_FIELDS = [
 const DefaultEventMetadata = ({ event }: DefaultEventMetadataProps) => {
   const rows = METADATA_FIELDS.flatMap(({ field, Icon, name }) => {
     const value = event[name];
-
     return hasEventValue(value) ? [{ Icon, field, value }] : [];
   });
 
@@ -387,7 +385,6 @@ const EventCardTimeRow = <Payload,>({
 
   const hasRenderTime = isSet(renderTime);
   const customTime = hasRenderTime ? renderTime(context) : undefined;
-
   // A renderTime that returns nothing removes the row, icon included.
   if (
     hasRenderTime &&

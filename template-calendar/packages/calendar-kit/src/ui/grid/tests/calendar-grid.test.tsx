@@ -319,7 +319,6 @@ describe("CalendarGrid unit behaviour", () => {
 
     const staleKey = (cell: CalendarCell): string => {
       calls += 1;
-
       return calls > 4 ? "stale-key" : `${cell.date}:${cell.startTime}`;
     };
 
@@ -341,7 +340,6 @@ describe("CalendarGrid unit behaviour", () => {
 
     const changingKey = (cell: CalendarCell): string => {
       calls += 1;
-
       return calls > 3 ? "missing-key" : `${cell.date}:${cell.startTime}`;
     };
 
