@@ -66,6 +66,7 @@ declare module '@gears-frontx/react' {
 emit<K extends keyof TEvents>(event: K, ...args: TEvents[K] extends void ? [] : [TEvents[K]]): void;
 on<K extends keyof TEvents>(event: K, handler: EventHandler<TEvents[K]>): Subscription;  // { unsubscribe(): void }
 once(...): Subscription;  clear(event: string): void;  clearAll(): void;
+// emit runs every handler and never awaits one; a handler that throws or returns a rejected promise is logged, not rethrown
 ```
 
 Actions emit, effects subscribe and dispatch, components call actions. **No shipped file
@@ -144,6 +145,7 @@ export const billingMockMap: MockMap = { 'GET /api/billing/status': (): GetStatu
 apiRegistry.register(BillingApiService);   // register<T extends BaseApiService>(serviceClass: new () => T): void
 apiRegistry.initialize();
 const mfeApp = createFrontX().use(effects()).use(queryCacheShared()).use(mock()).build();
+// The host's queryCache() clears the shared cache on a mock mode or tenant change and on login, logout or a session change the auth provider reports; an MFE never clears it itself
 registerSlice(homeSlice, initHomeEffects);
 ```
 
@@ -151,6 +153,7 @@ registerSlice(homeSlice, initHomeEffects);
 
 ```ts
 useApiQuery<TData = unknown, TError = Error>(descriptor: EndpointDescriptor<TData>, overrides?: ApiQueryOverrides): ApiQueryResult<TData, TError>;
+// overrides: { staleTime?, gcTime?, enabled? }; enabled: false keeps the query idle until it turns true
 // ApiQueryResult: { data, error, isLoading, isFetching, isError, refetch }
 useApiMutation<TData = unknown, TError = Error, TVariables = void, TContext = unknown>(options): ApiMutationResult<TData, TError, TVariables>;
 // options: { endpoint, cancelOnSupersede?, abortOnUnmount?, onMutate?, onSuccess?, onError?, onSettled? }

@@ -12,11 +12,15 @@ import {
   CONTROL_TEXT_PX,
   FULL_BLEED_TOLERANCE_PX,
   MIN_CARD_PADDING_PX,
+  SCROLL_EDGE_TOLERANCE_PX,
   TINY_TEXT_PX,
+  axeResultsToFindings,
+  clipInkToScrollers,
   collectHeadingSkipFindings,
   findCardEdgeFlush,
   findControlHeightMismatches,
   findHeadingSkips,
+  findPageScrollers,
   installDesignDefectCheck,
   isClippedText,
   isFullBleedMedia,
@@ -24,16 +28,21 @@ import {
   isTinyText,
   parseCssLengthPx,
   readTextFloors,
+  runDesignDefectCheck,
+  scrollsSideways,
   shareVisualRow,
+  soleLayoutChild,
   spacingProbeSpec,
 } from '../src/designDefects';
+import type { LayoutRole } from '../src/designDefects';
 
-// axe-core's collection is stubbed to reject so the sweep-failure test below
-// (K-002) can assert the rejection is caught, not left as an unhandled
-// rejection.
+// axe-core's run is stubbed per test: the sweep-failure test below (K-002)
+// makes it reject to assert the rejection is caught, not left as an
+// unhandled rejection, and the console tests hand it results.
+const axeRun = vi.hoisted(() => vi.fn());
 vi.mock('axe-core', () => ({
   default: {
-    run: () => Promise.reject(new Error('axe-core failed to run')),
+    run: axeRun,
   },
 }));
 
@@ -105,6 +114,149 @@ describe('isClippedText', () => {
   });
 });
 
+describe('scrollsSideways', () => {
+  it('flags a scroll container whose content is wider than its box', () => {
+    // The shell's screen container holding a 900px screen at a 320px viewport.
+    expect(scrollsSideways({ overflowX: 'auto', scrollWidth: 900, clientWidth: 288 })).toBe(true);
+    expect(scrollsSideways({ overflowX: 'scroll', scrollWidth: 900, clientWidth: 288 })).toBe(true);
+  });
+
+  it('accepts content that fits, within sub-pixel rounding', () => {
+    expect(scrollsSideways({ overflowX: 'auto', scrollWidth: 288, clientWidth: 288 })).toBe(false);
+    expect(scrollsSideways({ overflowX: 'auto', scrollWidth: 289, clientWidth: 288 })).toBe(false);
+  });
+
+  it('ignores boxes that clip or let content spill instead of scrolling', () => {
+    expect(scrollsSideways({ overflowX: 'hidden', scrollWidth: 900, clientWidth: 288 })).toBe(false);
+    expect(scrollsSideways({ overflowX: 'clip', scrollWidth: 900, clientWidth: 288 })).toBe(false);
+    expect(scrollsSideways({ overflowX: 'visible', scrollWidth: 900, clientWidth: 288 })).toBe(false);
+  });
+});
+
+describe('findPageScrollers', () => {
+  interface Box {
+    name: string;
+    scroller: boolean;
+    grid: boolean;
+    parent: Box | null;
+    children: Box[];
+  }
+
+  function box(name: string, scroller: boolean, children: Box[] = []): Box {
+    const node: Box = { name, scroller, grid: false, parent: null, children };
+    for (const child of children) child.parent = node;
+    return node;
+  }
+
+  function grid(name: string): Box {
+    return { ...box(name, false), grid: true };
+  }
+
+  const tree = {
+    parent: (node: Box) => node.parent,
+    soleChild: (node: Box) => (node.children.length === 1 ? node.children[0] : null),
+    isScroller: (node: Box) => node.scroller,
+    isGrid: (node: Box) => node.grid,
+  };
+
+  function scrollersFrom(main: Box): string[] {
+    return findPageScrollers(main, tree).map((node) => node.name);
+  }
+
+  it("finds the shell's screen container below a main that does not scroll", () => {
+    // Layout > main (overflow hidden) > div[data-mfe-screen-container] (overflow auto) > slot > screen
+    const main = box('main', false, [box('screen-container', true, [box('slot', false, [box('screen', false)])])]);
+    box('layout', false, [main]);
+
+    expect(scrollersFrom(main)).toEqual(['screen-container']);
+  });
+
+  it('measures every scroller on the sole-child chain, so a screen that scrolls on its own is found too', () => {
+    const main = box('main', false, [box('screen-container', true, [box('slot', false, [box('screen-root', true)])])]);
+
+    expect(scrollersFrom(main)).toEqual(['screen-container', 'screen-root']);
+  });
+
+  it("stops at a scroller whose only child is a table or grid: that is the grid's own scroll, not the page's", () => {
+    // The screen's only content is a data grid in its own overflow-x: auto wrapper.
+    const main = box('main', false, [
+      box('screen-container', true, [box('slot', false, [box('table-wrapper', true, [grid('table')])])]),
+    ]);
+
+    expect(scrollersFrom(main)).toEqual(['screen-container']);
+  });
+
+  it('still measures the page container when a grid is all the screen holds and has no scroll box of its own', () => {
+    const main = box('main', false, [box('screen-container', true, [box('slot', false, [grid('table')])])]);
+
+    expect(scrollersFrom(main)).toEqual(['screen-container']);
+  });
+
+  it('stops at a level with more than one child, so a table in its own scroll wrapper is not the page', () => {
+    const main = box('main', false, [box('screen', false, [box('heading', false), box('table-wrapper', true)])]);
+
+    expect(scrollersFrom(main)).toEqual([]);
+  });
+
+  it('includes the main landmark itself and the scrollers above it, nearest first', () => {
+    const main = box('main', true, [box('screen', false)]);
+    box('app', true, [box('frame', false, [main])]);
+
+    expect(scrollersFrom(main)).toEqual(['app', 'main']);
+  });
+
+  it('returns nothing when no box on the way scrolls', () => {
+    const main = box('main', false, [box('screen', false)]);
+    box('layout', false, [main]);
+
+    expect(scrollersFrom(main)).toEqual([]);
+  });
+});
+
+describe('soleLayoutChild', () => {
+  interface LayoutNode {
+    name: string;
+    role: LayoutRole;
+    contents: LayoutNode[];
+  }
+
+  const node = (name: string, role: LayoutRole, contents: LayoutNode[] = []): LayoutNode => ({ name, role, contents });
+  const layout = { role: (n: LayoutNode) => n.role, contents: (n: LayoutNode) => n.contents };
+  const sole = (nodes: LayoutNode[]) => soleLayoutChild(nodes, layout)?.name ?? null;
+
+  it('returns the only box, passing over nodes that take no part in the layout', () => {
+    // Whitespace text, a hidden element, a positioned badge.
+    expect(sole([node('ws', 'none'), node('screen', 'box'), node('badge', 'none')])).toBe('screen');
+  });
+
+  it('returns null for a level with more than one box, or text beside a box', () => {
+    expect(sole([node('heading', 'box'), node('table-wrapper', 'box')])).toBeNull();
+    expect(sole([node('label', 'text'), node('screen', 'box')])).toBeNull();
+    expect(sole([node('ws', 'none')])).toBeNull();
+  });
+
+  it("counts the boxes inside a display: contents wrapper, so a sibling is not taken for the level's only child", () => {
+    // The screen's heading and copy sit in a wrapper without a box of its
+    // own, beside a table that scrolls in its own wrapper.
+    const wrapper = node('wrapper', 'contents', [node('heading', 'box'), node('copy', 'box')]);
+
+    expect(sole([wrapper, node('table-wrapper', 'box')])).toBeNull();
+  });
+
+  it('follows a display: contents wrapper (a slot, by default) to the only box it lays out', () => {
+    const slot = node('slot', 'contents', [node('ws', 'none'), node('screen-root', 'box')]);
+
+    expect(sole([slot])).toBe('screen-root');
+    expect(sole([node('outer', 'contents', [node('inner', 'contents', [node('screen-root', 'box')])])])).toBe(
+      'screen-root'
+    );
+  });
+
+  it('returns null when a wrapper lays out text beside the box', () => {
+    expect(sole([node('wrapper', 'contents', [node('label', 'text')]), node('screen', 'box')])).toBeNull();
+  });
+});
+
 describe('shareVisualRow', () => {
   it('bottom-aligned controls of different heights still share the row', () => {
     // items-end row: 40px input and 36px button, flush bottoms.
@@ -156,6 +308,71 @@ describe('findControlHeightMismatches', () => {
   });
 });
 
+describe('clipInkToScrollers', () => {
+  it('cuts both sides of wide ink and keeps an edge that starts at padded content', () => {
+    const box = { left: 112, right: 388 };
+    expect(clipInkToScrollers({ left: 100, right: 420 }, [box])).toEqual({ left: null, right: null });
+    expect(clipInkToScrollers({ left: 112, right: 420 }, [box])).toEqual({ left: 112, right: null });
+  });
+
+  it('keeps an unpadded left edge measurable while cutting the right side', () => {
+    const ink = clipInkToScrollers({ left: 100, right: 420 }, [{ left: 100, right: 400 }]);
+    expect(ink).toEqual({ left: 100, right: null });
+    expect(findCardEdgeFlush({ left: 100, right: 400 }, [ink!], { left: true, right: true })).toEqual([
+      { side: 'left', insetPx: 0 },
+    ]);
+  });
+
+  it('cuts only the side beyond a scroller and drops ink fully out of view', () => {
+    const box = { left: 112, right: 388 };
+    expect(clipInkToScrollers({ left: 100, right: 388 }, [box])).toEqual({ left: null, right: 388 });
+    expect(clipInkToScrollers({ left: 390, right: 420 }, [box])).toBeNull();
+  });
+
+  it('intersects nested scrollers regardless of order', () => {
+    const outer = { left: 108, right: 390 };
+    const inner = { left: 112, right: 400 };
+    expect(clipInkToScrollers({ left: 110, right: 395 }, [outer, inner])).toEqual({ left: null, right: null });
+    expect(clipInkToScrollers({ left: 110, right: 395 }, [inner, outer])).toEqual({ left: null, right: null });
+  });
+
+  it('leaves ink unclipped without a scroller, so overflow past a hidden or clip container is still reported', () => {
+    const ink = clipInkToScrollers({ left: 90, right: 380 }, []);
+    expect(ink).toEqual({ left: 90, right: 380 });
+    expect(findCardEdgeFlush({ left: 100, right: 400 }, [ink!], { left: true, right: true })).toEqual([
+      { side: 'left', insetPx: -10 },
+    ]);
+  });
+
+  it('cuts by the element box, so cell text short of the edge in a cut cell is not measured', () => {
+    const scroller = { left: 100, right: 400 };
+    const cellText = { left: 316, right: 399 };
+    const cell = { left: 300, right: 415 };
+    expect(clipInkToScrollers(cellText, [scroller], cell)).toEqual({ left: 316, right: null });
+    expect(clipInkToScrollers(cellText, [scroller])).toEqual({ left: 316, right: 399 });
+    expect(clipInkToScrollers({ left: 408, right: 412 }, [scroller], { left: 405, right: 415 })).toBeNull();
+  });
+
+  it('does not cut a child that fills the scroller to within a subpixel', () => {
+    const box = { left: 112, right: 388 };
+    const edge = SCROLL_EDGE_TOLERANCE_PX / 2;
+    expect(clipInkToScrollers({ left: 112 - edge, right: 388 + edge }, [box])).toEqual({
+      left: 112 - edge,
+      right: 388 + edge,
+    });
+  });
+
+  it('accepts padded ink at both scroll ends', () => {
+    const content = { left: 100, right: 400 };
+    const box = { left: content.left + MIN_CARD_PADDING_PX, right: content.right - MIN_CARD_PADDING_PX };
+    const start = clipInkToScrollers({ left: box.left, right: 450 }, [box]);
+    const end = clipInkToScrollers({ left: 50, right: box.right }, [box]);
+    expect(start).toEqual({ left: box.left, right: null });
+    expect(end).toEqual({ left: null, right: box.right });
+    expect(findCardEdgeFlush(content, [start!, end!], { left: true, right: true })).toEqual([]);
+  });
+});
+
 describe('findCardEdgeFlush', () => {
   const content = { left: 100, right: 400 };
   const bothSides = { left: true, right: true };
@@ -194,6 +411,16 @@ describe('findCardEdgeFlush', () => {
 
   it('reports nothing for an empty card', () => {
     expect(findCardEdgeFlush(content, [], bothSides)).toEqual([]);
+  });
+
+  it('skips null sides and leaves a side with only null values unmeasured', () => {
+    expect(findCardEdgeFlush(content, [{ left: null, right: 400 }, { left: 116, right: null }], bothSides)).toEqual([
+      { side: 'right', insetPx: 0 },
+    ]);
+    expect(findCardEdgeFlush(content, [{ left: null, right: 400 }], bothSides)).toEqual([
+      { side: 'right', insetPx: 0 },
+    ]);
+    expect(findCardEdgeFlush(content, [{ left: null, right: null }], bothSides)).toEqual([]);
   });
 });
 
@@ -284,6 +511,7 @@ describe('installDesignDefectCheck sweep failure', () => {
 
   it('catches a rejected sweep instead of leaving an unhandled rejection', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    axeRun.mockRejectedValueOnce(new Error('axe-core failed to run'));
 
     installDesignDefectCheck(0);
     // Real timers: let the scheduled sweep (and the mocked axe-core
@@ -291,5 +519,121 @@ describe('installDesignDefectCheck sweep failure', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     expect(errorSpy).toHaveBeenCalledWith('[design-defects] sweep failed:', expect.any(Error));
+  });
+});
+
+describe('axeResultsToFindings', () => {
+  // Only the fields the mapping reads; axe's own result objects carry more.
+  function result(id: string, nodes: Array<{ target: Array<string | string[]>; messages: string[] }>, extra: Record<string, unknown> = {}) {
+    return {
+      id,
+      help: `${id} help`,
+      impact: 'serious',
+      nodes: nodes.map((node) => ({
+        target: node.target,
+        any: node.messages.map((message) => ({ id: 'check', message })),
+        all: [],
+        none: [],
+      })),
+      ...extra,
+    };
+  }
+
+  function map(violations: unknown[], incomplete: unknown[]) {
+    return axeResultsToFindings({ violations, incomplete } as unknown as Parameters<typeof axeResultsToFindings>[0]);
+  }
+
+  it('maps each violation to a defect, as before', () => {
+    expect(map([result('color-contrast', [{ target: ['p'], messages: ['2.32:1'] }, { target: ['span'], messages: [] }])], [])).toEqual([
+      {
+        id: 'axe/color-contrast',
+        detail: 'color-contrast help (impact: serious, 2 node(s))',
+        target: 'p',
+      },
+    ]);
+  });
+
+  it('reports each node axe could not decide the contrast of as needing review, with its own target and reasons', () => {
+    const gradient = "Element's background color could not be determined due to a background gradient";
+    const overlapped = "Element's background color could not be determined because it's overlapped by another element";
+    const findings = map(
+      [],
+      [
+        result('color-contrast', [
+          { target: ['p.synced'], messages: [gradient] },
+          { target: ['span.hint'], messages: [gradient, gradient] },
+          { target: ['em'], messages: [overlapped, gradient] },
+        ]),
+      ]
+    );
+
+    expect(findings).toEqual([
+      { id: 'axe-incomplete/color-contrast', detail: `axe could not decide this: ${gradient}`, target: 'p.synced', kind: 'needs-review' },
+      { id: 'axe-incomplete/color-contrast', detail: `axe could not decide this: ${gradient}`, target: 'span.hint', kind: 'needs-review' },
+      {
+        id: 'axe-incomplete/color-contrast',
+        detail: `axe could not decide this: ${overlapped}; ${gradient}`,
+        target: 'em',
+        kind: 'needs-review',
+      },
+    ]);
+  });
+
+  it('names each shadow host on the way to an element inside a shadow root', () => {
+    // axe's target for an element in a shadow root lists every host and then
+    // the element; MFE content renders into shadow roots.
+    const findings = map(
+      [result('color-contrast', [{ target: [['my-widget', 'p']], messages: [] }])],
+      [result('color-contrast', [{ target: [['my-widget', 'inner-card', 'span.hint']], messages: ['gradient'] }])]
+    );
+
+    expect(findings.map((finding) => finding.target)).toEqual(['my-widget >>> p', 'my-widget >>> inner-card >>> span.hint']);
+  });
+
+  it("leaves out other rules' undecided results and empty ones", () => {
+    expect(map([], [result('aria-valid-attr-value', [{ target: ['div'], messages: ['?'] }]), result('color-contrast', [])])).toEqual([]);
+  });
+});
+
+describe('runDesignDefectCheck console output', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('prints the clean line only when nothing was found and nothing is undecided', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    axeRun.mockResolvedValueOnce({ violations: [], incomplete: [] });
+
+    expect(await runDesignDefectCheck()).toEqual([]);
+    expect(info).toHaveBeenCalledWith('[design-defects] clean: no objective design defects detected');
+  });
+
+  it('lists undecided contrast as needing review instead of printing the clean line', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    axeRun.mockResolvedValueOnce({
+      violations: [],
+      incomplete: [
+        {
+          id: 'color-contrast',
+          help: 'h',
+          nodes: [{ target: ['p.synced'], any: [{ message: 'background gradient' }], all: [], none: [] }],
+        },
+      ],
+    });
+
+    const findings = await runDesignDefectCheck();
+
+    expect(findings).toEqual([expect.objectContaining({ id: 'axe-incomplete/color-contrast', kind: 'needs-review' })]);
+    // Both kinds in full: axe keeps one node per result for a type left out.
+    expect(axeRun).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ resultTypes: ['violations', 'incomplete'] }),
+    );
+    expect(info).not.toHaveBeenCalled();
+    expect(warn.mock.calls.map(([line]) => line)).toEqual([
+      '[design-defects] 1 item(s) need review — undecided, so this state is not clean:',
+      '[design-defects] needs review axe-incomplete/color-contrast: axe could not decide this: background gradient — p.synced',
+    ]);
   });
 });

@@ -76,13 +76,18 @@ authority on each step.
    copied package's `package.json`. `dev:all`'s port auto-discovery depends on the
    `preview`/`dev` script carrying `--port <N>` literally.
 3. **Rename package identity** — update the copied `package.json` `name` and the
-   Module Federation `name` in `vite.config.ts` (camelCase, must match across both).
+   Module Federation `name` in `vite.config.ts` (camelCase, must match across both), and keep `@gears-frontx/routing` in `sharedDeps` there and pinned in `package.json`, as the scaffold has it (add `@gears-frontx/routing-tanstack` to both, under `dependencies`, only when the MFE uses `<ExtensionRouter>` or `navigation()`).
 4. **Assign GTS IDs** — rewrite every placeholder ID in `mfe.json` following
    template-mfe's ID taxonomy (see the `gts-id-conventions` guideline and the
    `gts-id-patterns-reference` reference artifact in this same bundle): a manifest ID,
    one entry ID per exposed module, and one extension ID per screen contributed to a
    domain (typically `gts.frontx.mfes.ext.domain.v1~frontx.screensets.layout.screen.v1`
-   for a screen-domain contribution).
+   for a screen-domain contribution). `presentation.label` is the English menu
+   label; a menu label in another language goes in a label dictionary under
+   `public/labels/` (the `navigation-contribution` guideline), whose
+   `labels[].extension` is the screen extension's own `id`
+   (`gts.frontx.mfes.ext.extension.v1~frontx.screensets.layout.screen.v1~...`),
+   not the domain ID.
 5. **Implement the lifecycle** — `src/lifecycle.tsx` extends `ThemeAwareReactLifecycle`
    from `@gears-frontx/react`; the MFE's own `init.ts` builds its app instance with
    `createFrontX().use(effects()).use(queryCacheShared()).use(mock()).build()` so it
@@ -101,10 +106,10 @@ authority on each step.
    plan as a gap — never guessed at or recreated locally. Then compose from
    kit components and semantic tokens; hand-rolling a
    look-alike of an existing kit component is a defect, not a style choice. If a
-   design-contract bundle is installed in the project — any AI bundle that ships a
-   `generate-interface` skill (check for `.frontx/ai/*/*/skills/generate-interface/`) —
-   that skill and its design contract govern how the screen is generated — follow
-   them. If none is installed, say so in the plan: the screen is being generated
+   design-contract bundle is installed in the project (any AI bundle that ships a
+   `frontx-design` skill; check for `.frontx/ai/*/*/skills/frontx-design/`),
+   that skill's `references/generate.md` and its design contract govern how the
+   screen is generated: follow them. If none is installed, say so in the plan: the screen is being generated
    without a design contract.
    Replace the scaffold's `HomeScreen` content wholesale: its "Bridge Info"
    card (domain id, instance id, theme, language) is scaffold demo residue,
@@ -133,7 +138,8 @@ authority on each step.
    mounts with zero console errors. Automated checks passing is not the end
    of verification: complete a final visual review of the screen at its
    target widths and themes before calling the MFE complete — when a
-   design-contract bundle is installed, its `verify-interface` flow is that
+   design-contract bundle is installed, its `frontx-design` skill's
+   `references/verify.md` flow is that
    review; without one, look at the rendered screen yourself and check
    layout alignment, overflow, and each visual state.
 

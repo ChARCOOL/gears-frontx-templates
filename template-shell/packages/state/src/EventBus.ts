@@ -14,6 +14,18 @@ import type {
   EventBus as IEventBus,
 } from './types';
 
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+  return (
+    (typeof value === 'object' || typeof value === 'function')
+    && value !== null
+    && typeof (value as { then?: unknown }).then === 'function'
+  );
+}
+
+function logSubscriberError(eventType: PropertyKey, error: unknown): void {
+  console.error(`[Gears FrontX] A ${String(eventType)} subscriber threw`, error);
+}
+
 /**
  * EventBus Implementation
  *
@@ -34,8 +46,6 @@ import type {
  * subscription.unsubscribe();
  * ```
  */
-// @cpt-dod:cpt-frontx-dod-state-management-eventbus:p1
-// @cpt-state:cpt-frontx-state-state-management-handler-registration:p1
 class EventBusImpl<TEvents extends EventPayloadMap = EventPayloadMap> implements IEventBus<TEvents> {
   private handlers: Map<string, Set<EventHandler<unknown>>> = new Map();
 
@@ -43,8 +53,11 @@ class EventBusImpl<TEvents extends EventPayloadMap = EventPayloadMap> implements
    * Emit an event with payload.
    * Type-safe: payload must match event type in EventPayloadMap.
    * Payload is optional for void events.
+   * Every handler runs even when an earlier one throws: each error is logged
+   * and emit never rethrows, so one failing subscriber cannot skip the rest
+   * or fail the emitter. A handler that returns a promise is not awaited; its
+   * rejection is logged the same way, so it never becomes unhandled.
    */
-  // @cpt-algo:cpt-frontx-algo-state-management-eventbus-emit:p1
   emit<K extends keyof TEvents>(
     eventType: K,
     ...args: TEvents[K] extends void ? [] : [TEvents[K]]
@@ -52,7 +65,18 @@ class EventBusImpl<TEvents extends EventPayloadMap = EventPayloadMap> implements
     const handlers = this.handlers.get(eventType as string);
     if (handlers) {
       const payload = args[0];
-      handlers.forEach((handler) => handler(payload));
+      handlers.forEach((handler) => {
+        try {
+          const result: unknown = handler(payload);
+          if (isThenable(result)) {
+            result.then(undefined, (error: unknown) => {
+              logSubscriberError(eventType, error);
+            });
+          }
+        } catch (error) {
+          logSubscriberError(eventType, error);
+        }
+      });
     }
   }
 
@@ -61,8 +85,6 @@ class EventBusImpl<TEvents extends EventPayloadMap = EventPayloadMap> implements
    * Type-safe: handler receives correct payload type for event.
    * Returns subscription object with unsubscribe method.
    */
-  // @cpt-algo:cpt-frontx-algo-state-management-eventbus-subscribe:p1
-  // @cpt-flow:cpt-frontx-flow-state-management-type-augmentation:p1
   on<K extends keyof TEvents>(
     eventType: K,
     handler: EventHandler<TEvents[K]>
@@ -91,15 +113,17 @@ class EventBusImpl<TEvents extends EventPayloadMap = EventPayloadMap> implements
   /**
    * Subscribe to event, but only fire once then auto-unsubscribe.
    * Type-safe: handler receives correct payload type for event.
+   * The subscription is removed before the handler runs, so a handler that
+   * throws still fires only once.
    */
-  // @cpt-algo:cpt-frontx-algo-state-management-eventbus-subscribe-once:p2
   once<K extends keyof TEvents>(
     eventType: K,
     handler: EventHandler<TEvents[K]>
   ): Subscription {
+    // Returns the handler's result so emit can log an async rejection.
     const wrappedHandler = (payload: TEvents[K]): void => {
-      handler(payload);
       subscription.unsubscribe();
+      return handler(payload);
     };
 
     const subscription = this.on(eventType, wrappedHandler);
