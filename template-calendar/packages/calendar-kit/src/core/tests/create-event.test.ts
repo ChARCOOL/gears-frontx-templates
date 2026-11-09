@@ -97,7 +97,7 @@ describe(validateCreateEventDraft, () => {
     const draft: TimedCreateEventDraft = {
       ...timedDraft(),
       attendeeIds: ["person-1", "person-2"],
-      conferencingProviderId: "meet",
+      conferencingProviderId: "team-sync",
       description: "Bring the release checklist.",
       location: "Science Hall 204",
       recurrenceRule: "FREQ=WEEKLY;BYDAY=MO,WE",
