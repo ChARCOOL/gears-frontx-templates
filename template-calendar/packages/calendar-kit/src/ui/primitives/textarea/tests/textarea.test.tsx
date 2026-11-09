@@ -9,7 +9,6 @@ import textareaCss from "../textarea.module.css?raw";
 
 const getTextarea = (name: string): HTMLTextAreaElement => {
   const textarea = screen.getByRole("textbox", { name });
-
   if (!(textarea instanceof HTMLTextAreaElement)) {
     throw new Error("Expected a textarea element");
   }
@@ -51,7 +50,6 @@ describe(Textarea, () => {
     );
 
     const textarea = getTextarea("Description");
-
     const user = userEvent.setup();
     await user.click(textarea);
     await user.paste("notes");
@@ -104,7 +102,6 @@ describe(Textarea, () => {
     );
 
     const textarea = getTextarea("Description");
-
     const user = userEvent.setup();
     await user.keyboard("x");
     textarea.focus();
@@ -129,7 +126,6 @@ describe(Textarea, () => {
     );
 
     const textarea = getTextarea("Description");
-
     const user = userEvent.setup();
     await user.keyboard("x");
 

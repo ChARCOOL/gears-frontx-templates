@@ -78,7 +78,6 @@ describe("live listbox internals", () => {
     const frames: ((timestamp: number) => void)[] = [];
     vi.spyOn(window, "requestAnimationFrame").mockImplementation((frame) => {
       frames.push(frame);
-
       return frames.length;
     });
 

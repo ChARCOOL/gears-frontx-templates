@@ -22,7 +22,6 @@ export const useFloatingPanel = (
 
   const reposition = useCallback((): void => {
     const anchor = anchorRef.current;
-
     if (!anchor) {
       return;
     }
@@ -34,7 +33,6 @@ export const useFloatingPanel = (
       : { height: 0, width: 0 };
 
     const viewport = { height: window.innerHeight, width: window.innerWidth };
-
     const dir = resolveDirection(panel ?? anchor);
 
     setPosition(
