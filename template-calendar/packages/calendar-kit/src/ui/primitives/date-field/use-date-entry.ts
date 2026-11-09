@@ -26,7 +26,6 @@ import { toAsciiDigits } from "../../../core/digits";
 import type { CalendarDate } from "../../../core/model";
 
 const DIGIT_PATTERN = /^\d$/u;
-
 const DIGIT_RUN_PATTERN = /^\d+$/u;
 
 /** Tab walks the mask's segments; past the first or last one it belongs to the form. */
@@ -40,7 +39,6 @@ const tabStep = (
   }
 
   const step = event.shiftKey ? -1 : 1;
-
   return index + step < 0 || index + step >= count ? null : step;
 };
 
@@ -69,10 +67,8 @@ interface DateEntry {
   readonly handleChange: (event: ChangeEvent<HTMLInputElement>) => void;
 }
 
-/**
- * Segmented date entry: digits shift into the segment under the caret and move
- * it on, arrows step it, and a date is committed as soon as the mask parses.
- */
+/** Segmented date entry: digits shift into the segment under the caret and move it on,
+ * arrows step it, and a date commits as soon as the mask parses. */
 export const useDateEntry = ({
   value,
   onValueChange,
@@ -96,7 +92,6 @@ export const useDateEntry = ({
     (target: number): void => {
       const input = inputRef.current;
       const segment = mask.segments[target];
-
       if (input === null || segment === undefined) {
         return;
       }
@@ -153,7 +148,6 @@ export const useDateEntry = ({
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>): void => {
       const segment = mask.segments[index];
-
       if (segment === undefined || event.metaKey || event.ctrlKey) {
         return;
       }
@@ -170,7 +164,6 @@ export const useDateEntry = ({
       if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
         event.preventDefault();
         moveBy(event.key === "ArrowLeft" ? -1 : 1);
-
         return;
       }
 
@@ -178,7 +171,6 @@ export const useDateEntry = ({
         event.preventDefault();
         entryRef.current = null;
         commit(stepSegment(text, segment, event.key === "ArrowUp" ? 1 : -1));
-
         return;
       }
 
@@ -186,16 +178,13 @@ export const useDateEntry = ({
         event.preventDefault();
         entryRef.current = null;
         commit(clearSegment(text, mask, segment));
-
         return;
       }
 
       const tab = tabStep(event, index, mask.segments.length);
-
       if (tab !== null) {
         event.preventDefault();
         moveBy(tab);
-
         return;
       }
 
@@ -221,10 +210,8 @@ export const useDateEntry = ({
     [commit, index, mask, moveBy, onOpenCalendar, text]
   );
 
-  /* Pasted text is rarely the bare mask: `Sep 30, 2026` and `2026-09-30` parse
-   * through the text reader. Only a bare digit run (`09232026`) fills the mask
-   * digit by digit; anything else the reader rejects (`1/12/2026 10:00`) is
-   * ignored rather than spread across the segments. */
+  /* Only a bare digit run (`09232026`) fills the mask digit by digit. Other pasted text goes through the
+   * text reader; anything it rejects is ignored rather than spread across the segments. */
   const handlePaste = useCallback(
     (event: ClipboardEvent<HTMLInputElement>): void => {
       event.preventDefault();

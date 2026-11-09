@@ -24,7 +24,6 @@ import {
 } from "../../public";
 
 const CATALOG_IDS = Object.keys(ENGLISH_TRANSLATIONS);
-
 const PLACEHOLDER = /\{\{(?<name>\w+)\}\}/gu;
 
 const placeholdersOf = (template: string): readonly string[] =>
@@ -53,7 +52,6 @@ const isStringRecord = (value: object): value is Record<string, string> =>
 
 const parseCatalog = (text: string | null): Record<string, string> => {
   const parsed: unknown = JSON.parse(text ?? "{}");
-
   if (
     typeof parsed !== "object" ||
     parsed === null ||

@@ -38,7 +38,6 @@ describe("all-day span allocation", () => {
 
     const firstDate = calendarDate("2026-08-24");
     const secondDate = addCalendarDays(firstDate, 1);
-
     const dates = [firstDate, secondDate] as const;
 
     const duplicatedSegments = [

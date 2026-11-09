@@ -5,10 +5,8 @@ import {
 } from "../core/intl-cache";
 import type { CalendarLocale } from "../core/model";
 
-/**
- * Flat id → template map for one locale. i18next conventions: `{{name}}` placeholders and
- * `_one`/`_other` plural suffixes, so the same file feeds the kit and a react-i18next host.
- */
+/** Flat id → template map for one locale, using i18next conventions: `{{name}}` placeholders
+ * and `_one`/`_other` suffixes, so the same file feeds the kit and a react-i18next host. */
 export type CalendarTranslations = Readonly<Record<string, string>>;
 
 export type CalendarTranslationValues = Readonly<
@@ -21,7 +19,6 @@ export type CalendarMessages = Readonly<Record<string, CalendarTranslations>>;
 export type CalendarMissingTranslation = (id: string) => void;
 
 export const ENGLISH_LOCALE = "en";
-
 const PLACEHOLDER_PATTERN = /\{\{([^{}]+)\}\}/gu;
 
 /** A count picks the plural form, so a caller never builds a category-suffixed id itself. */
@@ -66,7 +63,6 @@ const interpolate = (
     }
 
     const value = values[name];
-
     return typeof value === "number" ? format.format(value) : String(value);
   });
 };
@@ -91,7 +87,6 @@ export const readTranslation = (
     pluralLocale
   )) {
     const template = translations[candidate];
-
     if (isUsableTranslation(template, candidate)) {
       return interpolate(template, values, locale);
     }

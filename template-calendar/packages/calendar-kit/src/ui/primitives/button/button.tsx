@@ -192,7 +192,6 @@ const Button = ({
   useEffect(() => {
     /* ui-kit's loading prop swaps disabled for focusable ARIA-disabled; the calendar keeps native disabled. */
     const element = buttonElementRef.current;
-
     if (!element) {
       return;
     }

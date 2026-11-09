@@ -18,7 +18,6 @@ import type { CalendarTranslate } from "../../i18n/calendar-localization";
 import { getRelativeDayLabel } from "../agenda-view/agenda-format";
 
 const DIACRITIC_MARKS = /[\u0300-\u036F]/gu;
-
 export const MIN_QUERY_LENGTH = 2;
 
 export interface SearchResultRow {
@@ -42,12 +41,9 @@ const addRow = (
   row: Omit<SearchResultRow, "focusIndex">
 ): void => {
   const existing = rowsByDate.get(date);
-
   const entry = { ...row, focusIndex: -1 };
-
   if (existing !== undefined) {
     existing.push(entry);
-
     return;
   }
 
@@ -83,7 +79,6 @@ const compareRows = (left: SearchResultRow, right: SearchResultRow): number => {
 
   if (left.start !== null && right.start !== null) {
     const startOrder = compareUtcInstants(left.start, right.start);
-
     if (startOrder !== 0) {
       return startOrder;
     }
@@ -97,20 +92,16 @@ const buildGroups = (
   timeZone: IanaTimeZone
 ): readonly SearchResultGroup[] => {
   const dates = sortCopy([...rowsByDate.keys()]);
-
   const groups: SearchResultGroup[] = [];
-
   let focusIndex = 0;
 
   for (const date of dates) {
     const rows = rowsByDate.get(date);
-
     if (rows === undefined) {
       continue;
     }
 
     const sortedRows = sortCopy(rows, compareRows);
-
     const indexedRows: SearchResultRow[] = [];
 
     for (const row of sortedRows) {
@@ -136,12 +127,10 @@ export const normalizeQuery = (query: string): string =>
 
 export const eventMatches = (event: CalendarEvent, needle: string): boolean => {
   const normalizedNeedle = normalizeQuery(needle);
-
   const fields = [event.title, event.organizer, event.location];
 
   for (const field of fields) {
     const resolvedField = field ?? undefined;
-
     if (
       resolvedField !== undefined &&
       normalizeQuery(resolvedField).includes(normalizedNeedle)
@@ -159,7 +148,6 @@ export const buildSearchGroups = (
   timeZone: IanaTimeZone
 ): readonly SearchResultGroup[] => {
   const needle = normalizeQuery(query);
-
   if (needle.length < MIN_QUERY_LENGTH) {
     return [];
   }
@@ -173,7 +161,6 @@ export const buildSearchGroups = (
 
     if (event.allDay) {
       addAllDayRows(rowsByDate, event);
-
       continue;
     }
 
@@ -204,7 +191,6 @@ export const formatSearchDayHeader = (
   t: CalendarTranslate
 ): string => {
   const relative = getRelativeDayLabel(date, todayDate, t);
-
   if (relative !== null) {
     return relative;
   }

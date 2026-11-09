@@ -56,7 +56,6 @@ export const formatAgendaDate = (
   const weekday = findPart(parts, "weekday");
   const month = findPart(parts, "month").slice(0, 3);
   const day = findPart(parts, "day");
-
   return `${weekday}, ${month} ${day}`;
 };
 
@@ -86,7 +85,6 @@ export const buildLiveAnnouncement = (
 ): string => {
   const firstGroup = arrayAt(dayGroups, 0);
   const lastGroup = arrayAt(dayGroups, -1);
-
   if (firstGroup === undefined || lastGroup === undefined) {
     return "";
   }

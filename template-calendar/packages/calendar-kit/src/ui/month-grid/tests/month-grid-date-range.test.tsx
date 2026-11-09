@@ -96,7 +96,6 @@ describe("MonthGrid date range selection", () => {
 
   it("passes the selected state to renderCell and keeps event activation", () => {
     const onEventSelect = vi.fn<() => void>();
-
     const selected: string[] = [];
 
     renderMonth({

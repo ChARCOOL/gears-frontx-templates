@@ -101,7 +101,6 @@ const AgendaInteractionContext =
 
 const useAgendaInteraction = (): AgendaInteractionContextValue => {
   const value = useContext(AgendaInteractionContext);
-
   if (value === null) {
     throw new Error("AgendaEventButton must be rendered inside AgendaView");
   }

@@ -80,27 +80,23 @@ const validateTimedDraft = (
   errors: CreateEventValidationErrors
 ): void => {
   const startMinutes = localTimeMinutes(draft.startTime);
-
   if (startMinutes === null) {
     errors.startTime = "invalid";
     return;
   }
 
   const endDate = draft.endDate ?? undefined;
-
   if (endDate !== undefined && endDate < draft.startDate) {
     errors.endDate = "before-start";
     return;
   }
 
   const endTime = draft.endTime ?? undefined;
-
   if (endTime === undefined) {
     return;
   }
 
   const endMinutes = localTimeMinutes(endTime);
-
   if (endMinutes === null) {
     errors.endTime = "invalid";
     return;
@@ -125,13 +121,11 @@ const parseRecurrenceValues = (rule: string): Map<string, string> | null => {
 
   for (const field of rule.split(";")) {
     const separator = field.indexOf("=");
-
     if (separator <= 0 || separator === field.length - 1) {
       return null;
     }
 
     const key = field.slice(0, separator);
-
     if (values.has(key)) {
       return null;
     }
@@ -144,7 +138,6 @@ const parseRecurrenceValues = (rule: string): Map<string, string> | null => {
 
 const isValidUntil = (value: string): boolean => {
   const groups = RECURRENCE_UNTIL_PATTERN.exec(value)?.groups;
-
   if (groups === undefined) {
     return false;
   }
@@ -181,7 +174,6 @@ const hasSupportedKeys = (values: ReadonlyMap<string, string>): boolean =>
 
 export const isValidRecurrenceRule = (rule: string): boolean => {
   const values = parseRecurrenceValues(rule);
-
   if (values === null) {
     return false;
   }

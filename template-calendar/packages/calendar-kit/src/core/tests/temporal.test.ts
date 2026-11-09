@@ -302,6 +302,7 @@ describe("calendar temporal algorithms", () => {
     "rejects a %s-minute slot instead of looping on it",
     (minutes) => {
       const slotMinutes = minutes as CalendarSlotMinutes;
+
       const range = {
         end: utcInstant("2026-08-25T00:00:00.000Z"),
         start: utcInstant("2026-08-24T00:00:00.000Z"),

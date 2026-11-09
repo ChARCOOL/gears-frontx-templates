@@ -85,7 +85,6 @@ const selectedPeopleForDraft = (
   }
 
   const validPeopleIds = new Set(people.map((person) => person.id));
-
   return attendeeIds.filter((id) => validPeopleIds.has(id));
 };
 
@@ -232,13 +231,11 @@ const closeShell = (
 
   if (discardOpen) {
     actions.dismissDiscard();
-
     return;
   }
 
   if (customRepeatOpen) {
     actions.closeCustomRepeat();
-
     return;
   }
 
@@ -416,7 +413,6 @@ export const useCreateEventPopoverContent = (
             }
       );
       setCustomRepeatOpen(true);
-
       return;
     }
 
@@ -428,14 +424,12 @@ export const useCreateEventPopoverContent = (
 
   const handleNativeSelectChange = (event: Event): void => {
     const { target } = event;
-
     if (!(target instanceof HTMLButtonElement)) {
       return;
     }
 
     if (target.id === fieldId("repeat")) {
       onRepeatPresetChange(target.value);
-
       return;
     }
 

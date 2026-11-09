@@ -25,7 +25,6 @@ export const formatWeekdayInitials = (
   locale: string
 ): string => {
   const short = dateTimeFormatter(locale, { weekday: "short" }).format(weekday);
-
   return leadingGraphemes(short, locale, WEEKDAY_INITIAL_LENGTH);
 };
 

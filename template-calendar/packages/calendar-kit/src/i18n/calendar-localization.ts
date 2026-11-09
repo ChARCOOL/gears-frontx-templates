@@ -72,10 +72,8 @@ export interface CalendarLocalizationProviderProps extends CalendarLocalizationP
 /** Props a component hands to the scopes it opens. */
 export interface CalendarContextProps
   extends CalendarLocalizationProps, CalendarViewerProps {
-  /**
-   * Text for the active locale, used in place of the provider's. A component renders in exactly
-   * one locale, so this stays flat; a whole calendar takes `messages` instead.
-   */
+  /** Text for the active locale, used in place of the provider's. A component renders in one locale,
+   * so this stays flat; a whole calendar takes `messages` instead. */
   readonly translations?: CalendarTranslations;
 }
 
@@ -112,11 +110,8 @@ export const CalendarLocalizationContext =
     t: englishTranslate,
   });
 
-/**
- * A component's `translations` outrank the host translator so one component can be retexted in
- * place; the provider's catalogues lose to it so a host that translates everything keeps
- * ownership.
- */
+/** A component's `translations` outrank the host translator, so one component can be retexted in place.
+ * Provider catalogues lose to them, so a host that translates everything keeps ownership. */
 const buildTranslate = (
   state: Omit<CalendarLocalizationState, "t">,
   instanceTranslations: CalendarTranslations | undefined
@@ -151,7 +146,6 @@ const buildTranslate = (
 
   const readHost: CalendarLookup = (id, values) => {
     const value = hostT?.(id, values);
-
     return isUsableTranslation(value, id) ? value : undefined;
   };
 
@@ -185,7 +179,6 @@ export const useLocalizationState = (
   const isProvider = provider !== undefined;
   const hostOnMissingTranslation = provider?.onMissingTranslation;
   const hasOnMissingTranslation = hostOnMissingTranslation !== undefined;
-
   const instanceTranslations = isProvider ? undefined : translations;
 
   // One set for the provider's lifetime, so a new `messages` object or an inline
@@ -239,7 +232,6 @@ export const useLocalizationState = (
 
 export const useCalendarLocalization = (): CalendarLocalizationValue => {
   const { direction, locale, t } = useContext(CalendarLocalizationContext);
-
   return useMemo(() => ({ direction, locale, t }), [direction, locale, t]);
 };
 

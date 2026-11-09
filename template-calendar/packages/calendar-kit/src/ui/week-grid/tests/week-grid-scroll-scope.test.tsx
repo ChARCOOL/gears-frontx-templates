@@ -84,7 +84,6 @@ describe("WeekGrid scroll scope acceptance pins", () => {
     assert(allDayBand).toBeVisible();
     assert(surface).toContainElement(hourRows[0]);
     const lastHourRow = hourRows.at(-1);
-
     if (lastHourRow === undefined) {
       throw new Error("Expected a last hour row");
     }

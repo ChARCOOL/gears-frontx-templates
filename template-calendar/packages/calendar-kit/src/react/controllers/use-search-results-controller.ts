@@ -91,7 +91,6 @@ export const useSearchResultsController = (
   });
 
   const [debouncedQuery, setDebouncedQuery] = useState(queryState.value);
-
   const [focusedIndex, setFocusedIndex] = useState(0);
 
   const rowRefs = useRef(new Map<number, HTMLElement>());
@@ -113,7 +112,6 @@ export const useSearchResultsController = (
   );
 
   const resultCount = useMemo(() => countRows(groups), [groups]);
-
   const todayDate = useMemo(() => viewerToday(now, timeZone), [now, timeZone]);
 
   const state = resolveState(debouncedQuery, resultCount);
@@ -149,7 +147,6 @@ export const useSearchResultsController = (
   const revealRow = useCallback(
     (focusIndex: number): void => {
       const row = rowAt(groups, focusIndex);
-
       if (row === undefined) {
         return;
       }

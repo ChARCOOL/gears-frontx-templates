@@ -27,7 +27,6 @@ import { Separator } from "../primitives/separator/separator";
 import styles from "./calendar-side-panel.module.css";
 
 const sidePanelToggleIcon = <PanelRightIcon aria-hidden="true" />;
-
 const sidePanelSearchIcon = <SearchIcon aria-hidden="true" />;
 
 export interface CalendarSidePanelSlots {

@@ -158,10 +158,8 @@ const AvailabilityGridContent = ({
     target: EventTarget | null
   ): CalendarAvailabilityCell | undefined => {
     const element = target instanceof Element ? target : null;
-
     const gridCell = element?.closest<HTMLElement>("[data-cell-key]");
     const key = gridCell?.dataset.cellKey;
-
     return key === undefined ? undefined : cellsByKey.get(key);
   };
 
@@ -169,7 +167,6 @@ const AvailabilityGridContent = ({
     event: ReactPointerEvent<HTMLDivElement>
   ): void => {
     const cell = cellAtTarget(event.target);
-
     if (cell === undefined || controller.interactionMode === "read-only") {
       return;
     }

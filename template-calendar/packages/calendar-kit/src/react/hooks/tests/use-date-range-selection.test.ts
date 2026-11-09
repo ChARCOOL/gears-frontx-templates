@@ -68,7 +68,6 @@ describe(useDateRangeSelection, () => {
 
   it("anchors and commits from the keyboard, and cancels back to the committed range", () => {
     const committed = { end: SEP_3, start: SEP_1 };
-
     const { hook, onChange } = renderSelection(committed);
 
     act(() => {

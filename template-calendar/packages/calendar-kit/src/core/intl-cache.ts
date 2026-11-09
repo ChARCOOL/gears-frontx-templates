@@ -52,7 +52,6 @@ const cachedByLocale = <Options extends object, Value>(
 
     const key = cacheKey(locale, options);
     const cached = cache.get(key);
-
     if (cached !== undefined) {
       return cached;
     }
@@ -66,7 +65,6 @@ const cachedByLocale = <Options extends object, Value>(
 };
 
 export const dateTimeFormatter = cachedByLocale(() => Intl.DateTimeFormat);
-
 export const numberFormatter = cachedByLocale(() => Intl.NumberFormat);
 
 export const relativeTimeFormatter = cachedByLocale(
@@ -74,7 +72,5 @@ export const relativeTimeFormatter = cachedByLocale(
 );
 
 export const listFormatter = cachedByLocale(() => Intl.ListFormat);
-
 export const pluralRules = cachedByLocale(() => Intl.PluralRules);
-
 export const segmenter = cachedByLocale(() => Intl.Segmenter);

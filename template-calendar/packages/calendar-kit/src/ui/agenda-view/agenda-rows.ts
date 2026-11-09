@@ -133,7 +133,6 @@ const resolveRowFlags = (
   if (row.kind === "timed") {
     const past = compareUtcInstants(row.end, now) <= 0;
     const inProgress = !past && compareUtcInstants(row.start, now) <= 0;
-
     return { now: inProgress, past };
   }
 
@@ -149,7 +148,6 @@ const toEventRow = (
 ): AgendaEventRow => {
   const key = `${row.event.id}:${row.date}:${row.segment ?? "single"}`;
   const flags = resolveRowFlags(row, now, todayDate);
-
   if (row.kind === "allday") {
     return {
       date: row.date,
@@ -310,7 +308,6 @@ const buildNowLine = (
   }
 
   const minute = Number(toViewerDateTime(now, timeZone).time.slice(3, 5));
-
   return { hourRowIndex, minutePercent: (minute / 60) * 100 };
 };
 
@@ -344,6 +341,7 @@ const collectRawRows = (
           start: null,
         });
       }
+
       continue;
     }
 
@@ -382,9 +380,7 @@ const buildDayGroup = (
   timeZone: IanaTimeZone
 ): AgendaDayGroup => {
   const dayRows: AgendaEventRow[] = [];
-
   const allDayEvents: AgendaAllDayRow[] = [];
-
   const timedRows: AgendaTimedRow[] = [];
 
   for (const row of eventRows) {
@@ -402,9 +398,7 @@ const buildDayGroup = (
   }
 
   const isToday = windowDate === todayDate;
-
   const hourRows = buildHourRows(windowDate, timedRows, isToday, now, timeZone);
-
   const nowLine = isToday ? buildNowLine(hourRows, now, timeZone) : null;
 
   return {
@@ -418,11 +412,9 @@ const buildDayGroup = (
 
 export const buildAgendaModel = (input: BuildAgendaModelInput): AgendaModel => {
   const { date, timeZone, events, now } = input;
-
   const windowRange = buildDayWindow(date, AGENDA_WINDOW_DAYS, timeZone);
   const windowDates = buildWindowDates(windowRange.start);
   const todayDate = toViewerDateTime(now, timeZone).date;
-
   const rawRows = collectRawRows(events, windowDates, timeZone);
   const sortedRawRows = sortCopy(rawRows, compareRawRows);
 

@@ -12,7 +12,6 @@ import type { WorldClocksProps } from "../world-clocks";
 import worldClocksCss from "../world-clocks.module.css?raw";
 
 const NOW = utcInstant("2026-08-24T13:59:00.000Z");
-
 const BERLIN = parseIanaTimeZone("Europe/Berlin");
 const SINGAPORE = parseIanaTimeZone("Asia/Singapore");
 const LONDON = parseIanaTimeZone("Europe/London");

@@ -15,7 +15,6 @@ export const timeZoneLabel = (
   t: CalendarTranslate
 ): string => {
   const messageId = CITY_GROUP_MESSAGE_IDS.get(timeZoneId);
-
   return messageId === undefined ? zoneCityLabel(timeZoneId) : t(messageId);
 };
 
