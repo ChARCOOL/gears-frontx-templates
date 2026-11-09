@@ -576,7 +576,8 @@ VITEST_VERSION="$(node -p "require('$REPO_ROOT/node_modules/vitest/package.json'
 TESTING_LIBRARY_VERSION="$(node -p "require('$REPO_ROOT/node_modules/@testing-library/react/package.json').version")"
 TESTING_DOM_VERSION="$(node -p "require('$REPO_ROOT/node_modules/@testing-library/dom/package.json').version")"
 JSDOM_VERSION="$(node -p "require('$REPO_ROOT/node_modules/jsdom/package.json').version")"
-TYPES_NODE_VERSION="$(node -p "require('$REPO_ROOT/node_modules/@types/node/package.json').version")"
+# Node 26 types require a newer compiler than the consumer's TypeScript 5.4.
+TYPES_NODE_VERSION="20.12.12"
 TYPES_REACT_VERSION="$(node -p "require('$REPO_ROOT/node_modules/@types/react/package.json').version")"
 TYPES_REACT_DOM_VERSION="$(node -p "require('$REPO_ROOT/node_modules/@types/react-dom/package.json').version")"
 
