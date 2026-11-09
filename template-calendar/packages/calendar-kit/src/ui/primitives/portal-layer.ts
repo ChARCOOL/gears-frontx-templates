@@ -4,7 +4,6 @@ export const resolvePortalContainer = (
   element: HTMLElement
 ): HTMLElement | ShadowRoot => {
   const root = element.getRootNode();
-
   if (root instanceof ShadowRoot) {
     return root;
   }
@@ -63,7 +62,6 @@ export const scrollMovesAnchor = (
   anchor: HTMLElement | null
 ): boolean => {
   const { target } = event;
-
   if (anchor === null || !(target instanceof Node)) {
     return true;
   }

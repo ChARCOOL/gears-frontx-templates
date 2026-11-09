@@ -118,9 +118,7 @@ export const useListboxController = <Value extends string>({
       const path = event.composedPath();
       const anchor = anchorRef.current;
       const panel = panelRef?.current;
-
       const insideAnchor = anchor ? path.includes(anchor) : false;
-
       const insidePanel = panel ? path.includes(panel) : false;
 
       if (anchor && !insideAnchor && !insidePanel) {
@@ -257,6 +255,7 @@ export const useListboxController = <Value extends string>({
 
           event.preventDefault();
           closeAndFocusTrigger();
+
           return;
         }
 
@@ -264,6 +263,7 @@ export const useListboxController = <Value extends string>({
           if (open) {
             closeListbox();
           }
+
           return;
         }
 

@@ -147,7 +147,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]),
-  :host:not([data-theme="light"]) {
+  :host(:not([data-theme="light"])) {
     --surface: #111827;
     --surface-elevated: #1f2937;
     --foreground: #f8fafc;

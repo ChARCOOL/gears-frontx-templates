@@ -1,6 +1,5 @@
 const splitSelectors = (value: string): string[] => {
   const selectors: string[] = [];
-
   let current = "";
   let parentheses = 0;
   let brackets = 0;
@@ -26,6 +25,7 @@ const splitSelectors = (value: string): string[] => {
       if (character === quote) {
         quote = undefined;
       }
+
       continue;
     }
 
@@ -70,7 +70,6 @@ export const declarations = (
 
   while (searchFrom < css.length) {
     const start = css.indexOf("{", searchFrom);
-
     if (start === -1) {
       break;
     }

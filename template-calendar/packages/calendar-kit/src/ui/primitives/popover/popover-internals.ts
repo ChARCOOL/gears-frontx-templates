@@ -4,7 +4,6 @@ import { subscribeGlobalEvent } from "../global-event-listener";
 import { hasNestedLayer } from "../portal-layer";
 
 const openPanels = new Set<HTMLElement>();
-
 let releaseSwallow: (() => void) | undefined;
 
 /** The panel unmounts before the click its press ends with, so the swallow outlives it. */

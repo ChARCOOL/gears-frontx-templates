@@ -78,7 +78,6 @@ const Sheet = ({
     if (event.key === "Escape") {
       event.stopPropagation();
       requestClose();
-
       return;
     }
 
@@ -89,12 +88,10 @@ const Sheet = ({
     if (!open) {
       originRef.current?.focus();
       originRef.current = null;
-
       return noopCleanup;
     }
 
     const panel = panelRef.current;
-
     if (!panel) {
       return noopCleanup;
     }
@@ -115,7 +112,6 @@ const Sheet = ({
 
     const panel = panelRef.current;
     const root = panel?.getRootNode();
-
     if (!panel || !(root instanceof Document || root instanceof ShadowRoot)) {
       return noopCleanup;
     }

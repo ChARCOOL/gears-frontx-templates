@@ -137,7 +137,6 @@ export interface UseWeekGridControllerResult<Payload = unknown> {
 }
 
 const DEFAULT_VISIBLE_DAYS = 5;
-
 const DEFAULT_INTERACTION_MODE: WeekGridInteractionMode = "quick-create";
 
 const buildDayColumn = (
@@ -148,7 +147,6 @@ const buildDayColumn = (
 ): WeekGridDayColumn => {
   const range = buildTimeWindowRange(date, timeZone, window);
   const starts = buildSlotStarts(range, slotMinutes);
-
   const slots: CalendarCell[] = [];
 
   for (const [index, start] of starts.entries()) {
@@ -265,7 +263,6 @@ export const useWeekGridController = <Payload = unknown>(
 
   const restoreOriginFocus = useCallback((): void => {
     const origin = originFocusRef.current;
-
     if (!origin) {
       return;
     }
@@ -372,7 +369,6 @@ export const useWeekGridController = <Payload = unknown>(
     (state: InteractionState): boolean => {
       const gridChanged = previousGridIdentityRef.current !== gridIdentity;
       const move = state.pendingMove ?? state.drag;
-
       if (!move) {
         return false;
       }
@@ -401,7 +397,6 @@ export const useWeekGridController = <Payload = unknown>(
       // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-paint-range:p1:inst-paint-return
       for (const cell of range.cells) {
         const event = findEventAtCellInEvents(events, cell);
-
         if (event && !isEventActionable(event)) {
           return;
         }
@@ -459,7 +454,6 @@ export const useWeekGridController = <Payload = unknown>(
   ): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-select
     const event = eventById.get(eventId);
-
     if (!event || !isEventActionable(event)) {
       return;
     }
@@ -483,7 +477,6 @@ export const useWeekGridController = <Payload = unknown>(
   ): CalendarSelectionRange | null => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-quick-create
     const cell = getCell(columnIndex, rowIndex);
-
     if (!cell || findEventAtCell(cell)) {
       return null;
     }
@@ -495,13 +488,11 @@ export const useWeekGridController = <Payload = unknown>(
   const beginPaint = (columnIndex: number, rowIndex: number): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-paint-range:p1:inst-paint-anchor
     const cell = getCell(columnIndex, rowIndex);
-
     if (!cell) {
       return;
     }
 
     const event = findEventAtCell(cell);
-
     if (event && !isEventActionable(event)) {
       return;
     }
@@ -513,13 +504,11 @@ export const useWeekGridController = <Payload = unknown>(
   const updatePaint = (columnIndex: number, rowIndex: number): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-paint-range:p1:inst-paint-extend
     const cell = getCell(columnIndex, rowIndex);
-
     if (!cell) {
       return;
     }
 
     const event = findEventAtCell(cell);
-
     if (event && !isEventActionable(event)) {
       return;
     }
@@ -545,7 +534,6 @@ export const useWeekGridController = <Payload = unknown>(
   ): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-request
     const event = eventById.get(eventId);
-
     if (!event || !isEventActionable(event)) {
       return;
     }
