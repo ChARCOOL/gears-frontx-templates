@@ -49,7 +49,6 @@ const compareEvents = (
 
   const leftDuration = left.endEpoch - left.startEpoch;
   const rightDuration = right.endEpoch - right.startEpoch;
-
   if (leftDuration !== rightDuration) {
     return rightDuration - leftDuration;
   }
@@ -66,7 +65,6 @@ const layoutGroup = (
   for (const event of groupEvents) {
     const columnIndex = columns.findIndex((column) => {
       const previous = arrayAt(column, -1);
-
       return previous !== undefined && previous.endEpoch <= event.startEpoch;
     });
 
@@ -75,7 +73,6 @@ const layoutGroup = (
       columns.push([event]);
     } else {
       const column = arrayAt(columns, columnIndex);
-
       if (!column) {
         throw new Error(`Missing overlap column for ${event.id}`);
       }
@@ -97,7 +94,6 @@ const layoutGroup = (
       columnIndex += 1
     ) {
       const column = arrayAt(columns, columnIndex);
-
       if (!column) {
         throw new Error(`Missing overlap column for ${event.id}`);
       }
@@ -137,7 +133,6 @@ const layoutGroup = (
 const toEpoch = (value: UtcInstant): number => {
   const normalized = utcInstant(value);
   const epoch = Date.parse(normalized);
-
   if (!Number.isFinite(epoch)) {
     throw new RangeError(`Invalid UTC instant: ${value}`);
   }
@@ -149,7 +144,6 @@ const normalizeTimedEvents = (
   events: readonly TimedLayoutInput[]
 ): NormalizedEvent[] => {
   const seenIds = new Set<string>();
-
   const timedEvents: NormalizedEvent[] = [];
 
   for (const [inputIndex, event] of events.entries()) {
@@ -198,9 +192,7 @@ const groupOverlappingEvents = (
   sortedEvents: readonly NormalizedEvent[]
 ): NormalizedEvent[][] => {
   const groups: NormalizedEvent[][] = [];
-
   let group: NormalizedEvent[] = [];
-
   let groupFurthestEnd = -Infinity;
 
   for (const event of sortedEvents) {
@@ -240,7 +232,6 @@ export const layoutTimedEvents = (
   const normalizedEvents = normalizeTimedEvents(events);
   const sortedEvents = sortCopy(normalizedEvents, compareEvents);
   const groups = groupOverlappingEvents(sortedEvents);
-
   return buildLayoutGeometry(groups);
   // @cpt-end:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-derive
 };
