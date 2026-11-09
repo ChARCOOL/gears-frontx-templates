@@ -163,7 +163,6 @@ const monthCell = (rowIndex: number, columnIndex: number): HTMLElement => {
     .getAllByRole("gridcell")
     .filter((element) => element.hasAttribute("data-cell-key"));
   const cell = cells[rowIndex * 7 + columnIndex];
-
   if (cell === undefined) {
     throw new Error(`Missing month grid cell at ${rowIndex}-${columnIndex}`);
   }
@@ -179,7 +178,6 @@ const dayNumberOf = (
   columnIndex: number
 ): string | undefined => {
   const cell = monthCell(rowIndex, columnIndex);
-
   return within(cell).getByText(/^\p{N}+$/u).textContent ?? undefined;
 };
 
@@ -233,7 +231,6 @@ describe(MonthGrid, () => {
     const localizedWeekNumber = new Intl.NumberFormat("ar-EG").format(1);
     const localizedDayNumber = new Intl.NumberFormat("ar-EG").format(2);
     const localizedHiddenCount = new Intl.NumberFormat("ar-EG").format(6);
-
     const [weekHeader] = within(grid).getAllByRole("rowheader");
     assert(weekHeader.textContent).toBe(`W${localizedWeekNumber}`);
     assert(weekHeader.getAttribute("aria-label")).toBe(

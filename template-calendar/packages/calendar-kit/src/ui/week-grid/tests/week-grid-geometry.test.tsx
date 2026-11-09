@@ -41,7 +41,6 @@ describe("WeekGrid event-card geometry seam", () => {
 
   it("uses computed week height for density while the frame remains the sole positioner", async () => {
     const user = userEvent.setup();
-
     const contexts: CalendarEventRenderContext[] = [];
 
     render(

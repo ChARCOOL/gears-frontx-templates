@@ -463,7 +463,6 @@ describe(EventCard, () => {
   it("forwards className to the card root", () => {
     const { container } = renderCard({ className: "consumer-card" });
     const root = container.firstElementChild;
-
     if (!(root instanceof HTMLElement)) {
       throw new Error("Expected EventCard to render a root element");
     }
