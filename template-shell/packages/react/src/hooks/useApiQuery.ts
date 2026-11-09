@@ -7,30 +7,46 @@
  *
  * Cache config cascade: component overrides > descriptor defaults > plugin defaults.
  * Omit overrides to rely on the descriptor's staleTime/gcTime, which in turn
- * fall back to the plugin-level query-cache defaults.
+ * fall back to the plugin-level query-cache defaults, so a screen that remounts
+ * within staleTime paints from cache without refetching.
+ *
+ * Pass `enabled: false` to hold a query whose input is not known yet.
  */
-// @cpt-dod:cpt-frontx-dod-request-lifecycle-use-api-query:p2
-// @cpt-flow:cpt-frontx-flow-request-lifecycle-use-api-query:p2
-// @cpt-state:cpt-frontx-state-request-lifecycle-query:p2
-// @cpt-FEATURE:implement-endpoint-descriptors:p3
 
 import type { EndpointDescriptor } from '@gears-frontx/framework';
 import type { ApiQueryResult } from '../types';
 import { useFrontXQuery } from '../queryClient';
 
-/** Per-call cache overrides. Cascade: these > descriptor > plugin defaults. */
-export interface ApiQueryOverrides {
+/**
+ * Per-call cache overrides shared by every read hook.
+ * Cascade: these > descriptor > plugin defaults.
+ */
+export interface ApiQueryCacheOverrides {
   /** Override staleTime for this specific call site. */
   staleTime?: number;
   /** Override gcTime for this specific call site. */
   gcTime?: number;
 }
 
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-use-api-query:p2:inst-delegate-use-query
+/** Per-call overrides for useApiSuspenseQuery. */
+export interface ApiSuspenseQueryOverrides extends ApiQueryCacheOverrides {
+  /** A suspense query always runs; use useApiQuery to hold one back. */
+  enabled?: never;
+}
+
+/** Per-call overrides for useApiQuery. */
+export interface ApiQueryOverrides extends ApiQueryCacheOverrides {
+  /**
+   * `false` keeps the query idle: it is not fetched automatically and
+   * `isLoading` stays false until it turns `true`. An explicit `refetch`
+   * still fetches. Defaults to `true`.
+   */
+  enabled?: boolean;
+}
+
 export function useApiQuery<TData = unknown, TError = Error>(
   descriptor: EndpointDescriptor<TData>,
   overrides?: ApiQueryOverrides
 ): ApiQueryResult<TData, TError> {
   return useFrontXQuery(descriptor, overrides);
 }
-// @cpt-end:cpt-frontx-flow-request-lifecycle-use-api-query:p2:inst-delegate-use-query
