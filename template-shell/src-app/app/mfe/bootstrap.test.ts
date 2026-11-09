@@ -9,25 +9,58 @@ const registerExtension = vi.fn().mockResolvedValue(undefined);
 const getDomain = vi.fn();
 const getExtension = vi.fn();
 const getExtensionsForDomain = vi.fn((_domainId: string): unknown[] => []);
-const getMountedExtensions = vi.fn(() => []);
 const executeActionsChain = vi.fn(() => undefined);
-// Real `ExclusiveMountStrategy`/`OptionalMountStrategy` need a fully wired
-// `mfes` registry/mounter/bridge to mount anything — out of scope here (that
-// machinery is `mfes`'s own tested behaviour, Global Constraints). These
-// fakes stand in for them so the cases below can exercise only what this
+// A real `ExclusiveMountStrategy` needs a fully wired
+// `mfes` registry/mounter/bridge to mount anything - out of scope here (that
+// machinery is `mfes`'s own tested behaviour, Global Constraints). A
+// fake stands in for it so the cases below can exercise only what this
 // package owns: the order between a strategy settling and `routing.afterMount`
 // / `routing.afterUnmount` being called.
-const exclusiveMount = vi.fn().mockResolvedValue(undefined);
+//
+// The Exclusive fake follows the call points of `ExclusiveMountStrategy`
+// (mfes `ExclusiveMountStrategy.ts`) on the container hooks it was built with:
+// `destroy(occupant)` when a mount evicts it, `create(subject)` before the
+// physical mount, `destroy(subject)` when that mount fails, and
+// `destroy(occupant)` when the slot detaches (`detach()` stands for the
+// screen mounter's detach releasing its occupant). `exclusiveMount` records
+// the call the handler makes on the strategy and is awaited first, so a case
+// can make the strategy fail or hang through it; `physicalMount` is the
+// mounter's own mount the strategy awaits.
+const exclusiveMount = vi.fn();
+const physicalMount = vi.fn().mockResolvedValue(undefined);
+interface RecordedHooks {
+  create(subject: string): unknown;
+  destroy(subject: string, container?: Element): void;
+}
 class FakeExclusiveMountStrategy {
-  mount = exclusiveMount;
+  static last: FakeExclusiveMountStrategy | undefined;
+  private occupant: string | undefined;
+  constructor(_mounter: unknown, private readonly hooks: RecordedHooks) {
+    FakeExclusiveMountStrategy.last = this;
+  }
+  async mount(payload: { subject: string }): Promise<void> {
+    await exclusiveMount(payload);
+    const subject = payload.subject;
+    if (this.occupant !== undefined && this.occupant !== subject) {
+      this.hooks.destroy(this.occupant);
+      this.occupant = undefined;
+    }
+    this.hooks.create(subject);
+    try {
+      await physicalMount(subject);
+    } catch (error) {
+      this.hooks.destroy(subject);
+      throw error;
+    }
+    this.occupant = subject;
+  }
+  detach(): void {
+    if (this.occupant !== undefined) {
+      this.hooks.destroy(this.occupant);
+      this.occupant = undefined;
+    }
+  }
 }
-const optionalMount = vi.fn().mockResolvedValue(undefined);
-const optionalUnmount = vi.fn().mockResolvedValue(undefined);
-class FakeOptionalMountStrategy {
-  mount = optionalMount;
-  unmount = optionalUnmount;
-}
-
 const mockMfeRegistry = {
   registerDomain,
   updateSharedProperty,
@@ -35,7 +68,6 @@ const mockMfeRegistry = {
   getDomain,
   getExtension,
   getExtensionsForDomain,
-  getMountedExtensions,
   executeActionsChain,
   typeSystem: {
     register: registerInstance,
@@ -49,22 +81,25 @@ const mockApp = {
   i18nRegistry: { getLanguage: () => null },
 };
 
-// Each domain needs a valid `route` — the injected router rejects a routed
-// domain that declares none, and `bootstrapMFE` would then throw before ever
-// reaching the manifest fetch these cases exercise.
+// The screen domain needs a valid `route`: the injected router rejects a
+// routed domain that declares none, and `bootstrapMFE` would then throw before
+// ever reaching the manifest fetch these cases exercise.
 vi.mock('@gears-frontx/react', async (importOriginal) => {
   const real = await importOriginal<Record<string, never>>();
   return {
     ...real,
     // `actions` is spread by the host bootstrap to append the chrome actions.
     screenDomain: { id: 'screen-domain', route: 'screen', actions: [] },
-    sidebarDomain: { id: 'sidebar-domain', route: 'sidebar' },
-    popupDomain: { id: 'popup-domain', route: 'popup' },
-    overlayDomain: { id: 'overlay-domain', route: 'overlay' },
     ExclusiveMountStrategy: FakeExclusiveMountStrategy,
-    OptionalMountStrategy: FakeOptionalMountStrategy,
   };
 });
+
+/** `bootstrapMFE` freshly imported, run with the screen domain the shell implements. */
+async function loadBootstrap(): Promise<{ bootstrapMFE: (app: never) => Promise<void> }> {
+  const { bootstrapMFE } = await import('./bootstrap');
+  const { registerScreenDomain } = await import('./screenDomain');
+  return { bootstrapMFE: (app) => bootstrapMFE(app, [registerScreenDomain]) };
+}
 
 describe('bootstrapMFE (host-app)', () => {
   let fetchSpy: ReturnType<typeof vi.spyOn>;
@@ -81,15 +116,11 @@ describe('bootstrapMFE (host-app)', () => {
     getExtension.mockReset();
     getExtensionsForDomain.mockReset();
     getExtensionsForDomain.mockReturnValue([]);
-    getMountedExtensions.mockReset();
-    getMountedExtensions.mockReturnValue([]);
     executeActionsChain.mockClear();
     exclusiveMount.mockClear();
-    exclusiveMount.mockResolvedValue(undefined);
-    optionalMount.mockClear();
-    optionalMount.mockResolvedValue(undefined);
-    optionalUnmount.mockClear();
-    optionalUnmount.mockResolvedValue(undefined);
+    physicalMount.mockReset();
+    physicalMount.mockResolvedValue(undefined);
+    FakeExclusiveMountStrategy.last = undefined;
 
     fetchSpy = vi.spyOn(globalThis, 'fetch');
   });
@@ -99,23 +130,61 @@ describe('bootstrapMFE (host-app)', () => {
     vi.restoreAllMocks();
   });
 
-  it('registers the four base domains before fetching manifests', async () => {
+  it('registers the screen domain and the screen extension type before fetching manifests', async () => {
     fetchSpy.mockResolvedValue(new Response('[]', { status: 200 }));
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const { bootstrapMFE } = await import('./bootstrap');
+    const { bootstrapMFE } = await loadBootstrap();
+    const { extensionScreenSchema } = await import('@gears-frontx/frontx-template-shell');
     await bootstrapMFE(mockApp as never);
 
-    expect(registerDomain).toHaveBeenCalledTimes(4);
+    expect(registerDomain).toHaveBeenCalledTimes(1);
+    expect(registerDomain.mock.calls[0][0].id).toBe('screen-domain');
+    expect(registerSchema).toHaveBeenCalledWith(extensionScreenSchema);
+    // The type goes on the type system before the domain that names it.
+    expect(registerSchema.mock.invocationCallOrder[0]).toBeLessThan(registerDomain.mock.invocationCallOrder[0]);
+    expect(registerDomain.mock.invocationCallOrder[0]).toBeLessThan(fetchSpy.mock.invocationCallOrder[0]);
     expect(updateSharedProperty.mock.calls.length).toBeGreaterThanOrEqual(2);
     expect(warnSpy).toHaveBeenCalled();
+  });
+
+  it('configures menu labels on the registry type system', async () => {
+    const aggregate = [{
+      manifest: { id: 'manifest.demo', metaData: { publicPath: '/mfe/demo/' } },
+      entries: [],
+      extensions: [{ id: 'ext.demo', domain: 'foreign-domain' }],
+      labelDictionaries: [{ language: 'fr', file: 'labels/fr.json' }],
+    }];
+    fetchSpy.mockResolvedValue(new Response(JSON.stringify(aggregate), { status: 200 }));
+    const { bootstrapMFE } = await loadBootstrap();
+    const { menuLabels } = await import('./menuLabels');
+    const configure = vi.spyOn(menuLabels, 'configure');
+
+    await bootstrapMFE(mockApp as never);
+
+    expect(configure).toHaveBeenCalledTimes(1);
+    const [manifests, aggregateUrl, typeSystem] = configure.mock.calls[0];
+    expect(manifests).toEqual(aggregate);
+    expect(aggregateUrl).toMatch(/generated-mfe-manifests\.json$/);
+    expect(typeSystem).toBe(mockMfeRegistry.typeSystem);
+  });
+
+  it('registers no domain and no screen type when the host implements none', async () => {
+    fetchSpy.mockResolvedValue(new Response('[]', { status: 200 }));
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { bootstrapMFE } = await import('./bootstrap');
+    await bootstrapMFE(mockApp as never, []);
+
+    expect(registerDomain).not.toHaveBeenCalled();
+    expect(registerSchema).not.toHaveBeenCalled();
   });
 
   it('opts the screen domain into the host chrome actions', async () => {
     fetchSpy.mockResolvedValue(new Response('[]', { status: 200 }));
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const { bootstrapMFE } = await import('./bootstrap');
+    const { bootstrapMFE } = await loadBootstrap();
     const { CHROME_SET_MENU_COLLAPSED, CHROME_SET_THEME } = await import('./chrome-actions');
     await bootstrapMFE(mockApp as never);
 
@@ -124,14 +193,15 @@ describe('bootstrapMFE (host-app)', () => {
     // Making them domain actions must not make them mandatory for the
     // extensions that mount into the domain.
     expect(screenDeclaration.extensionsActions).toBeUndefined();
-    expect(registerSchema).toHaveBeenCalledTimes(2);
+    // The screen extension type and the two chrome action types.
+    expect(registerSchema).toHaveBeenCalledTimes(3);
   });
 
-  it("the screen mount handler only calls the strategy's own mount — URL reflection is the injected router's own settled-action report now (ADR 0036), not this handler's concern", async () => {
+  it("the screen mount handler only calls the strategy's own mount — URL reflection is the runtime's `reflect` commands to the injected router (ADR 0036), not this handler's concern", async () => {
     fetchSpy.mockResolvedValue(new Response('[]', { status: 200 }));
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const { bootstrapMFE } = await import('./bootstrap');
+    const { bootstrapMFE } = await loadBootstrap();
     await bootstrapMFE(mockApp as never);
 
     const [, screenFactory] = registerDomain.mock.calls[0];
@@ -152,38 +222,120 @@ describe('bootstrapMFE (host-app)', () => {
     expect(exclusiveMount).toHaveBeenCalledWith({ subject: 'ext.hello-world' });
   });
 
-  it("an optional domain's mount and unmount handlers only call their own strategy — URL reflection is the injected router's own settled-action report now (ADR 0036)", async () => {
+  async function buildScreen(): Promise<{
+    mountId: string;
+    mount: (subject: string) => Promise<unknown>;
+    screenState: { getSnapshot(): string | undefined };
+  }> {
     fetchSpy.mockResolvedValue(new Response('[]', { status: 200 }));
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const { bootstrapMFE } = await import('./bootstrap');
+    const { bootstrapMFE } = await loadBootstrap();
+    const { screenState } = await import('./screenState');
     await bootstrapMFE(mockApp as never);
 
-    // Sidebar is the second `registerDomain` call (screen, sidebar, popup, overlay).
-    const [, sidebarFactory] = registerDomain.mock.calls[1];
+    const [, screenFactory] = registerDomain.mock.calls[0];
     const handlers = new Map<string, { handleAction: (t: string, p: unknown) => unknown }>();
-    sidebarFactory.build({
+    screenFactory.build({
       mounter: {},
       registerHandler: (actionTypeId: string, handler: { handleAction: (t: string, p: unknown) => unknown }) => {
         handlers.set(actionTypeId, handler);
       },
     });
-    const mountHandler = handlers.get('gts.frontx.mfes.comm.action.v1~frontx.mfes.ext.mount_ext.v1~');
-    const unmountHandler = handlers.get('gts.frontx.mfes.comm.action.v1~frontx.mfes.ext.unmount_ext.v1~');
-    expect(mountHandler).toBeDefined();
-    expect(unmountHandler).toBeDefined();
+    const mountId = 'gts.frontx.mfes.comm.action.v1~frontx.mfes.ext.mount_ext.v1~';
+    return {
+      mountId,
+      mount: (subject) => Promise.resolve(handlers.get(mountId)!.handleAction(mountId, { subject })),
+      screenState,
+    };
+  }
 
-    await mountHandler!.handleAction('mount', { subject: 'ext.sidebar-thing' });
-    await unmountHandler!.handleAction('unmount', { subject: 'ext.sidebar-thing' });
+  describe("the shell's screen state, driven by the screen strategy's container hooks", () => {
+    it('is empty before any mount and holds the screen once it is mounted', async () => {
+      const { mount, screenState } = await buildScreen();
+      expect(screenState.getSnapshot()).toBeUndefined();
 
-    expect(optionalMount).toHaveBeenCalledWith({ subject: 'ext.sidebar-thing' });
-    expect(optionalUnmount).toHaveBeenCalledWith({ subject: 'ext.sidebar-thing' });
+      await mount('ext.screen-a');
+
+      expect(screenState.getSnapshot()).toBe('ext.screen-a');
+    });
+
+    it('holds the new screen after a successful mount evicts the previous one', async () => {
+      const { mount, screenState } = await buildScreen();
+
+      await mount('ext.screen-a');
+      await mount('ext.screen-b');
+
+      expect(screenState.getSnapshot()).toBe('ext.screen-b');
+    });
+
+    it('is empty after a mount that fails once it has evicted the previous screen', async () => {
+      const { mount, screenState } = await buildScreen();
+      await mount('ext.screen-a');
+      expect(screenState.getSnapshot()).toBe('ext.screen-a');
+
+      physicalMount.mockRejectedValueOnce(new Error('mount refused'));
+      await expect(mount('ext.screen-b')).rejects.toThrow('mount refused');
+
+      expect(screenState.getSnapshot()).toBeUndefined();
+    });
+
+    it('is empty after a first mount that fails', async () => {
+      const { mount, screenState } = await buildScreen();
+
+      physicalMount.mockRejectedValueOnce(new Error('mount refused'));
+      await expect(mount('ext.bad')).rejects.toThrow('mount refused');
+
+      expect(screenState.getSnapshot()).toBeUndefined();
+    });
+
+    it('is empty after the screen slot detaches', async () => {
+      const { mount, screenState } = await buildScreen();
+      await mount('ext.screen-a');
+      expect(screenState.getSnapshot()).toBe('ext.screen-a');
+
+      FakeExclusiveMountStrategy.last!.detach();
+
+      expect(screenState.getSnapshot()).toBeUndefined();
+    });
+
+    it('is left alone when a screen other than the one it holds is destroyed', async () => {
+      const { mount, screenState } = await buildScreen();
+      await mount('ext.screen-a');
+
+      const hooks = (FakeExclusiveMountStrategy.last as unknown as { hooks: RecordedHooks }).hooks;
+      hooks.destroy('ext.other');
+
+      expect(screenState.getSnapshot()).toBe('ext.screen-a');
+    });
+  });
+
+  it('the screen domain registers no unmount_ext handler: an Exclusive domain declares none (ADR 0009)', async () => {
+    fetchSpy.mockResolvedValue(new Response('[]', { status: 200 }));
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { bootstrapMFE } = await loadBootstrap();
+    await bootstrapMFE(mockApp as never);
+
+    const [screenDeclaration, screenFactory] = registerDomain.mock.calls[0];
+    const handlers = new Map<string, unknown>();
+    screenFactory.build({
+      mounter: {},
+      registerHandler: (actionTypeId: string, handler: unknown) => {
+        handlers.set(actionTypeId, handler);
+      },
+    });
+
+    const unmountActionId = 'gts.frontx.mfes.comm.action.v1~frontx.mfes.ext.unmount_ext.v1~';
+    expect(handlers.has('gts.frontx.mfes.comm.action.v1~frontx.mfes.ext.mount_ext.v1~')).toBe(true);
+    expect(handlers.has(unmountActionId)).toBe(false);
+    expect(screenDeclaration.actions).not.toContain(unmountActionId);
   });
 
   it('throws when the manifest fetch fails', async () => {
     fetchSpy.mockResolvedValue(new Response('not found', { status: 404, statusText: 'Not Found' }));
 
-    const { bootstrapMFE } = await import('./bootstrap');
+    const { bootstrapMFE } = await loadBootstrap();
     await expect(bootstrapMFE(mockApp as never)).rejects.toThrow(/Failed to load MFE manifests/);
   });
 
@@ -212,7 +364,7 @@ describe('bootstrapMFE (host-app)', () => {
       ),
     );
 
-    const { bootstrapMFE } = await import('./bootstrap');
+    const { bootstrapMFE } = await loadBootstrap();
     await bootstrapMFE(mockApp as never);
 
     // Action schemas registered by scoped pass (act.a/act.b match entry actions/domainActions).
@@ -238,7 +390,7 @@ describe('bootstrapMFE (host-app)', () => {
       ),
     );
 
-    const { bootstrapMFE } = await import('./bootstrap');
+    const { bootstrapMFE } = await loadBootstrap();
     await expect(bootstrapMFE(mockApp as never)).resolves.toBeUndefined();
 
     expect(registerExtension).toHaveBeenCalledWith(extA);
@@ -260,7 +412,7 @@ describe('bootstrapMFE (host-app)', () => {
       ),
     );
 
-    const { bootstrapMFE } = await import('./bootstrap');
+    const { bootstrapMFE } = await loadBootstrap();
     await bootstrapMFE(mockApp as never);
 
     expect(registerExtension).not.toHaveBeenCalled();
@@ -278,7 +430,7 @@ describe('bootstrapMFE (host-app)', () => {
     ): Promise<Map<string, ActionHandler>> {
       fetchSpy.mockResolvedValue(new Response('[]', { status: 200 }));
 
-      const { bootstrapMFE } = await import('./bootstrap');
+      const { bootstrapMFE } = await loadBootstrap();
       await bootstrapMFE({ ...mockApp, actions } as never);
 
       const handlers = new Map<string, ActionHandler>();
@@ -370,6 +522,117 @@ describe('bootstrapMFE (host-app)', () => {
         handlerFor(handlers, CHROME_SET_THEME).handleAction(CHROME_SET_THEME, {}),
       ).toThrow(/no string themeId/);
       expect(changeTheme).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('manifestsUrl', () => {
+    it('reads the aggregate next to the shell at the root of a domain', async () => {
+      const { manifestsUrl } = await import('./bootstrap');
+
+      expect(manifestsUrl('./', 'https://example.com/assets/index-a1b2c3.js')).toBe(
+        'https://example.com/generated-mfe-manifests.json',
+      );
+    });
+
+    it('reads the aggregate next to the shell under a sub-path', async () => {
+      const { manifestsUrl } = await import('./bootstrap');
+
+      expect(manifestsUrl('./', 'https://example.com/apps/console/assets/index-a1b2c3.js')).toBe(
+        'https://example.com/apps/console/generated-mfe-manifests.json',
+      );
+    });
+
+    it('uses an absolute base (the dev server) as it is', async () => {
+      const { manifestsUrl } = await import('./bootstrap');
+
+      expect(manifestsUrl('/', 'http://localhost:5173/src-app/app/mfe/bootstrap.ts')).toBe(
+        'http://localhost:5173/generated-mfe-manifests.json',
+      );
+    });
+  });
+
+  describe('screen load failure report', () => {
+    const MOUNT_EXT = 'gts.frontx.mfes.comm.action.v1~frontx.mfes.ext.mount_ext.v1~';
+
+    async function screenMountHandler(): Promise<ActionHandler> {
+      fetchSpy.mockResolvedValue(new Response('[]', { status: 200 }));
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { bootstrapMFE } = await loadBootstrap();
+      await bootstrapMFE(mockApp as never);
+      const handlers = new Map<string, ActionHandler>();
+      const [, screenFactory] = registerDomain.mock.calls[0];
+      screenFactory.build({
+        mounter: {},
+        registerHandler: (actionTypeId: string, handler: ActionHandler) => {
+          handlers.set(actionTypeId, handler);
+        },
+      });
+      const handler = handlers.get(MOUNT_EXT);
+      if (!handler) throw new Error('the screen domain registered no mount handler');
+      return handler;
+    }
+
+    it.each([
+      [{ subject: 'ext.orders' }, 'push'],
+      [{ subject: 'ext.orders', history: 'push' }, 'push'],
+      [{ subject: 'ext.orders', history: 'replace' }, 'replace'],
+      [{ subject: 'ext.orders', history: 'none' }, 'none'],
+    ])('reports a failed mount of %j with history intent %s and still fails the action', async (payload, history) => {
+      const handler = await screenMountHandler();
+      const { screenLoadFailure } = await import('./screenLoadFailure');
+      exclusiveMount.mockRejectedValueOnce(new Error('remote unreachable'));
+
+      await expect(handler.handleAction(MOUNT_EXT, payload)).rejects.toThrow('remote unreachable');
+
+      expect(screenLoadFailure.current()).toEqual({ extensionId: 'ext.orders', history });
+    });
+
+    it('ignores an earlier mount that settles after a later one, whichever way each ends', async () => {
+      const handler = await screenMountHandler();
+      const { screenLoadFailure } = await import('./screenLoadFailure');
+      let failEarlier: (error: Error) => void = () => {};
+      exclusiveMount.mockImplementationOnce(
+        () => new Promise<void>((_resolve, reject) => {
+          failEarlier = reject;
+        }),
+      );
+      const earlier = handler.handleAction(MOUNT_EXT, { subject: 'ext.slow' });
+      await handler.handleAction(MOUNT_EXT, { subject: 'ext.fast' });
+
+      failEarlier(new Error('remote unreachable'));
+      await expect(earlier).rejects.toThrow('remote unreachable');
+
+      expect(screenLoadFailure.current()).toBeUndefined();
+    });
+
+    it('reports nothing for a mount that fails after a history step left its address', async () => {
+      const handler = await screenMountHandler();
+      const { screenLoadFailure } = await import('./screenLoadFailure');
+      let fail: (error: Error) => void = () => {};
+      exclusiveMount.mockImplementationOnce(
+        () => new Promise<void>((_resolve, reject) => {
+          fail = reject;
+        }),
+      );
+      const pending = handler.handleAction(MOUNT_EXT, { subject: 'ext.orders' });
+
+      screenLoadFailure.leave();
+      fail(new Error('remote unreachable'));
+      await expect(pending).rejects.toThrow('remote unreachable');
+
+      expect(screenLoadFailure.current()).toBeUndefined();
+    });
+
+    it('clears the report as soon as the next mount starts', async () => {
+      const handler = await screenMountHandler();
+      const { screenLoadFailure } = await import('./screenLoadFailure');
+      exclusiveMount.mockRejectedValueOnce(new Error('remote unreachable'));
+      await expect(handler.handleAction(MOUNT_EXT, { subject: 'ext.orders' })).rejects.toThrow();
+      exclusiveMount.mockImplementationOnce(() => new Promise<void>(() => {}));
+
+      void handler.handleAction(MOUNT_EXT, { subject: 'ext.billing' });
+
+      expect(screenLoadFailure.current()).toBeUndefined();
     });
   });
 });
