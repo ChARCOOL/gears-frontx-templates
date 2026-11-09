@@ -1,16 +1,11 @@
-// @cpt-FEATURE:implement-endpoint-descriptors:p2
-// @cpt-dod:cpt-frontx-dod-request-lifecycle-query-provider:p2
-// @cpt-flow:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2
-// @cpt-flow:cpt-frontx-flow-request-lifecycle-flux-escape-hatch:p2
-// @cpt-algo:cpt-frontx-algo-request-lifecycle-query-client-defaults:p2
-
 /**
  * QueryCache Plugin - shared QueryClient lifecycle management
  *
  * Framework Layer: L2
  *
  * Owns the shared QueryClient lifecycle, cache invalidation via Flux events,
- * cache clearing on mock toggle, and cleanup on destroy.
+ * cache clearing when mock mode, tenant or session changes (host queryCache()
+ * only), and cleanup on destroy.
  * Zero React imports — this plugin is headless.
  */
 
@@ -19,10 +14,13 @@ import {
   releaseSharedFetchCache,
   retainSharedFetchCache,
 } from '@gears-frontx/api';
-import { QueryClient } from '@tanstack/query-core';
-import { eventBus, type Subscription } from '@gears-frontx/state';
+import { QueryClient, type Mutation } from '@tanstack/query-core';
+import { eventBus, getStore, type Subscription } from '@gears-frontx/state';
 import type { FrontXApp, FrontXPlugin } from '../types';
 import { MockEvents } from '../effects/mockEffects';
+import { TenantEvents } from '../effects/tenantEffects';
+import { AuthEvents } from './auth';
+import { TENANT_SLICE_NAME } from '../slices';
 
 const QUERY_CACHE_RUNTIME_CHANGED_EVENT = 'cache/runtime/changed' as const;
 
@@ -72,6 +70,8 @@ const SHARED_QUERY_CLIENT_TEARDOWN_TOKEN_SYMBOL = Symbol.for(
 );
 const QUERY_CLIENT_BROADCAST_TARGET_SYMBOL = Symbol.for('frontx:query-cache:broadcast-target');
 const QUERY_CLIENT_BROADCAST_COUNTER_SYMBOL = Symbol.for('frontx:query-cache:broadcast-counter');
+const QUERY_CLIENT_SCOPE_GENERATION_SYMBOL = Symbol.for('frontx:query-cache:scope-generation');
+const QUERY_CLIENT_DROPPED_WRITE_GENERATION_SYMBOL = Symbol.for('frontx:query-cache:dropped-write-generation');
 const APP_QUERY_CLIENT_SYMBOL = Symbol.for('frontx:query-cache:app-client');
 const APP_QUERY_CLIENT_RESOLVER_SYMBOL = Symbol.for('frontx:query-cache:app-client-resolver');
 const APP_QUERY_CLIENT_ACTIVATOR_SYMBOL = Symbol.for('frontx:query-cache:app-client-activator');
@@ -79,6 +79,8 @@ const DUPLICATE_PLUGIN_CLEANUP_SYMBOL = Symbol.for('frontx:plugin:duplicate-clea
 
 type QueryClientWithMetadata = QueryClient & {
   [QUERY_CLIENT_BROADCAST_TARGET_SYMBOL]?: string;
+  [QUERY_CLIENT_SCOPE_GENERATION_SYMBOL]?: number;
+  [QUERY_CLIENT_DROPPED_WRITE_GENERATION_SYMBOL]?: number;
 };
 
 type QueryClientApp = FrontXApp & {
@@ -131,16 +133,72 @@ type CacheRemovePayloadInput = {
 type ResolvedQueryCacheConfig = Required<QueryCacheConfig>;
 
 const cacheEffectsByClient = new WeakMap<QueryClient, CacheEffectsEntry>();
+// Host-only: queryCacheShared() never retains an entry here, so a child runtime
+// cannot clear the host's cache.
+const hostClearEffectsByClient = new WeakMap<QueryClient, CacheEffectsEntry>();
 
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-shared-query-runtime-helpers
-function finalizeCacheEffectsEntry(queryClient: QueryClient, entry: CacheEffectsEntry): void {
+type CacheScopeState = {
+  // Mock mode and tenant the cached data was fetched under.
+  mockEnabled: boolean;
+  tenantId: string | null;
+  // The scope changed while no host was present to clear the cache.
+  stale: boolean;
+};
+
+// Lives with the cache effects entry, which host and child runtimes both
+// retain, so a scope change survives a host leaving and rejoining.
+const cacheScopeByClient = new WeakMap<QueryClient, CacheScopeState>();
+
+function finalizeCacheEffectsEntry(
+  entries: WeakMap<QueryClient, CacheEffectsEntry>,
+  queryClient: QueryClient,
+  entry: CacheEffectsEntry
+): void {
   if (entry.disposed) {
     return;
   }
 
   entry.disposed = true;
   entry.cleanup();
-  cacheEffectsByClient.delete(queryClient);
+  entries.delete(queryClient);
+}
+
+/**
+ * The number of cache scope changes (mock mode, tenant, login, logout) this
+ * QueryClient has seen. A caller that records it before async work and finds
+ * it moved afterwards knows its result belongs to a scope that is gone. Kept
+ * on the client itself, so every runtime sharing the client reads the same
+ * count whichever framework copy recorded the change.
+ */
+export function readQueryCacheScopeGeneration(queryClient: QueryClient): number {
+  return (queryClient as QueryClientWithMetadata)[QUERY_CLIENT_SCOPE_GENERATION_SYMBOL] ?? 0;
+}
+
+/**
+ * Records that a write meant for this QueryClient was dropped because the
+ * cache scope moved since the work started at `startGeneration` (a mutation
+ * callback's write after a session check, for one). When a session check
+ * keeps the session, the cache refreshes only if work started under the scope
+ * that check found had a write dropped; a drop from work that predates an
+ * earlier clear needs no repair. Kept on the client, like the scope
+ * generation.
+ */
+export function recordQueryCacheScopeWriteDropped(queryClient: QueryClient, startGeneration: number): void {
+  const client = queryClient as QueryClientWithMetadata;
+  client[QUERY_CLIENT_DROPPED_WRITE_GENERATION_SYMBOL] = Math.max(
+    client[QUERY_CLIENT_DROPPED_WRITE_GENERATION_SYMBOL] ?? -1,
+    startGeneration
+  );
+}
+
+/** The latest start generation among dropped writes, or -1 when none was dropped. */
+function readLatestDroppedWriteGeneration(queryClient: QueryClient): number {
+  return (queryClient as QueryClientWithMetadata)[QUERY_CLIENT_DROPPED_WRITE_GENERATION_SYMBOL] ?? -1;
+}
+
+function bumpQueryCacheScopeGeneration(queryClient: QueryClient): void {
+  (queryClient as QueryClientWithMetadata)[QUERY_CLIENT_SCOPE_GENERATION_SYMBOL] =
+    readQueryCacheScopeGeneration(queryClient) + 1;
 }
 
 function emitSharedQueryClientRuntimeChanged(available: boolean): void {
@@ -364,9 +422,11 @@ export function resetSharedQueryClient(): void {
   const host = globalThis as SharedQueryClientHost;
   const client = host[SHARED_QUERY_CLIENT_SYMBOL];
   if (client) {
-    const cacheEffects = cacheEffectsByClient.get(client);
-    if (cacheEffects) {
-      finalizeCacheEffectsEntry(client, cacheEffects);
+    for (const entries of [cacheEffectsByClient, hostClearEffectsByClient]) {
+      const cacheEffects = entries.get(client);
+      if (cacheEffects) {
+        finalizeCacheEffectsEntry(entries, client, cacheEffects);
+      }
     }
 
     client.clear();
@@ -492,12 +552,6 @@ export interface QueryCacheConfig {
   refetchOnWindowFocus?: boolean;
 }
 
-// @cpt-end:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-shared-query-runtime-helpers
-
-// @cpt-begin:implement-endpoint-descriptors:p2:inst-1
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-mock-cache-clear
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-flux-cache-invalidate
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-flux-escape-hatch:p2:inst-invalidate-after-flux
 async function cancelQueriesForTeardown(queryClient: QueryClient): Promise<void> {
   let cancelError: unknown;
 
@@ -536,19 +590,242 @@ function runQueryTeardown(
     });
 }
 
-function createCacheEffects(queryClient: QueryClient): () => void {
-  const mockToggleSub = eventBus.on(MockEvents.Toggle, () => {
-    runQueryTeardown(
-      queryClient,
-      {
-        onSettled: () => {
-          queryClient.clear();
-          peekSharedFetchCache()?.clear();
-        },
-      },
-      '[Gears FrontX] Failed to clear query cache after mock toggle'
-    );
+function readStoreSlice(key: string): unknown {
+  const state: unknown = getStore().getState();
+  if (state === null || typeof state !== 'object' || !(key in state)) {
+    return undefined;
+  }
+  return (state as Record<string, unknown>)[key];
+}
+
+function readMockEnabled(): boolean {
+  const mockState = readStoreSlice('mock');
+  return (
+    mockState !== null &&
+    typeof mockState === 'object' &&
+    'enabled' in mockState &&
+    mockState.enabled === true
+  );
+}
+
+function readTenantId(): string | null {
+  const tenantState = readStoreSlice(TENANT_SLICE_NAME);
+  if (tenantState === null || typeof tenantState !== 'object' || !('tenant' in tenantState)) {
+    return null;
+  }
+
+  const tenant: unknown = tenantState.tenant;
+  return tenant !== null && typeof tenant === 'object' && 'id' in tenant && typeof tenant.id === 'string'
+    ? tenant.id
+    : null;
+}
+
+/**
+ * Drops the old scope's data synchronously, so nothing written after the
+ * change is wiped by a late clear. cancelQueries() aborts in-flight fetches at
+ * once (their results never land); its promise is not awaited. Each query is
+ * reset before clear() removes it: clear() alone does not notify observers, so
+ * a mounted screen would keep rendering the old scope's data. The reset tells
+ * them their data is gone, and on that re-render they build a fresh query and
+ * fetch under the new scope. The shared fetch cache aborts its pending entries
+ * on clear() as well.
+ */
+function clearForScopeChange(queryClient: QueryClient): void {
+  queryClient.cancelQueries().catch((error: unknown) => {
+    console.error('[Gears FrontX] Failed to cancel queries after a mock, tenant or session change', error);
   });
+  queryClient.getQueryCache().getAll().forEach((query) => {
+    query.reset();
+  });
+  queryClient.clear();
+  peekSharedFetchCache()?.clear();
+}
+
+/**
+ * Mutations a session check stopped from writing. Their callbacks cannot roll
+ * back or refresh what they changed, such as an optimistic value, and a check
+ * that keeps the session clears nothing. So once every held mutation has
+ * settled, the cache refreshes, if a write of work started under the checked
+ * scope was dropped meanwhile (`recordQueryCacheScopeWriteDropped()`); with
+ * no such drop there is nothing to repair. It waits because a refetch while one still runs would
+ * read the server before it applied the mutation. A mutation started after
+ * the check is not waited for: its own callbacks still write, so it cleans up
+ * after itself as after any invalidation.
+ *
+ * Every read still running at the refresh may predate a held mutation, so the
+ * refresh cancels them all first; then the shared fetch cache drops its
+ * entries, queries without observers are removed, so their next use fetches,
+ * and the rest are invalidated, so active ones refetch.
+ *
+ * It does not wait for the identity check. A scope change, or a newer check
+ * that holds mutations, stops a refresh still waiting to cancel reads. A held
+ * mutation removed from the cache still reports its progress to it, so it is
+ * waited for like any other.
+ *
+ * Known limits: an observed `staleTime: 'static'` query (TanStack never
+ * refetches one) and a query whose observers are all disabled keep an
+ * optimistic value until they are next fetched; the wait has no bound, so a
+ * held mutation that stays pending (paused offline, or a request that never
+ * settles) delays the refresh; a cancelled read of a query with no data yet
+ * rejects its `fetchQuery()` or `ensureQueryData()` caller with a
+ * CancelledError.
+ */
+function createHeldBackMutations(queryClient: QueryClient): {
+  /** Holds the mutations running now; their callbacks write nothing from here on. */
+  hold(): void;
+  /** The cache scope changed, so nothing of theirs is left to refresh: let them go. */
+  release(): void;
+} {
+  const mutationCache = queryClient.getMutationCache();
+  const held = new Set<Mutation>();
+  let unwatch: (() => void) | null = null;
+  /** The generation the watch started at: a drop of work started under it or later is owed a refresh. */
+  let generationAtHold = 0;
+  /** A refresh is due: a write was dropped, and no refresh has run since. */
+  let owed = false;
+  /** Counts scope changes, so a refresh that spans one stops. */
+  let releases = 0;
+
+  const stopWatching = (): void => {
+    if (readLatestDroppedWriteGeneration(queryClient) >= generationAtHold) owed = true;
+    held.clear();
+    unwatch?.();
+    unwatch = null;
+  };
+
+  const refresh = async (): Promise<void> => {
+    const startedAt = releases;
+    // A cancel lands asynchronously; invalidating before it would reuse the cancelled fetch.
+    await queryClient.cancelQueries();
+    // A scope change in the meantime cleared the cache, so there is nothing left to refresh.
+    if (releases !== startedAt) return;
+    // A newer session check holds mutations: the refresh is still owed, once they settle.
+    if (held.size > 0) {
+      owed = true;
+      return;
+    }
+    peekSharedFetchCache()?.clear();
+    // Observers decide, not isActive(): a mounted query whose observers are disabled is not active,
+    // and removing it would leave those observers on a query the cache no longer updates.
+    queryClient.removeQueries({ predicate: (query) => query.getObserversCount() === 0 });
+    await queryClient.invalidateQueries();
+  };
+
+  const refreshIfSettled = (): void => {
+    held.forEach((mutation) => {
+      if (mutation.state.status !== 'pending') held.delete(mutation);
+    });
+    if (held.size > 0) return;
+    stopWatching();
+    if (!owed) return;
+    owed = false;
+    refresh().catch((error: unknown) => {
+      console.error('[Gears FrontX] Failed to refresh queries after a session check', error);
+    });
+  };
+
+  return {
+    hold() {
+      mutationCache.getAll().forEach((mutation) => {
+        if (mutation.state.status === 'pending') held.add(mutation);
+      });
+      if (held.size === 0 || unwatch) return;
+      generationAtHold = readQueryCacheScopeGeneration(queryClient);
+      unwatch = mutationCache.subscribe(refreshIfSettled);
+    },
+    release() {
+      releases += 1;
+      stopWatching();
+      owed = false;
+    },
+  };
+}
+
+/**
+ * Tracks the scope the cached data belongs to: mock mode, tenant and session.
+ * An event that repeats the scope already in force (every mock() runtime with
+ * enabledByDefault emits a toggle on init; a tenant change to the same tenant
+ * id) changes nothing. A real change, and every login or logout, clears the query
+ * cache and the shared fetch cache when a host queryCache() is present;
+ * otherwise the cache is marked stale and the next host to join clears it.
+ */
+function createCacheScopeTracking(queryClient: QueryClient): () => void {
+  const scope: CacheScopeState = {
+    mockEnabled: readMockEnabled(),
+    tenantId: readTenantId(),
+    stale: false,
+  };
+  cacheScopeByClient.set(queryClient, scope);
+  const heldBack = createHeldBackMutations(queryClient);
+
+  // The generation moves at the change itself, whether the cache is cleared
+  // now or only marked stale: work started before it belongs to the old
+  // scope either way. The deferred clear a joining host runs is no new scope,
+  // so it leaves the generation alone and work started after the change keeps
+  // writing.
+  const onScopeChanged = (): void => {
+    heldBack.release();
+    bumpQueryCacheScopeGeneration(queryClient);
+    if (hostClearEffectsByClient.has(queryClient)) {
+      clearForScopeChange(queryClient);
+    } else {
+      scope.stale = true;
+    }
+  };
+
+  const subscriptions = [
+    eventBus.on(MockEvents.Toggle, (payload) => {
+      if (payload.enabled === scope.mockEnabled) {
+        return;
+      }
+      scope.mockEnabled = payload.enabled;
+      onScopeChanged();
+    }),
+    eventBus.on(TenantEvents.Changed, (payload) => {
+      if (payload.tenant.id === scope.tenantId) {
+        return;
+      }
+      scope.tenantId = payload.tenant.id;
+      onScopeChanged();
+    }),
+    eventBus.on(TenantEvents.Cleared, () => {
+      if (scope.tenantId === null) {
+        return;
+      }
+      scope.tenantId = null;
+      onScopeChanged();
+    }),
+    eventBus.on(AuthEvents.LoggedOut, onScopeChanged),
+    eventBus.on(AuthEvents.LoggedIn, onScopeChanged),
+    // The session may be about to change: earlier work stops writing, nothing is cleared. The
+    // mutations it stopped get a refresh once they settle.
+    eventBus.on(AuthEvents.SessionCheck, () => {
+      heldBack.hold();
+      bumpQueryCacheScopeGeneration(queryClient);
+    }),
+  ];
+
+  return () => {
+    heldBack.release();
+    subscriptions.forEach((subscription) => {
+      subscription.unsubscribe();
+    });
+    cacheScopeByClient.delete(queryClient);
+  };
+}
+
+function createHostClearEffects(queryClient: QueryClient): () => void {
+  const scope = cacheScopeByClient.get(queryClient);
+  if (scope?.stale) {
+    scope.stale = false;
+    clearForScopeChange(queryClient);
+  }
+
+  return () => {};
+}
+
+function createCacheEffects(queryClient: QueryClient): () => void {
+  const releaseCacheScopeTracking = createCacheScopeTracking(queryClient);
 
   const invalidateSub = eventBus.on('cache/invalidate', (payload: unknown) => {
     const filters = toScopedInvalidateFilters(payload);
@@ -590,56 +867,51 @@ function createCacheEffects(queryClient: QueryClient): () => void {
   });
 
   return () => {
-    mockToggleSub.unsubscribe();
     invalidateSub.unsubscribe();
     setSub.unsubscribe();
     removeSub.unsubscribe();
+    releaseCacheScopeTracking();
+  };
+}
+
+function retainPerClientEffects(
+  entries: WeakMap<QueryClient, CacheEffectsEntry>,
+  queryClient: QueryClient,
+  create: (queryClient: QueryClient) => () => void
+): () => void {
+  let entry = entries.get(queryClient);
+  if (entry) {
+    entry.retainers += 1;
+  } else {
+    entry = {
+      retainers: 1,
+      cleanup: create(queryClient),
+      disposed: false,
+    };
+    entries.set(queryClient, entry);
+  }
+
+  const retained = entry;
+  return () => {
+    if (retained.disposed) {
+      return;
+    }
+
+    retained.retainers -= 1;
+    if (retained.retainers === 0) {
+      finalizeCacheEffectsEntry(entries, queryClient, retained);
+    }
   };
 }
 
 function retainCacheEffects(queryClient: QueryClient): () => void {
-  const existingEntry = cacheEffectsByClient.get(queryClient);
-  if (existingEntry) {
-    existingEntry.retainers += 1;
-    return () => {
-      if (existingEntry.disposed) {
-        return;
-      }
-
-      existingEntry.retainers -= 1;
-      if (existingEntry.retainers === 0) {
-        finalizeCacheEffectsEntry(queryClient, existingEntry);
-      }
-    };
-  }
-
-  const entry: CacheEffectsEntry = {
-    retainers: 1,
-    cleanup: createCacheEffects(queryClient),
-    disposed: false,
-  };
-  cacheEffectsByClient.set(queryClient, entry);
-
-  return () => {
-    if (entry.disposed) {
-      return;
-    }
-
-    entry.retainers -= 1;
-    if (entry.retainers === 0) {
-      finalizeCacheEffectsEntry(queryClient, entry);
-    }
-  };
+  return retainPerClientEffects(cacheEffectsByClient, queryClient, createCacheEffects);
 }
-// @cpt-end:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-mock-cache-clear
-// @cpt-end:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-flux-cache-invalidate
-// @cpt-end:cpt-frontx-flow-request-lifecycle-flux-escape-hatch:p2:inst-invalidate-after-flux
-// @cpt-end:implement-endpoint-descriptors:p2:inst-1
 
-// @cpt-begin:implement-endpoint-descriptors:p2:inst-2
-// @cpt-begin:cpt-frontx-algo-request-lifecycle-query-client-defaults:p2:inst-create-in-plugin
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-create-query-client
-// @cpt-begin:cpt-frontx-dod-request-lifecycle-query-provider:p2:inst-plugin-factory
+function retainHostClearEffects(queryClient: QueryClient): () => void {
+  return retainPerClientEffects(hostClearEffectsByClient, queryClient, createHostClearEffects);
+}
+
 export function queryCache(config?: QueryCacheConfig): FrontXPlugin {
   let queryClient: QueryClient | undefined;
   let cleanup: (() => void) | null = null;
@@ -688,7 +960,12 @@ export function queryCache(config?: QueryCacheConfig): FrontXPlugin {
         queryClient = retainSharedQueryClient(config);
         retainSharedFetchCache();
         sharedFetchCacheRetained = true;
-        cleanup = retainCacheEffects(queryClient);
+        const releaseCacheEffects = retainCacheEffects(queryClient);
+        const releaseHostClearEffects = retainHostClearEffects(queryClient);
+        cleanup = () => {
+          releaseHostClearEffects();
+          releaseCacheEffects();
+        };
       }
       attachQueryClientToApp(app, queryClient);
     },
@@ -729,10 +1006,6 @@ export function queryCache(config?: QueryCacheConfig): FrontXPlugin {
 
   return plugin;
 }
-// @cpt-end:cpt-frontx-algo-request-lifecycle-query-client-defaults:p2:inst-create-in-plugin
-// @cpt-end:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-create-query-client
-// @cpt-end:cpt-frontx-dod-request-lifecycle-query-provider:p2:inst-plugin-factory
-// @cpt-end:implement-endpoint-descriptors:p2:inst-2
 
 export function queryCacheShared(): FrontXPlugin {
   let queryClient: QueryClient | undefined;

@@ -5,9 +5,11 @@
  *
  * Reads the enriched mfe-manifest.json (produced by the frontx-mf-gts Vite
  * plugin into each MFE's dist directory) and writes the aggregated manifest
- * to a public asset (`public/generated-mfe-manifests.json`) served by Vite at
- * the runtime URL `/generated-mfe-manifests.json`. Every FrontX app instance
- * (root host AND any nested app) reads it from that URL at runtime.
+ * to a public asset (`public/generated-mfe-manifests.json`) served by Vite next
+ * to the shell's `index.html`. Every FrontX app instance (root host AND any
+ * nested app) reads it at runtime. This is the dev aggregate: it addresses each
+ * package at its preview server. `npm run build` copies it into `dist/` and
+ * `scripts/layout-dist.ts` rewrites that copy with addresses relative to it.
  *
  * The enriched mfe-manifest.json already contains all required data:
  * - manifest.metaData: publicPath, remoteEntry, buildInfo from mf-manifest.json
@@ -39,13 +41,17 @@
  *
  * When --base-url is omitted, publicPath comes from manifest.metaData.publicPath
  * in the enriched mfe-manifest.json (set by the build plugin from mf-manifest.json).
+ * Either way this sets the dev aggregate only: `npm run build` lays the screens
+ * out next to the shell and readdresses them there (`scripts/layout-dist.ts`).
  */
 
-import { existsSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { Gts } from '@globaltypesystem/gts-ts';
+import languageCodeSchema from '../src/gts/schemas/language_code.v1.json';
+import screenLabelsSchema from '../src/gts/schemas/screen_labels.v1.json';
 
 import {
   isNonPackageDirectory,
@@ -53,6 +59,13 @@ import {
   templateExamplesIncluded,
   templateExamplesSkippedNotice,
 } from './lib/mfe-tools.js';
+
+const screenExtensionRef = screenLabelsSchema.properties.labels.items.properties.extension['x-gts-ref'];
+if (!screenExtensionRef.endsWith('~*')) {
+  throw new Error(`screen_labels.v1 extension x-gts-ref must end with "~*", got: ${screenExtensionRef}`);
+}
+const screenExtensionPrefix = screenExtensionRef.slice(0, -1);
+const screenLabelsType = screenLabelsSchema.$id.replace(/^gts:\/\//, '');
 
 // ---------------------------------------------------------------------------
 // Raw JSON shape types (what we read from the enriched mfe-manifest.json on disk)
@@ -129,6 +142,7 @@ interface RawEnrichedMfeJson {
   entries: RawEntry[];
   extensions: RawExtension[];
   schemas?: RawSchema[];
+  labelDictionaries?: unknown;
 }
 
 // ---------------------------------------------------------------------------
@@ -180,6 +194,7 @@ interface OutMfeManifestConfig {
   entries: OutMfeEntryMF[];
   extensions: RawExtension[];
   schemas?: RawSchema[];
+  labelDictionaries?: Array<{ language: string; file: string }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -321,6 +336,7 @@ export class ManifestGenerator {
     const mfeJson = this.readEnrichedMfeJson(pkgPath, packageDir);
     this.assertRequiredCollectionsArePresent(mfeJson, packageDir);
     this.assertGtsIdsAreValid(mfeJson, pkgPath, packageDir);
+    const labelDictionaries = this.validateLabelDictionaries(mfeJson, pkgPath, packageDir);
     const publicPath = this.resolvePublicPath(mfeJson, packageDir);
 
     const outManifest = this.buildManifest(mfeJson.manifest, publicPath);
@@ -332,7 +348,72 @@ export class ManifestGenerator {
       entries: outEntries,
       extensions: mfeJson.extensions,
       ...(mfeJson.schemas !== undefined && { schemas: mfeJson.schemas }),
+      ...(labelDictionaries !== undefined && { labelDictionaries }),
     };
+  }
+
+  private validateLabelDictionaries(
+    mfeJson: RawEnrichedMfeJson,
+    pkgPath: string,
+    packageDir: string
+  ): Array<{ language: string; file: string }> | undefined {
+    const declared = mfeJson.labelDictionaries;
+    if (declared === undefined) return undefined;
+    const fail = (detail: string): never => {
+      throw new Error(`[${packageDir}] ${this.mfeManifestPath} labelDictionaries ${detail}`);
+    };
+    if (!Array.isArray(declared)) return fail('must be an array');
+    if (declared.length === 0) return [];
+    const languages = new Set<string>();
+    const owned = new Set(mfeJson.extensions.map(({ id }) => id));
+    const publicDir = join(pkgPath, 'public');
+    if (!existsSync(publicDir)) return fail('requires a public/ directory, which is missing');
+    const publicRoot = realpathSync(publicDir);
+    if (!publicRoot.startsWith(`${realpathSync(pkgPath)}${sep}`)) return fail('public/ must be inside the package');
+    return declared.map((item: unknown, index: number) => {
+      const field = `[${index}]`;
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return fail(`${field} must be an object`);
+      const { language, file } = item as Record<string, unknown>;
+      if (typeof language !== 'string' || typeof file !== 'string' || Object.keys(item).length !== 2) {
+        return fail(`${field} requires only string language and file`);
+      }
+      if (!languageCodeSchema.enum.includes(language)) return fail(`${field} has unsupported language ${language}`);
+      if (languages.has(language)) return fail(`${field} repeats language ${language}`);
+      languages.add(language);
+      if (!/^[A-Za-z0-9._\-/]+$/.test(file) || file.startsWith('/') || file.split('/').some((segment) => segment === '.' || segment === '..')) {
+        return fail(`${field} file must be a relative path inside public/`);
+      }
+      const path = join(publicRoot, file);
+      if (!existsSync(path) || !realpathSync(path).startsWith(`${publicRoot}${sep}`) || !statSync(path).isFile()) {
+        return fail(`${field} file not found under public/: ${file}`);
+      }
+      let dictionary: unknown;
+      try {
+        dictionary = JSON.parse(readFileSync(path, 'utf-8'));
+      } catch {
+        return fail(`${field} file is not valid JSON: ${file}`);
+      }
+      if (!dictionary || typeof dictionary !== 'object' || Array.isArray(dictionary)) {
+        return fail(`${field} file is not a screen labels dictionary: ${file}`);
+      }
+      const content = dictionary as Record<string, unknown>;
+      if (content.type !== screenLabelsType) return fail(`${field} file has wrong type: ${file}`);
+      if (content.language !== language) return fail(`${field} file language does not match ${language}: ${file}`);
+      if (!Array.isArray(content.labels)) return fail(`${field} file labels must be an array: ${file}`);
+      const extensions = new Set<string>();
+      for (const [labelIndex, entry] of content.labels.entries()) {
+        const at = `${field} file labels[${labelIndex}]`;
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return fail(`${at} must be an object`);
+        const { extension, label } = entry as Record<string, unknown>;
+        if (typeof extension !== 'string') return fail(`${at}.extension must be a string`);
+        if (typeof label !== 'string' || !label) return fail(`${at}.label must be a non-empty string`);
+        if (!extension.startsWith(screenExtensionPrefix)) return fail(`${at}.extension is not a screen extension`);
+        if (!owned.has(extension)) return fail(`${at}.extension is not owned by this package`);
+        if (extensions.has(extension)) return fail(`${at} repeats extension ${extension}`);
+        extensions.add(extension);
+      }
+      return { language, file };
+    });
   }
 
   private readEnrichedMfeJson(pkgPath: string, packageDir: string): RawEnrichedMfeJson {

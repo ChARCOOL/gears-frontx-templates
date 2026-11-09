@@ -3,14 +3,19 @@
  * parsing, verification-matrix expansion, and the screenshot naming
  * convention. No I/O — everything here is unit-testable without a browser.
  */
+import path from 'node:path';
+import { SHELL_THEME_KEY, STUDIO_THEME_KEY } from './theme.mjs';
 
 export const DEFAULTS = Object.freeze({
-  url: 'http://127.0.0.1:5173/',
+  // Vite's own default host: `localhost` may resolve to ::1 only, where a
+  // 127.0.0.1 address never answers.
+  url: 'http://localhost:5173/',
   routes: ['/'],
   menus: [],
-  widths: [1440, 768, 320],
+  // APP-005's desktop, tablet and phone widths, then LAY-002's 320 px floor.
+  widths: [1440, 768, 390, 320],
   themes: ['light', 'dark'],
-  themeKey: 'frontx:studio:theme',
+  themeKey: SHELL_THEME_KEY,
   outDir: 'design-verify-report',
   cdpUrl: '',
   chromePath: '',
@@ -22,6 +27,8 @@ export const DEFAULTS = Object.freeze({
   screenshots: false,
   failOnFindings: false,
   baseline: '',
+  waivers: '',
+  designMd: '',
 });
 
 const LIST_FLAGS = new Set(['--routes', '--menu', '--widths', '--themes']);
@@ -38,6 +45,8 @@ const VALUE_FLAGS = new Set([
   '--sweep-timeout-ms',
   '--settle-ms',
   '--baseline',
+  '--waivers',
+  '--design-md',
 ]);
 const BOOL_FLAGS = new Set(['--fail-on-findings', '--screenshots', '--no-screenshots', '--help']);
 
@@ -102,7 +111,16 @@ export function parseArgs(argv) {
         config.url = value;
         break;
       case '--theme-key':
-        config.themeKey = value;
+        // Studio's key holds a JSON string and the runner writes it as one, so
+        // it cannot also be the raw key the shell restores from.
+        if (value === STUDIO_THEME_KEY) {
+          errors.push(
+            `--theme-key ${value} is FrontX Studio's own key (a JSON string the runner writes as well); ` +
+              `pass the key the shell restores its theme from, ${SHELL_THEME_KEY} in the template shell`,
+          );
+        } else {
+          config.themeKey = value;
+        }
         break;
       case '--out':
         config.outDir = value;
@@ -121,6 +139,12 @@ export function parseArgs(argv) {
         break;
       case '--baseline':
         config.baseline = value;
+        break;
+      case '--waivers':
+        config.waivers = value;
+        break;
+      case '--design-md':
+        config.designMd = value;
         break;
       case '--server-timeout-ms':
       case '--sweep-timeout-ms':
@@ -155,10 +179,19 @@ Usage: node runner/cli.mjs [flags]
                             route sweep would measure nothing. Replaces
                             --routes when given; screenshots are named by the
                             label
-  --widths 1440,768,320     Viewport widths in CSS px (default ${DEFAULTS.widths.join(',')})
+  --widths 1440,390         Viewport widths in CSS px (default ${DEFAULTS.widths.join(',')})
   --themes light,dark       Theme ids to exercise (default ${DEFAULTS.themes.join(',')})
-  --theme-key <key>         localStorage key the app restores its theme from
-                            (default ${DEFAULTS.themeKey})
+  --theme-key <key>         localStorage key the app restores its theme from,
+                            as a raw theme id (default ${DEFAULTS.themeKey},
+                            the shell's key); FrontX Studio's own key is
+                            written as well and refused here. This key only
+                            seeds the theme; it never confirms it. Every state
+                            is measured only when the page's data-theme-id on
+                            <html> (stamped by the app, in the template shell
+                            by src-app/app/themes/themeIdAttribute.ts) equals
+                            the requested id: another id, an id the app has
+                            not registered, or no data-theme-id is an
+                            environment failure for that state, never clean
   --out <dir>               Report directory (default ${DEFAULTS.outDir})
   --cdp-url <http>          Attach to an already-running Chrome DevTools
                             endpoint (e.g. http://127.0.0.1:9222) instead of
@@ -186,13 +219,44 @@ Usage: node runner/cli.mjs [flags]
                             carried-over relative to it. With
                             --fail-on-findings, only NEW findings gate the
                             exit code - known findings stay advisory
+  --waivers <file>          Per-screen waiver file (default design-waivers.json
+                            at the project root, when present): a finding a
+                            waiver covers moves to the state's waived list
+  --design-md <file>        Also measure the text contrast of every DESIGN.md
+                            components pair in each theme, on the rendered
+                            app: a pair below its WCAG threshold is a finding
+                            (state "DESIGN.md", check design-md-contrast)
   --fail-on-findings        Exit 1 when any finding is reported (default:
                             advisory - findings never fail the run; exit 2 is
                             reserved for environment failures and for a
                             requested screenshot that could not be captured
                             or written, either way)
   --help                    Print this message
+
+Relative --out, --baseline, --waivers, --design-md and --server-cwd paths
+resolve against the project root: $INIT_CWD (where npm was invoked), else
+the current directory.
 `;
+
+/**
+ * The report and input paths, resolved against the project root.
+ *
+ * @template {{outDir: string, baseline: string, waivers: string, designMd: string, serverCwd: string}} C
+ * @param {C} config
+ * @param {string} root
+ * @returns {C}
+ */
+export function resolvePaths(config, root) {
+  const at = (p) => (p ? path.resolve(root, p) : p);
+  return {
+    ...config,
+    outDir: at(config.outDir),
+    baseline: at(config.baseline),
+    waivers: at(config.waivers),
+    designMd: at(config.designMd),
+    serverCwd: at(config.serverCwd),
+  };
+}
 
 /**
  * Resolve the directory --start-server runs in. npm executes workspace
