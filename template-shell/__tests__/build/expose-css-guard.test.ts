@@ -13,7 +13,6 @@
  * CSS-modules from node_modules that the host delivers by style adoption),
  * and graph traversal through static and dynamic imports.
  */
-// @cpt-FEATURE:frontx-mf-gts-plugin:p1
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -31,6 +30,7 @@ function chunk(
     fileName,
     {
       fileName,
+      cssAssets: [],
       imports: [],
       dynamicImports: [],
       ownCssModules: [],
@@ -65,6 +65,12 @@ describe('isOwnCssModule', () => {
   it('rejects ?inline imports — they travel inside the JS as strings', () => {
     expect(isOwnCssModule('/app/src/globals.css?inline')).toBe(false);
     expect(isOwnCssModule('/app/src/globals.css?used&inline=')).toBe(false);
+  });
+
+  it('rejects the other imports Vite does not extract into a CSS file', () => {
+    for (const query of ['raw', 'url', 'worker', 'sharedworker', 'commonjs-proxy', 'transform-only']) {
+      expect(isOwnCssModule(`/app/src/globals.css?${query}`)).toBe(false);
+    }
   });
 
   it('rejects node_modules CSS — the host delivers it by style adoption', () => {

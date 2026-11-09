@@ -1,9 +1,9 @@
 {
   "name": "@gears-frontx/design-verify",
   "private": true,
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "type": "module",
-  "description": "Design-verification workspace package delivered by @gears-frontx/template-design-guardrails: the dev-only runtime design-defect checker (axe-core + objective layout rules), the composed-markup axe test suite, and the jsx-a11y lint fragment. The shell wires each of these in optionally, so an app without the guardrails template carries no verification machinery.",
+  "description": "Design-verification workspace package delivered by @gears-frontx/template-design-guardrails: the dev-only runtime design-defect checker (axe-core + objective layout rules) with its headless render runner (verify:ui), the static source check for literal values and native elements (verify:static), the composed-markup axe test suite, and the jsx-a11y lint fragment. The shell wires each of these in optionally, so an app without the guardrails template carries no verification machinery.",
   "exports": {
     "./runtime": "./src/designDefects.ts",
     "./eslint": "./eslint.config.mjs"
@@ -11,17 +11,19 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "verify:ui": "node runner/cli.mjs",
+    "verify:static": "node runner/static.mjs",
     "test": "npm run test:unit",
     "test:unit": "vitest --run --passWithNoTests=false",
     "test:unit:watch": "vitest --watch"
   },
   "dependencies": {
     "axe-core": "4.13.0",
+    "css-tree": "3.2.1",
     "eslint-plugin-jsx-a11y": "6.10.2",
     "vitest-axe": "1.0.0-pre.5"
   },
   "devDependencies": {
-    "typescript": "^5.4.2",
+    "typescript": "5.9.3",
     "vitest": "4.1.4"
   }
 }
