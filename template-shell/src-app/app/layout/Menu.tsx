@@ -5,11 +5,10 @@
  * Uses local shadcn/ui Sidebar components for proper styling and collapsible behavior.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import {
   useAppSelector,
   useFrontX,
-  useMountedExtensions,
   eventBus,
   FRONTX_ACTION_MOUNT_EXT,
   FRONTX_SCREEN_DOMAIN,
@@ -26,13 +25,17 @@ import {
   SidebarHeader,
 } from '@/app/components/ui/sidebar';
 import { Icon } from '@iconify/react';
-import { bootstrapOnce } from '@/app/mfe/bootstrapOnce';
+import { bootstrapSettled } from '@/app/mfe/bootstrapOnce';
+import { screenState } from '@/app/mfe/screenState';
+import { menuLabels } from '@/app/mfe/menuLabels';
 import { FrontXLogoIcon } from '@/app/icons/FrontXLogoIcon';
 import { FrontXLogoTextIcon } from '@/app/icons/FrontXLogoTextIcon';
 
 export interface MenuProps {
   children?: React.ReactNode;
 }
+
+type RegistryScreenExtension = Omit<ScreenExtension, 'route'>;
 
 const hintCodeClass = 'rounded bg-muted px-1.5 py-0.5 font-mono text-xs';
 
@@ -61,32 +64,58 @@ export const menuItemTestId = (extensionId: string): string => `menu-item-${exte
 
 export const Menu: React.FC<MenuProps> = ({ children }) => {
   const menuState = useAppSelector((state) => state['layout/menu'] as MenuState | undefined);
-  const app = useFrontX();
-  const { mfeRegistry } = app;
+  const { mfeRegistry, i18nRegistry } = useFrontX();
+  const language = useSyncExternalStore(
+    useCallback((listener: () => void) => {
+      const subscription = eventBus.on('i18n/language/changed', listener);
+      const unsubscribeRegistry = i18nRegistry?.subscribe(listener);
+      return () => {
+        subscription.unsubscribe();
+        unsubscribeRegistry?.();
+      };
+    }, [i18nRegistry]),
+    () => i18nRegistry?.getLanguage() ?? 'en',
+  );
+  const [translated, setTranslated] = useState<{ language: string; labels: Map<string, string> }>();
+
+  useEffect(() => {
+    let cancelled = false;
+    bootstrapSettled()
+      .then(() => cancelled ? new Map<string, string>() : menuLabels.load(language))
+      .then((labels) => {
+        if (!cancelled) setTranslated({ language, labels });
+      }).catch((error: unknown) => {
+        console.warn('[Menu labels] Failed to load menu labels:', error);
+      });
+    return () => { cancelled = true; };
+  }, [language]);
 
   const collapsed = menuState?.collapsed ?? false;
 
-  // Currently-mounted screen extension. Re-reads when a mount_ext/unmount_ext
-  // settles. Index 0 is meaningful because the host registers the screen domain
-  // with ExclusiveMountStrategy in `bootstrap.ts` (single mount per domain).
-  const mountedScreens = useMountedExtensions(FRONTX_SCREEN_DOMAIN);
-  const mountedId = mountedScreens[0]?.id;
+  // Currently-mounted screen extension, as the screen domain's container
+  // hooks recorded it: creating a screen's container sets it, destroying the
+  // container that holds it clears it.
+  const mountedId = useSyncExternalStore(screenState.subscribe, screenState.getSnapshot);
 
+  // Registry reads carry no `route`, so the menu holds the screen extension
+  // shape without it.
   // `undefined` until bootstrap has settled: bootstrap registers every screen
   // extension, so the list is read once, after it, and an empty list before
-  // that point means "not known yet", not "no screens".
-  const [extensions, setExtensions] = useState<ScreenExtension[] | undefined>(undefined);
+  // that point means "not known yet", not "no screens". The screen container
+  // starts the bootstrap; the menu only waits for it, so a shell without a
+  // screen container keeps the menu blank.
+  const [extensions, setExtensions] = useState<RegistryScreenExtension[] | undefined>(undefined);
 
   useEffect(() => {
     if (!mfeRegistry) return;
     let cancelled = false;
-    bootstrapOnce(app).then(
+    bootstrapSettled().then(
       () => {
         if (cancelled) return;
         // The cast asserts `presentation` rather than checking it, and nothing
         // between the manifest and `registry.registerExtension` does either, so
         // an extension without it is dropped here instead of throwing mid-sort.
-        const screenExts = mfeRegistry.getExtensionsForDomain(FRONTX_SCREEN_DOMAIN) as ScreenExtension[];
+        const screenExts = mfeRegistry.getExtensionsForDomain(FRONTX_SCREEN_DOMAIN) as RegistryScreenExtension[];
         setExtensions(
           screenExts
             .filter((ext) => ext?.presentation)
@@ -102,10 +131,11 @@ export const Menu: React.FC<MenuProps> = ({ children }) => {
     return () => {
       cancelled = true;
     };
-  }, [app, mfeRegistry]);
+  }, [mfeRegistry]);
 
   // No registry means no microfrontends plugin: nothing is ever coming.
   const screens = mfeRegistry ? extensions : [];
+  const labels = translated?.language === language ? translated.labels : menuLabels.peek(language);
 
   const handleToggleCollapse = () => {
     eventBus.emit('layout/menu/collapsed', { collapsed: !collapsed });
@@ -161,20 +191,23 @@ export const Menu: React.FC<MenuProps> = ({ children }) => {
             screens?.map((ext) => {
               const isActive = ext.id === mountedId;
               const pres = ext.presentation;
+              const label = labels?.get(ext.id) ?? pres.label;
               return (
                 <SidebarMenuItem key={ext.id}>
                   <SidebarMenuButton
                     data-testid={menuItemTestId(ext.id)}
                     isActive={isActive}
+                    // `data-active` styles the item; this tells assistive technology which screen is open.
+                    aria-current={isActive ? 'page' : undefined}
                     onClick={() => handleMenuItemClick(ext.id)}
-                    tooltip={collapsed ? pres.label : undefined}
+                    tooltip={collapsed ? label : undefined}
                   >
                     {pres.icon && (
                       <SidebarMenuIcon>
                         <Icon icon={pres.icon} className="w-4 h-4" />
                       </SidebarMenuIcon>
                     )}
-                    <span>{pres.label}</span>
+                    <span>{label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               );

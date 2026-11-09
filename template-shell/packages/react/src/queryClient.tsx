@@ -18,26 +18,27 @@ import {
   type MutationFunctionContext,
 } from '@tanstack/react-query';
 import {
+  readQueryCacheScopeGeneration,
+  recordQueryCacheScopeWriteDropped,
   subscribeQueryCacheRuntimeChanged,
   type EndpointDescriptor,
   type FrontXApp,
 } from '@gears-frontx/framework';
-import type { ApiQueryOverrides } from './hooks/useApiQuery';
+import type { ApiQueryOverrides, ApiSuspenseQueryOverrides } from './hooks/useApiQuery';
 import type {
   ApiInfiniteQueryOptions,
   ApiInfiniteQueryPageContext,
+  ApiSuspenseInfiniteQueryOptions,
 } from './hooks/useApiInfiniteQuery';
 import type { UseApiMutationOptions } from './hooks/useApiMutation';
-import { createQueryCache, type MutationCallbackContext, type QueryCacheKey } from './hooks/QueryCache';
+import {
+  createQueryCache,
+  type MutationCallbackContext,
+  type QueryCache,
+  type QueryCacheKey,
+} from './hooks/QueryCache';
 import { useLatest } from './hooks/useLatest';
 
-// @cpt-FEATURE:implement-endpoint-descriptors:p3
-// @cpt-dod:cpt-frontx-dod-request-lifecycle-query-provider:p2
-// @cpt-flow:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2
-// @cpt-flow:cpt-frontx-flow-request-lifecycle-use-api-query:p2
-// @cpt-flow:cpt-frontx-flow-request-lifecycle-use-api-mutation:p2
-
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-react-query-client-symbols
 const APP_QUERY_CLIENT_SYMBOL = Symbol.for('frontx:query-cache:app-client');
 const APP_QUERY_CLIENT_RESOLVER_SYMBOL = Symbol.for('frontx:query-cache:app-client-resolver');
 const APP_QUERY_CLIENT_ACTIVATOR_SYMBOL = Symbol.for('frontx:query-cache:app-client-activator');
@@ -49,9 +50,7 @@ type QueryClientApp = FrontXApp & {
 };
 
 const FrontXQueryClientContext = createContext<QueryClient | undefined>(undefined);
-// @cpt-end:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-react-query-client-symbols
 
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-resolve-app-query-client
 type RuntimeAwareEndpointDescriptor<TData> = EndpointDescriptor<TData> & {
   fetch(options?: { signal?: AbortSignal; staleTime?: number }): Promise<TData>;
 };
@@ -76,9 +75,7 @@ export function activateFrontXQueryClient(app: FrontXApp): QueryClient | undefin
   const clientApp = app as QueryClientApp;
   return clientApp[APP_QUERY_CLIENT_SYMBOL] ?? clientApp[APP_QUERY_CLIENT_ACTIVATOR_SYMBOL]?.();
 }
-// @cpt-end:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-resolve-app-query-client
 
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-imperative-cache-bootstrap
 /**
  * Imperatively invalidates cache entries for `target` on the QueryClient bound to `app`.
  * Use from non-React code (e.g. MFE actions); in components prefer `useQueryCache().invalidate`.
@@ -100,9 +97,7 @@ export async function invalidateQueryCacheForApp(
 export function bootstrapFrontXQueryClient(app: FrontXApp): QueryClient | undefined {
   return resolveFrontXQueryClient(app);
 }
-// @cpt-end:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-imperative-cache-bootstrap
 
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-use-bootstrapped-query-client
 export function useBootstrappedFrontXQueryClient(app: FrontXApp): QueryClient | undefined {
   const fromApp = useMemo(() => bootstrapFrontXQueryClient(app), [app]);
   const [eventResolvedClient, setEventResolvedClient] = useState<AppResolvedQueryClient | undefined>(
@@ -146,9 +141,7 @@ export function useBootstrappedFrontXQueryClient(app: FrontXApp): QueryClient | 
 
   return queryClient;
 }
-// @cpt-end:cpt-frontx-flow-request-lifecycle-query-client-lifecycle:p2:inst-use-bootstrapped-query-client
 
-// @cpt-begin:cpt-frontx-dod-request-lifecycle-query-provider:p2:inst-frontx-query-client-provider
 export function FrontXQueryClientProvider({
   queryClient,
   children,
@@ -170,9 +163,7 @@ export function FrontXQueryClientProvider({
     </FrontXQueryClientContext.Provider>
   );
 }
-// @cpt-end:cpt-frontx-dod-request-lifecycle-query-provider:p2:inst-frontx-query-client-provider
 
-// @cpt-begin:cpt-frontx-dod-request-lifecycle-query-provider:p2:inst-query-client-context-hooks
 export function useOptionalFrontXQueryClient(): QueryClient | undefined {
   return useContext(FrontXQueryClientContext);
 }
@@ -187,9 +178,7 @@ export function useRequiredFrontXQueryClient(): QueryClient {
 
   return queryClient;
 }
-// @cpt-end:cpt-frontx-dod-request-lifecycle-query-provider:p2:inst-query-client-context-hooks
 
-// @cpt-begin:implement-endpoint-descriptors:p3:inst-descriptor-fetch-stale-helpers
 function buildPageContext<TPage>(
   page: TPage,
   pages: readonly TPage[],
@@ -209,19 +198,50 @@ function normalizeFetchStaleTime(staleTime: unknown): number | undefined {
     return Number.POSITIVE_INFINITY;
   }
 
+  // A function staleTime is resolved per query by TanStack; 0 keeps the fetch
+  // cache from serving a response older than the query would accept.
+  if (typeof staleTime === 'function') {
+    return 0;
+  }
+
   return typeof staleTime === 'number' ? staleTime : undefined;
 }
 
+/**
+ * The staleTime the shared fetch cache uses, resolved the way TanStack
+ * resolves it for the query: call site, then descriptor, then the
+ * QueryClient defaults for the query key (global defaults with every
+ * matching setQueryDefaults prefix spread over them).
+ */
 function resolveFetchStaleTime<TData>(
   queryClient: QueryClient,
+  queryKey: readonly unknown[],
   descriptor: EndpointDescriptor<TData>,
   overrideStaleTime?: number
 ): number | undefined {
+  const clientDefaults = {
+    ...queryClient.getDefaultOptions().queries,
+    ...queryClient.getQueryDefaults(queryKey),
+  };
   return normalizeFetchStaleTime(
-    overrideStaleTime ??
-      descriptor.staleTime ??
-      queryClient.getDefaultOptions().queries?.staleTime
+    overrideStaleTime ?? descriptor.staleTime ?? clientDefaults.staleTime
   );
+}
+
+/**
+ * staleTime/gcTime for a query, with only the keys that are set. An explicit
+ * `undefined` would override the QueryClient defaults (TanStack spreads the
+ * query options over them), so a screen that remounts would refetch instead of
+ * painting from cache.
+ */
+function cacheTimeOptions(
+  staleTime: number | undefined,
+  gcTime: number | undefined
+): { staleTime?: number; gcTime?: number } {
+  return {
+    ...(staleTime === undefined ? {} : { staleTime }),
+    ...(gcTime === undefined ? {} : { gcTime }),
+  };
 }
 
 function fetchDescriptor<TData>(
@@ -230,20 +250,26 @@ function fetchDescriptor<TData>(
 ): Promise<TData> {
   return (descriptor as RuntimeAwareEndpointDescriptor<TData>).fetch(options);
 }
-// @cpt-end:implement-endpoint-descriptors:p3:inst-descriptor-fetch-stale-helpers
 
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-use-api-query:p2:inst-delegate-frontx-use-query
 export function useFrontXQuery<TData = unknown, TError = Error>(
   descriptor: EndpointDescriptor<TData>,
   overrides?: ApiQueryOverrides
 ) {
   const queryClient = useRequiredFrontXQueryClient();
-  const staleTime = resolveFetchStaleTime(queryClient, descriptor, overrides?.staleTime);
+  const staleTime = resolveFetchStaleTime(
+    queryClient,
+    descriptor.key,
+    descriptor,
+    overrides?.staleTime
+  );
   const result = useQuery<TData, TError>({
     queryKey: descriptor.key as unknown[],
     queryFn: ({ signal }) => fetchDescriptor(descriptor, { signal, staleTime }),
-    staleTime: overrides?.staleTime ?? descriptor.staleTime,
-    gcTime: overrides?.gcTime ?? descriptor.gcTime,
+    ...cacheTimeOptions(
+      overrides?.staleTime ?? descriptor.staleTime,
+      overrides?.gcTime ?? descriptor.gcTime
+    ),
+    ...(overrides?.enabled === undefined ? {} : { enabled: overrides.enabled }),
   });
 
   return {
@@ -255,20 +281,25 @@ export function useFrontXQuery<TData = unknown, TError = Error>(
     refetch: result.refetch,
   };
 }
-// @cpt-end:cpt-frontx-flow-request-lifecycle-use-api-query:p2:inst-delegate-frontx-use-query
 
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-use-api-query:p2:inst-delegate-frontx-use-suspense-query
 export function useFrontXSuspenseQuery<TData = unknown, TError = Error>(
   descriptor: EndpointDescriptor<TData>,
-  overrides?: ApiQueryOverrides
+  overrides?: ApiSuspenseQueryOverrides
 ) {
   const queryClient = useRequiredFrontXQueryClient();
-  const staleTime = resolveFetchStaleTime(queryClient, descriptor, overrides?.staleTime);
+  const staleTime = resolveFetchStaleTime(
+    queryClient,
+    descriptor.key,
+    descriptor,
+    overrides?.staleTime
+  );
   const result = useSuspenseQuery<TData, TError>({
     queryKey: descriptor.key as unknown[],
     queryFn: ({ signal }) => fetchDescriptor(descriptor, { signal, staleTime }),
-    staleTime: overrides?.staleTime ?? descriptor.staleTime,
-    gcTime: overrides?.gcTime ?? descriptor.gcTime,
+    ...cacheTimeOptions(
+      overrides?.staleTime ?? descriptor.staleTime,
+      overrides?.gcTime ?? descriptor.gcTime
+    ),
   });
 
   return {
@@ -280,9 +311,7 @@ export function useFrontXSuspenseQuery<TData = unknown, TError = Error>(
     },
   };
 }
-// @cpt-end:cpt-frontx-flow-request-lifecycle-use-api-query:p2:inst-delegate-frontx-use-suspense-query
 
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-use-api-query:p2:inst-delegate-frontx-use-infinite-query
 export function useFrontXInfiniteQuery<TPage = unknown, TError = Error>(
   options: ApiInfiniteQueryOptions<TPage>
 ) {
@@ -299,7 +328,12 @@ export function useFrontXInfiniteQuery<TPage = unknown, TError = Error>(
     queryFn: ({ pageParam, signal }) =>
       fetchDescriptor(pageParam, {
         signal,
-        staleTime: resolveFetchStaleTime(queryClient, pageParam, options.staleTime),
+        staleTime: resolveFetchStaleTime(
+          queryClient,
+          options.initialPage.key,
+          pageParam,
+          options.staleTime
+        ),
       }),
     getNextPageParam: (
       lastPage,
@@ -327,9 +361,12 @@ export function useFrontXInfiniteQuery<TPage = unknown, TError = Error>(
           )
       : undefined,
     select: (data) => data.pages,
-    staleTime: options.staleTime ?? options.initialPage.staleTime,
-    gcTime: options.gcTime ?? options.initialPage.gcTime,
+    ...cacheTimeOptions(
+      options.staleTime ?? options.initialPage.staleTime,
+      options.gcTime ?? options.initialPage.gcTime
+    ),
     maxPages: options.maxPages,
+    ...(options.enabled === undefined ? {} : { enabled: options.enabled }),
   });
 
   return {
@@ -353,11 +390,9 @@ export function useFrontXInfiniteQuery<TPage = unknown, TError = Error>(
     },
   };
 }
-// @cpt-end:cpt-frontx-flow-request-lifecycle-use-api-query:p2:inst-delegate-frontx-use-infinite-query
 
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-use-api-query:p2:inst-delegate-frontx-use-suspense-infinite-query
 export function useFrontXSuspenseInfiniteQuery<TPage = unknown, TError = Error>(
-  options: ApiInfiniteQueryOptions<TPage>
+  options: ApiSuspenseInfiniteQueryOptions<TPage>
 ) {
   const queryClient = useRequiredFrontXQueryClient();
   const result = useSuspenseInfiniteQuery<
@@ -372,7 +407,12 @@ export function useFrontXSuspenseInfiniteQuery<TPage = unknown, TError = Error>(
     queryFn: ({ pageParam, signal }) =>
       fetchDescriptor(pageParam, {
         signal,
-        staleTime: resolveFetchStaleTime(queryClient, pageParam, options.staleTime),
+        staleTime: resolveFetchStaleTime(
+          queryClient,
+          options.initialPage.key,
+          pageParam,
+          options.staleTime
+        ),
       }),
     getNextPageParam: (
       lastPage,
@@ -400,8 +440,10 @@ export function useFrontXSuspenseInfiniteQuery<TPage = unknown, TError = Error>(
           )
       : undefined,
     select: (data) => data.pages,
-    staleTime: options.staleTime ?? options.initialPage.staleTime,
-    gcTime: options.gcTime ?? options.initialPage.gcTime,
+    ...cacheTimeOptions(
+      options.staleTime ?? options.initialPage.staleTime,
+      options.gcTime ?? options.initialPage.gcTime
+    ),
     maxPages: options.maxPages,
   });
 
@@ -424,9 +466,65 @@ export function useFrontXSuspenseInfiniteQuery<TPage = unknown, TError = Error>(
     },
   };
 }
-// @cpt-end:cpt-frontx-flow-request-lifecycle-use-api-query:p2:inst-delegate-frontx-use-suspense-infinite-query
 
-// @cpt-begin:cpt-frontx-flow-request-lifecycle-use-api-mutation:p2:inst-delegate-frontx-use-mutation
+/** The cache scope a mutation started under: its QueryClient and that client's scope generation. */
+type MutationScope = {
+  queryClient: QueryClient;
+  generation: number;
+};
+
+/**
+ * The scope each mutation run started under, keyed by the context object
+ * TanStack builds once per run and passes as the last argument to onMutate,
+ * onSuccess, onError and onSettled. Recorded before the caller's onMutate
+ * runs, so the callbacks find it even when that onMutate throws and TanStack
+ * keeps no onMutate result.
+ */
+const mutationScopes = new WeakMap<MutationFunctionContext, MutationScope>();
+
+/**
+ * A queryCache whose writes do nothing once the cache scope (mock mode,
+ * tenant, session) has changed since the mutation started, so a response or a
+ * snapshot from the old scope never lands in the new scope's cache. Reads
+ * still go through.
+ */
+function scopeBoundQueryCache(queryCache: QueryCache, scope: MutationScope): QueryCache {
+  const scopeChanged = () => readQueryCacheScopeGeneration(scope.queryClient) !== scope.generation;
+  // A dropped write that would change the cache is recorded, so a session check that keeps the
+  // session knows it has something to refresh. A dropped cancel changes nothing.
+  const dropped = (): boolean => {
+    if (!scopeChanged()) return false;
+    recordQueryCacheScopeWriteDropped(scope.queryClient, scope.generation);
+    return true;
+  };
+  return {
+    get: queryCache.get,
+    getState: queryCache.getState,
+    set: (key, dataOrUpdater) => {
+      if (!dropped()) queryCache.set(key, dataOrUpdater);
+    },
+    cancel: (key) => (scopeChanged() ? Promise.resolve() : queryCache.cancel(key)),
+    invalidate: (key) => (dropped() ? Promise.resolve() : queryCache.invalidate(key)),
+    invalidateMany: (filters) => (dropped() ? Promise.resolve() : queryCache.invalidateMany(filters)),
+    remove: (key) => {
+      if (!dropped()) queryCache.remove(key);
+    },
+  };
+}
+
+// The cache is built from the recorded QueryClient, not the latest render's,
+// so the scope check and the writes always target the same client even when
+// the provider swaps its QueryClient mid-flight. No scope only for a run that
+// skipped onMutate (TanStack resuming a restored paused mutation).
+function scopeBoundCallbackCtx(
+  callbackCtx: MutationCallbackContext,
+  scope: MutationScope | undefined
+): MutationCallbackContext {
+  return scope
+    ? { queryCache: scopeBoundQueryCache(createQueryCache(scope.queryClient), scope) }
+    : callbackCtx;
+}
+
 export function useFrontXMutation<
   TData = unknown,
   TError = Error,
@@ -436,9 +534,9 @@ export function useFrontXMutation<
   options: UseApiMutationOptions<TData, TError, TVariables, TContext>,
   callbackCtx: MutationCallbackContext
 ) {
-  useRequiredFrontXQueryClient();
+  const queryClient = useRequiredFrontXQueryClient();
 
-  const latestRef = useLatest({ options, callbackCtx });
+  const latestRef = useLatest({ options, callbackCtx, queryClient });
   const fetchAbortControllersRef = React.useRef<Set<AbortController>>(new Set());
 
   // Effect event: reads abortOnUnmount from the most recent render, not
@@ -489,33 +587,63 @@ export function useFrontXMutation<
     // callback on every render.
   }, [latestRef]);
 
-  const onMutate = React.useCallback((variables: TVariables, _context: MutationFunctionContext) => {
+  // onMutate always runs: it records the scope the mutation starts under,
+  // and every callback gets a queryCache bound to that scope.
+  const onMutate = React.useCallback(async (
+    variables: TVariables,
+    mutationFnContext: MutationFunctionContext
+  ): Promise<TContext | undefined> => {
     const current = latestRef.current;
-    if (!current.options.onMutate) {
-      return undefined as TContext;
-    }
-
-    return current.options.onMutate(variables, current.callbackCtx);
-    // latestRef's identity never changes — see mutationFn above.
+    const scope: MutationScope = {
+      queryClient: current.queryClient,
+      generation: readQueryCacheScopeGeneration(current.queryClient),
+    };
+    mutationScopes.set(mutationFnContext, scope);
+    return current.options.onMutate?.(
+      variables,
+      scopeBoundCallbackCtx(current.callbackCtx, scope)
+    );
+    // latestRef's identity never changes - see mutationFn above.
   }, [latestRef]);
 
-  const onSuccess = React.useCallback((data: TData, variables: TVariables, context: TContext | undefined) => {
+  const onSuccess = React.useCallback((
+    data: TData,
+    variables: TVariables,
+    context: TContext | undefined,
+    mutationFnContext: MutationFunctionContext
+  ) => {
     const current = latestRef.current;
-    return current.options.onSuccess?.(data, variables, context, current.callbackCtx);
-    // latestRef's identity never changes — see mutationFn above.
+    return current.options.onSuccess?.(
+      data,
+      variables,
+      context,
+      scopeBoundCallbackCtx(current.callbackCtx, mutationScopes.get(mutationFnContext))
+    );
+    // latestRef's identity never changes - see mutationFn above.
   }, [latestRef]);
 
-  const onError = React.useCallback((error: TError, variables: TVariables, context: TContext | undefined) => {
+  const onError = React.useCallback((
+    error: TError,
+    variables: TVariables,
+    context: TContext | undefined,
+    mutationFnContext: MutationFunctionContext
+  ) => {
     const current = latestRef.current;
-    return current.options.onError?.(error, variables, context, current.callbackCtx);
-    // latestRef's identity never changes — see mutationFn above.
+    return current.options.onError?.(
+      error,
+      variables,
+      context,
+      scopeBoundCallbackCtx(current.callbackCtx, mutationScopes.get(mutationFnContext))
+    );
+    // latestRef's identity never changes - see mutationFn above.
   }, [latestRef]);
 
   const onSettled = React.useCallback((
     data: TData | undefined,
     error: TError | null,
     variables: TVariables,
-    context: TContext | undefined
+    context: TContext | undefined,
+    mutationFnContext: MutationFunctionContext
   ) => {
     const current = latestRef.current;
     return current.options.onSettled?.(
@@ -523,14 +651,14 @@ export function useFrontXMutation<
       error,
       variables,
       context,
-      current.callbackCtx
+      scopeBoundCallbackCtx(current.callbackCtx, mutationScopes.get(mutationFnContext))
     );
-    // latestRef's identity never changes — see mutationFn above.
+    // latestRef's identity never changes - see mutationFn above.
   }, [latestRef]);
 
-  const mutation = useMutation<TData, TError, TVariables, TContext>({
+  const mutation = useMutation<TData, TError, TVariables, TContext | undefined>({
     mutationFn,
-    onMutate: options.onMutate ? onMutate : undefined,
+    onMutate,
     onSuccess: options.onSuccess ? onSuccess : undefined,
     onError: options.onError ? onError : undefined,
     onSettled: options.onSettled ? onSettled : undefined,
@@ -545,4 +673,3 @@ export function useFrontXMutation<
     reset: mutation.reset,
   };
 }
-// @cpt-end:cpt-frontx-flow-request-lifecycle-use-api-mutation:p2:inst-delegate-frontx-use-mutation
