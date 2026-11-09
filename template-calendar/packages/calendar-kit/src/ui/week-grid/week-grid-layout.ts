@@ -297,9 +297,7 @@ export const buildGridData = (
   const allDayCellByDate = new Map<CalendarDate, CalendarCell>();
   const cellByKey = new Map<string, CalendarCell>();
   const cellKeyByCell = new Map<CalendarCell, string>();
-
   const rows: CalendarGridRow[] = [];
-
   const timeLabels = new Map<UtcInstant, string>();
 
   for (const column of dayColumns) {
@@ -309,7 +307,6 @@ export const buildGridData = (
   }
 
   const fallbackCell = arrayAt(arrayAt(dayColumns, 0)?.slots ?? [], 0);
-
   if (!fallbackCell) {
     return {
       allDayCellByDate,
@@ -343,7 +340,6 @@ export const buildGridData = (
 
   for (const [columnIndex, viewerDate] of viewerDates.entries()) {
     const range = dayRanges.get(viewerDate);
-
     if (range === undefined) {
       continue;
     }
@@ -384,16 +380,13 @@ export const buildGridData = (
 
     for (const column of dayColumns) {
       const cell = arrayAt(column.slots, slotIndex);
-
       if (cell) {
         slotSource = cell;
-
         break;
       }
     }
 
     const gutter = createGutterCell(slotSource);
-
     const cells: CalendarCell[] = [gutter];
 
     registerCell(
@@ -415,7 +408,6 @@ export const buildGridData = (
 
     for (const [columnIndex, column] of dayColumns.entries()) {
       const cell = arrayAt(column.slots, slotIndex);
-
       if (!cell) {
         continue;
       }
@@ -459,7 +451,6 @@ export const buildTimedSegments = <Payload>(
   timeZone: IanaTimeZone
 ): readonly ViewerDateEventSegment<TimedCalendarEvent<Payload>>[] => {
   const timedEvents = events.flatMap((event) => (event.allDay ? [] : [event]));
-
   return segmentEventsAcrossViewerDates(timedEvents, viewerDates, timeZone);
 };
 
@@ -476,9 +467,7 @@ export const buildVisibleAllDaySpans = <Payload>(
   );
 
   const spans = allocateAllDaySpans(segments, allViewerDates);
-
   const visible: AllDaySpan<AllDaySource<Payload>>[] = [];
-
   const visibleCount = viewerDates.length;
 
   for (const span of spans) {
@@ -582,14 +571,12 @@ export const buildTimedPositions = <Payload>(
 
     for (const segment of columnSegments) {
       const layout = layoutById.get(segment.key);
-
       if (!layout) {
         continue;
       }
 
       const startIndex = findCellIndex(slots, segment.start, segment.end);
       const startCell = arrayAt(slots, startIndex);
-
       if (!startCell) {
         continue;
       }
@@ -651,18 +638,15 @@ export const buildAllDayPositions = <Payload>(
 ): ReadonlyMap<string, readonly AllDayPosition<Payload>[]> => {
   // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-derive
   const byCell = new Map<string, AllDayPosition<Payload>[]>();
-
   const dates = [...gridData.allDayCellByDate.keys()];
 
   for (const span of spans) {
     const date = arrayAt(dates, span.startColumn);
-
     if (date === undefined) {
       continue;
     }
 
     const cell = gridData.allDayCellByDate.get(date);
-
     if (cell === undefined) {
       continue;
     }
@@ -762,14 +746,12 @@ export const buildNowPosition = (
 ): NowPosition | null => {
   const currentDate = toViewerDateTime(currentInstant, timeZone).date;
   const columnIndex = viewerDates.indexOf(currentDate);
-
   if (columnIndex === -1) {
     return null;
   }
 
   const column = arrayAt(dayColumns, columnIndex);
   const firstCell = arrayAt(column?.slots ?? [], 0);
-
   if (!column || !firstCell) {
     return null;
   }
@@ -777,13 +759,11 @@ export const buildNowPosition = (
   const { range } = column;
   const elapsed = Date.parse(currentInstant) - Date.parse(range.start);
   const duration = Date.parse(range.end) - Date.parse(range.start);
-
   if (elapsed < 0 || elapsed >= duration) {
     return null;
   }
 
   const offset = (elapsed / duration) * column.slots.length * HOUR_ROW_HEIGHT;
-
   return { cellKey: getCellKey(firstCell), offset };
 };
 
