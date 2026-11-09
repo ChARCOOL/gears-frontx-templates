@@ -292,3 +292,10 @@ describe(CalendarSidePanel, () => {
     ).toBeNull();
   });
 });
+
+it("keeps focus rings of full-width body controls inside the scroll body", () => {
+  const body = declarations(sidePanelCss, ".body");
+
+  expect(body.get("margin-inline")).toBe("calc(-1 * var(--cal-focus-ring-width))");
+  expect(body.get("padding-inline")).toBe("var(--cal-focus-ring-width)");
+});

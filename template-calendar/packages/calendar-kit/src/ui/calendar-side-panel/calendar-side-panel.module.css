@@ -58,7 +58,11 @@
 .body {
   min-block-size: 0;
   flex: 1 1 auto;
+  /* The scroll container clips focus rings on the full-width controls here; the negative
+     margin and matching padding give the rings room inside the body. */
+  margin-inline: calc(-1 * var(--cal-focus-ring-width));
   padding-block-start: var(--cal-space-3);
+  padding-inline: var(--cal-focus-ring-width);
   overflow: auto;
   scrollbar-color: var(--cal-color-grid-line) transparent;
   scrollbar-width: thin;

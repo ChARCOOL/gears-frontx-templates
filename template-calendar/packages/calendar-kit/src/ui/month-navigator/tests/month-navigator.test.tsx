@@ -11,10 +11,12 @@ import {
 } from "../../../__test-utils__/fixtures";
 import { calendarDate } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
+import { declarations } from "../../../__test-utils__/css-declarations";
 import { MonthNavigator } from "../month-navigator";
 import type { MonthNavigatorProps } from "../month-navigator";
 
 import styles from "../month-navigator.module.css";
+import monthNavigatorCss from "../month-navigator.module.css?raw";
 
 const DATE = calendarDate("2026-08-24");
 
@@ -231,4 +233,10 @@ describe(MonthNavigator, () => {
     );
     assert(cell("Tuesday, November 3, 2026")).toHaveAttribute("tabindex", "0");
   });
+});
+
+it("keeps navigator day columns at least the control height wide", () => {
+  assert(declarations(monthNavigatorCss, ".row").get("grid-template-columns")).toBe(
+    "repeat(7, minmax(var(--cal-control-height-md), 1fr))"
+  );
 });

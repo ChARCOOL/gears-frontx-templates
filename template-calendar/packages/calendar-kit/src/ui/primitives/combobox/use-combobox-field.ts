@@ -643,7 +643,8 @@ export const useComboboxField = ({
         return;
       }
 
-      if (key === " ") {
+      // A Space inside a query is text; only an empty input treats it as "open".
+      if (key === " " && event.currentTarget.value === "") {
         event.preventDefault();
         preventBaseUIHandler?.();
         setOpenAndPortal(true);
