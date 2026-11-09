@@ -510,12 +510,12 @@ export const useWeekGridContent = <Payload = unknown>(
     controller.endPaint();
   };
 
-  const handlePointerCancel = (): void => {
-    controller.cancelPaint();
-    controller.cancelMove();
-  };
+  // A drag fires pointercancel and pointerleave as it starts; the drag events own that move.
+  const cancelPointerInteraction = (): void => {
+    if (draggedEventIdRef.current !== null) {
+      return;
+    }
 
-  const handlePointerLeave = (): void => {
     controller.cancelPaint();
     controller.cancelMove();
   };
@@ -663,9 +663,9 @@ export const useWeekGridContent = <Payload = unknown>(
     handleDrop,
     handleEventSelect,
     handleGridActiveCellChange,
-    handlePointerCancel,
+    handlePointerCancel: cancelPointerInteraction,
     handlePointerDown,
-    handlePointerLeave,
+    handlePointerLeave: cancelPointerInteraction,
     handlePointerUp,
     headerColumns,
     isCellNavigable,
