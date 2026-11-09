@@ -26,7 +26,6 @@ import {
 } from "../time-input";
 
 const BERLIN = parseIanaTimeZone("Europe/Berlin");
-
 const REFERENCE = utcInstant("2026-08-24T10:00:00.000Z");
 
 describe("calendar formatting and time-input algorithms", () => {
@@ -316,4 +315,37 @@ describe("calendar formatting and time-input algorithms", () => {
       value: "13:30",
     });
   });
+
+  it.each(["09", "09:00", "0900", "9:00"])(
+    "treats %s as explicit with a PM reference",
+    (text) => {
+      assert(
+        parseTimeInput(text, {
+          locale: "en-US",
+          reference: parseLocalTime("14:00"),
+        })
+      ).toStrictEqual({ kind: TIME_INPUT.value, value: "09:00" });
+    }
+  );
+
+  it("inherits the reference period for a bare two-digit hour", () => {
+    assert(
+      parseTimeInput("11", {
+        locale: "en-US",
+        reference: parseLocalTime("14:00"),
+      })
+    ).toStrictEqual({ kind: TIME_INPUT.value, value: "23:00" });
+  });
+
+  it.each(["es-ES", "es-MX"])(
+    "accepts spaced day periods for %s",
+    (locale) => {
+      for (const text of ["9 p. m.", "9 p m", "9 p.\u00a0m."]) {
+        assert(parseTimeInput(text, { locale })).toStrictEqual({
+          kind: TIME_INPUT.value,
+          value: "21:00",
+        });
+      }
+    }
+  );
 });
