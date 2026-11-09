@@ -232,7 +232,7 @@ describe(MonthGrid, () => {
     const grid = screen.getByRole("grid");
     const localizedWeekNumber = new Intl.NumberFormat("ar-EG").format(1);
     const localizedDayNumber = new Intl.NumberFormat("ar-EG").format(2);
-    const localizedHiddenCount = new Intl.NumberFormat("ar-EG").format(3);
+    const localizedHiddenCount = new Intl.NumberFormat("ar-EG").format(6);
 
     const [weekHeader] = within(grid).getAllByRole("rowheader");
     assert(weekHeader.textContent).toBe(`W${localizedWeekNumber}`);
@@ -423,9 +423,9 @@ describe(MonthGrid, () => {
             !(button.getAttribute("aria-label")?.includes("hidden") ?? false)
         )
     ).toHaveLength(2);
-    within(cell).getByText("+3 hidden");
-    assert(cell.dataset.eventCount).toBe("5");
-    assert(screen.getByRole("status").textContent).toContain("+3 hidden");
+    within(cell).getByText("+6 hidden");
+    assert(cell.dataset.eventCount).toBe("8");
+    assert(screen.getByRole("status").textContent).toContain("+6 hidden");
   });
 
   it("uses the translated whole phrase for a cell event count", () => {
@@ -763,7 +763,7 @@ describe(MonthGrid, () => {
       onOverflowSelect,
     });
 
-    const overflow = monthOverflow("3");
+    const overflow = monthOverflow("6");
     assert(overflow.getAttribute("type")).toBe("button");
 
     fireEvent.click(overflow);

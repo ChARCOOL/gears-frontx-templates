@@ -283,7 +283,11 @@ export const buildMonthGridRows = (
     const cells: MonthGridCell[] = [];
 
     for (const candidate of candidates) {
-      const eventCount = candidate.eventIds.length;
+      const hiddenFromApi = input.overflowByDate[candidate.date];
+      const heldBack = Number.isFinite(hiddenFromApi)
+        ? Math.max(0, Math.floor(hiddenFromApi))
+        : 0;
+      const eventCount = candidate.eventIds.length + heldBack;
       const visibility = visibleCountForCell(
         input.cellHeight,
         eventCount,
@@ -309,16 +313,7 @@ export const buildMonthGridRows = (
       }
 
       visibleByDate.set(candidate.date, visibleIds);
-      const hiddenFromApi = input.overflowByDate[candidate.date];
-
-      const normalizedHiddenFromApi = Number.isFinite(hiddenFromApi)
-        ? Math.max(0, Math.floor(hiddenFromApi))
-        : 0;
-
-      const hiddenCount = Math.max(
-        visibility.hiddenCount,
-        normalizedHiddenFromApi
-      );
+      const hiddenCount = eventCount - visibleIds.size;
 
       const allDayEventIds: string[] = [];
 
