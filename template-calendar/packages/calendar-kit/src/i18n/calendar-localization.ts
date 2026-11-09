@@ -47,10 +47,8 @@ export interface CalendarLocalizationProviderProps extends CalendarLocalizationP
 /** Props a component hands to the scopes it opens. */
 export interface CalendarContextProps
   extends CalendarLocalizationProps, CalendarViewerProps {
-  /**
-   * Text for the active locale, used in place of the provider's. A component renders in exactly
-   * one locale, so this stays flat; a whole calendar takes `messages` instead.
-   */
+  /** Text for the active locale, used in place of the provider's. A component renders in one locale,
+   * so this stays flat; a whole calendar takes `messages` instead. */
   readonly translations?: CalendarTranslations;
 }
 
@@ -89,7 +87,6 @@ export const CalendarLocalizationContext =
 
 export const useCalendarLocalization = (): CalendarLocalizationValue => {
   const { direction, locale, t } = useContext(CalendarLocalizationContext);
-
   return useMemo(() => ({ direction, locale, t }), [direction, locale, t]);
 };
 

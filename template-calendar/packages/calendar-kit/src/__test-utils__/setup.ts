@@ -85,7 +85,6 @@ const installFloatingUiPseudoClassPolyfill = (): void => {
   }
 
   const descriptorValue: unknown = descriptor.value;
-
   if (!isElementMatches(descriptorValue)) {
     return;
   }
@@ -104,7 +103,6 @@ const installFloatingUiPseudoClassPolyfill = (): void => {
 };
 
 const initialFetch = globalThis.fetch;
-
 const memoryStorages: Storage[] = [];
 
 const noopScrollIntoView = (): void => {

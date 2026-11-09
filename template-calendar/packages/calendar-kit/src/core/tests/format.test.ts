@@ -26,7 +26,6 @@ import {
 } from "../time-input";
 
 const BERLIN = parseIanaTimeZone("Europe/Berlin");
-
 const REFERENCE = utcInstant("2026-08-24T10:00:00.000Z");
 
 describe("calendar formatting and time-input algorithms", () => {

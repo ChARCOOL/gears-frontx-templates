@@ -46,11 +46,8 @@ const cell = (
 };
 
 const first = cell("2026-08-24", "09:00");
-
 const second = cell("2026-08-24", "10:00");
-
 const third = cell("2026-08-24", "11:00");
-
 const fourth = cell("2026-08-24", "12:00");
 
 const run = (
@@ -247,6 +244,7 @@ describe("core interaction state machine", () => {
   it("labels inferred cells from their instants across a spring-forward gap", () => {
     const zone = parseIanaTimeZone("America/New_York");
     const date = calendarDate("2026-03-08");
+
     const zonedCell = (startTime: string, endTime: string): CalendarCell => ({
       date,
       end: fromViewerDateTime({ date, time: endTime, timeZone: zone }),
@@ -289,7 +287,6 @@ describe("core interaction state machine", () => {
 
   it("ignores malformed or missing targets instead of creating an inverted range", () => {
     const state = createInteractionState("paint-and-move");
-
     const malformedCell = { ...third };
     Object.defineProperty(malformedCell, "start", { value: "not-utc" });
     // A paint must be under way, or the update returns before it reads the cell.
@@ -390,7 +387,6 @@ describe("additional calendar interaction contracts", () => {
 
   it("does not move unavailable or unidentified events and does not permit moves outside the mode", () => {
     const unavailable = { ...event, available: false };
-
     const missingId = { ...event, id: "   " };
 
     assert(
