@@ -15,7 +15,7 @@ import {
   useEventDetailPanelController,
 } from "../use-event-detail-panel-controller";
 
-const SAFE_JOIN_URL = "https://meet.example.com/chemistry";
+const SAFE_JOIN_URL = "https://join.example.com/chemistry";
 const UNSAFE_SCRIPT_SCHEME = ["java", "script:"].join("");
 
 type TimedCalendarEvent = Extract<CalendarEvent, { readonly allDay: false }>;
@@ -435,9 +435,9 @@ describe(useEventDetailPanelController, () => {
 
 describe(isSafeHttpUrl, () => {
   it("accepts only http and https schemes, case-insensitively", () => {
-    expect(isSafeHttpUrl("https://meet.example.com")).toBeTruthy();
-    expect(isSafeHttpUrl("http://meet.example.com")).toBeTruthy();
-    expect(isSafeHttpUrl("HTTPS://MEET.EXAMPLE.COM")).toBeTruthy();
+    expect(isSafeHttpUrl("https://join.example.com")).toBeTruthy();
+    expect(isSafeHttpUrl("http://join.example.com")).toBeTruthy();
+    expect(isSafeHttpUrl("HTTPS://JOIN.EXAMPLE.COM")).toBeTruthy();
   });
 
   it("rejects script and data schemes", () => {
@@ -449,7 +449,7 @@ describe(isSafeHttpUrl, () => {
 
   it("rejects ftp and missing values", () => {
     const missingUrl: string | null | undefined = undefined;
-    expect(isSafeHttpUrl("ftp://meet.example.com")).toBeFalsy();
+    expect(isSafeHttpUrl("ftp://join.example.com")).toBeFalsy();
     expect(isSafeHttpUrl(null)).toBeFalsy();
     expect(isSafeHttpUrl(missingUrl)).toBeFalsy();
   });
