@@ -35,7 +35,6 @@ const messageFor = (
   t: CreateEventErrorTranslate
 ): string | null => {
   const error = errors[field];
-
   return error ? resolveCreateEventError(error, field, t) : null;
 };
 
@@ -45,7 +44,6 @@ export const firstCreateEventError = (
 ): string | undefined => {
   for (const field of VALIDATION_FIELDS) {
     const message = messageFor(errors, field, t);
-
     if (message !== null) {
       return message;
     }
