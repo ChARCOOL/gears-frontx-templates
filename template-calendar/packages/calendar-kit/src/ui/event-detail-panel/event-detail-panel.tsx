@@ -258,7 +258,6 @@ const expansion = (
   expandedHere: boolean
 ) => {
   const canExpand = anchored && !restricted;
-
   return { canExpand, expanded: !anchored || (canExpand && expandedHere) };
 };
 

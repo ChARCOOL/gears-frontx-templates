@@ -14,11 +14,8 @@ interface TooltipProps {
   readonly label: ReactNode;
 }
 
-/**
- * ui-kit's tooltip as a chip below its control. It portals into the control's own layer, so it
- * stays above an open popover or dialog and inside a shadow root; fixed positioning keeps a
- * clipping panel from cutting it off.
- */
+/** ui-kit's tooltip as a chip below its control. It portals into the control's own layer so it stays
+ * above open popovers and dialogs and inside shadow roots; fixed positioning avoids clipping. */
 export const Tooltip = ({ children, label }: TooltipProps) => {
   const [trigger, setTrigger] = useState<HTMLElement | null>(null);
 

@@ -16,7 +16,6 @@ import type { EventCardProps } from "../event-card";
 import cardStyles from "../event-card.module.css";
 
 const DATE = calendarDate("2026-08-24");
-
 const TIMED_EVENT = { id: "timed-1", title: "Chemistry lab" };
 
 const ALL_DAY_EVENT = {

@@ -178,7 +178,6 @@ describe(useWeekGridController, () => {
     );
 
     const [column] = result.current.dayColumns;
-
     if (column === undefined) {
       throw new Error("Expected a week column");
     }
@@ -317,7 +316,6 @@ describe(useWeekGridController, () => {
 
     const occupied = result.current.getCell(0, 9);
     const empty = result.current.getCell(0, 10);
-
     if (!occupied || !empty) {
       throw new Error("Expected week cells");
     }
@@ -350,7 +348,6 @@ describe(useWeekGridController, () => {
 
   it("keeps controlled selection and ignores missing or unavailable events", () => {
     const onSelectedEventIdChange = vi.fn<(eventId: string | null) => void>();
-
     const unavailable = { ...event("unavailable"), available: false };
 
     const { result, rerender } = renderHook(
@@ -766,7 +763,6 @@ describe(useWeekGridController, () => {
 
   it("never exposes a stale pending move across the invalidation render", () => {
     const initialEvent = event();
-
     const renders: (string | null)[] = [];
 
     const { result, rerender } = renderHook(

@@ -22,7 +22,6 @@ import type { CalendarQuickCreatePayload } from "../../slots";
 import { useDayGridController } from "../use-day-grid-controller";
 
 const DATE = calendarDate("2026-08-24");
-
 const AUCKLAND = parseIanaTimeZone("Pacific/Auckland");
 const LOS_ANGELES = parseIanaTimeZone("America/Los_Angeles");
 const KIRITIMATI = parseIanaTimeZone("Pacific/Kiritimati");
@@ -513,7 +512,6 @@ describe("day-grid rows across a DST transition", () => {
       );
 
       const [placement] = result.current.timedEvents;
-
       if (placement === undefined) {
         throw new Error("Expected a timed event placement");
       }
@@ -554,7 +552,6 @@ describe("day-grid rows across a DST transition", () => {
     );
 
     const [placement] = result.current.timedEvents;
-
     if (placement === undefined) {
       throw new Error("Expected a timed event placement");
     }

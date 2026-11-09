@@ -48,7 +48,6 @@ describe(useFloatingPanel, () => {
       y: 100,
     });
     const anchorRef = { current: anchor };
-
     const { result } = renderHook(() => useFloatingPanel(true, anchorRef));
     const panel = document.createElement("div");
     panel.setAttribute("dir", "rtl");
@@ -68,7 +67,6 @@ describe(useFloatingPanel, () => {
     });
 
     const missingRef = { current: null };
-
     const missing = renderHook(() => useFloatingPanel(true, missingRef));
     expect(missing.result.current.position).toBeNull();
 
@@ -89,7 +87,6 @@ describe(useFloatingPanel, () => {
       y: 100,
     });
     const nestedRef = { current: nestedAnchor };
-
     const nested = renderHook(() => useFloatingPanel(true, nestedRef));
     expect(nested.result.current.position?.left).toBe(480);
   });

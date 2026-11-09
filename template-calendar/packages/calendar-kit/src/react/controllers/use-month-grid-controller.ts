@@ -122,9 +122,7 @@ export interface UseMonthGridControllerResult {
 }
 
 const DEFAULT_DIRECTION: CalendarDirection = "ltr";
-
 const DEFAULT_CELL_HEIGHT = 135.2;
-
 const EMPTY_OVERFLOW_BY_DATE: Readonly<Record<string, number>> = {};
 
 const buildEventSegment = (
@@ -166,7 +164,6 @@ const resolveFocusedCell = (
   }
 
   const focusedEventId = focusedCell.eventId;
-
   if (
     !currentCell ||
     typeof focusedEventId !== "string" ||
@@ -283,7 +280,6 @@ export const useMonthGridController = (
 
   const { timedEvents, allDayEvents } = useMemo(() => {
     const timed: TimedCalendarEvent[] = [];
-
     const allDay: AllDayCalendarEvent[] = [];
 
     for (const event of options.events) {
@@ -357,9 +353,7 @@ export const useMonthGridController = (
   const focusPosition = useCallback(
     (rowIndex: number, columnIndex: number): void => {
       const row = rowIndex < 0 ? undefined : arrayAt(rows, rowIndex);
-
       const cell = arrayAt(row?.cells ?? [], columnIndex);
-
       if (!cell) {
         return;
       }
@@ -433,10 +427,8 @@ export const useMonthGridController = (
       }
 
       const key = getCellKey(cell);
-
       if (!element) {
         cellElementsRef.current.delete(key);
-
         return;
       }
 
@@ -452,7 +444,6 @@ export const useMonthGridController = (
       anchor?: HTMLElement
     ): void => {
       const event = eventById.get(eventId);
-
       if (!event || !isEventActionable(event)) {
         return;
       }
@@ -495,7 +486,6 @@ export const useMonthGridController = (
       eventId?: string
     ): void => {
       const currentRow = arrayAt(rows, rowIndex);
-
       if (!currentRow) {
         return;
       }

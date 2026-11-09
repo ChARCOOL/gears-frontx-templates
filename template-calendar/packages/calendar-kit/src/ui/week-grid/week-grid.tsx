@@ -174,7 +174,6 @@ const WeekGridInteractionLayer = ({
 }: WeekGridInteractionLayerProps) => {
   const { locale } = useCalendarLocalization();
   const { timeZone } = useCalendarContext();
-
   const nowTime = formatGridTime(currentInstant, timeZone, locale);
 
   return (
@@ -424,13 +423,11 @@ const WeekCalendarGrid = (props: WeekCalendarGridProps) => {
       {row.cells.map((cell) => {
         const key = getCellKey(cell);
         const record = recordsByKey.get(key);
-
         if (!record) {
           return null;
         }
 
         const isFocused = currentActiveCellKey === key;
-
         const provisionalContext = baseCellContext(cell, key, isFocused);
 
         const label =
@@ -656,7 +653,6 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
 
     const start = formatGridTime(eventContext.segment.start, timeZone, locale);
     const end = formatGridTime(eventContext.segment.end, timeZone, locale);
-
     return `${start} – ${end}`;
   };
 
@@ -714,7 +710,6 @@ const visibleGutterLabel = (
   }
 
   const covered = now !== undefined && nowCoversHourLabel(meta.cell.start, now);
-
   return meta.cell.startTime.endsWith(":00") && !covered ? meta.label : null;
 };
 

@@ -30,7 +30,6 @@ describe("primitive default labels", () => {
 
     const t: CalendarTranslate = (key) => {
       calls.push(key);
-
       return translated(key);
     };
 

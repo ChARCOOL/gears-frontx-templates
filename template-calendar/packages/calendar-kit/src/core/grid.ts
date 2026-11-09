@@ -25,7 +25,6 @@ import {
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 export const DAYS_PER_WEEK = 7;
-
 export const EVENT_CHIP_HEIGHT = 21;
 
 const MONTH_CELL_BOX_MODEL = {
@@ -97,7 +96,6 @@ const buildEventColumnIndex = <T extends GridEvent>(
 
   for (const segment of segments) {
     const displayIndex = dateIndexes.get(segment.date);
-
     if (displayIndex === undefined) {
       continue;
     }
@@ -134,7 +132,6 @@ const buildSpanCandidate = <T extends GridEvent>(
 ): SpanCandidateInput<T> => {
   const firstSegment = columns.get(startColumn);
   const lastSegment = columns.get(endColumn - 1);
-
   if (!firstSegment || !lastSegment) {
     throw new Error(`Missing all-day segment for ${group.event.id}`);
   }
@@ -243,10 +240,8 @@ const groupSegmentsByEvent = <T extends GridEvent>(
     }
 
     const existing = grouped.get(segment.event.id);
-
     if (existing !== undefined) {
       existing.segments.push(segment);
-
       continue;
     }
 
@@ -301,9 +296,7 @@ const buildContiguousColumnRuns = (
   }
 
   const runs: (readonly [number, number])[] = [];
-
   const [firstColumn] = sortedColumns;
-
   if (firstColumn === undefined) {
     return runs;
   }
@@ -314,7 +307,6 @@ const buildContiguousColumnRuns = (
   for (const column of sortedColumns.slice(1)) {
     if (column === previousColumn + 1) {
       previousColumn = column;
-
       continue;
     }
 
@@ -341,7 +333,6 @@ const buildMonthWeekFragmentsForGroup = <T extends GridEvent>(
   );
 
   const fragments: MonthWeekFragment<T>[] = [];
-
   const eventId = group.event.id;
 
   for (const [startColumn, endColumn] of buildContiguousColumnRuns(
@@ -349,7 +340,6 @@ const buildMonthWeekFragmentsForGroup = <T extends GridEvent>(
   )) {
     const firstSegment = columns.get(startColumn);
     const lastSegment = columns.get(endColumn - 1);
-
     if (!firstSegment || !lastSegment) {
       throw new Error(`Missing month segment for ${eventId}`);
     }
@@ -391,7 +381,6 @@ const buildMonthWeekFragments = <T extends GridEvent>(
   );
   const nextEventColumns = buildEventColumnIndex(nextRowSegments, dateIndexes);
   const grouped = groupSegmentsByEvent(rowSegments);
-
   const fragments: MonthWeekFragment<T>[] = [];
 
   for (const group of grouped.values()) {
@@ -415,7 +404,6 @@ const buildAllDaySpanCandidates = <T extends GridEvent>(
   dateIndexes: ReadonlyMap<CalendarDate, number>
 ): SpanCandidateInput<T>[] => {
   const grouped = groupSegmentsByEvent(segments, dateIndexes);
-
   const candidates: SpanCandidateInput<T>[] = [];
 
   for (const group of grouped.values()) {
@@ -675,7 +663,6 @@ export const segmentAllDayEventAcrossViewerDates = <
   // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-derive
   const startDate = calendarDate(event.startDate);
   const endDate = calendarDate(event.endDate);
-
   if (endDate <= startDate) {
     return [];
   }
@@ -720,7 +707,6 @@ export const allocateAllDaySpans = <T extends GridEvent>(
   // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-derive
   const dateIndexes = new Map(viewerDates.map((date, index) => [date, index]));
   const candidates = buildAllDaySpanCandidates(segments, dateIndexes);
-
   return assignAllDaySpanLanes(candidates);
   // @cpt-end:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-derive
 };

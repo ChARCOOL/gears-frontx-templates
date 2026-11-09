@@ -4,9 +4,7 @@ import type { RefObject } from "react";
 import type { CalendarAttendee, CalendarEvent } from "../../core/model";
 
 export const COPY_STATUS_RESET_MS = 2000;
-
 const DEFAULT_MAX_VISIBLE_PARTICIPANTS = 6;
-
 const EMPTY_ATTENDEES: readonly CalendarAttendee[] = [];
 
 type FocusContainer =
@@ -75,7 +73,6 @@ const findActiveElement = (
 
   if (resolvedContainer !== null) {
     const root = resolvedContainer.getRootNode();
-
     if (
       root instanceof ShadowRoot &&
       root.activeElement instanceof HTMLElement
@@ -85,7 +82,6 @@ const findActiveElement = (
   }
 
   const documentActiveElement = document.activeElement;
-
   if (documentActiveElement?.shadowRoot?.activeElement instanceof HTMLElement) {
     return documentActiveElement.shadowRoot.activeElement;
   }
@@ -104,7 +100,6 @@ export const isSafeHttpUrl = (
 
   try {
     const parsed = new URL(url);
-
     return parsed.protocol === "http:" || parsed.protocol === "https:";
   } catch {
     return false;
@@ -139,7 +134,6 @@ export const useEventDetailPanelController = (
   const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isControlled = open !== undefined && defaultOpen === undefined;
-
   const isOpen = isControlled ? open : uncontrolledOpen;
 
   const originFocusRef = useRef<HTMLElement | null>(null);
@@ -209,7 +203,6 @@ export const useEventDetailPanelController = (
 
   const copyLink = (): void => {
     const url = event?.joinUrl;
-
     if (!isSafeHttpUrl(url)) {
       return;
     }

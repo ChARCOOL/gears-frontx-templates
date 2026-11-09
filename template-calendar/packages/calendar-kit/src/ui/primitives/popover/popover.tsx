@@ -126,7 +126,6 @@ const Popover = ({
   children,
 }: PopoverProps) => {
   const [measuredSize, setMeasuredSize] = useState(EMPTY_SIZE);
-
   const [dir, setDir] = useState<"ltr" | "rtl">("ltr");
 
   const headerId = useId();
@@ -231,7 +230,6 @@ const Popover = ({
   );
 
   const content = container ? createPortal(layer, container) : layer;
-
   return <Activity mode={open ? "visible" : "hidden"}>{content}</Activity>;
 };
 

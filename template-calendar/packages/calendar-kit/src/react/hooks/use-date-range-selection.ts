@@ -49,7 +49,6 @@ export const useDateRangeSelection = ({
   const press = (date: CalendarDate): void => {
     if (pick !== null && !pick.dragging) {
       commit(pick.anchor, date);
-
       return;
     }
 
@@ -72,7 +71,6 @@ export const useDateRangeSelection = ({
 
     if (date === pick.anchor) {
       setPick({ ...pick, dragging: false });
-
       return;
     }
 
@@ -82,7 +80,6 @@ export const useDateRangeSelection = ({
   const activate = (date: CalendarDate): void => {
     if (pick === null) {
       setPick({ anchor: date, dragging: false, hovered: date });
-
       return;
     }
 
