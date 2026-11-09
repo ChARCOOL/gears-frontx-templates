@@ -36,9 +36,10 @@ src-app/
 │   ├── App.tsx / main.tsx   # Boot: providers, registries, MFE bootstrap
 │   ├── components/ui/        # App-owned UI primitives (shadcn)
 │   ├── layout/               # CoreLayout: Menu, header, footer, screen container
-│   ├── mfe/                  # bootstrap.ts + generated-mfe-manifests.json
-│   ├── themes/               # Theme tokens and registries
-│   └── globals.css           # Tailwind entry + theme CSS variables
+│   ├── mfe/                  # bootstrap.ts: registers MFEs from public/generated-mfe-manifests.json
+│   ├── themes/               # Themes over the ui-kit palette
+│   ├── font.css              # Registers the kit's Inter face
+│   └── globals.css           # Tailwind entry and global styles
 └── mfe_packages/             # Microfrontends (from `frontx-template-mfe`; empty in a shell-only seed)
     ├── demo-mfe/             # Hello World, Profile, Theme, UIKit, Widgets Host
     ├── _blank-mfe/           # Minimal MFE — copy this to start a new one
@@ -57,7 +58,8 @@ The host shell is intentionally empty. Screens come from **microfrontends**:
    top-level `route` and a
    `presentation` block: label, icon, order).
 2. The build produces a manifest; `src-app/app/mfe/bootstrap.ts` fetches
-   `/generated-mfe-manifests.json` and registers everything at runtime.
+   `generated-mfe-manifests.json` from the shell's own folder and registers
+   everything at runtime.
 3. `src-app/app/layout/Menu.tsx` reads the registered screen extensions and
    renders the menu — mounting the corresponding MFE remote on click.
 
@@ -138,7 +140,7 @@ fails to say so.
 
 Then update its `package.json` name and preview `--port`, declare your entries
 and screen extensions in `mfe.json`, and expose your lifecycle modules in its
-`vite.config.ts`.
+`vite.config.ts`, keeping `@gears-frontx/routing` in its `sharedDeps` and pinned in its `package.json`, as the scaffold has it (add `@gears-frontx/routing-tanstack` to both, under `dependencies`, only when the MFE uses `<ExtensionRouter>` or `navigation()`).
 `dev:all` discovers MFEs automatically by scanning `src-app/mfe_packages/` —
 there is no registry file to edit. See the shell's `mfe-package-contract` AI
 guideline for the exact shape a new package must have.
@@ -148,7 +150,7 @@ guideline for the exact shape a new package must have.
 The template ships a complete `CoreLayout` (menu, header, footer, sidebar, and
 the screen container). You compose *into* it:
 
-- **Menu** is populated from screen extensions (`presentation.label`/`icon`/`order`).
+- **Menu** is populated from screen extensions (`presentation.label`/`icon`/`order`). Optional `labelDictionaries` supply translated menu labels, with `presentation.label` as fallback.
 - **Screen container** mounts one screen at a time (exclusive mount strategy).
 - **Sidebar / popup / overlay** are optional domains an MFE can target the same way.
 
@@ -171,13 +173,20 @@ const MenuToggle = () => {
 ```
 
 The app is **event-driven**: prefer emitting events over dispatching directly.
-Hooks such as `useMountedExtensions`, `useTheme`, `useTranslation`, and
-`useApiQuery` subscribe to store changes without polling.
+Hooks such as `useTheme`, `useTranslation`, and `useApiQuery` subscribe to
+store changes without polling. The shell's own screen domain implementation
+knows which screen it mounted: its container hooks record it in
+`src-app/app/mfe/screenState.ts` (creating a screen's container sets it;
+destroying the container that holds that screen clears it), which the menu reads.
 
 ## Styling
 
-Tailwind CSS with CSS-variable theme tokens (defined in
-`src-app/app/globals.css`):
+Tailwind CSS with CSS-variable theme tokens. Colour, radius and type tokens
+come from `@gears-frontx/ui-kit/theme.css`; the shell's themes
+(`src-app/app/themes/`) add the shell's own tokens (left menu, spacing,
+shadows, transitions) and override a kit token only on purpose, as the
+Dracula themes do. The kit's Inter face is registered in
+`src-app/app/font.css`.
 
 ```tsx
 <div className="bg-background text-foreground">
@@ -214,7 +223,7 @@ Import via the `@` alias: `import { Badge } from '@/app/components/ui/badge';`
 # Development
 npm run dev:all           # build MFEs + start host and all MFE preview servers
 npm run dev               # host only (rebuilds packages + MFEs, then vite)
-npm run build             # full production build
+npm run build             # production build: one deployable dist/ (README, "Deploying the build")
 npm run build:packages    # build solution workspace packages
 npm run build:mfes        # build all MFE packages
 npm run generate:mfe-manifests   # regenerate the host MFE manifest index

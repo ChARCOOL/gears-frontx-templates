@@ -40,17 +40,87 @@ describe('EventBusImpl', () => {
     expect(handler).toHaveBeenCalledWith({ label: 'first' });
   });
 
-  it('propagates handler errors to the emitter', () => {
+  it('runs every handler and logs instead of rethrowing when one throws', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const bus = new EventBusImpl<TestEventPayloadMap>();
     const error = new Error('handler failed');
+    const later = vi.fn<(payload: { value: number }) => void>();
 
     bus.on('test/valueChanged', () => {
       throw error;
     });
+    bus.on('test/valueChanged', later);
 
-    expect(() => {
-      bus.emit('test/valueChanged', { value: 1 });
-    }).toThrow(error);
+    try {
+      expect(() => {
+        bus.emit('test/valueChanged', { value: 1 });
+      }).not.toThrow();
+      expect(later).toHaveBeenCalledWith({ value: 1 });
+      expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('test/valueChanged'), error);
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it('removes a once handler that throws after its first event', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const bus = new EventBusImpl<TestEventPayloadMap>();
+    const handler = vi.fn<(payload: { label: string }) => void>(() => {
+      throw new Error('once handler failed');
+    });
+
+    try {
+      bus.once('test/once', handler);
+      bus.emit('test/once', { label: 'first' });
+      bus.emit('test/once', { label: 'second' });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it('logs a rejection from an async subscriber and still runs the others', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const bus = new EventBusImpl<TestEventPayloadMap>();
+    const error = new Error('async handler failed');
+    const later = vi.fn<(payload: { value: number }) => void>();
+
+    bus.on('test/valueChanged', async () => {
+      await Promise.resolve();
+      throw error;
+    });
+    bus.on('test/valueChanged', later);
+
+    try {
+      expect(bus.emit('test/valueChanged', { value: 2 })).toBeUndefined();
+      expect(later).toHaveBeenCalledWith({ value: 2 });
+      await vi.waitFor(() => {
+        expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('test/valueChanged'), error);
+      });
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
+  it('logs a rejection from an async once handler and removes it', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const bus = new EventBusImpl<TestEventPayloadMap>();
+    const error = new Error('async once handler failed');
+    const handler = vi.fn<(payload: { label: string }) => Promise<void>>().mockRejectedValue(error);
+
+    try {
+      bus.once('test/once', handler);
+      bus.emit('test/once', { label: 'first' });
+      bus.emit('test/once', { label: 'second' });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      await vi.waitFor(() => {
+        expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('test/once'), error);
+      });
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 
   it('ignores emits when no subscribers are registered', () => {

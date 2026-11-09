@@ -28,7 +28,7 @@ const renderPreview = (overrides: Partial<EventDetailPanelProps> = {}) => {
         attendees: [attendee("a", "accepted"), attendee("b", "declined")],
         description: "Weekly sync",
         id: "sync",
-        joinUrl: "https://meet.example.com/sync",
+        joinUrl: "https://join.example.com/sync",
         location: "BG-Istanbul",
         organizer: "Vitaly Panteleev",
         organizerEmail: "vitaly@example.com",
@@ -78,7 +78,7 @@ describe("EventDetailPanel anchored preview", () => {
     assert(within(preview).getByText("vitaly@example.com")).toBeInTheDocument();
     assert(within(preview).getByRole("link", { name: "Join" })).toHaveAttribute(
       "href",
-      "https://meet.example.com/sync"
+      "https://join.example.com/sync"
     );
     assert(within(preview).getByText("2 guests")).toBeInTheDocument();
     assert(within(preview).getByText("1 yes, 1 no")).toBeInTheDocument();

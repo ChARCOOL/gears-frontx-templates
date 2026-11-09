@@ -100,12 +100,6 @@ jobs:
     - name: Check template mfes import boundary (ADR-0003)
       run: npm run policy:template-mfes-import-boundary
 
-    # The design-guardrails bundle routes guideline loading through the
-    # generated reference-artifacts/guideline-index.json, derived from each
-    # guideline's front matter. This asserts the checked-in index matches it.
-    - name: Check guideline index is generated from front matter
-      run: npm run policy:guideline-index
-
   # Architecture documents of the catalogue (architecture/) and of each
   # template (<template>/architecture): ids, PRD to DESIGN coverage and
   # references, validated the way gears-frontx validates its own. The
@@ -116,10 +110,6 @@ jobs:
   studio-validate:
     name: Studio Validate Artifacts
     runs-on: ubuntu-latest
-    # The Constructor Studio release, pinned once here for both the CLI install
-    # and the runtime it materializes.
-    env:
-      CFS_VERSION: v1.6.2
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
@@ -131,8 +121,14 @@ jobs:
       with:
         python-version: '3.12'
 
+    # The Constructor Studio release is pinned in .cf-studio/version.toml;
+    # read it once for both the CLI install and the runtime it materializes.
+    - name: Read pinned Constructor Studio version
+      id: cfs-version
+      run: echo "version=$(python3 -c 'import tomllib; print(tomllib.load(open(".cf-studio/version.toml", "rb"))["cfs"]["version"])')" >> "$GITHUB_OUTPUT"
+
     - name: Install Constructor Studio CLI
-      run: pipx install "git+https://github.com/constructorfabric/studio.git@${{ env.CFS_VERSION }}"
+      run: pipx install "git+https://github.com/constructorfabric/studio.git@${{ steps.cfs-version.outputs.version }}"
 
     # .cf-studio/.core is gitignored (Constructor-Studio-owned, regenerated
     # on demand) - materialize it before invoking studio.py directly. cfs
@@ -142,13 +138,39 @@ jobs:
     - name: Bootstrap Constructor Studio runtime
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: cfs update -y --no-interactive --with-kits yes --version ${{ env.CFS_VERSION }}
+      run: cfs update -y --no-interactive --with-kits yes --version ${{ steps.cfs-version.outputs.version }}
 
-    # The bootstrap above also validates the installed sdlc kit (its output
-    # prints `Validate kits: PASS`), and this repository registers no kit of
-    # its own, so no separate kit job runs.
     - name: Validate artifacts and traceability
       run: python3 .cf-studio/.core/skills/studio/scripts/studio.py validate
+
+  studio-validate-kits:
+    name: Studio Validate Kits
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        persist-credentials: false
+
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Read pinned Constructor Studio version
+      id: cfs-version
+      run: echo "version=$(python3 -c 'import tomllib; print(tomllib.load(open(".cf-studio/version.toml", "rb"))["cfs"]["version"])')" >> "$GITHUB_OUTPUT"
+
+    - name: Install Constructor Studio CLI
+      run: pipx install "git+https://github.com/constructorfabric/studio.git@${{ steps.cfs-version.outputs.version }}"
+
+    - name: Bootstrap Constructor Studio runtime
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: cfs update -y --no-interactive --with-kits yes --version ${{ steps.cfs-version.outputs.version }}
+
+    - name: Validate installed kits
+      run: python3 .cf-studio/.core/skills/studio/scripts/studio.py validate-kits
 
   # template-shell and template-mfe carry their own arch:deps / lint /
   # test:unit scripts, and nothing else in this workflow enters them - so
@@ -341,6 +363,17 @@ jobs:
         # without the overlay, so it has no mfe_packages entries and `ci`
         # would fail as out of sync.
         npm install
+
+        # The design-guardrails overlay's DESIGN.md names the kit's token
+        # names and the kit version they come from. Check both against the kit
+        # this shell pins, now installed: a kit bump in the shell fails here
+        # until DESIGN.md names its tokens and its version. Exit 1 (findings)
+        # and 2 (input error) both fail the step under `set -e`.
+        case " $OVERLAY_TEMPLATES " in
+          *" template-design-guardrails "*)
+            node .frontx/ai/@gears-frontx/template-design-guardrails/skills/frontx-design/scripts/check-design-md.mjs
+            ;;
+        esac
 
         # FRONTX_INCLUDE_TEMPLATE_EXAMPLES=1 on both commands below, because
         # every MFE package this job composes is one the template ships as an

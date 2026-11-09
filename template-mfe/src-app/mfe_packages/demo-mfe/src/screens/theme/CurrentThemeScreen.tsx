@@ -72,12 +72,12 @@ export const CurrentThemeScreen: React.FC<CurrentThemeScreenProps> = ({ bridge }
   // Show skeleton while translations are loading
   if (loading) {
     return (
-      <div ref={containerRef} className="p-8" role="status" aria-busy="true">
-        <div className={`${PLACEHOLDER_CLASS} h-8 w-64 mb-4`} />
-        <div className={`${PLACEHOLDER_CLASS} h-4 w-96 mb-6`} />
+      <div ref={containerRef} className="px-0 py-4 sm:p-8" role="status" aria-busy="true">
+        <div className={`${PLACEHOLDER_CLASS} h-8 w-64 max-w-full mb-4`} />
+        <div className={`${PLACEHOLDER_CLASS} h-4 w-96 max-w-full mb-6`} />
         <div className={CARD_CLASS}>
-          <div className="p-6">
-            <div className={`${PLACEHOLDER_CLASS} h-6 w-48 mb-4`} />
+          <div className="p-4 sm:p-6">
+            <div className={`${PLACEHOLDER_CLASS} h-6 w-48 max-w-full mb-4`} />
             <div className="space-y-3">
               <div className={`${PLACEHOLDER_CLASS} h-4 w-full`} />
               <div className={`${PLACEHOLDER_CLASS} h-4 w-full`} />
@@ -89,7 +89,7 @@ export const CurrentThemeScreen: React.FC<CurrentThemeScreenProps> = ({ bridge }
   }
 
   return (
-    <div ref={containerRef} className="p-8">
+    <div ref={containerRef} className="px-0 py-4 sm:p-8">
       <h1 className="text-3xl font-bold mb-4">
         {t('title')}
       </h1>
@@ -100,7 +100,7 @@ export const CurrentThemeScreen: React.FC<CurrentThemeScreenProps> = ({ bridge }
       <div className="max-w-4xl space-y-4">
         {/* Theme Info Card */}
         <div className={CARD_CLASS}>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="text-xl font-semibold mb-3">
               {t('theme_information')}
             </h2>
@@ -115,11 +115,11 @@ export const CurrentThemeScreen: React.FC<CurrentThemeScreenProps> = ({ bridge }
 
         {/* Color Swatches */}
         <div className={CARD_CLASS}>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="text-xl font-semibold mb-3">
               {t('theme_color_swatches')}
             </h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {colorSwatches.map((swatch) => (
                 <div
                   key={swatch.nameKey}
@@ -135,11 +135,11 @@ export const CurrentThemeScreen: React.FC<CurrentThemeScreenProps> = ({ bridge }
 
         {/* CSS Variables Reference */}
         <div className={CARD_CLASS}>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="text-xl font-semibold mb-3">
               {t('css_custom_properties')}
             </h2>
-            <div className="grid grid-cols-2 gap-2 text-sm font-mono">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-mono">
               <div>--background</div>
               <div>--foreground</div>
               <div>--primary</div>
@@ -158,18 +158,19 @@ export const CurrentThemeScreen: React.FC<CurrentThemeScreenProps> = ({ bridge }
 
         {/* Bridge Info Card */}
         <div className={CARD_CLASS}>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="text-xl font-semibold mb-3">
               {t('bridge_info')}
             </h2>
+            {/* A GTS id has no break opportunity; break-all wraps it instead of widening the screen. */}
             <dl className="grid gap-2">
               <div>
                 <dt className="font-medium">{t('domain_id')}</dt>
-                <dd className="font-mono text-sm text-muted-foreground">{bridge.extDomainId}</dd>
+                <dd className="font-mono text-sm text-muted-foreground break-all">{bridge.extDomainId}</dd>
               </div>
               <div>
                 <dt className="font-medium">{t('instance_id')}</dt>
-                <dd className="font-mono text-sm text-muted-foreground">{bridge.extensionId}</dd>
+                <dd className="font-mono text-sm text-muted-foreground break-all">{bridge.extensionId}</dd>
               </div>
               <div>
                 <dt className="font-medium">{t('current_theme')}</dt>

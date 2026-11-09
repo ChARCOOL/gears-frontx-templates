@@ -59,7 +59,10 @@ Then, inside `my-mfe/`:
    or overlay) with GTS IDs following this template's ID conventions guideline.
 3. **`vite.config.ts`** — keep the `frontxMfGts` build plugin wired, and add
    your lifecycle modules to the Module Federation `exposes` map so the shell
-   can load them at runtime.
+   can load them at runtime. Keep `@gears-frontx/routing` in `sharedDeps` and
+   pinned in `package.json`, as the scaffold has it; an MFE that uses
+   `<ExtensionRouter>` or `navigation()` adds `@gears-frontx/routing-tanstack`
+   to both, under `dependencies`.
 
 Existing packages here for reference: `demo-mfe` (`:3001`, a full worked
 example — Hello World, Profile, Theme, UIKit, Widgets Host), `_blank-mfe`
