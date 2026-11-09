@@ -428,6 +428,36 @@ describe(MonthGrid, () => {
     assert(screen.getByRole("status").textContent).toContain("+6 hidden");
   });
 
+  it("keeps all local chips visible when only API held-back events overflow the cell", () => {
+    const date = calendarDate("2025-09-04");
+
+    const events = Array.from({ length: 3 }, (_, index) =>
+      eventFixture({
+        end: instant(date, `${String(10 + index).padStart(2, "0")}:00`),
+        id: `local-${index}`,
+        start: instant(date, `${String(9 + index).padStart(2, "0")}:00`),
+        title: `Local ${index}`,
+      })
+    );
+
+    renderMonth({
+      events,
+      monthData: { overflowByDate: { "2025-09-04": 1 } },
+    });
+
+    const cell = monthCell(0, 3);
+    assert(
+      within(cell)
+        .getAllByRole("button")
+        .filter(
+          (button) =>
+            !(button.getAttribute("aria-label")?.includes("hidden") ?? false)
+        )
+    ).toHaveLength(3);
+    within(cell).getByText("+1 hidden");
+    assert(cell.dataset.eventCount).toBe("4");
+  });
+
   it("uses the translated whole phrase for a cell event count", () => {
     const date = calendarDate("2025-09-04");
 
