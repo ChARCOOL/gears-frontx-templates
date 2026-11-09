@@ -327,6 +327,25 @@ describe(WeekGrid, () => {
     assert(onMoveRequest).not.toHaveBeenCalled();
   });
 
+  it("keeps a drag alive when the browser cancels the pointer as the drag starts", () => {
+    const onMoveRequest = vi.fn<() => void>();
+    renderWeek({
+      events: [event()],
+      interactionMode: "paint-and-move",
+      onMoveRequest,
+    });
+    const eventButton = screen.getByRole("button", { name: /Chemistry/u });
+    const target = getTimedCell("13:00");
+
+    // A real drag fires pointercancel and pointerleave right after dragstart.
+    fireEvent.dragStart(eventButton);
+    fireEvent.pointerCancel(eventButton);
+    fireEvent.dragOver(target);
+    fireEvent.drop(target);
+
+    assert(onMoveRequest).toHaveBeenCalledOnce();
+  });
+
   it("emits the exact ordered paint range for reversed pointer travel", () => {
     const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
     renderWeek({
