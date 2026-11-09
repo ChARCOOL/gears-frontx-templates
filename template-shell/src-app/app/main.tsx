@@ -2,10 +2,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { FrontXProvider, apiRegistry, createFrontX, presets, microfrontends, MfeHandlerMF, gtsPlugin, FRONTX_MFE_ENTRY_MF } from '@gears-frontx/react';
-import { themeSchema, languageSchema, extensionScreenSchema } from '@gears-frontx/frontx-template-shell';
+import { themeSchema, languageCodeSchema, languageSchema, screenLabelsSchema } from '@gears-frontx/frontx-template-shell';
 import { Toaster } from '@/app/components/ui/sonner';
 import { AccountsApiService } from '@/app/api';
 import '@gears-frontx/ui-kit/theme.css'; // UI-kit design tokens (imported exactly once, at the app entry)
+import './font.css'; // Registers Inter, the face the kit's --font-sans and --font-heading name first
 import './globals.css'; // Global styles with CSS variables
 import '@gears-frontx/ui-kit'; // side-effect: puts ui-kit component CSS in the host document, where MFE shadow roots adopt it (ThemeAwareReactLifecycle). Must come after globals.css so component rules beat Tailwind's preflight resets on specificity ties.
 import '@/app/events/bootstrapEvents'; // Register app-level events (type augmentation)
@@ -18,14 +19,18 @@ import { darkTheme } from '@/app/themes/dark';
 import { lightTheme } from '@/app/themes/light';
 import { draculaTheme } from '@/app/themes/dracula';
 import { draculaLargeTheme } from '@/app/themes/dracula-large';
+import { applyPersistedTheme } from '@/app/themes/themePersistence';
+import { stampAppliedThemeId } from '@/app/themes/themeIdAttribute';
 
 // Register application-specific GTS schemas before constructing the FrontX app.
 // These derived schemas encode application-level constraints (valid theme names,
-// supported languages, screen extension shape) and are not part of the core
-// type system in @gears-frontx/gts-plugin.
+// supported languages) and are not part of the core type system in
+// @gears-frontx/gts-plugin. The screen extension type belongs to the screen
+// domain, and its implementation (`mfe/screenDomain.ts`) registers it.
 gtsPlugin.registerSchema(themeSchema);
+gtsPlugin.registerSchema(languageCodeSchema);
 gtsPlugin.registerSchema(languageSchema);
-gtsPlugin.registerSchema(extensionScreenSchema);
+gtsPlugin.registerSchema(screenLabelsSchema);
 
 // Register accounts service (application-level service for user info)
 apiRegistry.register(AccountsApiService);
@@ -57,8 +62,11 @@ app.themeRegistry.register(darkTheme);
 app.themeRegistry.register(draculaTheme);
 app.themeRegistry.register(draculaLargeTheme);
 
-// Apply default theme explicitly
-app.themeRegistry.apply(DEFAULT_THEME_ID);
+// Apply the theme the user chose in an earlier session (the default, not
+// stored, on a first visit), and remember every later choice
+applyPersistedTheme(app.themeRegistry, DEFAULT_THEME_ID);
+// Name the applied theme on <html> (data-theme-id), now and on every switch
+stampAppliedThemeId(app.themeRegistry);
 
 /**
  * Render application
