@@ -95,7 +95,7 @@ describe("agenda event slot", () => {
               attendees: 8,
             }
           ),
-          joinUrl: "https://meet.example.com/call",
+          joinUrl: "https://join.example.com/call",
         },
       ],
       DURING_CALL
@@ -109,7 +109,7 @@ describe("agenda event slot", () => {
 
     const join = screen.getByRole("link", { name: "Join" });
 
-    assert(join).toHaveAttribute("href", "https://meet.example.com/call");
+    assert(join).toHaveAttribute("href", "https://join.example.com/call");
     assert(join.closest("button")).toBeNull();
   });
 
@@ -121,7 +121,7 @@ describe("agenda event slot", () => {
           "2026-08-24T09:00:00.000Z",
           "2026-08-24T10:30:00.000Z"
         ),
-        joinUrl: "https://meet.example.com/call",
+        joinUrl: "https://join.example.com/call",
       },
     ]);
 
@@ -137,7 +137,7 @@ describe("agenda event slot", () => {
             "2026-08-24T09:00:00.000Z",
             "2026-08-24T10:30:00.000Z"
           ),
-          joinUrl: "https://meet.example.com/call",
+          joinUrl: "https://join.example.com/call",
         },
       ],
       utcInstant("2026-08-24T11:00:00.000Z")

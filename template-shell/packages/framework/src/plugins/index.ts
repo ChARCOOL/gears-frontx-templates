@@ -8,7 +8,10 @@ export { i18n } from './i18n';
 export { effects } from './effects';
 export {
   auth,
+  AuthEvents,
   frontxApiTransport,
+  type AuthLoggedInPayload,
+  type AuthLoggedOutPayload,
   type AuthPluginConfig,
   type AuthRuntime,
   type AuthTransportBinding,
@@ -20,6 +23,8 @@ export {
   queryCache,
   queryCacheShared,
   subscribeQueryCacheRuntimeChanged,
+  readQueryCacheScopeGeneration,
+  recordQueryCacheScopeWriteDropped,
   type QueryCacheConfig,
 } from './queryCache';
 export {
@@ -50,12 +55,4 @@ export {
   sidebarDomain,
   popupDomain,
   overlayDomain,
-  // The app-facing router handle type (ADR 0036) — `FrameworkRouter` itself
-  // stays internal to this plugin, never exported. The framework-internal
-  // reach-through functions (`buildExtensionHistory`, `startRoutedDomain`,
-  // `stopRoutedDomain`, `routedDomainStatus`,
-  // `subscribeRoutedDomainStatus`) are NOT re-exported here — only through
-  // this package's `./internal` subpath (`src/internal.ts`); never part of
-  // `app.mfeRouter`, never MFE-reachable.
-  type MfeRouterHandle,
 } from './microfrontends';
