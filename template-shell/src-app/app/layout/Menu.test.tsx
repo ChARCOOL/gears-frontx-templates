@@ -1,22 +1,23 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ScreenExtension } from '@gears-frontx/react';
+import { eventBus, type ScreenExtension } from '@gears-frontx/react';
 import { Menu } from './Menu';
+import { screenState } from '@/app/mfe/screenState';
+import { menuLabels } from '@/app/mfe/menuLabels';
 
 const mockUseFrontX = vi.fn();
-const mockUseMountedExtensions = vi.fn();
-const mockBootstrapOnce = vi.fn();
+const mockBootstrapSettled = vi.fn();
+let mockMenuState: { collapsed: boolean } | undefined;
 
 vi.mock('@/app/mfe/bootstrapOnce', () => ({
-  bootstrapOnce: (...args: unknown[]) => mockBootstrapOnce(...args),
+  bootstrapSettled: () => mockBootstrapSettled(),
 }));
 
 vi.mock('@gears-frontx/react', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@gears-frontx/react')>()),
-  useAppSelector: () => undefined,
+  useAppSelector: () => mockMenuState,
   useFrontX: () => mockUseFrontX(),
-  useMountedExtensions: () => mockUseMountedExtensions(),
 }));
 
 const screenExtension = (
@@ -50,23 +51,44 @@ const tasks = screenExtension(
 );
 
 describe('Menu', () => {
+  let language = 'en';
+  let registryListeners: Set<() => void>;
   let app: {
     mfeRegistry: {
       getExtensionsForDomain: ReturnType<typeof vi.fn>;
       executeActionsChain: ReturnType<typeof vi.fn>;
     };
+    i18nRegistry: {
+      getLanguage: () => string;
+      subscribe: (listener: () => void) => () => void;
+    };
   };
 
   beforeEach(() => {
+    registryListeners = new Set();
     app = {
       mfeRegistry: {
         getExtensionsForDomain: vi.fn().mockReturnValue([tasks]),
         executeActionsChain: vi.fn().mockReturnValue(undefined),
       },
+      i18nRegistry: {
+        getLanguage: () => language,
+        subscribe: (listener) => {
+          registryListeners.add(listener);
+          return () => { registryListeners.delete(listener); };
+        },
+      },
     };
+    language = 'en';
+    mockMenuState = undefined;
+    vi.spyOn(menuLabels, 'load').mockResolvedValue(new Map());
     mockUseFrontX.mockReturnValue(app);
-    mockUseMountedExtensions.mockReturnValue([]);
-    mockBootstrapOnce.mockResolvedValue(undefined);
+    screenState.set(undefined);
+    mockBootstrapSettled.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   const emptyState = () => screen.queryByText(/No screens yet/);
@@ -95,9 +117,44 @@ describe('Menu', () => {
     expect(chain.action.payload.subject).toBe(tasks.id);
   });
 
+  it('highlights the screen that is mounted, and follows it when another replaces it', async () => {
+    const other = screenExtension('ext.other', '/other', 10, 'Other');
+    app.mfeRegistry.getExtensionsForDomain.mockReturnValue([other, tasks]);
+    await renderSettled();
+
+    const active = (id: string) => screen.getByTestId(`menu-item-${id}`).getAttribute('data-active');
+    expect(active(tasks.id)).toBe('false');
+    expect(active(other.id)).toBe('false');
+
+    await act(async () => {
+      screenState.set(tasks.id);
+    });
+    expect(active(tasks.id)).toBe('true');
+    expect(active(other.id)).toBe('false');
+
+    await act(async () => {
+      screenState.set(other.id);
+    });
+    expect(active(tasks.id)).toBe('false');
+    expect(active(other.id)).toBe('true');
+  });
+
+  it('marks only the mounted screen as the current page', async () => {
+    const inbox = screenExtension(`${tasks.id}.inbox`, '/inbox', 30, 'Inbox');
+    app.mfeRegistry.getExtensionsForDomain.mockReturnValue([tasks, inbox]);
+    await renderSettled();
+
+    await act(async () => {
+      screenState.set(inbox.id);
+    });
+
+    expect(screen.getByTestId(`menu-item-${inbox.id}`).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByTestId(`menu-item-${tasks.id}`).hasAttribute('aria-current')).toBe(false);
+  });
+
   it('stays blank until bootstrap has settled, then lists the registered screens', async () => {
     let finishBootstrap!: () => void;
-    mockBootstrapOnce.mockReturnValue(new Promise<void>((resolve) => (finishBootstrap = resolve)));
+    mockBootstrapSettled.mockReturnValue(new Promise<void>((resolve) => (finishBootstrap = resolve)));
 
     await renderSettled();
     expect(emptyState()).toBeNull();
@@ -111,6 +168,16 @@ describe('Menu', () => {
     expect(emptyState()).toBeNull();
   });
 
+  it('stays blank, with no empty state, while nothing starts the bootstrap (a shell without a screen container)', async () => {
+    mockBootstrapSettled.mockReturnValue(new Promise<void>(() => {}));
+
+    await renderSettled();
+
+    expect(screen.queryByTestId(/^menu-item-/)).toBeNull();
+    expect(emptyState()).toBeNull();
+    expect(app.mfeRegistry.getExtensionsForDomain).not.toHaveBeenCalled();
+  });
+
   it('shows the empty state when bootstrap settles with nothing registered', async () => {
     app.mfeRegistry.getExtensionsForDomain.mockReturnValue([]);
 
@@ -120,7 +187,7 @@ describe('Menu', () => {
   });
 
   it('shows the empty state when bootstrap fails', async () => {
-    mockBootstrapOnce.mockRejectedValue(new Error('manifests unavailable'));
+    mockBootstrapSettled.mockRejectedValue(new Error('manifests unavailable'));
 
     await renderSettled();
 
@@ -131,11 +198,19 @@ describe('Menu', () => {
   it('shows the empty state when the app carries no MFE registry at all', async () => {
     // `mfeRegistry` is optional on the app: a project without the
     // microfrontends plugin has no screens coming.
-    mockUseFrontX.mockReturnValue({ mfeRegistry: undefined });
+    mockUseFrontX.mockReturnValue({ ...app, mfeRegistry: undefined });
 
     await renderSettled();
 
     expect(emptyState()).not.toBeNull();
+  });
+
+  it('renders presentation labels without an i18n registry', async () => {
+    mockUseFrontX.mockReturnValue({ ...app, i18nRegistry: undefined });
+
+    await renderSettled();
+
+    expect(screen.getByText('Tasks')).toBeTruthy();
   });
 
   it('still lists the well-formed screens when a sibling extension carries no presentation metadata', async () => {
@@ -160,5 +235,100 @@ describe('Menu', () => {
     await renderSettled();
 
     expect(emptyState()).not.toBeNull();
+  });
+
+  it('loads labels on a language event without translation loaders and hides stale labels while loading', async () => {
+    mockMenuState = { collapsed: true };
+    let resolveFrench!: (labels: Map<string, string>) => void;
+    vi.mocked(menuLabels.load).mockImplementation((code) => code === 'en'
+      ? Promise.resolve(new Map([[tasks.id, 'Translated tasks']]))
+      : new Promise((resolve) => { resolveFrench = resolve; }));
+    await renderSettled();
+    expect(screen.getByText('Translated tasks')).toBeTruthy();
+    expect(screen.getByTestId(`menu-item-${tasks.id}`).getAttribute('title')).toBe('Translated tasks');
+
+    await act(async () => {
+      language = 'fr';
+      eventBus.emit('i18n/language/changed', { language: 'fr' });
+    });
+    expect(menuLabels.load).toHaveBeenCalledWith('fr');
+    expect(screen.getByText('Tasks')).toBeTruthy();
+    expect(screen.getByTestId(`menu-item-${tasks.id}`).getAttribute('title')).toBe('Tasks');
+
+    await act(async () => { resolveFrench(new Map([[tasks.id, 'Taches']])); });
+    expect(screen.getByText('Taches')).toBeTruthy();
+  });
+
+  it('reloads labels after a direct registry language change and translation notification', async () => {
+    vi.mocked(menuLabels.load).mockImplementation(async (code) => new Map([
+      [tasks.id, code === 'fr' ? 'Taches' : 'Translated tasks'],
+    ]));
+    await renderSettled();
+    expect(screen.getByText('Translated tasks')).toBeTruthy();
+
+    await act(async () => {
+      language = 'fr';
+      registryListeners.forEach((listener) => listener());
+    });
+
+    expect(menuLabels.load).toHaveBeenCalledWith('fr');
+    expect(screen.getByText('Taches')).toBeTruthy();
+  });
+
+  it('shows cached labels during the render that switches back to a loaded language', async () => {
+    vi.spyOn(menuLabels, 'peek').mockImplementation((code) => code === 'en'
+      ? new Map([[tasks.id, 'English tasks']])
+      : new Map([[tasks.id, 'Taches']]));
+    vi.mocked(menuLabels.load).mockImplementation(async (code) => new Map([
+      [tasks.id, code === 'en' ? 'English tasks' : 'Taches'],
+    ]));
+    await renderSettled();
+
+    await act(async () => {
+      language = 'fr';
+      registryListeners.forEach((listener) => listener());
+    });
+    expect(screen.getByText('Taches')).toBeTruthy();
+
+    act(() => {
+      language = 'en';
+      registryListeners.forEach((listener) => listener());
+    });
+    expect(screen.getByText('English tasks')).toBeTruthy();
+    expect(screen.queryByText('Tasks')).toBeNull();
+  });
+
+  it('keeps the current language when an earlier dictionary finishes late', async () => {
+    let resolveEnglish!: (labels: Map<string, string>) => void;
+    let resolveFrench!: (labels: Map<string, string>) => void;
+    let resolveSecondEnglish!: (labels: Map<string, string>) => void;
+    let englishLoads = 0;
+    vi.mocked(menuLabels.load).mockImplementation((code) => {
+      if (code === 'fr') return new Promise((resolve) => { resolveFrench = resolve; });
+      if (englishLoads++ === 0) return new Promise((resolve) => { resolveEnglish = resolve; });
+      return new Promise((resolve) => { resolveSecondEnglish = resolve; });
+    });
+
+    await renderSettled();
+    expect(menuLabels.load).toHaveBeenCalledWith('en');
+
+    await act(async () => {
+      language = 'fr';
+      eventBus.emit('i18n/language/changed', { language: 'fr' });
+    });
+    await act(async () => { resolveFrench(new Map()); });
+    expect(screen.getByText('Tasks')).toBeTruthy();
+
+    await act(async () => { resolveEnglish(new Map([[tasks.id, 'English tasks']])); });
+    expect(screen.getByText('Tasks')).toBeTruthy();
+
+    await act(async () => {
+      language = 'en';
+      eventBus.emit('i18n/language/changed', { language: 'en' });
+    });
+    expect(screen.getByText('Tasks')).toBeTruthy();
+
+    await act(async () => { resolveSecondEnglish(new Map([[tasks.id, 'English tasks v2']])); });
+    expect(screen.getByText('English tasks v2')).toBeTruthy();
   });
 });

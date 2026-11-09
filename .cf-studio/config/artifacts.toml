@@ -24,14 +24,14 @@
 # never carries a backticked gears-frontx id (a cpt-frontx-* id outside the
 # prefixes registered here); it cites the decision as plain text, such as
 # FrontX ADR-0033, or as a link to the file on develop. Both the prefix and
-# the citation rule are checked in review, because cfs v1.6.2 neither ties
+# the citation rule are checked in review, because cfs neither ties
 # a prefix to its owning system (any registered prefix passes in any
 # document) nor flags a backticked cpt-frontx-* reference; both silently
 # pass. Sources: the registry spec
 # .cf-studio/.core/architecture/specs/artifacts-registry.md (Autodetect
 # section) and the engine's longest-prefix match over all registered
-# systems in .cf-studio/.core/skills/studio/scripts/studio/commands/validate.py,
-# line 173.
+# systems in .cf-studio/.core/skills/studio/scripts/studio/commands/validate.py
+# (_cpt_definition_matches_kind).
 #
 # A system may find its documents by autodetect, as the blocks below do, or
 # list them explicitly in artifacts = [...] (template-dashboard lists its
@@ -47,12 +47,11 @@
 # template's own code paths ([[systems.codebase]] under its block), so that
 # the @cpt- markers there trace to that template's own documents; cfs does
 # not report a registered code path that does not exist, so review checks
-# the paths. template-shell, template-mfe and template-design-guardrails
-# register none, because they have no documents yet for a marker to trace
-# to; template-calendar registers its calendar-kit source. ADR-0033 of gears-frontx
+# the paths. The template blocks below register none, except template-calendar,
+# which registers its calendar-kit source, because they have no documents yet
+# for a marker to trace to. FrontX ADR-0033 (template-territory traceability)
 # only rules that markers in template code bind nothing to gears-frontx
-# artifacts
-# (https://github.com/constructorfabric/gears-frontx/blob/develop/architecture/ADR/0033-template-territory-traceability.md).
+# artifacts.
 
 # The catalogue: ids cpt-templates-*.
 [[systems]]
@@ -251,4 +250,36 @@ required = false
 [[systems.codebase]]
 name = "calendar-kit source"
 path = "template-calendar/packages/calendar-kit/src"
+extensions = [".ts", ".tsx"]
+
+# template-dashboard: ids cpt-frontx-dashboard-*. Lists its documents explicitly
+# and registers its own code path.
+[[systems]]
+name = "template-dashboard"
+slug = "frontx-dashboard"
+kit = "sdlc"
+artifacts_dir = "template-dashboard/architecture"
+artifacts = [
+  { name = "FrontX Dashboard Template PRD", path = "template-dashboard/architecture/PRD.md", kind = "PRD", traceability = "DOCS-ONLY" },
+  { name = "FrontX Dashboard Template DESIGN", path = "template-dashboard/architecture/DESIGN.md", kind = "DESIGN", traceability = "DOCS-ONLY" },
+  { name = "FrontX Dashboard Template DECOMPOSITION", path = "template-dashboard/architecture/DECOMPOSITION.md", kind = "DECOMPOSITION", traceability = "DOCS-ONLY" },
+  { name = "ADR-0001: Frontend framework", path = "template-dashboard/architecture/ADR/0001-frontend-framework-v1.md", kind = "ADR", traceability = "DOCS-ONLY" },
+  { name = "ADR-0002: Dashboard layout grid", path = "template-dashboard/architecture/ADR/0002-dashboard-layout-grid-v1.md", kind = "ADR", traceability = "DOCS-ONLY" },
+  { name = "ADR-0003: Shared data types and schemas", path = "template-dashboard/architecture/ADR/0003-shared-data-types-and-schemas-v1.md", kind = "ADR", traceability = "DOCS-ONLY" },
+  { name = "ADR-0004: Charting library", path = "template-dashboard/architecture/ADR/0004-charting-library-v1.md", kind = "ADR", traceability = "DOCS-ONLY" },
+  { name = "ADR-0005: Data grid library", path = "template-dashboard/architecture/ADR/0005-data-grid-library-v1.md", kind = "ADR", traceability = "DOCS-ONLY" },
+  { name = "ADR-0006: Theme distribution", path = "template-dashboard/architecture/ADR/0006-theme-distribution-v1.md", kind = "ADR", traceability = "DOCS-ONLY" },
+  { name = "ADR-0007: Extension domain, action and the larger view", path = "template-dashboard/architecture/ADR/0007-extension-domain-taxonomy-v1.md", kind = "ADR", traceability = "DOCS-ONLY" },
+  { name = "ADR-0008: Widget type and entry trait", path = "template-dashboard/architecture/ADR/0008-widget-type-and-mfe-realization-v1.md", kind = "ADR", traceability = "DOCS-ONLY" },
+  { name = "ADR-0009: Subject-agnostic widget catalog", path = "template-dashboard/architecture/ADR/0009-subject-agnostic-widget-catalog-v1.md", kind = "ADR", traceability = "DOCS-ONLY" },
+  { name = "ADR-0010: Template packages and host contract", path = "template-dashboard/architecture/ADR/0010-template-packages-and-host-contract-v1.md", kind = "ADR", traceability = "DOCS-ONLY" },
+  { name = "ADR-0011: Widget data binding", path = "template-dashboard/architecture/ADR/0011-widget-data-binding-v1.md", kind = "ADR", traceability = "DOCS-ONLY" },
+  { name = "feature-dashboard-model", path = "template-dashboard/architecture/features/feature-dashboard-model/FEATURE.md", kind = "FEATURE", traceability = "DOCS-ONLY" },
+  { name = "feature-dashboard-runtime", path = "template-dashboard/architecture/features/feature-dashboard-runtime/FEATURE.md", kind = "FEATURE", traceability = "DOCS-ONLY" },
+  { name = "feature-widget-contract", path = "template-dashboard/architecture/features/feature-widget-contract/FEATURE.md", kind = "FEATURE", traceability = "DOCS-ONLY" },
+  { name = "feature-widget-catalog", path = "template-dashboard/architecture/features/feature-widget-catalog/FEATURE.md", kind = "FEATURE", traceability = "DOCS-ONLY" },
+]
+
+[[systems.codebase]]
+path = "template-dashboard/src-app"
 extensions = [".ts", ".tsx"]

@@ -7,12 +7,13 @@
  * so an undeclared field at either level must be refused here, at
  * admission, not silently accepted.
  *
- * A fresh `GtsPlugin` instance, per its own guidance for tests that need
- * isolated state — this file registers entities no other suite should see.
+ * Built with `{ isolated: true }`: a plain `new GtsPlugin()` shares one store
+ * with every other copy in the realm, and this file registers entities (and
+ * the `refresh_profile` type) no other suite should see or be seen by.
  */
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { GtsPlugin } from '@gears-frontx/gts-plugin';
-import { extensionScreenSchema, languageSchema, themeSchema } from '@gears-frontx/frontx-template-shell';
+import { extensionScreenSchema, languageCodeSchema, languageSchema, themeSchema } from '@gears-frontx/frontx-template-shell';
 import type { ExtensionDomain, Extension } from '@gears-frontx/react';
 import { PROFILE_EXTENSION_ID, DEMO_ACTION_REFRESH_PROFILE } from './shared/extension-ids';
 import refreshProfileSchemaJson from '../mfe.json' with { type: 'json' };
@@ -48,8 +49,9 @@ const PROFILE_EXTENSION = {
 let gtsPlugin: GtsPlugin;
 
 beforeAll(() => {
-  gtsPlugin = new GtsPlugin();
+  gtsPlugin = new GtsPlugin({ isolated: true });
   gtsPlugin.registerSchema(themeSchema);
+  gtsPlugin.registerSchema(languageCodeSchema);
   gtsPlugin.registerSchema(languageSchema);
   gtsPlugin.registerSchema(extensionScreenSchema);
   gtsPlugin.registerSchema(REFRESH_PROFILE_SCHEMA as never);

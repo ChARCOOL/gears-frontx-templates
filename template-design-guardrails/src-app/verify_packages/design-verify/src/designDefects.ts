@@ -7,9 +7,13 @@
  *
  *   - axe-core over the live document, including the color-contrast rule
  *     (browser-only: it needs real paint) — axe traverses open shadow roots,
- *     so MFE content is covered;
+ *     so MFE content is covered; contrast axe cannot decide (text over a
+ *     gradient or an image) is reported as needing review, not dropped;
  *   - page-level horizontal scroll (the layout contract every screen must
- *     keep: wide content scrolls in its own container, never the page);
+ *     keep: wide content scrolls in its own container, never the page),
+ *     measured on the document and on every box the main landmark's content
+ *     scrolls in — the FrontX shell never scrolls the document and scrolls
+ *     the screen in a container of its own;
  *   - clipped text (content wider than its box under overflow hidden/clip
  *     with no ellipsis treatment);
  *   - tiny text (visible text below a readable floor);
@@ -17,13 +21,14 @@
  *   - control-height mismatch (form controls sharing one flex row rendered
  *     at different heights — e.g. a default-size button beside a large
  *     input; tops or bottoms can never both align);
- *   - card missing padding (content ink flush against a drawn card edge —
- *     bounded containers carry horizontal padding; the one exemption is a
- *     card filled by a full-bleed media child); a negative inset — content
- *     extending past the edge — reports as card-content-overflow instead;
- *   - dead spacing class (a Tailwind spacing utility present in the DOM that
- *     no CSS rule defines — e.g. an MFE source outside the host's Tailwind
- *     scan: the source reads correct, the padding renders as nothing).
+ *   - card missing padding (content ink flush against a drawn card edge;
+ *     content scrolling inside its own auto/scroll container is measured at
+ *     the scroller's visible content box; bounded containers carry horizontal
+ *     padding; the one exemption is a card filled by a full-bleed media child);
+ *     a negative inset reports as card-content-overflow instead;
+ *   - dead spacing class (a spacing utility class present in the DOM that
+ *     no CSS rule defines: the source reads correct, the padding renders as
+ *     nothing; screens style spacing with CSS Modules on kit tokens instead).
  *
  * Delivery model: no browser-automation stack. The checker ships inside the
  * dev bundle only (the shell's main.tsx imports it behind `import.meta.env.DEV`
@@ -40,6 +45,8 @@
  * copied, with axe-core supplying the contrast engine.
  */
 
+import type { AxeResults, NodeResult } from 'axe-core';
+
 export interface DesignDefectFinding {
   /** Stable rule id, e.g. 'axe/color-contrast', 'tiny-text'. */
   id: string;
@@ -47,6 +54,12 @@ export interface DesignDefectFinding {
   detail: string;
   /** Best-effort locator for the offending element. */
   target?: string;
+  /**
+   * 'needs-review' marks a check the sweep could not decide (axe's
+   * incomplete color-contrast results): not a defect, and not a pass either,
+   * so a sweep that has one does not print the clean line.
+   */
+  kind?: 'needs-review';
 }
 
 /**
@@ -151,6 +164,96 @@ export function isClippedText(box: {
 }
 
 /**
+ * Pure predicate for the page-level horizontal-scroll rule on a box that is
+ * not the document; exported for unit tests. Only a box that scrolls on the
+ * inline axis counts: content past a hidden or clip box is clipped, not
+ * scrolled.
+ */
+export function scrollsSideways(box: { overflowX: string; scrollWidth: number; clientWidth: number }): boolean {
+  if (!scrollsOnInlineAxis(box.overflowX)) return false;
+  return box.scrollWidth > box.clientWidth + OVERFLOW_TOLERANCE_PX;
+}
+
+function scrollsOnInlineAxis(overflowX: string): boolean {
+  return overflowX === 'auto' || overflowX === 'scroll';
+}
+
+/**
+ * The boxes the page's content scrolls in, found from the main landmark:
+ * each scroller among its ancestors, then the landmark itself and each box
+ * on the chain of sole children below it. A shell can keep the document
+ * still and scroll the page in a box of its own — the FrontX shell hides
+ * overflow on html, body and main and scrolls the screen in
+ * div[data-mfe-screen-container] — so the reflow rule has to measure that
+ * box too. The chain stops at the first level with more than one child: a
+ * box with siblings holds only part of the page, and a table scrolling in its
+ * own overflow-x: auto wrapper is the isolated scroll the layout rule allows.
+ * It also stops at a scroller whose only child is a table or grid, which is
+ * that grid's own scroll box even when the grid is all the screen holds.
+ * Generic over the node type so the walk is unit-testable without layout.
+ */
+export function findPageScrollers<T>(
+  main: T,
+  tree: {
+    parent(node: T): T | null;
+    soleChild(node: T): T | null;
+    isScroller(node: T): boolean;
+    isGrid(node: T): boolean;
+  }
+): T[] {
+  const scrollers: T[] = [];
+  for (let node = tree.parent(main); node !== null; node = tree.parent(node)) {
+    if (tree.isScroller(node)) scrollers.push(node);
+  }
+  for (let node: T | null = main; node !== null; node = tree.soleChild(node)) {
+    if (!tree.isScroller(node)) continue;
+    const child = tree.soleChild(node);
+    if (child !== null && tree.isGrid(child)) break;
+    scrollers.push(node);
+  }
+  return scrollers;
+}
+
+/**
+ * How a child node takes part in its parent's layout: a box of its own, a
+ * display: contents wrapper (a slot, by default) whose own children lay out
+ * in its place, text, or nothing (whitespace, hidden, out of flow).
+ */
+export type LayoutRole = 'box' | 'contents' | 'text' | 'none';
+
+/**
+ * The only box among `nodes`, looking through display: contents wrappers
+ * to the nodes they lay out; null when there is none, more than one, or
+ * text beside it. A wrapper without a box of its own still holds boxes of
+ * the level: skipping it would leave a sibling looking like the only child.
+ * Pure; exported for unit tests.
+ */
+export function soleLayoutChild<T>(
+  nodes: Iterable<T>,
+  layout: { role(node: T): LayoutRole; contents(node: T): Iterable<T> }
+): T | null {
+  let sole: T | null = null;
+  for (const node of laidOutNodes(nodes, layout)) {
+    const role = layout.role(node);
+    if (role === 'text') return null;
+    if (role !== 'box') continue;
+    if (sole !== null) return null;
+    sole = node;
+  }
+  return sole;
+}
+
+function* laidOutNodes<T>(
+  nodes: Iterable<T>,
+  layout: { role(node: T): LayoutRole; contents(node: T): Iterable<T> }
+): Generator<T> {
+  for (const node of nodes) {
+    if (layout.role(node) === 'contents') yield* laidOutNodes(layout.contents(node), layout);
+    else yield node;
+  }
+}
+
+/**
  * Pure heading-sequence rule; exported for unit tests. Takes heading levels
  * in document order, returns the (fromLevel, toLevel) pairs that skip.
  * The first heading may be any level — screens inside a host legitimately
@@ -237,6 +340,12 @@ export interface InkEdge {
   right: number;
 }
 
+/** Ink sides cut off by a scroller edge are not measured. */
+export interface MeasuredInk {
+  left: number | null;
+  right: number | null;
+}
+
 /**
  * A media child at (or beyond) the card's content width is a deliberate
  * full-bleed treatment, which exempts the card from the padding rule.
@@ -247,6 +356,42 @@ export function isFullBleedMedia(cardContentWidth: number, mediaWidth: number): 
 }
 
 /**
+ * Slack for "runs under the scroller's edge": the scroller box comes from
+ * integer clientLeft/clientWidth, the element box from fractional rects, so
+ * a child that exactly fills the scroller can land a fraction of a pixel past
+ * its edge without being cut off.
+ */
+export const SCROLL_EDGE_TOLERANCE_PX = 1;
+
+/**
+ * Clip ink to the visible content boxes of its horizontal scrollers. A null
+ * side is cut off by a scroller edge, not measured: content continuing under
+ * that edge is a scroll cue, not missing padding. A null result is not visible.
+ * Scrolled content starts at the content box, and browsers put inline-end
+ * padding after it, so readers see the scroller's padding at both ends of the
+ * scroll range. This does not depend on the current scroll position.
+ *
+ * `box` is the element's own border box when the ink sits inside it (text
+ * inside a cell's padding): the element decides what is cut, so a table
+ * cell running under the scroller's edge is cut even where its text stops
+ * short of that edge. It defaults to the ink itself.
+ */
+export function clipInkToScrollers(
+  ink: InkEdge,
+  scrollers: readonly InkEdge[],
+  box: InkEdge = ink
+): MeasuredInk | null {
+  if (scrollers.length === 0) return { left: ink.left, right: ink.right };
+  const lo = Math.max(...scrollers.map((scroller) => scroller.left));
+  const hi = Math.min(...scrollers.map((scroller) => scroller.right));
+  if (Math.max(box.left, lo) >= Math.min(box.right, hi)) return null;
+  return {
+    left: box.left < lo - SCROLL_EDGE_TOLERANCE_PX ? null : ink.left,
+    right: box.right > hi + SCROLL_EDGE_TOLERANCE_PX ? null : ink.right,
+  };
+}
+
+/**
  * Pure rule for card padding: given the card's content-box edges, the ink
  * extents of its visible content, and which edges the card actually draws,
  * report each drawn side where ink sits closer than the minimum padding.
@@ -254,28 +399,34 @@ export function isFullBleedMedia(cardContentWidth: number, mediaWidth: number): 
  */
 export function findCardEdgeFlush(
   content: { left: number; right: number },
-  inks: readonly InkEdge[],
+  inks: readonly MeasuredInk[],
   drawnSides: { left: boolean; right: boolean }
 ): Array<{ side: 'left' | 'right'; insetPx: number }> {
   if (inks.length === 0) return [];
   const violations: Array<{ side: 'left' | 'right'; insetPx: number }> = [];
   if (drawnSides.left) {
-    const inset = Math.round(Math.min(...inks.map((ink) => ink.left)) - content.left);
-    if (inset < MIN_CARD_PADDING_PX) violations.push({ side: 'left', insetPx: inset });
+    const lefts = inks.map((ink) => ink.left).filter((left): left is number => left !== null);
+    if (lefts.length > 0) {
+      const inset = Math.round(Math.min(...lefts) - content.left);
+      if (inset < MIN_CARD_PADDING_PX) violations.push({ side: 'left', insetPx: inset });
+    }
   }
   if (drawnSides.right) {
-    const inset = Math.round(content.right - Math.max(...inks.map((ink) => ink.right)));
-    if (inset < MIN_CARD_PADDING_PX) violations.push({ side: 'right', insetPx: inset });
+    const rights = inks.map((ink) => ink.right).filter((right): right is number => right !== null);
+    if (rights.length > 0) {
+      const inset = Math.round(content.right - Math.max(...rights));
+      if (inset < MIN_CARD_PADDING_PX) violations.push({ side: 'right', insetPx: inset });
+    }
   }
   return violations;
 }
 
 /**
- * Tailwind spacing-utility grammar for the dead-class probe. Bare numeric
- * utilities only: variants (`md:p-8`) and arbitrary values (`p-[13px]`) are
- * out of scope — the failure mode this rule catches is a class the CSS build
- * never emitted at all (e.g. an MFE source outside the host's Tailwind scan),
- * where the element looks styled in the source and renders flush.
+ * Utility-class spacing grammar for the dead-class probe. Bare numeric
+ * classes only: variants (`md:p-8`) and arbitrary values (`p-[13px]`) are
+ * out of scope. The failure mode this rule catches is a utility class no
+ * CSS rule defines, where the element looks styled in the source and
+ * renders flush.
  */
 const PADDING_MARGIN_RE = /^-?([pm])([trblxyse])?-(\d+(?:\.\d+)?|px)$/;
 const GAP_RE = /^gap(?:-([xy]))?-(\d+(?:\.\d+)?|px)$/;
@@ -373,7 +524,7 @@ function probeDeadSpacingTokens(
       if (dead) {
         findings.push({
           id: 'dead-spacing-class',
-          detail: `spacing utility "${token}" is used by ${count} element(s) but no CSS rule defines it — the class silently does nothing (is this source scanned by the host Tailwind build?)`,
+          detail: `spacing utility "${token}" is used by ${count} element(s) but no CSS rule defines it, so the class silently does nothing; style the spacing with a CSS Module rule on a --space-* token`,
         });
       }
       probe.remove();
@@ -472,7 +623,36 @@ function collectCardPaddingFindings(card: Element, cardStyle: CSSStyleDeclaratio
   const contentWidth = contentRight - contentLeft;
   if (contentWidth < MIN_CARD_WIDTH_PX || rect.height < MIN_CARD_HEIGHT_PX) return [];
 
-  const inks: InkEdge[] = [];
+  const inks: MeasuredInk[] = [];
+  const scrollerBoxes = new Map<Element, InkEdge | null>();
+  const pushDescendantInk = (el: Element, ink: InkEdge, box: InkEdge = ink): void => {
+    const scrollers: InkEdge[] = [];
+    for (let ancestor = el.parentElement; ancestor; ancestor = ancestor.parentElement) {
+      let scrollerBox = scrollerBoxes.get(ancestor);
+      if (scrollerBox === undefined) {
+        const style = ancestor === card ? cardStyle : getComputedStyle(ancestor);
+        scrollerBox = null;
+        // Only a box that really scrolls sideways clips: overflow-y: auto also
+        // computes overflow-x to auto, and an inline or display: contents box
+        // reports auto with no width at all.
+        if (
+          (style.overflowX === 'auto' || style.overflowX === 'scroll') &&
+          ancestor.scrollWidth > ancestor.clientWidth
+        ) {
+          const ancestorRect = ancestor === card ? rect : ancestor.getBoundingClientRect();
+          scrollerBox = {
+            left: ancestorRect.left + ancestor.clientLeft + parsePx(style.paddingLeft),
+            right: ancestorRect.left + ancestor.clientLeft + ancestor.clientWidth - parsePx(style.paddingRight),
+          };
+        }
+        scrollerBoxes.set(ancestor, scrollerBox);
+      }
+      if (scrollerBox) scrollers.push(scrollerBox);
+      if (ancestor === card) break;
+    }
+    const clipped = clipInkToScrollers(ink, scrollers, box);
+    if (clipped) inks.push(clipped);
+  };
   if (hasDirectText(card)) {
     inks.push({
       left: contentLeft + parsePx(cardStyle.paddingLeft),
@@ -488,7 +668,7 @@ function collectCardPaddingFindings(card: Element, cardStyle: CSSStyleDeclaratio
     const inkRect = el.getBoundingClientRect();
     if (MEDIA_TAGS.has(el.tagName.toUpperCase())) {
       if (isFullBleedMedia(contentWidth, inkRect.width)) return []; // deliberate full-bleed card
-      inks.push({ left: inkRect.left, right: inkRect.right });
+      pushDescendantInk(el, { left: inkRect.left, right: inkRect.right });
       continue;
     }
     const paintsOwnBox =
@@ -497,14 +677,18 @@ function collectCardPaddingFindings(card: Element, cardStyle: CSSStyleDeclaratio
       borderSideVisible(style.borderLeftWidth, style.borderLeftStyle) ||
       borderSideVisible(style.borderRightWidth, style.borderRightStyle);
     if (paintsOwnBox) {
-      inks.push({ left: inkRect.left, right: inkRect.right });
+      pushDescendantInk(el, { left: inkRect.left, right: inkRect.right });
     } else if (hasDirectText(el)) {
       // Unpainted text carriers (spans, ghost buttons): ink starts where the
       // text does, inside the element's own padding.
-      inks.push({
-        left: inkRect.left + parsePx(style.borderLeftWidth) + parsePx(style.paddingLeft),
-        right: inkRect.right - parsePx(style.borderRightWidth) - parsePx(style.paddingRight),
-      });
+      pushDescendantInk(
+        el,
+        {
+          left: inkRect.left + parsePx(style.borderLeftWidth) + parsePx(style.paddingLeft),
+          right: inkRect.right - parsePx(style.borderRightWidth) - parsePx(style.paddingRight),
+        },
+        { left: inkRect.left, right: inkRect.right }
+      );
     }
   }
 
@@ -578,6 +762,86 @@ function hasDirectText(el: Element): boolean {
 }
 
 /**
+ * The parent box, stepping out of a shadow root to its host. Null at body:
+ * the document's own scroll is measured on document.scrollingElement, and
+ * body and html also carry the overflow the viewport takes from them.
+ */
+function layoutParent(el: Element): Element | null {
+  const root = el.getRootNode();
+  const parent = el.parentElement ?? (root instanceof ShadowRoot ? root.host : null);
+  if (parent === null || parent === document.body || parent === document.documentElement) return null;
+  return parent;
+}
+
+/**
+ * A node's part in its parent's layout (see LayoutRole). Absolutely
+ * positioned and fixed elements sit outside the flow and hold no part of
+ * the page's content.
+ */
+function layoutRole(node: Node): LayoutRole {
+  if (node.nodeType === Node.TEXT_NODE) return (node.textContent ?? '').trim().length > 0 ? 'text' : 'none';
+  if (node.nodeType !== Node.ELEMENT_NODE) return 'none';
+  const el = node as Element;
+  const style = getComputedStyle(el);
+  if (style.display === 'contents') return 'contents';
+  if (!isRendered(el)) return 'none';
+  return style.position === 'absolute' || style.position === 'fixed' ? 'none' : 'box';
+}
+
+/**
+ * The nodes a display: contents element lays out in its place: a slot's
+ * assigned nodes (its fallback content when none are assigned), otherwise
+ * its children, or its shadow root's when it hosts one.
+ */
+function contentsNodes(node: Node): Node[] {
+  if (node instanceof HTMLSlotElement) return node.assignedNodes({ flatten: true });
+  const el = node as Element;
+  return Array.from((el.shadowRoot ?? el).childNodes);
+}
+
+/**
+ * The only rendered in-flow child box of `el`, or of its shadow root when it
+ * hosts one; null when there is none, more than one, or text beside it.
+ */
+function soleInFlowChild(el: Element): Element | null {
+  const children = Array.from((el.shadowRoot ?? el).childNodes);
+  return soleLayoutChild<Node>(children, { role: layoutRole, contents: contentsNodes }) as Element | null;
+}
+
+/**
+ * The page-level horizontal-scroll rule for the boxes the page's content
+ * scrolls in (see findPageScrollers); the document itself is measured
+ * separately.
+ */
+function collectPageScrollerFindings(mains: readonly Element[]): DesignDefectFinding[] {
+  const scrollers = new Set<Element>();
+  for (const main of mains) {
+    const found = findPageScrollers(main, {
+      parent: layoutParent,
+      soleChild: soleInFlowChild,
+      isScroller: (el) => scrollsOnInlineAxis(getComputedStyle(el).overflowX),
+      isGrid: (el) => el.tagName === 'TABLE' || ['grid', 'treegrid'].includes(el.getAttribute('role') ?? ''),
+    });
+    for (const scroller of found) scrollers.add(scroller);
+  }
+  const findings: DesignDefectFinding[] = [];
+  for (const scroller of scrollers) {
+    const box = {
+      overflowX: getComputedStyle(scroller).overflowX,
+      scrollWidth: scroller.scrollWidth,
+      clientWidth: scroller.clientWidth,
+    };
+    if (!scrollsSideways(box)) continue;
+    findings.push({
+      id: 'page-horizontal-scroll',
+      detail: `the page's scroll container scrolls horizontally (${box.scrollWidth}px content in ${box.clientWidth}px box) — wide content must scroll inside its own container, not the page's`,
+      target: describeElement(scroller),
+    });
+  }
+  return findings;
+}
+
+/**
  * Pairs each heading-level skip with the specific heading element that
  * caused it (not the first heading of that level anywhere in the document —
  * a document with repeated levels, e.g. [1, 3, 1, 3], has one skip per h3
@@ -612,6 +876,7 @@ function collectLayoutFindings(): DesignDefectFinding[] {
     });
   }
 
+  const mains: Element[] = [];
   const headingLevels: number[] = [];
   const headingEls: Element[] = [];
   const controlRows = new Map<Element, Element[]>();
@@ -619,6 +884,8 @@ function collectLayoutFindings(): DesignDefectFinding[] {
 
   for (const el of walkElements(document)) {
     if (!isRendered(el) || isStudioChrome(el)) continue;
+
+    if (el.matches('main, [role="main"]')) mains.push(el);
 
     for (const token of Array.from(el.classList)) {
       if (!isSpacingToken(token)) continue;
@@ -686,6 +953,8 @@ function collectLayoutFindings(): DesignDefectFinding[] {
     }
   }
 
+  findings.push(...collectPageScrollerFindings(mains));
+
   for (const [, group] of controlRows) {
     if (group.length < 2) continue;
     const boxes: ControlBox[] = group.map((el) => {
@@ -710,30 +979,88 @@ function collectLayoutFindings(): DesignDefectFinding[] {
   return findings;
 }
 
-async function collectAxeFindings(): Promise<DesignDefectFinding[]> {
-  const axe = (await import('axe-core')).default;
-  const result = await axe.run(
-    { exclude: [['.studio-panel'], ['.studio-portal-container']] },
-    { resultTypes: ['violations'] }
-  );
-  return result.violations.map((violation) => ({
-    id: `axe/${violation.id}`,
-    detail: `${violation.help} (impact: ${violation.impact ?? 'unknown'}, ${violation.nodes.length} node(s))`,
-    target: violation.nodes[0]?.target?.join(' '),
-  }));
+/**
+ * Rules whose undecided (axe "incomplete") results are reported as needing
+ * review. color-contrast is the one the verification leans on as objective
+ * evidence, and axe leaves it undecided whenever it cannot resolve the
+ * background: text over a gradient or an image, or behind another element.
+ */
+const UNDECIDED_RULES_REPORTED = new Set(['color-contrast']);
+
+/**
+ * An axe node's target as one locator. Each entry selects within one frame.
+ * An element inside a shadow root comes as a list of every shadow host and
+ * then the element, joined here with `>>>` (`my-widget >>> p`): joined with a
+ * space it would read as the selector list `my-widget,p`, and MFE content
+ * renders into shadow roots.
+ */
+function axeTargetLocator(target: NodeResult['target'] | undefined): string | undefined {
+  return target?.map((selector) => (Array.isArray(selector) ? selector.join(' >>> ') : selector)).join(' ');
 }
 
-/** Runs the full sweep and reports to the console. Resolves with findings. */
+/**
+ * Maps an axe run to findings: each violation as a defect, and each node of
+ * an undecided result of a rule in UNDECIDED_RULES_REPORTED as its own
+ * needs-review entry, with that node's target and axe's reasons for it, since
+ * each element needs its own check by hand. Pure; exported for unit tests.
+ */
+export function axeResultsToFindings(results: Pick<AxeResults, 'violations' | 'incomplete'>): DesignDefectFinding[] {
+  const violations = results.violations.map((violation) => ({
+    id: `axe/${violation.id}`,
+    detail: `${violation.help} (impact: ${violation.impact ?? 'unknown'}, ${violation.nodes.length} node(s))`,
+    target: axeTargetLocator(violation.nodes[0]?.target),
+  }));
+  const undecided = results.incomplete
+    .filter((result) => UNDECIDED_RULES_REPORTED.has(result.id))
+    .flatMap((result) =>
+      result.nodes.map((node): DesignDefectFinding => {
+        const reasons = new Set([...node.any, ...node.all, ...node.none].map((check) => check.message));
+        return {
+          id: `axe-incomplete/${result.id}`,
+          detail: `axe could not decide this: ${[...reasons].join('; ')}`,
+          target: axeTargetLocator(node.target),
+          kind: 'needs-review',
+        };
+      })
+    );
+  return [...violations, ...undecided];
+}
+
+async function collectAxeFindings(): Promise<DesignDefectFinding[]> {
+  const axe = (await import('axe-core')).default;
+  // Both kinds in full: axe keeps one node per result for a type left out.
+  const result = await axe.run(
+    { exclude: [['.studio-panel'], ['.studio-portal-container']] },
+    { resultTypes: ['violations', 'incomplete'] }
+  );
+  return axeResultsToFindings(result);
+}
+
+function consoleLine(finding: DesignDefectFinding): string {
+  return `${finding.id}: ${finding.detail}${finding.target ? ` — ${finding.target}` : ''}`;
+}
+
+/**
+ * Runs the full sweep and reports to the console. Resolves with findings,
+ * needs-review entries included. The clean line prints only when there is
+ * neither: a check the sweep could not decide is not a pass.
+ */
 export async function runDesignDefectCheck(): Promise<DesignDefectFinding[]> {
   const findings = [...collectLayoutFindings(), ...(await collectAxeFindings())];
+  const defects = findings.filter((finding) => finding.kind !== 'needs-review');
+  const needsReview = findings.filter((finding) => finding.kind === 'needs-review');
 
   if (findings.length === 0) {
     console.info('[design-defects] clean: no objective design defects detected');
-  } else {
-    console.warn(`[design-defects] ${findings.length} finding(s):`);
-    for (const finding of findings) {
-      console.warn(`[design-defects] ${finding.id}: ${finding.detail}${finding.target ? ` — ${finding.target}` : ''}`);
-    }
+    return findings;
+  }
+  if (defects.length > 0) {
+    console.warn(`[design-defects] ${defects.length} finding(s):`);
+    for (const finding of defects) console.warn(`[design-defects] ${consoleLine(finding)}`);
+  }
+  if (needsReview.length > 0) {
+    console.warn(`[design-defects] ${needsReview.length} item(s) need review — undecided, so this state is not clean:`);
+    for (const finding of needsReview) console.warn(`[design-defects] needs review ${consoleLine(finding)}`);
   }
   return findings;
 }

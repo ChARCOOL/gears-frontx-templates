@@ -17,9 +17,10 @@
 
 import { describe, it, expect } from 'vitest';
 import { GtsPlugin } from '@gears-frontx/gts-plugin';
+import { Language } from '@gears-frontx/i18n';
 import { FRONTX_SHARED_PROPERTY_THEME, FRONTX_SHARED_PROPERTY_LANGUAGE } from '../../../src/mfe/constants';
 import type { JSONSchema } from '@gears-frontx/gts-plugin';
-import { themeSchema, languageSchema, extensionScreenSchema } from '@gears-frontx/frontx-template-shell';
+import { themeSchema, languageCodeSchema, languageSchema, extensionScreenSchema } from '@gears-frontx/frontx-template-shell';
 
 /**
  * Returns the `value` property of a shared_property schema or fails the test
@@ -34,12 +35,14 @@ function getValuePropertySchema(schema: JSONSchema | undefined): JSONSchema {
 }
 
 /**
- * Build a fresh GtsPlugin instance with the application-layer derived schemas registered.
- * Using a fresh instance per describe block keeps tests isolated from singleton state.
+ * Build a GtsPlugin with a private store and the application-layer derived schemas registered.
+ * `isolated: true` keeps these tests off the realm-wide store every other
+ * GtsPlugin copy (including the `gtsPlugin` singleton) shares.
  */
 function buildPluginWithDerivedSchemas(): GtsPlugin {
-  const plugin = new GtsPlugin();
+  const plugin = new GtsPlugin({ isolated: true });
   plugin.registerSchema(themeSchema);
+  plugin.registerSchema(languageCodeSchema);
   plugin.registerSchema(languageSchema);
   plugin.registerSchema(extensionScreenSchema);
   return plugin;
@@ -93,19 +96,27 @@ describe('application-layer derived GTS schemas', () => {
   describe('language schema', () => {
     const plugin = buildPluginWithDerivedSchemas();
 
+    it('matches the runtime language codes', () => {
+      const codes = languageCodeSchema.enum as string[];
+      expect(new Set(codes).size).toBe(codes.length);
+      expect(new Set(codes)).toEqual(new Set(Object.values(Language)));
+    });
+
     it('is accessible via getSchema using the language property type ID', () => {
       const schema = plugin.getSchema(FRONTX_SHARED_PROPERTY_LANGUAGE);
       expect(schema).toBeDefined();
       expect(schema?.$id).toBe(`gts://${FRONTX_SHARED_PROPERTY_LANGUAGE}`);
     });
 
-    it('constrains value to 36 enum strings', () => {
-      const schema = plugin.getSchema(FRONTX_SHARED_PROPERTY_LANGUAGE);
-      const valueSchema = getValuePropertySchema(schema);
-      expect(valueSchema.type).toBe('string');
-      expect(valueSchema.enum).toBeDefined();
-      expect(Array.isArray(valueSchema.enum)).toBe(true);
-      expect(valueSchema.enum as unknown[]).toHaveLength(36);
+    it('resolves language values through the language code schema', () => {
+      expect(getValuePropertySchema(languageSchema)).toEqual({ $ref: 'gts://gts.frontx.i18n.lang.code.v1~' });
+      const isolatedPlugin = new GtsPlugin({ isolated: true });
+      isolatedPlugin.registerSchema(languageCodeSchema);
+      isolatedPlugin.registerSchema(languageSchema);
+      const validId = `${FRONTX_SHARED_PROPERTY_LANGUAGE}frontx.mfes.comm.runtime.v1`;
+      const invalidId = `${FRONTX_SHARED_PROPERTY_LANGUAGE}frontx.mfes.comm.runtime.invalid.v1`;
+      expect(() => isolatedPlugin.register({ id: validId, value: 'en' })).not.toThrow();
+      expect(() => isolatedPlugin.register({ id: invalidId, value: 'xx' })).toThrow(/GTS validation failed/);
     });
 
     it('uses allOf derivation from base shared_property schema', () => {

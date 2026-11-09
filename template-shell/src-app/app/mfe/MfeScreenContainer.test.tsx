@@ -1,15 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 
 const mockBootstrapMFE = vi.fn();
 const mockUseFrontX = vi.fn();
-const mockUseMountedExtensions = vi.fn((_domainId: string): Array<{ id: string }> => []);
-const mockUseDomainRouteStatus = vi.fn(
-  (_registry: unknown, _domainId: string): { entries: number; unresolved: number } => ({
-    entries: 0,
-    unresolved: 0,
-  }),
-);
 const mockScreenDomain = { id: 'screen-domain' };
 const FRONTX_SCREEN_DOMAIN = 'screen-domain';
 
@@ -20,12 +13,10 @@ vi.mock('./bootstrap', () => ({
 vi.mock('@gears-frontx/react', async (importOriginal) => ({
   ...(await importOriginal<Record<string, never>>()),
   useFrontX: () => mockUseFrontX(),
-  useMountedExtensions: (domainId: string) => mockUseMountedExtensions(domainId),
-  useDomainRouteStatus: (registry: unknown, domainId: string) => mockUseDomainRouteStatus(registry, domainId),
   screenDomain: mockScreenDomain,
   FRONTX_SCREEN_DOMAIN,
   // `ExtensionDomainSlot` itself owns starting/stopping a routed domain's
-  // observer (ADR 0036, D10/D11) — its own suite covers that; this fake
+  // observer (ADR 0036, "URL ownership") — its own suite covers that; this fake
   // only stands in for the DOM root this container renders around.
   ExtensionDomainSlot: ({
     registry,
@@ -71,10 +62,6 @@ describe('MfeScreenContainer', () => {
           bootstrap.reject = reject;
         }),
     );
-    mockUseMountedExtensions.mockReset();
-    mockUseMountedExtensions.mockReturnValue([]);
-    mockUseDomainRouteStatus.mockReset();
-    mockUseDomainRouteStatus.mockReturnValue({ entries: 0, unresolved: 0 });
   });
 
   afterEach(() => {
@@ -95,15 +82,16 @@ describe('MfeScreenContainer', () => {
     expect(screen.queryByTestId('extension-domain-slot')).toBeNull();
   });
 
-  it('bootstraps the MFE runtime only once across re-renders', async () => {
+  it('bootstraps the MFE runtime once across re-renders, with the screen domain it implements', async () => {
     const { MfeScreenContainer } = await import('./MfeScreenContainer');
+    const { registerScreenDomain } = await import('./screenDomain');
 
     const { rerender } = render(<MfeScreenContainer />);
     rerender(<MfeScreenContainer />);
     rerender(<MfeScreenContainer />);
 
     expect(mockBootstrapMFE).toHaveBeenCalledTimes(1);
-    expect(mockBootstrapMFE).toHaveBeenCalledWith(app);
+    expect(mockBootstrapMFE).toHaveBeenCalledWith(app, [registerScreenDomain]);
   });
 
   it('renders the screen-domain ExtensionDomainSlot after bootstrap succeeds', async () => {
@@ -116,21 +104,6 @@ describe('MfeScreenContainer', () => {
     expect(slot.dataset.domainId).toBe(mockScreenDomain.id);
     expect(slot.dataset.registryPresent).toBe('yes');
     expect(slot.dataset.className).toContain('h-full');
-  });
-
-  it('reads the screen domain status only once bootstrap has settled, not before', async () => {
-    const { MfeScreenContainer } = await import('./MfeScreenContainer');
-
-    render(<MfeScreenContainer />);
-
-    // Every call before settling is gated to `undefined` (C1 — no
-    // observer-backed status to read before this container's own
-    // `ExtensionDomainSlot` has anywhere to mount into).
-    expect(mockUseDomainRouteStatus).toHaveBeenLastCalledWith(undefined, FRONTX_SCREEN_DOMAIN);
-
-    await settleBootstrap();
-
-    expect(mockUseDomainRouteStatus).toHaveBeenLastCalledWith(app.mfeRegistry, FRONTX_SCREEN_DOMAIN);
   });
 
   it('reuses the settled bootstrap across a real remount rather than re-invoking it (C8)', async () => {
@@ -152,7 +125,7 @@ describe('MfeScreenContainer', () => {
     expect(mockBootstrapMFE).toHaveBeenCalledTimes(1);
   });
 
-  it('logs an error and renders nothing when bootstrap rejects', async () => {
+  it('logs the error and shows the error state when bootstrap rejects (the manifest aggregate unreachable)', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const { MfeScreenContainer } = await import('./MfeScreenContainer');
@@ -163,40 +136,128 @@ describe('MfeScreenContainer', () => {
 
     expect(errorSpy).toHaveBeenCalled();
     expect(screen.queryByTestId('extension-domain-slot')).toBeNull();
+    const alert = screen.getByRole('alert');
+    expect(within(alert).getByRole('heading', { level: 2 }).textContent).toBe('This screen could not be loaded');
+    expect(within(alert).getByRole('button', { name: 'Retry' })).not.toBeNull();
   });
 
-  it('renders the fallback when every URL entry for the screen domain is unresolved and nothing mounted', async () => {
-    mockUseDomainRouteStatus.mockReturnValue({ entries: 1, unresolved: 1 });
-    mockUseMountedExtensions.mockReturnValue([]);
-    const { MfeScreenContainer } = await import('./MfeScreenContainer');
+  it('reloads the page on Retry after a failed bootstrap, which is not safe to repeat in the same page', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const reload = vi.fn();
+    const realLocation = window.location;
+    Object.defineProperty(window, 'location', { configurable: true, value: { ...realLocation, reload } });
+    try {
+      const { MfeScreenContainer } = await import('./MfeScreenContainer');
+      const { screenLoadFailure } = await import('./screenLoadFailure');
+      render(<MfeScreenContainer />);
+      await act(async () => {
+        bootstrap.reject(new Error('boom'));
+      });
+      act(() => screenLoadFailure.report('ext.orders', 'push'));
 
-    render(<MfeScreenContainer />);
-    await settleBootstrap();
+      expect(screen.getAllByRole('alert')).toHaveLength(1);
 
-    expect(screen.getByTestId('screen-route-fallback')).not.toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+      expect(reload).toHaveBeenCalledTimes(1);
+      expect(mockBootstrapMFE).toHaveBeenCalledTimes(1);
+    } finally {
+      Object.defineProperty(window, 'location', { configurable: true, value: realLocation });
+    }
   });
 
-  it('renders no fallback when the screen domain carries no URL entry', async () => {
-    mockUseDomainRouteStatus.mockReturnValue({ entries: 0, unresolved: 0 });
-    mockUseMountedExtensions.mockReturnValue([]);
-    const { MfeScreenContainer } = await import('./MfeScreenContainer');
+  describe('a screen that failed to load', () => {
+    it('shows the error state once a screen failure is reported', async () => {
+      const { MfeScreenContainer } = await import('./MfeScreenContainer');
+      const { screenLoadFailure } = await import('./screenLoadFailure');
+      render(<MfeScreenContainer />);
+      await settleBootstrap();
 
-    render(<MfeScreenContainer />);
-    await settleBootstrap();
+      act(() => screenLoadFailure.report('ext.orders', 'push'));
 
-    expect(screen.getByTestId('extension-domain-slot')).not.toBeNull();
-    expect(screen.queryByTestId('screen-route-fallback')).toBeNull();
-  });
+      const alert = screen.getByRole('alert');
+      expect(within(alert).getByRole('heading', { level: 2 }).textContent).toBe('This screen could not be loaded');
+      expect(within(alert).getByRole('button', { name: 'Retry' })).not.toBeNull();
+    });
 
-  it('renders no fallback once a screen is mounted, even with an unresolved sibling entry', async () => {
-    mockUseDomainRouteStatus.mockReturnValue({ entries: 1, unresolved: 1 });
-    mockUseMountedExtensions.mockReturnValue([{ id: 'ext.hello-world' }]);
-    const { MfeScreenContainer } = await import('./MfeScreenContainer');
+    it.each(['push', 'replace', 'none'] as const)(
+      'mounts the screen again on Retry with the failed action history intent (%s)',
+      async (history) => {
+        const executeActionsChain = vi.fn();
+        app.mfeRegistry = { executeActionsChain } as never;
+        const { MfeScreenContainer } = await import('./MfeScreenContainer');
+        const { screenLoadFailure } = await import('./screenLoadFailure');
+        render(<MfeScreenContainer />);
+        await settleBootstrap();
+        act(() => screenLoadFailure.report('ext.orders', history));
 
-    render(<MfeScreenContainer />);
-    await settleBootstrap();
+        fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
-    expect(screen.getByTestId('extension-domain-slot')).not.toBeNull();
-    expect(screen.queryByTestId('screen-route-fallback')).toBeNull();
+        expect(executeActionsChain).toHaveBeenCalledWith({
+          action: {
+            type: 'gts.frontx.mfes.comm.action.v1~frontx.mfes.ext.mount_ext.v1~',
+            target: FRONTX_SCREEN_DOMAIN,
+            payload: { subject: 'ext.orders', history },
+          },
+        });
+        expect(screen.queryByRole('alert')).toBeNull();
+      },
+    );
+
+    it('drops the error state when a history step leaves the failed navigation', async () => {
+      const { MfeScreenContainer } = await import('./MfeScreenContainer');
+      const { screenLoadFailure } = await import('./screenLoadFailure');
+      render(<MfeScreenContainer />);
+      await settleBootstrap();
+      act(() => screenLoadFailure.report('ext.orders', 'push'));
+
+      act(() => {
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      });
+
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('starts the new visit before a popstate listener added earlier mounts the new address', async () => {
+      const { MfeScreenContainer } = await import('./MfeScreenContainer');
+      const { screenLoadFailure } = await import('./screenLoadFailure');
+      let visitSeenByRouter: number | undefined;
+      // Stands in for the router, which subscribes in the bubble phase; added
+      // first, so only the phase decides the order.
+      const router = () => {
+        visitSeenByRouter = screenLoadFailure.visit();
+      };
+      window.addEventListener('popstate', router);
+      try {
+        render(<MfeScreenContainer />);
+        await settleBootstrap();
+        const before = screenLoadFailure.visit();
+
+        act(() => {
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        });
+
+        expect(visitSeenByRouter).toBe(before + 1);
+      } finally {
+        window.removeEventListener('popstate', router);
+      }
+    });
+
+    it('renders the error state the app passes in', async () => {
+      const { MfeScreenContainer } = await import('./MfeScreenContainer');
+      const { screenLoadFailure } = await import('./screenLoadFailure');
+      const Custom = ({ onRetry }: { onRetry: () => void }) => (
+        <button type="button" onClick={onRetry}>
+          custom error state
+        </button>
+      );
+      render(<MfeScreenContainer LoadFailed={Custom} />);
+      await settleBootstrap();
+
+      act(() => screenLoadFailure.report('ext.orders', 'push'));
+
+      expect(screen.getByRole('button', { name: 'custom error state' })).not.toBeNull();
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
   });
 });
