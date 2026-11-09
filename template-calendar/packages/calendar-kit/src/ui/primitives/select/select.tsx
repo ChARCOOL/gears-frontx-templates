@@ -174,7 +174,6 @@ const SelectPopup = ({
   const handlePopupPointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
       const { target } = event;
-
       if (!(target instanceof Element)) {
         return;
       }
@@ -191,7 +190,6 @@ const SelectPopup = ({
   const handlePopupKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       const { target } = event;
-
       if (!(target instanceof Element) || target.closest('[role="option"]')) {
         return;
       }
@@ -199,7 +197,6 @@ const SelectPopup = ({
       if (event.key === "Escape" || event.key === "Tab") {
         event.preventDefault();
         onClose();
-
         return;
       }
 
@@ -212,7 +209,6 @@ const SelectPopup = ({
             event.key === "ArrowDown" ? 1 : -1
           )
         );
-
         return;
       }
 
@@ -225,7 +221,6 @@ const SelectPopup = ({
             event.key === "Home" ? 1 : -1
           )
         );
-
         return;
       }
 
@@ -258,7 +253,6 @@ const SelectPopup = ({
       }
 
       const selectedOption = options[activeIndex];
-
       if (selectedOption === undefined || selectedOption.disabled === true) {
         return;
       }
@@ -337,7 +331,6 @@ const getInitialSelectedIndex = (
   value: string | undefined
 ): number => {
   const selectedIndex = options.findIndex((option) => option.value === value);
-
   return selectedIndex === -1 ? -1 : selectedIndex;
 };
 
@@ -524,7 +517,6 @@ export const Select = ({
   const optionSignature = JSON.stringify(
     options.map((option) => {
       const itemLabel = selectItemText(option.label).trim();
-
       return { label: itemLabel || option.value, value: option.value };
     })
   );

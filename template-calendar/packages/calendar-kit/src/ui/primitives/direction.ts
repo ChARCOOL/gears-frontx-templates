@@ -3,7 +3,6 @@ export const resolveDirection = (node: Element): "ltr" | "rtl" => {
 
   while (current !== null) {
     const direction = current.getAttribute("dir");
-
     if (direction === "rtl" || direction === "ltr") {
       return direction;
     }

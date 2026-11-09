@@ -31,13 +31,11 @@ const renderInShadowRoot = (ui: ReactElement, hostDir?: string) => {
   shadowRoot.append(mountNode);
   testHosts.add(host);
   const utils = render(ui, { container: mountNode });
-
   return { ...utils, host, mountNode, queries: within(mountNode), shadowRoot };
 };
 
 const activeIn = (shadowRoot: ShadowRoot): HTMLElement | null => {
   const active = shadowRoot.activeElement;
-
   return active instanceof HTMLElement ? active : null;
 };
 
@@ -60,7 +58,6 @@ describe(computePopoverPosition, () => {
   afterEach(removeTestHosts);
 
   const viewport = { height: 768, width: 1024 };
-
   const size = { height: 100, width: 200 };
 
   it("places below when it fits and flips above when it does not", () => {
@@ -585,7 +582,6 @@ describe(Popover, () => {
 
   it("does not rerender when reopening with the same measured size", () => {
     const panelRef: MutableElementRef = { current: null };
-
     let commitCount = 0;
 
     const onRender = () => {
@@ -608,7 +604,6 @@ describe(Popover, () => {
 
     const { rerender } = render(renderMeasuredPopover(true));
     const panel = panelRef.current;
-
     if (!panel) {
       throw new Error("Expected the popover panel to exist");
     }
@@ -638,7 +633,6 @@ const inlineAt = (
   area: { height: number; width: number }
 ): InlinePopoverPosition => {
   const position = computeInlinePopoverPosition(anchor, panel, area);
-
   if (position === null) {
     throw new Error("Expected the panel to fit beside the anchor");
   }
@@ -648,7 +642,6 @@ const inlineAt = (
 
 describe(computeInlinePopoverPosition, () => {
   const viewport = { height: 800, width: 1200 };
-
   const size = { height: 300, width: 360 };
 
   it("opens after the anchor when there is room and points the arrow at its middle", () => {
