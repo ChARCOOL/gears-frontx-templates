@@ -12,13 +12,22 @@
 
 import { spawn } from 'child_process';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, relative } from 'path';
+import { concurrently } from 'concurrently';
 import {
   buildMfesSequentially,
   getMFEPackages,
   noDiscoveredPackagesNotice,
   type MfeInfo,
 } from './lib/mfe-tools.js';
+import {
+  findSharedPreviewPorts,
+  findTakenPreviewPorts,
+  previewCommand,
+  sharedPreviewPortsMessage,
+  takenPreviewPortsMessage,
+  type PreviewCommand,
+} from './lib/preview-ports.js';
 
 // Determine main app command based on available scripts
 function getMainAppCommand(): string {
@@ -37,15 +46,16 @@ function getMainAppCommand(): string {
 }
 
 // Build preview-only commands (no build step — MFEs are pre-built)
-function buildPreviewCommands(mfes: MfeInfo[]): string[] {
-  const commands: string[] = [];
+function buildPreviewCommands(mfes: MfeInfo[]): PreviewCommand[] {
+  const commands: PreviewCommand[] = [];
 
   // Add main app
-  commands.push(getMainAppCommand());
+  commands.push({ command: getMainAppCommand() });
 
-  // MFE preview only (build already done in the sequential step)
+  // MFE preview only (build already done in the sequential step), each in
+  // its package on a strict port (scripts/lib/preview-ports.ts)
   for (const mfe of mfes) {
-    commands.push(`cd src-app/mfe_packages/${mfe.name} && npm run preview`);
+    commands.push(previewCommand(mfe));
   }
 
   return commands;
@@ -89,38 +99,43 @@ async function main() {
     console.log();
   }
 
+  // Step 0: every declared preview port must be one package's own and free,
+  // before any screen package is built
+  const shared = findSharedPreviewPorts(packages);
+  if (shared.length > 0) {
+    throw new Error(sharedPreviewPortsMessage(shared));
+  }
+  const taken = await findTakenPreviewPorts(packages);
+  if (taken.length > 0) {
+    throw new Error(takenPreviewPortsMessage(taken));
+  }
+
   // Step 1: Build all MFEs (produces dist/ with mf-manifest.json)
   await buildMfesSequentially(packages);
 
-  // Step 2: Generate manifests (reads dist/mf-manifest.json, produces generated-mfe-manifests.ts).
+  // Step 2: Generate manifests (reads dist/mf-manifest.json, writes public/generated-mfe-manifests.json).
   // This child is also where the skipped-examples notice is printed, once per run.
   await generateManifests();
 
   // Step 3: Start host + MFE preview servers concurrently
   const commands = buildPreviewCommands(packages);
 
-  // Quote each command properly for concurrently
-  const quotedCommands = commands.map((cmd) => `"${cmd.replace(/"/g, '\\"')}"`);
-
-  // Build concurrently command
-  const concurrentlyCmd = ['concurrently', '--kill-others', ...quotedCommands];
-
-  console.log(`📝 Running: ${concurrentlyCmd.join(' ')}\n`);
-
-  // Execute concurrently
-  const proc = spawn('npx', concurrentlyCmd, {
-    stdio: 'inherit',
-    shell: true,
+  console.log('📝 Running concurrently:');
+  commands.forEach(({ command, cwd }, idx) => {
+    console.log(`  [${idx}] ${command}${cwd ? ` (in ${relative(process.cwd(), cwd)})` : ''}`);
   });
+  console.log();
 
-  proc.on('error', (error) => {
-    console.error(`❌ Failed to start dev:all: ${error.message}`);
-    process.exit(1);
-  });
+  // `concurrently` comes from the devDependency pinned in package.json, so
+  // dev:all never fetches it from the registry and works offline. Removing
+  // that dependency fails `type-check:scripts` (TS2307).
+  const { result } = concurrently(commands, { killOthersOn: ['success', 'failure'] });
 
-  proc.on('exit', (code) => {
-    process.exit(code || 0);
-  });
+  // Exit as the `concurrently` CLI does: 0 when every command succeeded, 1 otherwise.
+  result.then(
+    () => process.exit(0),
+    () => process.exit(1),
+  );
 }
 
 // The rejection is already phrased as a full report - `buildMfesSequentially`
