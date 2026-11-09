@@ -4,21 +4,16 @@ import type { LocalTime } from "./model";
 import { invalidTemporalValue, padTwo, parseLocalTime } from "./validation";
 
 export const MINUTES_PER_HOUR = 60;
-
 export const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;
-
 const NOON = 12 * MINUTES_PER_HOUR;
 
 const HOUR_MINUTE_PATTERN =
   /^(?<group1>\d{1,2})\s*[:.,\s]\s*(?<group2>\d{1,2})$/u;
 
 const HOUR_ONLY_PATTERN = /^(?<group1>\d{1,2})$/u;
-
 const COMPACT_PATTERN = /^(?<group1>\d{1,2})(?<group2>\d{2})$/u;
-
 // `p.m.` and es `p. m.` read as `pm` and `p m`; a dot between digits still separates.
 const ABBREVIATION_DOT_PATTERN = /(?<=\p{L})\./gu;
-
 // Empty, or a separator HOUR_MINUTE_PATTERN already reads.
 const PLAIN_SEPARATOR_PATTERN = /^[:.,]?$/u;
 
@@ -49,7 +44,6 @@ const meridiemTokens = (
   locale: string
 ): readonly (readonly [string, Meridiem])[] => {
   const tokens: (readonly [string, Meridiem])[] = [];
-
   const localizedAm = localeDayPeriod(locale, 9);
   const localizedPm = localeDayPeriod(locale, 21);
 
@@ -92,19 +86,16 @@ const readHourMinute = (
   text: string
 ): { readonly hour: number; readonly minute: number } | null => {
   const separated = HOUR_MINUTE_PATTERN.exec(text);
-
   if (separated) {
     return { hour: Number(separated[1]), minute: Number(separated[2]) };
   }
 
   const hourOnly = HOUR_ONLY_PATTERN.exec(text);
-
   if (hourOnly) {
     return { hour: Number(hourOnly[1]), minute: 0 };
   }
 
   const compact = COMPACT_PATTERN.exec(text);
-
   if (compact) {
     return { hour: Number(compact[1]), minute: Number(compact[2]) };
   }
@@ -131,10 +122,8 @@ const getTimeFormatters = (locale: string): TimeFormatters => ({
   }),
 });
 
-/**
- * The text the locale writes between hour and minute when it is not a plain separator,
- * such as fr-CA `13 h 30`, so the kit's own output parses back.
- */
+/** Text the locale writes between hour and minute when it is not a plain separator,
+ * such as fr-CA `13 h 30`, so the kit's own output parses back. */
 const hourMinuteLiterals = (locale: string): readonly string[] => {
   const sample = new Date(Date.UTC(1970, 0, 1, 13, 30));
   const { twelveHour, twentyFourHour } = getTimeFormatters(locale);
@@ -143,6 +132,7 @@ const hourMinuteLiterals = (locale: string): readonly string[] => {
     const parts = formatter.formatToParts(sample);
     const hourIndex = parts.findIndex((part) => part.type === "hour");
     const between = parts[hourIndex + 1];
+
     const literal =
       between?.type === "literal" && parts[hourIndex + 2]?.type === "minute"
         ? between.value.trim().toLowerCase()
@@ -164,7 +154,6 @@ export const minutesFromLocalTime = (time: LocalTime): number => {
   const validTime = parseLocalTime(time);
   const hour = Number(validTime.slice(0, 2));
   const minute = Number(validTime.slice(3, 5));
-
   return hour * MINUTES_PER_HOUR + minute;
 };
 
@@ -175,7 +164,6 @@ const inheritReferencePeriod = (
   reference: LocalTime | undefined
 ): number => {
   const ambiguous = hour >= 1 && hour <= 11;
-
   if (!reference || !ambiguous || !usesTwelveHourClock(locale)) {
     return minutes;
   }
@@ -199,7 +187,6 @@ const resolveMinutes = (
     }
 
     const hourMinutes = hour === 12 ? 0 : hour * MINUTES_PER_HOUR;
-
     return (period === MERIDIEM.pm ? hourMinutes + NOON : hourMinutes) + minute;
   }
 
@@ -248,7 +235,6 @@ export const localTimeFromMinutes = (minutes: number): LocalTime => {
 
   const hour = Math.floor(minutes / MINUTES_PER_HOUR);
   const minute = minutes % MINUTES_PER_HOUR;
-
   return parseLocalTime(`${padTwo(hour)}:${padTwo(minute)}`);
 };
 
@@ -287,7 +273,6 @@ export const timeOfDayIncrements = ({
 
   const first = Math.ceil(Math.max(fromMinutes, 0) / stepMinutes) * stepMinutes;
   const last = Math.min(toMinutes, MINUTES_PER_DAY - 1);
-
   const rows: LocalTime[] = [];
 
   for (let minutes = first; minutes <= last; minutes += stepMinutes) {
@@ -302,7 +287,6 @@ export const parseTimeInput = (
   { locale, reference }: ParseTimeInputOptions
 ): TimeInputResult => {
   const normalised = toAsciiDigits(text).trim();
-
   if (!normalised) {
     return { kind: TIME_INPUT.empty };
   }
@@ -323,7 +307,6 @@ export const parseTimeInput = (
   }
 
   const minutes = resolveMinutes(parts, period, locale, reference);
-
   if (minutes === null) {
     return { kind: TIME_INPUT.invalid };
   }

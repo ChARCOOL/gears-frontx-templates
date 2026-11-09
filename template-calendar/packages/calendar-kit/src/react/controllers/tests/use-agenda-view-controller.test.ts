@@ -97,7 +97,6 @@ const groupFor = (
   date: string
 ) => {
   const group = groups.find((candidate) => candidate.date === date);
-
   if (!group) {
     throw new Error(`Missing group ${date}`);
   }

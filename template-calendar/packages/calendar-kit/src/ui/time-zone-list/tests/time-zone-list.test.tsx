@@ -12,7 +12,6 @@ import type { TimeZoneListProps } from "../time-zone-list";
 import timeZoneListCss from "../time-zone-list.module.css?raw";
 
 const JULY = utcInstant("2026-07-01T12:00:00.000Z");
-
 const JANUARY = utcInstant("2026-01-01T12:00:00.000Z");
 
 const OPTIONS: readonly CalendarTimeZoneOption[] = [

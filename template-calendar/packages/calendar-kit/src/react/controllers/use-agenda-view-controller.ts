@@ -176,7 +176,6 @@ export const useAgendaViewController = (
   const selectEvent = useCallback(
     (eventId: string, anchor?: HTMLElement): void => {
       const row = eventRowById.get(eventId);
-
       if (row === undefined || !isRowAvailable(row)) {
         return;
       }
@@ -213,7 +212,6 @@ export const useAgendaViewController = (
               ? event.currentTarget
               : undefined
           );
-
           break;
         }
         default: {

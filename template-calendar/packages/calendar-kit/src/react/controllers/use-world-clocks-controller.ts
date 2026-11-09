@@ -45,7 +45,6 @@ const readValidTimeZoneIds = (
   timeZoneIds.flatMap((timeZoneId) => {
     try {
       parseIanaTimeZone(timeZoneId);
-
       return [timeZoneId];
     } catch {
       return [];
@@ -152,9 +151,7 @@ export const useWorldClocksController = ({
 
   const moveClock = (timeZoneId: IanaTimeZone, move: ClockMove): void => {
     const index = viewModel.selectedTimeZoneIds.indexOf(timeZoneId);
-
     const targetIndex = move === CLOCK_MOVE.earlier ? index - 1 : index + 1;
-
     if (
       index === -1 ||
       targetIndex < 0 ||
@@ -165,7 +162,6 @@ export const useWorldClocksController = ({
 
     const currentTimeZoneId = viewModel.selectedTimeZoneIds[index];
     const adjacentTimeZoneId = viewModel.selectedTimeZoneIds[targetIndex];
-
     const reordered = [...viewModel.selectedTimeZoneIds];
     reordered[index] = adjacentTimeZoneId;
     reordered[targetIndex] = currentTimeZoneId;

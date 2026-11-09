@@ -92,6 +92,7 @@ const assertA11Calls = (calls: readonly TranslationCall[]): void => {
       { count: 2 },
     ]);
   }
+
   expect(calls).toContainEqual(["calendar.detail.guests", { count: 2 }]);
 
   for (const call of calls) {
@@ -250,7 +251,6 @@ describe("i18n acceptance: values and pluralization", () => {
 
   it("A12: host ICU bridges work", () => {
     const i18nextCalls: unknown[][] = [];
-
     const reactIntlCalls: unknown[][] = [];
 
     const defaultMessages: Record<string, string> = {
@@ -264,7 +264,6 @@ describe("i18n acceptance: values and pluralization", () => {
 
     const i18next = (key: string, options: Record<string, unknown>) => {
       i18nextCalls.push([key, options]);
-
       return `i18next:${String(options.defaultValue)}`;
     };
 
@@ -273,7 +272,6 @@ describe("i18n acceptance: values and pluralization", () => {
       values: Readonly<Record<string, string | number>> | undefined
     ) => {
       reactIntlCalls.push([descriptor, values]);
-
       return `formatjs:${descriptor.defaultMessage}`;
     };
 

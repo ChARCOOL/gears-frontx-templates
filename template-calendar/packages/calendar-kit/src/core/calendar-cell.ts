@@ -11,7 +11,6 @@ export const normalizeCalendarCell = (
     const endTime = parseLocalTime(cell.endTime);
     const start = utcInstant(cell.start);
     const end = utcInstant(cell.end);
-
     if (compareUtcInstants(start, end) >= 0) {
       return null;
     }
@@ -27,7 +26,6 @@ export const compareCalendarCells = (
   right: CalendarCell
 ): -1 | 0 | 1 => {
   const byStart = compareUtcInstants(left.start, right.start);
-
   if (byStart !== 0) {
     return byStart;
   }

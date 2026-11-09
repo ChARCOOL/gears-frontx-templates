@@ -32,7 +32,6 @@ const UNIT_CONFLICTS: readonly CalendarConflict[] = [
 
 const rootElement = (container: HTMLElement): HTMLElement => {
   const root = container.firstElementChild;
-
   if (!(root instanceof HTMLElement)) {
     throw new Error("Expected ConflictIndicator to render a root element");
   }

@@ -67,7 +67,6 @@ const translationsForMode = (
 
 const splitTranslationEntry = (entry: string): [string, string | undefined] => {
   const [id, value] = entry.split("=", 2);
-
   if (id === undefined) {
     return ["", value];
   }
@@ -307,7 +306,6 @@ describe("i18n acceptance: resolution and fallback", () => {
     ];
 
     const unknownId = "calendar.acceptance.unknown";
-
     const modes = ["id", "undefined", "empty"] as const;
 
     for (const mode of modes) {

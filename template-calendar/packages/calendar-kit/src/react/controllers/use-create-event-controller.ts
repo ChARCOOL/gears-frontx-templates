@@ -169,9 +169,7 @@ export const useCreateEventController = (
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
-
   // Host default writes are not user edits.
   const [isEdited, setIsEdited] = useState(false);
 
@@ -180,13 +178,9 @@ export const useCreateEventController = (
   const isDraftControlled = options.draft !== undefined;
   const isOpenControlled = options.open !== undefined;
   const isExpandedControlled = options.expanded !== undefined;
-
   const draft = isDraftControlled ? options.draft : internalDraft;
-
   const isOpen = isOpenControlled ? options.open : internalOpen;
-
   const isExpanded = isExpandedControlled ? options.expanded : internalExpanded;
-
   const isDirty = isEdited && !sameDraft(draft, initialDraft);
 
   const [previousOpen, setPreviousOpen] = useState(isOpen);
@@ -240,11 +234,9 @@ export const useCreateEventController = (
     }
 
     const validation = validateCreateEventDraft(draft);
-
     if (!validation.valid) {
       setErrors(validation.errors);
       setSubmitError(null);
-
       return undefined;
     }
 
@@ -277,7 +269,6 @@ export const useCreateEventController = (
 
     if (result?.error !== undefined) {
       setSubmitError(result.error);
-
       return result;
     }
 
@@ -294,7 +285,6 @@ export const useCreateEventController = (
 
     if (isDirty) {
       setIsDiscardDialogOpen(true);
-
       return;
     }
 

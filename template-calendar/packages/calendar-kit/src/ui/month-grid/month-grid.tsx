@@ -127,10 +127,8 @@ export interface MonthGridProps extends CalendarContextProps {
     context: CalendarEventRenderContext,
     anchor?: HTMLElement
   ) => void;
-  /**
-   * An empty part of a day was activated (in `selectionMode="none"`). `anchorRect` is the day
-   * cell's rectangle, for a popover.
-   */
+  /** An empty part of a day was activated (in `selectionMode="none"`). `anchorRect` is the day
+   * cell's rectangle, for a popover. */
   readonly onEmptyCellSelect?: (
     cell: CalendarCell,
     anchorRect: DOMRectReadOnly
@@ -676,7 +674,6 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     }
 
     const key = target.closest<HTMLElement>("[data-cell-key]")?.dataset.cellKey;
-
     return key === undefined ? undefined : cellsByKey.get(key)?.date;
   };
 
@@ -684,7 +681,6 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     event: ReactPointerEvent<HTMLDivElement>
   ): void => {
     const day = dayAtTarget(event.target);
-
     if (!rangeMode || day === undefined || event.button !== 0) {
       return;
     }
@@ -766,7 +762,6 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     if (rangeMode && event.key === "Escape" && rangeSelection.anchor !== null) {
       event.preventDefault();
       rangeSelection.cancel();
-
       return;
     }
 
@@ -1068,14 +1063,15 @@ const MonthGridContent = (props: MonthGridContentProps) => {
     className
   );
   const weeksHeading = t("calendar.month.weeks").toUpperCase();
+
   const gridRef = useRef<HTMLDivElement>(null);
+
   const { setMeasuredCellHeight } = controller;
   const rowCount = controller.rows.length;
 
   // Rows stretch to the view's height, so the chip capacity follows the rendered cell, not a constant.
   useLayoutEffect(() => {
     const grid = gridRef.current;
-
     if (grid === null) {
       return noopCleanup;
     }

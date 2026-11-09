@@ -10,6 +10,5 @@ export const nowCoversHourLabel = (
   now: UtcInstant
 ): boolean => {
   const sinceHourStart = Date.parse(now) - Date.parse(hourStart);
-
   return sinceHourStart >= 0 && sinceHourStart < nowLabelClearsAfterMs;
 };

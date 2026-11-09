@@ -41,7 +41,6 @@ const renderToolbar = (overrides: Partial<CalendarToolbarProps> = {}) =>
 
 const toolbarRoot = (container: HTMLElement): HTMLElement => {
   const root = container.firstElementChild;
-
   if (!(root instanceof HTMLElement)) {
     throw new Error("toolbar root is missing");
   }
@@ -312,9 +311,7 @@ describe("CalendarToolbar keyboard model", () => {
 
     renderToolbar({ defaultActiveView: "day", onViewChange });
     const user = userEvent.setup();
-
     const observedViews: string[] = [];
-
     const observedFocus: string[] = [];
 
     const observe = (): void => {
@@ -354,7 +351,6 @@ describe("CalendarToolbar keyboard model", () => {
   it("selects the first and last radio on Home and End", async () => {
     renderToolbar({ defaultActiveView: "week" });
     const user = userEvent.setup();
-
     const week = radio("Week");
     week.focus();
 
@@ -378,7 +374,6 @@ describe("CalendarToolbar keyboard model", () => {
       onViewChange,
     });
     const user = userEvent.setup();
-
     const day = radio("Day");
     day.focus();
     const observedViews: string[] = [];
@@ -415,9 +410,7 @@ describe("CalendarToolbar available views", () => {
       defaultActiveView: "day",
     });
     const user = userEvent.setup();
-
     const radios = screen.getAllByRole("radio");
-
     const observedViews: string[] = [];
 
     const observe = (): void => {
@@ -461,7 +454,6 @@ describe("CalendarToolbar available views", () => {
 describe("CalendarToolbar host integration", () => {
   it("resolves the English defaults when the host misses translations", () => {
     const { container } = renderToolbar({ t: missingTranslation });
-
     const root = toolbarRoot(container);
     expect({
       ariaLabel: root.getAttribute("aria-label"),

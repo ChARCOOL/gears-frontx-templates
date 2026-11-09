@@ -18,7 +18,6 @@ const activeOption = () =>
 
 const getShadowListbox = (root: ShadowRoot): HTMLElement => {
   const listboxes = root.querySelectorAll<HTMLElement>('[role="listbox"]');
-
   if (listboxes.length !== 1) {
     throw new Error(
       `Expected one shadow-root listbox, found ${listboxes.length}`
@@ -26,7 +25,6 @@ const getShadowListbox = (root: ShadowRoot): HTMLElement => {
   }
 
   const listbox = listboxes.item(0);
-
   if (listbox === null) {
     throw new Error("Expected a shadow-root listbox");
   }
@@ -57,7 +55,6 @@ type InternalListboxProps = Omit<ListboxProps, "anchorRef" | "ref"> & {
 
 const InternalListbox = ({ listboxRef, ...props }: InternalListboxProps) => {
   const anchorRef = useRef<HTMLDivElement>(null);
-
   return <Listbox {...props} ref={listboxRef} anchorRef={anchorRef} />;
 };
 
@@ -128,7 +125,6 @@ describe(Select, () => {
       `:scope > .${selectStyles.optionIcon}`
     );
     const indicator = selected.querySelector(":scope > span:last-child");
-
     const separator = screen.getByRole("separator");
     expect({
       indentClass: itemText?.firstElementChild?.classList.contains(
@@ -192,7 +188,6 @@ describe(Select, () => {
 
     fireEvent.keyDown(trigger, { key: "ArrowDown" });
     const listbox = screen.getByRole("listbox");
-
     const activeNames = [activeOption()?.textContent];
 
     fireEvent.keyDown(listbox, { key: "ArrowDown" });

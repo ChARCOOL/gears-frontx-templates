@@ -34,7 +34,6 @@ const NEW_YORK = parseIanaTimeZone("America/New_York");
 
 const MissingProbe = ({ id }: { readonly id: string }) => {
   const { t } = useCalendarLocalization();
-
   return <output data-testid="missing">{t(id)}</output>;
 };
 
@@ -177,7 +176,6 @@ describe("i18n acceptance: ownership and diagnostics", () => {
 
     const t: CalendarTranslate = (key, values) => {
       calls.push([key, values]);
-
       return `HOST:${key}`;
     };
 
@@ -271,7 +269,6 @@ describe("i18n acceptance: ownership and diagnostics", () => {
 
     const t: CalendarTranslate = (key, values) => {
       calls.push(key);
-
       return `A19:${key}${values?.week === undefined ? "" : `:${values.week}`}`;
     };
 

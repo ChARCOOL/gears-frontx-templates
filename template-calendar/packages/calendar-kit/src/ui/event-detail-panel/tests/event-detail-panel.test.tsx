@@ -23,18 +23,12 @@ import type { EventDetailPanelProps } from "../event-detail-panel";
 import dialogStyles from "../../primitives/dialog/dialog.module.css";
 
 const BERLIN = parseIanaTimeZone("Europe/Berlin");
-
 const DATE = calendarDate("2026-08-24");
-
 const EVENT_TITLE = "Chemistry";
-
 const SAFE_JOIN_URL = "https://meet.example.com/chemistry";
-
 const SAFE_HTTP_JOIN_URL = "http://meet.example.com/chemistry";
-
 // A rule the kit cannot describe, so the host translation names it.
 const RAW_RECURRENCE_RULE = "FREQ=WEEKLY;BYDAY=MO,WE;COUNT=6";
-
 // Joined so the no-script-url lint ignores the fixture.
 const SCRIPT_JOIN_URL = ["java", "script:alert(1)"].join("");
 
@@ -343,7 +337,6 @@ describe(EventDetailPanel, () => {
   it("passes the exact typed event to product body and action slots", () => {
     const renderBody = vi.fn<(event: CalendarEvent) => ReactNode>((event) => {
       expect(event).toBe(SCHEDULE_EVENT);
-
       return <p>Course code: {SCHEDULE_EVENT.metadata.courseCode}</p>;
     });
 

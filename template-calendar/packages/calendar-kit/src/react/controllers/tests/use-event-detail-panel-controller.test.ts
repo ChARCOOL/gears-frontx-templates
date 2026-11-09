@@ -16,7 +16,6 @@ import {
 } from "../use-event-detail-panel-controller";
 
 const SAFE_JOIN_URL = "https://meet.example.com/chemistry";
-
 const UNSAFE_SCRIPT_SCHEME = ["java", "script:"].join("");
 
 type TimedCalendarEvent = Extract<CalendarEvent, { readonly allDay: false }>;

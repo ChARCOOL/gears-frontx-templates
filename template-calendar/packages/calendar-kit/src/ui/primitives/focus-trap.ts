@@ -53,7 +53,6 @@ export const cycleTabFocus = (
   }
 
   const focusable = collectFocusable(panel);
-
   if (focusable.length === 0) {
     event.preventDefault();
     panel.focus(focusOptions);
@@ -63,7 +62,6 @@ export const cycleTabFocus = (
   const [first] = focusable;
   const last = focusable.at(-1) ?? first;
   const active = resolveActiveElement(panel);
-
   if (event.shiftKey && (active === first || active === panel)) {
     event.preventDefault();
     last.focus(focusOptions);

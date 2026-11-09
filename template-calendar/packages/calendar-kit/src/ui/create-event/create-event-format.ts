@@ -97,7 +97,6 @@ const parseWeekdays = (value: string | undefined): readonly Weekday[] => {
   }
 
   const codes = new Set(value.split(","));
-
   return WEEKDAY_ORDER.filter((weekday) => codes.has(WEEKDAY_CODES[weekday]));
 };
 
@@ -122,7 +121,6 @@ const parseRule = (rule: string): Map<string, string> => {
 
   for (const field of rule.split(";")) {
     const separator = field.indexOf("=");
-
     if (separator <= 0) {
       continue;
     }
@@ -151,7 +149,6 @@ export const resolveOverlayKind = (
 
 export const serializeCustomRepeat = (state: CustomRepeatState): string => {
   const frequency = frequencyForUnit(state.unit);
-
   const parts = [`FREQ=${frequency}`];
 
   if (state.interval > 1) {
@@ -225,7 +222,6 @@ export const formatRepeatSummary = (
   const frequency = fields.get("FREQ");
   const summary = t(frequencyTranslationKey(frequency));
   const byDay = fields.get("BYDAY");
-
   if (byDay === undefined) {
     return summary;
   }
@@ -265,7 +261,6 @@ export const dateRangeDayCount = (
 
   const start = Date.parse(`${startDate}T00:00:00Z`);
   const end = Date.parse(`${endDate}T00:00:00Z`);
-
   return Math.max(0, Math.round((end - start) / (24 * 60 * 60 * 1000)));
 };
 
@@ -280,7 +275,6 @@ export const formatTimeZone = (
     timeZoneName: "short",
   }).formatToParts(now === undefined ? new Date() : new Date(now));
   const offset = parts.find((part) => part.type === "timeZoneName")?.value;
-
   if (timeZone === "Europe/Berlin" && offset !== undefined) {
     return `${offset} ${t("calendar.timeZone.cityGroup.berlinBratislavaBelgrade")}`;
   }
@@ -364,6 +358,7 @@ export const formatRepeatHint = (
   }
 
   const state = parseCustomRepeatState(rule);
+
   const frequency =
     parseRule(rule ?? "").get("FREQ") === "YEARLY"
       ? t(

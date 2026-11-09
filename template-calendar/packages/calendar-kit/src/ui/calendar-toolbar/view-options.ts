@@ -53,6 +53,5 @@ export const visibleViewOptions = (
 ): readonly ViewOption[] =>
   available.flatMap((value) => {
     const option = VIEW_OPTIONS_BY_VALUE.get(value);
-
     return option === undefined ? [] : [option];
   });

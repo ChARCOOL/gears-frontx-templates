@@ -541,7 +541,6 @@ const RadioGroup = ({
     (option) => option.disabled !== true
   )?.value;
   let hasSelectedEnabledValue = false;
-
   const enabledValues: string[] = [];
 
   for (const option of options) {
@@ -584,25 +583,21 @@ const RadioGroup = ({
         node instanceof HTMLElement && node.getAttribute("role") === "radio"
     );
     const currentValue = radio?.dataset.calendarRadioValue;
-
     if (currentValue === undefined) {
       return;
     }
 
     const currentIndex = enabledValues.indexOf(currentValue);
-
     if (currentIndex === -1) {
       return;
     }
 
     const direction = resolveDirection(event.currentTarget);
-
     if (direction !== "rtl") {
       return;
     }
 
     const step = rtlStepFor(event.key);
-
     if (step === 0) {
       return;
     }

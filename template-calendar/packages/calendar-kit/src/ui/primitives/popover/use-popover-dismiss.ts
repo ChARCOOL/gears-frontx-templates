@@ -15,7 +15,6 @@ const isOwnedEvent = (
   belongsTo?: (target: EventTarget, panel: HTMLElement) => boolean
 ): boolean => {
   const path = event.composedPath();
-
   if (path.includes(panel) || isNestedLayerEvent(panel, path)) {
     return true;
   }
@@ -51,7 +50,6 @@ const usePopoverDismiss = ({
 
   useEffect(() => {
     const panel = panelRef.current;
-
     if (!open || !panel) {
       return noopCleanup;
     }
@@ -63,7 +61,6 @@ const usePopoverDismiss = ({
 
       if (event.key === "Escape") {
         const listbox = panel.querySelector('[role="listbox"]');
-
         if (listbox !== null) {
           return;
         }

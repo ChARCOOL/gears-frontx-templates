@@ -46,7 +46,6 @@ const StatefulTimeField = (
 
 const input = (): HTMLInputElement => {
   const field = screen.getByRole("combobox", { name: "Start time" });
-
   if (!(field instanceof HTMLInputElement)) {
     throw new Error("Expected a time input");
   }

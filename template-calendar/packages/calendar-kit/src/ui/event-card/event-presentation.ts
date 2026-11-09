@@ -46,7 +46,6 @@ const resolvePastState = <Payload>(
   }
 
   const { currentInstant } = input;
-
   if (currentInstant === undefined) {
     return false;
   }

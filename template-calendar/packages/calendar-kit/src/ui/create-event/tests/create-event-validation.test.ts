@@ -30,7 +30,6 @@ declare global {
 }
 
 const DATE = calendarDate("2026-08-24");
-
 const NEXT_DATE = calendarDate("2026-08-25");
 
 const draft = (): TimedCreateEventDraft => ({
