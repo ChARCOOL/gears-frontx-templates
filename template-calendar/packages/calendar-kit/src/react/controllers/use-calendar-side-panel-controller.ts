@@ -33,7 +33,6 @@ const activeElementFor = (toggle: HTMLButtonElement | null): Element | null => {
 
 const needsFocus = (toggle: HTMLButtonElement | null): boolean => {
   const active = activeElementFor(toggle);
-
   if (!active) {
     return true;
   }

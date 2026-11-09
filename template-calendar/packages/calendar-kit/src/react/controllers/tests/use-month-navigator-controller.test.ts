@@ -17,7 +17,6 @@ import { useMonthNavigatorController } from "../use-month-navigator-controller";
 type ControllerOptions = Parameters<typeof useMonthNavigatorController>[0];
 
 const AUCKLAND = parseIanaTimeZone("Pacific/Auckland");
-
 const DATE = calendarDate("2026-08-24");
 
 const timedEvent = (

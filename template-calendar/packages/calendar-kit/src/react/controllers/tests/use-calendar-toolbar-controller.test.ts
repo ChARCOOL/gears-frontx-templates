@@ -16,9 +16,7 @@ import { useCalendarToolbarController } from "../use-calendar-toolbar-controller
 import type { UseCalendarToolbarControllerOptions } from "../use-calendar-toolbar-controller";
 
 const DATE = calendarDate("2026-08-24");
-
 const VIEWS: readonly CalendarView[] = ["day", "week", "month", "agenda"];
-
 const scratchButtons: HTMLButtonElement[] = [];
 
 const options = (
@@ -275,7 +273,6 @@ describe("useCalendarToolbarController roving keyboard model", () => {
     );
 
     const indexRef = { current: 0 };
-
     const user = userEvent.setup();
 
     render(
@@ -305,7 +302,6 @@ describe("useCalendarToolbarController roving keyboard model", () => {
     );
 
     const indexRef = { current: 0 };
-
     const user = userEvent.setup();
 
     render(
@@ -331,7 +327,6 @@ describe("useCalendarToolbarController roving keyboard model", () => {
     );
 
     const indexRef = { current: 0 };
-
     const user = userEvent.setup();
 
     render(
@@ -357,7 +352,6 @@ describe("useCalendarToolbarController roving keyboard model", () => {
     );
 
     const indexRef = { current: 0 };
-
     const user = userEvent.setup();
 
     render(
@@ -387,7 +381,6 @@ describe("useCalendarToolbarController roving keyboard model", () => {
     );
 
     const indexRef = { current: 0 };
-
     const user = userEvent.setup();
 
     render(
@@ -413,7 +406,6 @@ describe("useCalendarToolbarController roving keyboard model", () => {
     );
 
     const indexRef = { current: 0 };
-
     const user = userEvent.setup();
 
     render(
@@ -441,7 +433,6 @@ describe("useCalendarToolbarController roving keyboard model", () => {
     );
 
     const indexRef = { current: 0 };
-
     const user = userEvent.setup();
 
     render(
@@ -467,7 +458,6 @@ describe("useCalendarToolbarController roving keyboard model", () => {
     );
 
     const indexRef = { current: 0 };
-
     const user = userEvent.setup();
 
     render(
@@ -508,7 +498,6 @@ describe("useCalendarToolbarController available views", () => {
     );
 
     const indexRef = { current: 0 };
-
     const user = userEvent.setup();
 
     render(
@@ -539,7 +528,6 @@ describe("useCalendarToolbarController available views", () => {
     );
 
     const indexRef = { current: 0 };
-
     const user = userEvent.setup();
 
     render(

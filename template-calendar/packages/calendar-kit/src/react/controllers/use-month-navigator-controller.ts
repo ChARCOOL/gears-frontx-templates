@@ -298,25 +298,20 @@ export const useMonthNavigatorController = (
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       selectDate(date);
-
       return;
     }
 
     const dayStep = dayStepForKey(event.key);
-
     if (dayStep !== null) {
       event.preventDefault();
       focusDate(addCalendarDays(date, dayStep));
-
       return;
     }
 
     const monthStep = monthStepForKey(event.key);
-
     if (monthStep !== null) {
       event.preventDefault();
       stepMonth(monthStep);
-
       return;
     }
 
@@ -327,7 +322,6 @@ export const useMonthNavigatorController = (
     event.preventDefault();
 
     const week = weeks.find((candidate) => candidate.dates.includes(date));
-
     if (!week) {
       return;
     }

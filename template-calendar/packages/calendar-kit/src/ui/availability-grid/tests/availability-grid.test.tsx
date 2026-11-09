@@ -15,7 +15,6 @@ import { AvailabilityGrid } from "../availability-grid";
 import type { AvailabilityGridProps } from "../availability-grid";
 
 const MONDAY = "2026-08-24";
-
 const TUESDAY = "2026-08-25";
 
 const cell = (
@@ -37,21 +36,13 @@ const cell = (
 };
 
 const mon08 = cell(MONDAY, "08:00");
-
 const mon09Blocked = cell(MONDAY, "09:00", false);
-
 const mon10 = cell(MONDAY, "10:00");
-
 const tue08 = cell(TUESDAY, "08:00");
-
 const tue09 = cell(TUESDAY, "09:00");
-
 const tue10 = cell(TUESDAY, "10:00");
-
 const cells = [mon08, mon09Blocked, mon10, tue08, tue09, tue10] as const;
-
 const keyboardMon09 = cell(MONDAY, "09:00");
-
 const keyboardCells = [mon08, keyboardMon09, mon10] as const;
 
 const renderCell = (
@@ -90,7 +81,6 @@ const renderAvailability = (overrides: Partial<AvailabilityGridProps> = {}) => {
 const getRenderedCell = (date: string, time: string): HTMLElement => {
   const content = screen.getByText(`${date} ${time}`);
   const element = content.closest<HTMLElement>('[role="gridcell"]');
-
   if (!element) {
     throw new Error(
       `Expected ${date} ${time} to be rendered inside a gridcell`
@@ -268,7 +258,6 @@ describe(AvailabilityGrid, () => {
     const onSelectedRangeChange =
       vi.fn<(range: CalendarSelectionRange | null) => void>();
     const selectedRange = expectedRange(mon08, mon10, [mon08, mon10]);
-
     const selectedStates: boolean[] = [];
 
     const renderSlot = vi.fn<
