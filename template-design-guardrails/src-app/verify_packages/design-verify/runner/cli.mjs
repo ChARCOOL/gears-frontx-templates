@@ -9,26 +9,46 @@
  * This replaces the ad-hoc CDP scripts agents previously authored per run
  * (the guardrails pilot wrote and re-ran /tmp/verify.mjs + /tmp/shots.mjs
  * from scratch - minutes of throwaway harness work every time). The runner
- * is the owned form of that harness; the verify-interface skill's ban on
+ * is the owned form of that harness; the design skill's ban on
  * improvised browser automation stands, and this is the sanctioned path.
  *
  * Invocation (from the shell project root):
  *   npm run verify:ui --workspace=@gears-frontx/design-verify -- \
- *     --routes /login,/tasks --widths 1440,768,320 --themes light,dark
+ *     --routes /login,/tasks [--design-md DESIGN.md]
+ *
+ * The default widths are 1440, 768, 390 and 320 CSS px and the default
+ * themes light and dark.
+ *
+ * Every finding carries the gate the frontx-design skill's
+ * rules/render-check.json gives its rule id, and a finding the per-screen
+ * waiver file covers moves to its state's waived list (runner/waivers.mjs).
  *
  * See --help (runner/config.mjs USAGE) for every flag. Exit codes: 0 ran
  * (findings are advisory), 1 findings + --fail-on-findings, 2 environment
- * failure or a requested screenshot that could not be produced - an
- * unverified state is never reported as a pass.
+ * failure, an input the run cannot honour (a bad flag, baseline or waiver
+ * file, a missing skill rule file) or a requested screenshot that could not
+ * be produced - an unverified state is never reported as a pass.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { parseArgs, expandMatrix, resolveServerCwd, shotName, USAGE } from './config.mjs';
+import { parseArgs, expandMatrix, resolvePaths, resolveServerCwd, shotName, USAGE } from './config.mjs';
 import { CdpSession, newTarget } from './cdp.mjs';
 import { findChrome, launchChrome } from './chrome.mjs';
 import { isUrlReachable, waitForUrl, startServer } from './server.mjs';
-import { buildReport, diffReports, exitCode, summaryLines } from './report.mjs';
+import {
+  buildReport,
+  diffReports,
+  exitCode,
+  gateLookup,
+  measuredScreens,
+  summaryLines,
+  sweepState,
+} from './report.mjs';
+import { appliedThemeExpression, themeSeedExpression } from './theme.mjs';
+import { ContractError, designMdParser, isEntryPoint, projectRoot, readSkillJson } from './skill.mjs';
+import { CONTRAST_CHECK, contrastPairs, contrastState, ContrastInputError, probeExpression } from './contrast.mjs';
+import { coversRendered, loadWaivers, waiverReport, WaiverError } from './waivers.mjs';
 
 const SWEEP_LINE = /\[design-defects\]/;
 const VERIFY_PKG_FAILURE = /\[verify-packages\].*(none installed|failed to load)/;
@@ -76,17 +96,61 @@ async function activateMenu(session, label, timeoutMs) {
   }
 }
 
-async function main() {
-  const { config, errors } = parseArgs(process.argv.slice(2));
-  if (config.help) {
+/**
+ * The runner. Inputs are checked before any server, browser or sweep work,
+ * so an input the run cannot honour returns 2 at once.
+ *
+ * @param {string[]} [argv]
+ * @returns {Promise<number>} exit code
+ */
+export async function main(argv = process.argv.slice(2)) {
+  const parsed = parseArgs(argv);
+  if (parsed.config.help) {
     console.log(USAGE);
     return 0;
   }
-  if (errors.length > 0) {
-    for (const error of errors) console.error(`design-verify: ${error}`);
+  if (parsed.errors.length > 0) {
+    for (const error of parsed.errors) console.error(`design-verify: ${error}`);
     console.error('run with --help for usage');
     return 2;
   }
+  const root = projectRoot();
+  const config = resolvePaths(parsed.config, root);
+  const mode = config.menus.length > 0 ? 'menu' : 'route';
+
+  // The gate of every rule id and the waiver file, before any sweeping: a
+  // waiver the run cannot honour fails now, not after minutes of work.
+  // The DESIGN.md pairs too, so a broken DESIGN.md fails before any browser work.
+  let gateFor;
+  let reportedGates;
+  let waivers;
+  let contrastSpec;
+  /** @type {import('./contrast.mjs').ContrastPair[] | undefined} */
+  let pairs;
+  let parser;
+  try {
+    const registry = readSkillJson('rules/quality-gates.json');
+    const renderCheck = readSkillJson('rules/render-check.json');
+    gateFor = gateLookup(renderCheck);
+    reportedGates = renderCheck.ruleGates.map((row) => row.gate);
+    waivers = loadWaivers(config.waivers || undefined, root, registry);
+    if (config.designMd) {
+      contrastSpec = renderCheck.designMdContrast;
+      parser = await designMdParser();
+      pairs = contrastPairs(parser.readDesignMd(config.designMd).front, contrastSpec);
+    }
+  } catch (error) {
+    const known =
+      error instanceof ContractError ||
+      error instanceof WaiverError ||
+      error instanceof ContrastInputError ||
+      (parser !== undefined && error instanceof parser.InputError);
+    if (!known) throw error;
+    console.error(`design-verify: ${error.message}`);
+    return 2;
+  }
+  const coversState = coversRendered(mode);
+  const probedThemes = new Set();
 
   // Read the baseline up front: a bad path should fail before minutes of
   // sweeping, not after.
@@ -148,12 +212,12 @@ async function main() {
       if (pageKey !== currentKey) {
         const beforeNav = session.consoleLines.length;
         await session.navigate(menuMode ? config.url : joinUrl(config.url, route));
-        // Theme restore reads localStorage on mount, so set it on the app's
-        // origin and reload for it to take effect (the checker re-sweeps).
+        // The app restores its theme from localStorage at boot, so store it on
+        // the app's origin and reload for it to take effect (the checker
+        // re-sweeps). runner/theme.mjs says which keys and how each state
+        // checks that the theme took.
         await session.waitForConsoleLine(SWEEP_LINE, beforeNav, config.sweepTimeoutMs);
-        const set = await session.evaluate(
-          `localStorage.setItem(${JSON.stringify(config.themeKey)}, JSON.stringify(${JSON.stringify(theme)}))`,
-        );
+        const set = await session.evaluate(themeSeedExpression(config.themeKey, theme));
         if (set.error) {
           record.environmentError = `could not set theme: ${set.error}`;
           states.push(record);
@@ -180,6 +244,33 @@ async function main() {
               `at ${route} (${theme}) - attempting on-demand sweep anyway`,
           );
         }
+        // Tokens are page-wide: probe the DESIGN.md pairs once per theme, on
+        // the first page that theme loads.
+        if (pairs && !probedThemes.has(theme)) {
+          probedThemes.add(theme);
+          await session.setWidth(width);
+          await new Promise((r) => setTimeout(r, config.settleMs));
+          const applied = await session.evaluate(appliedThemeExpression(config.themeKey));
+          const probe = await session.evaluate(probeExpression(pairs));
+          const contrast = contrastState({
+            theme,
+            width,
+            pairs,
+            applied,
+            themeKey: config.themeKey,
+            probe,
+            spec: contrastSpec,
+            gateFor,
+          });
+          states.push(contrast);
+          console.log(
+            `design-verify: DESIGN.md contrast ${theme} - ` +
+              (contrast.environmentError
+                ? `ENVIRONMENT: ${contrast.environmentError}`
+                : `${contrast.contrast.length} pair(s) measured, ${contrast.findings.length} below threshold` +
+                  (contrast.needsReview.length > 0 ? `, ${contrast.needsReview.length} needing review` : '')),
+          );
+        }
         if (menuMode) {
           const activationError = await activateMenu(session, route, config.sweepTimeoutMs);
           if (activationError) {
@@ -195,18 +286,18 @@ async function main() {
       await session.setWidth(width);
       await new Promise((r) => setTimeout(r, config.settleMs));
       const before = session.consoleLines.length;
+      const applied = await session.evaluate(appliedThemeExpression(config.themeKey));
       const sweep = await session.evaluate('window.__frontxDesignDefects()', {
         awaitPromise: true,
       });
-      if (sweep.error !== undefined) {
-        record.environmentError = /is not a function|undefined/.test(sweep.error)
-          ? `window.__frontxDesignDefects is unavailable - is the design-verify package installed and the app in dev mode? (${sweep.error})`
-          : `sweep threw: ${sweep.error}`;
-      } else if (!Array.isArray(sweep.value)) {
-        record.environmentError = `sweep returned a non-array: ${JSON.stringify(sweep.value)}`;
-      } else {
-        record.findings = sweep.value;
-      }
+      sweepState(record, {
+        applied,
+        themeKey: config.themeKey,
+        sweep,
+        gateFor,
+        waivers: waivers.waivers,
+        coversState,
+      });
       record.consoleLines = session.consoleLines.slice(before);
 
       if (config.screenshots) {
@@ -223,18 +314,45 @@ async function main() {
       }
       states.push(record);
       const count = record.findings?.length;
+      const undecided = record.needsReview?.length ?? 0;
+      const waivedCount = record.waived?.length ?? 0;
       console.log(
         `design-verify: ${route} ${theme} ${width}px - ` +
           (record.environmentError
             ? `ENVIRONMENT: ${record.environmentError}`
-            : count === 0
+            : count === 0 && undecided === 0
               ? 'clean'
-              : `${count} finding(s)`) +
+              : `${count} finding(s)` + (undecided > 0 ? `, ${undecided} needing review` : '')) +
+          (waivedCount > 0 ? `, ${waivedCount} waived` : '') +
           (record.screenshotError ? ` - SCREENSHOT FAILED: ${record.screenshotError}` : ''),
       );
     }
 
-    const report = buildReport({ baseUrl: config.url, themeKey: config.themeKey }, states);
+    // A theme whose every page failed to load was never probed: say so
+    // rather than leave its pairs out of the report.
+    for (const theme of pairs ? config.themes : []) {
+      if (probedThemes.has(theme)) continue;
+      states.push({
+        check: CONTRAST_CHECK,
+        route: 'DESIGN.md',
+        theme,
+        environmentError: 'contrast not measured: no page of this theme loaded',
+      });
+    }
+
+    const report = buildReport(
+      {
+        baseUrl: config.url,
+        themeKey: config.themeKey,
+        waivers: waiverReport(waivers, {
+          mode,
+          gates: reportedGates,
+          exercised: measuredScreens(states),
+          requested: menuMode ? config.menus : config.routes,
+        }),
+      },
+      states,
+    );
     const diff = baselineReport ? diffReports(baselineReport, report) : undefined;
     if (diff) report.baselineComparison = { baseline: config.baseline, ...diff };
     const reportPath = path.join(config.outDir, 'findings.json');
@@ -250,14 +368,17 @@ async function main() {
 /**
  * @typedef {{route: string, theme: string, width: number,
  *   findings?: Array<{id?: string, detail?: string, target?: string}>,
- *   environmentError?: string, screenshot?: string, screenshotError?: string,
+ *   needsReview?: Array<{id?: string, detail?: string, target?: string}>,
+ *   environmentError?: string, appliedTheme?: string | null, screenshot?: string, screenshotError?: string,
  *   consoleLines?: string[]}} StateRecord
  */
 
-main().then(
-  (code) => process.exit(code),
-  (error) => {
-    console.error(`design-verify: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(2);
-  },
-);
+if (isEntryPoint(import.meta.url)) {
+  main().then(
+    (code) => process.exit(code),
+    (error) => {
+      console.error(`design-verify: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(2);
+    },
+  );
+}
