@@ -14,7 +14,6 @@ type ControllerOptions = Parameters<typeof useWorldClocksController>[0];
 const BERLIN = parseIanaTimeZone("Europe/Berlin");
 const SINGAPORE = parseIanaTimeZone("Asia/Singapore");
 const LONDON = parseIanaTimeZone("Europe/London");
-
 const NOW = utcInstant("2026-08-24T13:59:00.000Z");
 
 const storedTimeZoneIds = (ids: readonly string[]): readonly IanaTimeZone[] =>

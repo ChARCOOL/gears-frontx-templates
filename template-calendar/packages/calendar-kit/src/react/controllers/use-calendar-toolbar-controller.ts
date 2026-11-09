@@ -16,7 +16,6 @@ import {
 import { parseIanaTimeZone } from "../../core/validation";
 
 const ALL_VIEWS: readonly CalendarView[] = ["day", "week", "month", "agenda"];
-
 const DEFAULT_TIME_ZONE = parseIanaTimeZone("UTC");
 
 export interface ToolbarTitleRange extends Readonly<Record<string, string>> {
@@ -105,7 +104,6 @@ const rovingTargetFor = (
   }
 
   const step = rovingStepFor(key, direction);
-
   if (step === 0) {
     return null;
   }
