@@ -60,7 +60,6 @@ export interface UseAvailabilityGridControllerResult {
 }
 
 const DEFAULT_INTERACTION_MODE = "paint" as const;
-
 const FIRST_CELL: AvailabilityFocusedCell = { columnIndex: 0, rowIndex: 0 };
 
 export const useAvailabilityGridController = (
@@ -149,17 +148,13 @@ export const useAvailabilityGridController = (
     }
   };
 
-  /**
-   * The cell a key moves to. Up and down skip slots the column has no cell for (the
-   * spring-forward hour, sparse days); a sideways move lands on the nearest row the
-   * target column has, preferring the later one.
-   */
+  /** The cell a key moves to. Up and down skip slots the column has no cell for (spring-forward hour,
+   * sparse days); a sideways move lands on the nearest row, preferring the later one. */
   const findMoveTarget = (
     key: string,
     from: AvailabilityFocusedCell
   ): AvailabilityFocusedCell | undefined => {
     const step = stepGridPosition(key, direction, from, columns.length);
-
     if (step.columnIndex < 0 || step.columnIndex >= columns.length) {
       return undefined;
     }
@@ -202,7 +197,6 @@ export const useAvailabilityGridController = (
     }
 
     const range = buildAvailabilityRange(options.cells, cell, cell);
-
     if (range === null) {
       return;
     }
@@ -235,7 +229,6 @@ export const useAvailabilityGridController = (
     if (interactionMode === "read-only" || range === null) {
       paintAnchorRef.current = null;
       setCurrentPaint(null);
-
       return;
     }
 
@@ -266,6 +259,7 @@ export const useAvailabilityGridController = (
 
     const from = { columnIndex, rowIndex };
     const target = findMoveTarget(event.key, from);
+
     const nextCell =
       target === undefined
         ? undefined
@@ -276,6 +270,7 @@ export const useAvailabilityGridController = (
     }
 
     const storedAnchor = keyboardAnchorRef.current;
+
     const anchor =
       storedAnchor?.signature === cellsSignature
         ? storedAnchor.cell
@@ -285,7 +280,6 @@ export const useAvailabilityGridController = (
 
     if (!event.shiftKey || interactionMode !== "paint") {
       keyboardAnchorRef.current = { cell: nextCell, signature: cellsSignature };
-
       return;
     }
 
@@ -306,7 +300,6 @@ export const useAvailabilityGridController = (
   ): void => {
     if (isGridNavigationKey(event.key)) {
       moveFocus(event, rowIndex, columnIndex);
-
       return;
     }
 

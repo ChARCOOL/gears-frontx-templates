@@ -35,7 +35,6 @@ export const readTimeZoneOption = (
 
 export const zoneCityLabel = (timeZone: IanaTimeZone | string): string => {
   const segment = timeZone.split("/").pop() ?? timeZone;
-
   return segment.replaceAll("_", " ");
 };
 

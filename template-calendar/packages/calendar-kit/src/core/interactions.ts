@@ -76,7 +76,6 @@ export const validateInteractionEvent = (
 ): InteractionValidationResult => {
   // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-mode-gating:p1:inst-gate-return
   const blocker = eventActionBlocker(event);
-
   if (blocker !== null) {
     return { reason: blocker, valid: false };
   }
@@ -102,9 +101,7 @@ const assertMode = (mode: WeekGridInteractionMode): void => {
 const wallDurationMinutes = (cell: CalendarCell): number => {
   const start = minutesFromLocalTime(cell.startTime);
   const end = minutesFromLocalTime(cell.endTime);
-
   const dayDifference = end < start ? 1 : 0;
-
   const duration = dayDifference * MINUTES_PER_DAY + end - start;
 
   return duration > 0
@@ -121,7 +118,6 @@ const advancePoint = (
   const days = Math.floor(total / MINUTES_PER_DAY);
   const minuteOfDay = total - days * MINUTES_PER_DAY;
   const nextDate = addCalendarDays(date, days);
-
   return { date: nextDate, time: localTimeFromMinutes(minuteOfDay) };
 };
 
@@ -162,13 +158,11 @@ const inferCells = (
   // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-paint-range:p1:inst-paint-extend
   const durationMilliseconds = Date.parse(start.end) - Date.parse(start.start);
   const durationMinutes = wallDurationMinutes(start);
-
   if (durationMilliseconds <= 0 || durationMinutes <= 0) {
     return compareCalendarCells(start, end) === 0 ? [start] : [start, end];
   }
 
   const cells: CalendarCell[] = [start];
-
   let cursor = start;
   let iterations = 0;
 
@@ -177,7 +171,6 @@ const inferCells = (
     iterations < MAX_INFERRED_CELLS
   ) {
     const nextStartInstant = cursor.end;
-
     if (compareUtcInstants(nextStartInstant, end.start) >= 0) {
       break;
     }
@@ -221,7 +214,6 @@ export const buildSelectionRange = (
   // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-paint-range:p1:inst-paint-return
   const validFirst = normalizeCalendarCell(first);
   const validSecond = normalizeCalendarCell(second);
-
   if (!validFirst || !validSecond) {
     return null;
   }
@@ -232,14 +224,12 @@ export const buildSelectionRange = (
       : { end: validFirst, start: validSecond };
 
   const cells = inferCells(ordered.start, ordered.end, timeZone);
-
   if (cells.length === 0) {
     return null;
   }
 
   const start = arrayAt(cells, 0);
   const end = arrayAt(cells, -1);
-
   if (!start || !end) {
     return null;
   }
@@ -291,7 +281,6 @@ const transitionPaintStart = (
   }
 
   const cell = normalizeCalendarCell(action.cell);
-
   if (!cell) {
     return state;
   }
@@ -312,13 +301,11 @@ const transitionPaintUpdate = (
   }
 
   const cell = normalizeCalendarCell(action.cell);
-
   if (!cell) {
     return state;
   }
 
   const paint = buildSelectionRange(state.paintAnchor, cell, state.timeZone);
-
   return paint ? { ...state, paint } : state;
 };
 
@@ -331,13 +318,11 @@ const transitionMoveStart = (
   }
 
   const eventValidation = validateInteractionEvent(action.event);
-
   if (!eventValidation.valid) {
     return state;
   }
 
   const from = normalizeCalendarCell(action.from);
-
   if (!from) {
     return state;
   }
@@ -359,7 +344,6 @@ const transitionMoveTarget = (
   }
 
   const to = action.to ? normalizeCalendarCell(action.to) : null;
-
   return { ...state, drag: { ...state.drag, to: to ?? state.drag.from } };
 };
 
@@ -375,6 +359,7 @@ const transitionMoveDrop = (state: InteractionState): InteractionState => {
     ? { ...state, drag: null }
     : { ...state, drag: null, pendingMove: drag };
 };
+
 // @cpt-end:cpt-template-calendar-calendar-kit-state-week-grid-pending-move:p2:inst-pm-idle-to-pending
 
 const transitionMoveCancel = (

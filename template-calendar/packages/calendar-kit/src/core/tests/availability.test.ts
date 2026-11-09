@@ -12,9 +12,7 @@ import type { CalendarAvailabilityCell } from "../model";
 const mon08 = cell("2026-08-24", "08:00");
 const mon09 = cell("2026-08-24", "09:00");
 const mon10 = cell("2026-08-24", "10:00");
-
 const mon10Blocked = { ...mon10, available: false };
-
 const mon11 = cell("2026-08-24", "11:00");
 const tue09 = cell("2026-08-25", "09:00");
 const tue10 = cell("2026-08-25", "10:00");
@@ -92,6 +90,7 @@ describe(buildAvailabilityRows, () => {
       halfHour("2026-10-31", "01:30", "2026-10-31T05:30:00.000Z"),
       halfHour("2026-10-31", "02:00", "2026-10-31T06:00:00.000Z"),
     ];
+
     const sunday = [
       halfHour("2026-11-01", "00:30", "2026-11-01T04:30:00.000Z"),
       halfHour("2026-11-01", "01:00", "2026-11-01T05:00:00.000Z"),
@@ -100,6 +99,7 @@ describe(buildAvailabilityRows, () => {
       halfHour("2026-11-01", "01:30", "2026-11-01T06:30:00.000Z"),
       halfHour("2026-11-01", "02:00", "2026-11-01T07:00:00.000Z"),
     ];
+
     const rows = buildAvailabilityRows(
       buildAvailabilityColumns([...sunday, ...saturday])
     );
@@ -226,7 +226,6 @@ describe(buildAvailabilityRange, () => {
   it("uses span bounds rather than membership and drops malformed supplied cells", () => {
     const early = cell("2026-08-24", "08:30");
     const late = cell("2026-08-24", "10:30");
-
     const malformed = { ...mon10 };
     Object.defineProperty(malformed, "start", { value: "not-an-instant" });
 

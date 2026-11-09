@@ -146,7 +146,6 @@ const positionalTimedEventThree = (
 ): TimedEventInput<PositionalPayload> => {
   const [first, second, third] = args;
   const defaults = positionalDefaults(id);
-
   if (isIso(first) && isIso(second) && typeof third === "boolean") {
     return {
       ...defaults,
@@ -200,7 +199,6 @@ const positionalTimedEventFour = (
 ): TimedEventInput<PositionalPayload> => {
   const [first, second, third, fourth] = args;
   const defaults = positionalDefaults(id);
-
   if (isDate(first) && isTime(second) && isDate(third) && isTime(fourth)) {
     return {
       ...defaults,
@@ -247,7 +245,6 @@ const positionalTimedEventFiveOrMore = (
 ): TimedEventInput<PositionalPayload> => {
   const [first, second, third, fourth, fifth, sixth] = args;
   const defaults = positionalDefaults(id);
-
   if (typeof first !== "string" || !isDate(second) || !isTime(third)) {
     return defaults;
   }
@@ -385,7 +382,6 @@ export function allDayEvent<Payload = unknown>(
       : { endDate: fourth, id, startDate: third, title: second };
 
   const options = typeof first === "string" ? positional(first) : first;
-
   const startDate = dateValue(options.startDate ?? "2026-08-24");
   const endDate = dateValue(options.endDate ?? "2026-08-25");
 

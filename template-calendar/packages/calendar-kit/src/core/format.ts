@@ -27,7 +27,6 @@ const DEFAULT_VIEWER_DATE_TIME_OPTIONS = {
 } as const;
 
 const DEFAULT_VIEWER_DATE_OPTIONS = { dateStyle: "medium" } as const;
-
 const DEFAULT_VIEWER_TIME_OPTIONS = { timeStyle: "short" } as const;
 
 type DurationUnit = "day" | "hour" | "minute";
@@ -178,7 +177,6 @@ export const formatDuration = (
   assertLocale(locale);
 
   const elapsedMilliseconds = Date.parse(validEnd) - Date.parse(validStart);
-
   if (elapsedMilliseconds <= 0) {
     throw invalidTemporalValue("Duration end must be after start");
   }
@@ -187,7 +185,6 @@ export const formatDuration = (
   const days = Math.floor(totalMinutes / MINUTES_PER_DAY);
   const hours = Math.floor((totalMinutes % MINUTES_PER_DAY) / MINUTES_PER_HOUR);
   const minutes = totalMinutes % MINUTES_PER_HOUR;
-
   const parts: string[] = [];
 
   if (days > 0) {
@@ -228,7 +225,6 @@ export const formatRelativeHint = (
   });
 
   const magnitude = Math.abs(deltaMinutes);
-
   if (magnitude < MINUTES_PER_HOUR) {
     return relativeTimeFormat.format(deltaMinutes, "minute");
   }
