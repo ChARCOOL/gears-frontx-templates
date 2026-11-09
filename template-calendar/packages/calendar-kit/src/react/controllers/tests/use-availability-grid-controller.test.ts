@@ -30,9 +30,7 @@ const WEDNESDAY = "2026-08-26";
 
 const availabilityCells = (): CalendarAvailabilityCell[] => {
   const days = [MONDAY, TUESDAY, WEDNESDAY];
-
   const hours = ["08:00", "09:00", "10:00", "11:00"];
-
   const blocked = new Set<string>([`${MONDAY}:10:00`, `${TUESDAY}:09:00`]);
 
   return days.flatMap((day) =>
@@ -44,7 +42,6 @@ const mon08 = cell(MONDAY, "08:00");
 const mon09 = cell(MONDAY, "09:00");
 const mon10Blocked = cell(MONDAY, "10:00", false);
 const mon11 = cell(MONDAY, "11:00");
-
 const wed08 = cell(WEDNESDAY, "08:00");
 const wed09 = cell(WEDNESDAY, "09:00");
 const wed10 = cell(WEDNESDAY, "10:00");
@@ -52,7 +49,6 @@ const wed11 = cell(WEDNESDAY, "11:00");
 
 const keyEvent = (key: string, shiftKey = false) => {
   const event = keyDownEvent(key, { shiftKey });
-
   return { event, preventDefault: vi.spyOn(event, "preventDefault") };
 };
 
@@ -640,7 +636,6 @@ describe(useAvailabilityGridController, () => {
   it("rejects painting, extending, clearing, and activation in read-only mode", () => {
     const onPaintSelect = vi.fn<() => void>();
     const onSelectedRangeChange = vi.fn<() => void>();
-
     const defaultRange = { cells: [mon08, mon09], end: mon09, start: mon08 };
 
     const { result } = renderHook(() =>
@@ -689,7 +684,6 @@ describe(useAvailabilityGridController, () => {
   it("preserves a pending paint while the controlled selection changes", () => {
     const onPaintSelect = vi.fn<() => void>();
     const onSelectedRangeChange = vi.fn<() => void>();
-
     const hostRange = { cells: [wed08, wed09], end: wed09, start: wed08 };
 
     const { result, rerender } = renderHook(
@@ -734,7 +728,6 @@ describe(useAvailabilityGridController, () => {
   it("emits only the controlled selection when a pending paint ends", () => {
     const onPaintSelect = vi.fn<() => void>();
     const onSelectedRangeChange = vi.fn<() => void>();
-
     const hostRange = { cells: [wed08, wed09], end: wed09, start: wed08 };
 
     const { result, rerender } = renderHook(
@@ -772,7 +765,6 @@ describe(useAvailabilityGridController, () => {
 
   it("ignores invalid pending-paint completion gestures", () => {
     const onPaintSelect = vi.fn<() => void>();
-
     const hostRange = { cells: [wed08, wed09], end: wed09, start: wed08 };
 
     const { result, rerender } = renderHook(

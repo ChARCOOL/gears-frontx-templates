@@ -20,7 +20,6 @@ export const useControlledValue = <Value>({
   const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
 
   const isControlled = value !== undefined;
-
   const currentValue = isControlled ? value : uncontrolledValue;
 
   const setValue = useCallback(

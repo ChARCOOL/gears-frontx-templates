@@ -186,7 +186,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]),
-  :host:not([data-theme="light"]),
+  :host(:not([data-theme="light"])),
   [data-theme]:not([data-theme="light"]) {
     --cal-color-surface: var(--surface, #0f131b);
     --cal-color-raised: var(--surface-elevated, #131824);
