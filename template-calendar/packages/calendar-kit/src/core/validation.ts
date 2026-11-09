@@ -91,7 +91,6 @@ const getDatePartsFormatter = (timeZone: IanaTimeZone): Intl.DateTimeFormat =>
 const readInstantCandidate = (value: string | Date | number): string => {
   if (value instanceof Date) {
     const date = new Date(value);
-
     if (!Number.isFinite(date.getTime())) {
       throw invalidTemporalValue(`Invalid UTC instant: ${String(value)}`);
     }
@@ -101,7 +100,6 @@ const readInstantCandidate = (value: string | Date | number): string => {
 
   if (Number.isFinite(value)) {
     const date = new Date(value);
-
     if (!Number.isFinite(date.getTime())) {
       throw invalidTemporalValue(`Invalid UTC instant: ${String(value)}`);
     }
@@ -130,7 +128,6 @@ const createUtcDate = (
 
 const isCalendarDateValue = (value: string): value is CalendarDate => {
   const match = CALENDAR_DATE_PATTERN.exec(value);
-
   if (match === null) {
     return false;
   }
@@ -157,7 +154,6 @@ export const calendarDate = (value: string): CalendarDate => {
 
 const readCalendarDate = (value: string) => {
   const match = CALENDAR_DATE_PATTERN.exec(value);
-
   if (!match) {
     throw invalidTemporalValue(`Invalid calendar date: ${value}`);
   }
@@ -173,7 +169,6 @@ const readCalendarDate = (value: string) => {
 
 const readLocalTime = (value: string) => {
   const match = LOCAL_TIME_PATTERN.exec(value);
-
   if (!match) {
     throw invalidTemporalValue(`Invalid local time: ${value}`);
   }
@@ -183,7 +178,6 @@ const readLocalTime = (value: string) => {
   const second = Number(match[3] ?? "0");
   const fraction = match[4] ?? "";
   const millisecond = Number(fraction.padEnd(3, "0") || "0");
-
   if (hour > 23 || minute > 59 || second > 59 || millisecond > 999) {
     throw invalidTemporalValue(`Invalid local time: ${value}`);
   }
@@ -195,13 +189,11 @@ export const padTwo = (value: number): string => String(value).padStart(2, "0");
 
 export const utcInstant = (value: string | Date | number): UtcInstant => {
   const candidate = readInstantCandidate(value);
-
   if (!isUtcInstantValue(candidate)) {
     throw invalidTemporalValue(`Invalid UTC instant: ${candidate}`);
   }
 
   const parsed = new Date(candidate);
-
   if (!Number.isFinite(parsed.getTime())) {
     throw invalidTemporalValue(`Invalid UTC instant: ${candidate}`);
   }
@@ -220,7 +212,6 @@ export const utcInstant = (value: string | Date | number): UtcInstant => {
 
 const isLocalTimeValue = (value: string): value is LocalTime => {
   const match = LOCAL_TIME_PATTERN.exec(value);
-
   if (match === null) {
     return false;
   }
@@ -230,7 +221,6 @@ const isLocalTimeValue = (value: string): value is LocalTime => {
 export const parseLocalTime = (value: string): LocalTime => {
   const parts = readLocalTime(value);
   const canonical = `${padTwo(parts.hour)}:${padTwo(parts.minute)}`;
-
   if (!isLocalTimeValue(canonical)) {
     throw invalidTemporalValue(`Invalid local time: ${value}`);
   }
@@ -243,7 +233,6 @@ export const parseIanaTimeZone = (value: string): IanaTimeZone => {
   }
 
   const cached = canonicalTimeZones.get(value);
-
   if (cached !== undefined) {
     return cached;
   }
@@ -329,7 +318,6 @@ export const datePartsInZone = (
 
   const formatter = getDatePartsFormatter(parseIanaTimeZone(timeZone));
   const parts = formatter.formatToParts(new Date(timestamp));
-
   const values = new Map<string, string>();
 
   for (const part of parts) {

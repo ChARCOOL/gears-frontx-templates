@@ -9,7 +9,6 @@ import styles from "../input.module.css";
 
 const getInput = (name: string): HTMLInputElement => {
   const input = screen.getByRole("textbox", { name });
-
   if (!(input instanceof HTMLInputElement)) {
     throw new Error("Expected an input element");
   }
@@ -52,7 +51,6 @@ describe(Input, () => {
     );
 
     const input = screen.getByRole("textbox", { name: "Title" });
-
     const user = userEvent.setup();
     await user.click(input);
     await user.paste("abc");
@@ -119,7 +117,6 @@ describe(Input, () => {
     );
 
     const input = getInput("Title");
-
     const user = userEvent.setup();
     await user.keyboard("x");
     input.focus();
@@ -144,7 +141,6 @@ describe(Input, () => {
     );
 
     const input = getInput("Title");
-
     const user = userEvent.setup();
     await user.keyboard("x");
 

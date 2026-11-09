@@ -58,13 +58,8 @@ const compareRowDrafts = (left: RowDraft, right: RowDraft): number =>
   left.startTime.localeCompare(right.startTime) ||
   left.occurrence - right.occurrence;
 
-/**
- * Lines the columns up by wall-clock start. A wall-clock time that repeats within a day
- * (the fall-back hour) gets a row per occurrence, so every cell has exactly one row.
- * Rows keep each column's chronological order: a new row goes after that column's previous
- * row, past any earlier wall-clock rows, so on a fall-back day the second 01:00 and 01:30
- * follow the first 01:30.
- */
+/** Lines columns up by wall-clock start. A repeated fall-back hour gets a row per occurrence.
+ * Each column keeps chronological order, so the second 01:30 follows the first. */
 export const buildAvailabilityRows = (
   columns: readonly AvailabilityColumn[]
 ): readonly AvailabilityRow[] => {
@@ -126,11 +121,8 @@ export const buildAvailabilityRange = (
   }
 
   const anchorBeforeActive = compareCalendarCells(anchor, active) <= 0;
-
   const lowerBound = anchorBeforeActive ? anchor.start : active.start;
-
   const upperBound = anchorBeforeActive ? active.end : anchor.end;
-
   const rangeCells: CalendarAvailabilityCell[] = [];
 
   for (const cell of cells) {
@@ -149,7 +141,6 @@ export const buildAvailabilityRange = (
   const sortedRangeCells = sortCopy(rangeCells, compareCalendarCells);
   const start = arrayAt(sortedRangeCells, 0);
   const end = arrayAt(sortedRangeCells, -1);
-
   if (start === undefined || end === undefined) {
     return null;
   }

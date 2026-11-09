@@ -170,7 +170,6 @@ export const useInteractionController = (
 
   const prepareNextInteraction = useCallback((): void => {
     const currentState = stateRef.current;
-
     if (!currentState.committedMove) {
       return;
     }
@@ -234,7 +233,6 @@ export const useInteractionController = (
       }
 
       const range = buildSelectionRange(cell, cell);
-
       if (!range) {
         return null;
       }
@@ -348,7 +346,6 @@ export const useInteractionController = (
   const confirmMove = useCallback((): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-resolve
     const { pendingMove } = stateRef.current;
-
     if (!pendingMove) {
       return;
     }
@@ -359,6 +356,7 @@ export const useInteractionController = (
       }
 
       apply({ move: pendingMove, type: "move-confirm" });
+
       return;
     }
 
@@ -370,7 +368,6 @@ export const useInteractionController = (
   const cancelMove = useCallback((): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-resolve
     const move = stateRef.current.pendingMove ?? stateRef.current.drag;
-
     if (!move) {
       return;
     }

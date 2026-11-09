@@ -27,10 +27,8 @@ export const CalendarLocalizationProvider = ({
   );
 };
 
-/**
- * Publishes one component's localization and viewer zone to its subtree, so nested parts and
- * primitives resolve without the props being threaded. Not part of the published API.
- */
+/** Publishes one component's localization and viewer zone to its subtree, so nested parts
+ * and primitives resolve without threading props. Not part of the published API. */
 export const CalendarScope = ({
   children,
   ...props

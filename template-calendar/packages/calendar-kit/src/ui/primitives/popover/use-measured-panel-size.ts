@@ -20,7 +20,6 @@ const useMeasuredPanelSize = (
 
   useLayoutEffect(() => {
     const panel = panelRef.current;
-
     if (!open || panel === null) {
       return noopCleanup;
     }
@@ -29,7 +28,6 @@ const useMeasuredPanelSize = (
       const width = panel.offsetWidth;
       const height = panel.offsetHeight;
       const previous = measuredSizeRef.current;
-
       if (previous.width === width && previous.height === height) {
         return;
       }

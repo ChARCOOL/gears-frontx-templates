@@ -36,9 +36,7 @@ import {
 const MINUTE_IN_MILLISECONDS = 60_000;
 const HOUR_IN_MILLISECONDS = 60 * MINUTE_IN_MILLISECONDS;
 const OFFSET_SAMPLE_SPAN_HOURS = 72;
-
 export const AGENDA_WINDOW_DAYS = 30;
-
 const SHORT_MONTHS: ReadonlySet<number> = new Set([4, 6, 9, 11]);
 
 const WEEKDAY_INDEXES: Readonly<Record<Weekday, number>> = {
@@ -70,7 +68,6 @@ const offsetMinutesAt = (timestamp: number, timeZone: IanaTimeZone): number => {
   const parts = datePartsInZone(timestamp, timeZone);
   const displayedAsUtc = timestampFromParts(parts);
   const offset = (displayedAsUtc - timestamp) / MINUTE_IN_MILLISECONDS;
-
   return Math.round(offset);
 };
 
@@ -106,7 +103,6 @@ const resolveGapTimestamp = (
 
 const instantFromTimestamp = (timestamp: number): UtcInstant => {
   const date = new Date(timestamp);
-
   if (!Number.isFinite(date.getTime())) {
     throw invalidTemporalValue(`Invalid UTC timestamp: ${timestamp}`);
   }
@@ -160,7 +156,6 @@ export const compareUtcInstants = (
 ): -1 | 0 | 1 => {
   const leftEpoch = Date.parse(utcInstant(left));
   const rightEpoch = Date.parse(utcInstant(right));
-
   if (leftEpoch < rightEpoch) {
     return -1;
   }
@@ -195,7 +190,6 @@ const assertDisambiguation = (value: LocalTimeDisambiguation): void => {
 
 const daysInMonth = (year: number, monthIndex: number): number => {
   const month = monthIndex + 1;
-
   if (month === 2) {
     return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28;
   }
@@ -205,7 +199,6 @@ const daysInMonth = (year: number, monthIndex: number): number => {
 
 export const weekdayIndex = (date: CalendarDate): number => {
   const normalizedDate = calendarDate(date);
-
   return new Date(`${normalizedDate}T00:00:00.000Z`).getUTCDay();
 };
 
@@ -288,7 +281,6 @@ export const fromViewerDateTime = (input: LocalDateTimeInput): UtcInstant => {
     disambiguation === LOCAL_TIME_DISAMBIGUATION.earlier
   ) {
     const earlier = arrayAt(matches, 0);
-
     if (earlier === undefined) {
       throw invalidTemporalValue("No matching local timestamp");
     }
@@ -297,7 +289,6 @@ export const fromViewerDateTime = (input: LocalDateTimeInput): UtcInstant => {
   }
 
   const later = arrayAt(matches, -1);
-
   if (later === undefined) {
     throw invalidTemporalValue("No matching local timestamp");
   }
@@ -368,7 +359,6 @@ export const addCalendarMonths = (
   );
 
   const target = `${String(targetYear).padStart(4, "0")}-${padTwo(targetMonth + 1)}-${padTwo(targetDay)}`;
-
   return calendarDate(target);
 };
 
@@ -378,7 +368,6 @@ export const buildDayRange = (
 ): ViewerDateRange => {
   const start = calendarDate(date);
   const zone = parseIanaTimeZone(timeZone);
-
   return { endExclusive: addCalendarDays(start, 1), start, timeZone: zone };
 };
 
@@ -415,7 +404,6 @@ export const buildWeekRange = (
     (weekdayIndex(anchor) - WEEKDAY_INDEXES[weekStartsOn] + 7) % 7;
 
   const start = addCalendarDays(anchor, -daysSinceStart);
-
   return { endExclusive: addCalendarDays(start, 7), start, timeZone: zone };
 };
 
@@ -480,7 +468,6 @@ const minutesOfDay = (time: LocalTime): number =>
 
 const windowEndMinutes = (window: CalendarTimeWindow): number => {
   const end = minutesOfDay(window.end);
-
   return end === 0 ? MINUTES_PER_DAY : end;
 };
 
@@ -503,7 +490,6 @@ export const assertTimeWindow = (
 
   const start = minutesOfDay(window.start);
   const end = windowEndMinutes(window);
-
   if (start >= end) {
     throw invalidTemporalValue(
       `Time window must end after it starts: ${window.start} -> ${window.end}`
@@ -517,17 +503,13 @@ export const assertTimeWindow = (
   }
 };
 
-/**
- * The window's nominal slot count in wall-clock time, for a time axis that has no date.
- * A DST day has one slot fewer or more than this; `buildSlotStarts(...).length` gives
- * the real count for one day.
- */
+/** Nominal slot count of the window in wall-clock time, for a time axis without a date.
+ * A DST day has more or fewer slots; `buildSlotStarts(...).length` gives the real count. */
 export const countWindowSlots = (
   window: CalendarTimeWindow,
   slotMinutes: CalendarSlotMinutes
 ): number => {
   assertSlotMinutes(slotMinutes);
-
   return (windowEndMinutes(window) - minutesOfDay(window.start)) / slotMinutes;
 };
 
@@ -573,7 +555,6 @@ export const buildSlotStarts = (
 ): UtcInstant[] => {
   const startEpoch = Date.parse(utcInstant(range.start));
   const endEpoch = Date.parse(utcInstant(range.end));
-
   if (endEpoch <= startEpoch) {
     throw invalidTemporalValue("UTC range must end after it starts");
   }
@@ -581,7 +562,6 @@ export const buildSlotStarts = (
   assertSlotMinutes(slotMinutes);
 
   const slotMilliseconds = slotMinutes * MINUTE_IN_MILLISECONDS;
-
   const starts: UtcInstant[] = [];
 
   for (let epoch = startEpoch; epoch < endEpoch; epoch += slotMilliseconds) {
@@ -619,9 +599,7 @@ export const splitUtcRangeByViewerDay = (
   const endProbe = instantFromTimestamp(Date.parse(validEnd) - 1);
   const endDate = toViewerDateTime(endProbe, zone).date;
   const crossesMidnight = startDate !== endDate;
-
   const segments: ViewerDaySegment[] = [];
-
   let cursor = validStart;
   let currentDate = startDate;
 

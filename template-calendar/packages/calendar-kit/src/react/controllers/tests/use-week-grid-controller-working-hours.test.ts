@@ -6,11 +6,9 @@ import { calendarDate, parseIanaTimeZone } from "../../../core/model";
 import { useWeekGridController } from "../use-week-grid-controller";
 
 const SOFIA = parseIanaTimeZone("Europe/Sofia");
-
 const DATE = calendarDate("2026-09-14");
 // Contains the Europe/Sofia fall-back, 2026-10-25.
 const DST_WEEK = calendarDate("2026-10-19");
-
 const WORKING_HOUR_START_ROW = 8;
 const HOUR_ROWS_PER_DAY = 24;
 

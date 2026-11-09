@@ -212,7 +212,6 @@ describe(RadioGroup, () => {
 
   it("swaps horizontal arrows in an RTL shadow-root host", async () => {
     const calls: string[] = [];
-
     const host = document.createElement("div");
     host.setAttribute("dir", "rtl");
     document.body.append(host);

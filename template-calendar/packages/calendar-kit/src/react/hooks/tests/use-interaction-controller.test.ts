@@ -385,7 +385,6 @@ describe(useInteractionController, () => {
 
   it("rejects busy-access move sources", () => {
     const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
-
     const busyEvent = { ...event, access: "busy" as const };
 
     const { result } = renderHook(() =>
