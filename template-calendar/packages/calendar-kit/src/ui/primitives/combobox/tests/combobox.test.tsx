@@ -11,7 +11,6 @@ import comboboxStyles from "../combobox.module.css";
 
 const getCombobox = (): HTMLInputElement => {
   const input = screen.getByRole("combobox");
-
   if (!(input instanceof HTMLInputElement)) {
     throw new Error("Expected a combobox input");
   }
@@ -45,7 +44,6 @@ const StatefulCombobox = ({
   ...props
 }: Partial<Parameters<typeof Combobox>[0]> = {}) => {
   const [value, setValue] = useState("");
-
   const [selected, setSelected] = useState<readonly string[]>(selectedValues);
 
   const handleSelect = (option: ComboboxOption): void => {
@@ -75,7 +73,6 @@ describe(Combobox, () => {
   it("opens on focus and click with fixed listbox and correct aria wiring", async () => {
     renderCombobox();
     const input = screen.getByRole("combobox", { name: "People" });
-
     const user = userEvent.setup();
     await user.tab();
 
@@ -96,7 +93,6 @@ describe(Combobox, () => {
     async (tags) => {
       renderCombobox({ tags });
       const input = getCombobox();
-
       const user = userEvent.setup();
       await user.click(input);
 
@@ -171,7 +167,6 @@ describe(Combobox, () => {
   it("skips disabled options while arrowing and honours Home and End", async () => {
     renderCombobox();
     const input = screen.getByRole("combobox");
-
     const user = userEvent.setup();
     await user.tab();
     await user.keyboard("{ArrowDown}");
@@ -193,7 +188,6 @@ describe(Combobox, () => {
     const onSelect = vi.fn<() => void>();
     renderCombobox({ onSelect });
     const input = screen.getByRole("combobox");
-
     const user = userEvent.setup();
     await user.tab();
     await user.keyboard("{ArrowDown}");
@@ -208,7 +202,6 @@ describe(Combobox, () => {
     const onSelect = vi.fn<() => void>();
     renderCombobox({ onSelect });
     const input = screen.getByRole("combobox");
-
     const user = userEvent.setup();
     await user.tab();
     await user.keyboard("{Space}");
@@ -230,7 +223,6 @@ describe(Combobox, () => {
     const onValueChange = vi.fn<() => void>();
     renderCombobox({ onSearchChange, onValueChange });
     const input = getCombobox();
-
     const user = userEvent.setup();
     await user.click(input);
     await user.paste("al");
@@ -243,7 +235,6 @@ describe(Combobox, () => {
   it("preserves spaces while typing multi-word queries", async () => {
     render(<StatefulCombobox />);
     const input = getCombobox();
-
     const user = userEvent.setup();
     await user.click(input);
     await user.paste("Lena Markovic");
@@ -254,7 +245,6 @@ describe(Combobox, () => {
   it("types spaces from the keyboard in multi-word queries", async () => {
     render(<StatefulCombobox />);
     const input = getCombobox();
-
     const user = userEvent.setup();
     await user.click(input);
     await user.keyboard("Lena Markovic");
@@ -293,7 +283,6 @@ describe(Combobox, () => {
   it("does not open read-only controls but keeps them focusable", async () => {
     renderCombobox({ readOnly: true });
     const input = screen.getByRole("combobox");
-
     const user = userEvent.setup();
     await user.tab();
     await user.click(input);
@@ -459,7 +448,6 @@ describe(Combobox, () => {
     await user.click(input);
 
     const shadowListbox = shadowRoot.querySelector('[role="listbox"]');
-
     if (shadowListbox === null) {
       throw new Error("Expected a listbox in the shadow root");
     }
@@ -474,7 +462,6 @@ describe(Combobox, () => {
   it("closes on outside pointer-down and ancestor scroll", async () => {
     render(<StatefulCombobox />);
     const input = screen.getByRole("combobox");
-
     const user = userEvent.setup();
     await user.click(input);
     fireEvent.pointerDown(document.body);

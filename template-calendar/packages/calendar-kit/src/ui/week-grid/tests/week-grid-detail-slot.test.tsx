@@ -75,7 +75,6 @@ describe("WeekGrid detail-panel slot", () => {
     assert(renderDetail).toHaveBeenCalledOnce();
 
     const [detailContext] = renderDetail.mock.calls[0] ?? [];
-
     if (detailContext === undefined) {
       throw new Error("Missing detail context");
     }

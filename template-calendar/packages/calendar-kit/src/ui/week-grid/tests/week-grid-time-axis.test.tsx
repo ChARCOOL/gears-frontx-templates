@@ -120,7 +120,6 @@ describe("WeekGrid time axis", () => {
     });
 
     const [nine] = timedRows();
-
     if (nine === undefined) {
       throw new Error("Expected a 09:00 row");
     }

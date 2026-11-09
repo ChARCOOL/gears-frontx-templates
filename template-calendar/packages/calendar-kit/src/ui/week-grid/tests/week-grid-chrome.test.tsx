@@ -9,7 +9,6 @@ import type { WeekGridProps } from "../week-grid";
 const DATE = calendarDate("2026-09-14");
 const NEXT_DATE = calendarDate("2026-09-21");
 const SOFIA = parseIanaTimeZone("Europe/Sofia");
-
 const SCROLL_HEIGHT = 1200;
 const WORKING_HOUR_OFFSET = 400;
 
@@ -58,7 +57,6 @@ const requireScrollContainer = (): HTMLElement => {
     .getAllByRole("row")
     .at(2);
   const surface = firstScrollableRow?.parentElement;
-
   if (!(surface instanceof HTMLElement)) {
     throw new Error(
       "Expected the week interaction surface under the grid rows"

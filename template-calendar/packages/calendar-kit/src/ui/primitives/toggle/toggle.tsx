@@ -81,7 +81,6 @@ const Toggle = ({
   const trackId = useId();
   const labelId = useId();
   const hasLabel = isPresentNode(label);
-
   const labelPosition = hasLabel ? LABEL_POSITION[type] : "none";
 
   const labelContent = (

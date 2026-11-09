@@ -31,7 +31,6 @@ const renderSheet = (onOpenChange = vi.fn<() => void>()) => {
       </Sheet>
     </>
   );
-
   return { dialog: screen.getByRole("dialog"), onOpenChange };
 };
 
@@ -149,7 +148,6 @@ describe(Sheet, () => {
 
   it("forwards object and callback refs", () => {
     const objectRef: MutableElementRef = { current: null };
-
     const callbackRef = vi.fn<() => void>();
 
     const { rerender } = render(

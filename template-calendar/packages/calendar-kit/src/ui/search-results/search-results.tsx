@@ -71,7 +71,6 @@ const SearchResultsControllerContext =
 
 const useSearchResultsControllerContext = (): SearchResultsControllerValue => {
   const value = useContext(SearchResultsControllerContext);
-
   if (value === null) {
     throw new Error("Search result rows must be rendered inside SearchResults");
   }

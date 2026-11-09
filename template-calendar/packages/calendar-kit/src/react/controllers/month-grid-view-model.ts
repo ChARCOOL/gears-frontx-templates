@@ -80,7 +80,6 @@ const uniqueTimedSegments = (
   segments: readonly TimedMonthSegment[]
 ): readonly TimedMonthSegment[] => {
   const seen = new Set<string>();
-
   const unique: TimedMonthSegment[] = [];
 
   for (const segment of segments) {
@@ -128,7 +127,6 @@ const allDaySpansForRow = (
   return spans.flatMap((span: AllDaySpan<AllDaySegmentEvent>) => {
     const { source } = span.event;
     const date = arrayAt(rowDates, span.startColumn);
-
     if (date === undefined) {
       return [];
     }
@@ -214,7 +212,6 @@ export const buildMonthGridRows = (
   input: MonthGridViewModelInput
 ): MonthGridViewModelOutput => {
   const rowsWithCells: MonthGridRow[] = [];
-
   const timedByDate = new Map<CalendarDate, TimedMonthSegment[]>();
 
   for (const segment of input.timedSegments) {
@@ -279,14 +276,15 @@ export const buildMonthGridRows = (
     }
 
     const visibleByDate = new Map<CalendarDate, Set<string>>();
-
     const cells: MonthGridCell[] = [];
 
     for (const candidate of candidates) {
       const hiddenFromApi = input.overflowByDate[candidate.date];
+
       const heldBack = Number.isFinite(hiddenFromApi)
         ? Math.max(0, Math.floor(hiddenFromApi))
         : 0;
+
       const visibility = visibleCountForCell(
         input.cellHeight,
         candidate.eventIds.length,
@@ -314,9 +312,7 @@ export const buildMonthGridRows = (
 
       visibleByDate.set(candidate.date, visibleIds);
       const hiddenCount = eventCount - visibleIds.size;
-
       const allDayEventIds: string[] = [];
-
       const visibleTimedEvents: TimedMonthSegment[] = [];
 
       for (const span of candidate.allDaySpans) {
@@ -352,7 +348,6 @@ export const buildMonthGridRows = (
         columnIndex += 1
       ) {
         const date = arrayAt(monthRow.dates, columnIndex);
-
         if (
           date === undefined ||
           visibleByDate.get(date)?.has(span.event.id) !== true

@@ -18,7 +18,6 @@ import type { AgendaViewProps } from "../agenda-view";
 type CalendarEventRenderContext = Parameters<CalendarEventRenderer>[0];
 
 const NOW = utcInstant("2026-08-24T09:58:00.000Z");
-
 const RENDERED_DAY_COUNT = 30;
 
 const renderAgenda = (props: Partial<AgendaViewProps> = {}) => {

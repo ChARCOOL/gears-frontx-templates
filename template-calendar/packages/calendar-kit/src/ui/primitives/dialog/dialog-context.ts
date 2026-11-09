@@ -9,7 +9,6 @@ export const ModalContext = createContext<ModalContextValue | null>(null);
 
 export const useModalContext = (): ModalContextValue => {
   const context = useContext(ModalContext);
-
   if (!context) {
     throw new Error("Modal content must be rendered inside a modal root.");
   }

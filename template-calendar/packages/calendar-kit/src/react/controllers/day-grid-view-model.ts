@@ -77,7 +77,6 @@ export const buildDayGridViewModel = (
 
   for (const geometry of input.timedGeometryByEventId.values()) {
     const segment = timedSegmentsById.get(geometry.id);
-
     if (segment === undefined) {
       continue;
     }
@@ -103,7 +102,6 @@ export const buildDayGridViewModel = (
     geometry?: TimedEventGeometry
   ): CalendarEventRenderContext | undefined => {
     const segment = segmentsById.get(event.id);
-
     if (segment === undefined) {
       return undefined;
     }

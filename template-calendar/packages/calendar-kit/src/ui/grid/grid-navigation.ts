@@ -87,7 +87,6 @@ export const resolveActiveCellKey = (
     records.some((record) => record.key === key);
 
   const firstKey = records[0]?.key ?? null;
-
   if (activeCellKey !== undefined) {
     return exists(activeCellKey) ? activeCellKey : firstKey;
   }
@@ -122,7 +121,6 @@ export const navigateGrid = ({
   rows,
 }: GridNavigationInput): GridNavigation => {
   const currentRow = arrayAt(rows, record.rowIndex);
-
   if (!isGridNavigationKey(key) || currentRow === undefined) {
     return { handled: false };
   }
@@ -153,7 +151,6 @@ export const navigateGrid = ({
   }
 
   const destination = recordsByKey.get(getCellKey(destinationCell));
-
   if (
     destination === undefined ||
     (isCellNavigable !== undefined && !isCellNavigable(destinationCell))

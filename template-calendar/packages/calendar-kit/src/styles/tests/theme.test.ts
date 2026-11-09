@@ -266,13 +266,11 @@ const upstreamSeams = (css: string): string[] => {
 
 const mediaContents = (css: string, marker: string): string => {
   const start = css.indexOf(marker);
-
   if (start === -1) {
     return "";
   }
 
   const nextMedia = css.indexOf("@media", start + marker.length);
-
   const block = css.slice(start, nextMedia === -1 ? css.length : nextMedia);
   const firstBrace = block.indexOf("{");
   const lastBrace = block.lastIndexOf("}");

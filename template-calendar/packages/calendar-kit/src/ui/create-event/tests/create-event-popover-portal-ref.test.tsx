@@ -9,7 +9,6 @@ import { CreateEventPopover } from "../create-event-popover";
 import type { CreateEventPopoverProps } from "../create-event-popover";
 
 const DATE = calendarDate("2026-08-24");
-
 const INERT_RERENDERS = 6;
 
 const t = ((key: string) => key) as CreateEventPopoverProps["t"];
@@ -142,7 +141,6 @@ describe("CreateEventPopover portal anchor ref", () => {
     );
 
     const { rerender } = render(<Host tick={0} />);
-
     const host = screen.getByRole("group", { name: "portal host" });
     const dialog = screen.getByRole("dialog", { name: /create/iu });
 

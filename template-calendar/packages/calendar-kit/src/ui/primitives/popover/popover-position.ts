@@ -23,7 +23,6 @@ export const computePopoverPosition = (
   const dir = options.dir ?? "ltr";
   const below = anchor.bottom + ANCHOR_GAP;
   const above = anchor.top - ANCHOR_GAP - size.height;
-
   let side: PopoverPosition["side"] = "bottom";
   let top = below;
 
@@ -80,7 +79,6 @@ export const computeInlinePopoverPosition = (
   const roomBefore = anchor.left - INLINE_GAP - VIEWPORT_MARGIN;
   const rightFits = roomAfter >= size.width;
   const leftFits = roomBefore >= size.width;
-
   if (!rightFits && !leftFits) {
     return null;
   }
@@ -116,7 +114,6 @@ export const computeInlinePopoverPosition = (
   );
 
   const physicalSide = onRight ? "right" : "left";
-
   const startSide = dir === "ltr" ? "left" : "right";
 
   return {

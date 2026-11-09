@@ -25,7 +25,6 @@ const nearestOptionIndex = (
   }
 
   const exact = options.indexOf(value);
-
   if (exact !== -1) {
     return exact;
   }
@@ -95,7 +94,6 @@ export const TimeField = ({
   );
 
   const [draft, setDraft] = useState<string | null>(null);
-
   const [draftRejected, setDraftRejected] = useState(false);
 
   const locked = disabled || readOnly;
@@ -128,7 +126,6 @@ export const TimeField = ({
 
       if (result.kind === TIME_INPUT.invalid) {
         setDraftRejected(true);
-
         return false;
       }
 
@@ -191,6 +188,7 @@ export const TimeField = ({
         if (commitText(draft)) {
           controller.closeListbox();
         }
+
         return;
       }
 

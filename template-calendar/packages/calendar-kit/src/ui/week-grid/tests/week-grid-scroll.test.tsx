@@ -8,7 +8,6 @@ import type { WeekGridProps } from "../week-grid";
 
 const DST_WEEK = calendarDate("2026-10-19");
 const SOFIA = parseIanaTimeZone("Europe/Sofia");
-
 const WORKING_HOUR_START_ROW = 8;
 const SOFIA_HOUR_ROW_HEIGHT = 48;
 
@@ -37,7 +36,6 @@ const requireScrollSurface = (container: HTMLElement): HTMLElement => {
 
 const requireWrapper = (container: HTMLElement): HTMLElement => {
   const wrapper = container.firstElementChild;
-
   if (!(wrapper instanceof HTMLElement)) {
     throw new Error("Expected the wrapper this suite renders around the week");
   }
