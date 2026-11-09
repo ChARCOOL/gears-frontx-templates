@@ -183,6 +183,38 @@ module.exports = {
       comment: 'LAYER VIOLATION: React (L3) cannot import SDK (L1) directly. Use @gears-frontx/framework re-exports.'
     },
     {
+      // The framework's only routing code is the router injection in the
+      // microfrontends plugin, which passes `router` to the registry it builds.
+      // `routing(/|$)` leaves `@gears-frontx/routing-tanstack` to the rule below,
+      // and a subpath import (`@gears-frontx/routing/...`) matches too. Tests
+      // are exempt: they stub or inspect the router the plugin passes.
+      name: 'framework-routing-only-in-microfrontends-plugin',
+      severity: 'error',
+      from: {
+        path: '^packages/framework/',
+        pathNot: ['^packages/framework/src/plugins/microfrontends/index\\.ts$', '(^|/)__tests__/', '\\.test\\.tsx?$'],
+      },
+      to: { path: '(^|/)@gears-frontx/routing(/|$)' },
+      comment: 'ROUTING VIOLATION: Only the framework\'s microfrontends plugin imports @gears-frontx/routing, to pass its router to the registry it builds.'
+    },
+    {
+      // An MFE with routes renders `<ExtensionRouter>` or calls `navigation()`
+      // from `@gears-frontx/routing-tanstack` in its own code; neither the
+      // framework nor the React adapter navigates for it.
+      name: 'framework-and-react-no-routing-tanstack',
+      severity: 'error',
+      from: { path: '^packages/(framework|react)/' },
+      to: { path: '(^|/)@gears-frontx/routing-tanstack(/|$)' },
+      comment: 'ROUTING VIOLATION: Framework (L2) and React (L3) carry no navigation. An MFE imports @gears-frontx/routing-tanstack itself.'
+    },
+    {
+      name: 'react-no-routing',
+      severity: 'error',
+      from: { path: '^packages/react/' },
+      to: { path: '(^|/)@gears-frontx/routing(/|$)' },
+      comment: 'ROUTING VIOLATION: React (L3) carries no routing code. The router is the framework plugin\'s to pass to the registry.'
+    },
+    {
       name: 'packages-no-src-app-import',
       severity: 'error',
       from: { path: '^packages/' },

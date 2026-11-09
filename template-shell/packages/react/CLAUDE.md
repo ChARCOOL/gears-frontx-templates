@@ -55,7 +55,7 @@ Services define endpoints as descriptors. Components consume them via `useApiQue
 import { useApiQuery, useApiMutation, apiRegistry } from '@gears-frontx/react';
 import { AccountsApiService } from '../api/AccountsApiService';
 
-function ProfileScreen() {
+function ProfileScreen({ teamId }: { teamId?: string }) {
   const service = apiRegistry.getService(AccountsApiService);
 
   // Read — pass descriptor directly
@@ -87,11 +87,19 @@ function ProfileScreen() {
 
   // Per-endpoint cache override (rare)
   const { data: config } = useApiQuery(service.getConfig, { staleTime: 0 });
+
+  // Conditional query: stays idle until enabled (not on the suspense hooks).
+  // The hook still needs a descriptor on every render, so one is built with a
+  // stand-in id; while enabled is false it is not fetched automatically, and
+  // refetch would still fetch it, so do not call refetch before teamId is set.
+  const { data: team } = useApiQuery(service.getTeam({ id: teamId ?? '' }), { enabled: Boolean(teamId) });
 }
 ```
 
 Cache keys are derived automatically by the service — `QueryCache` methods accept
 endpoint descriptors directly (e.g., `queryCache.get(service.getCurrentUser)`).
+
+The `queryCache` a mutation callback receives is bound to the cache scope (mock mode, tenant, session) the mutation started under: once that scope changes, its writes (`set`, `remove`, `invalidate`, `invalidateMany`, `cancel`) do nothing and reads still work, so a response or snapshot from the old scope never lands in the new cache. Nothing else is scope-bound: a `useQueryCache()` handle, the raw `QueryClient`, `cache/*` eventBus emits and per-call `mutate(vars, { onSuccess })` options write to whatever scope is current, so a write after an `await` or inside a mutation callback must go through the callback's `queryCache`.
 
 ### SSE Streaming with Stream Descriptors
 

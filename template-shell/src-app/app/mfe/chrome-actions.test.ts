@@ -20,6 +20,7 @@ import {
 // for them the same way.
 import {
   extensionScreenSchema,
+  languageCodeSchema,
   languageSchema,
   themeSchema,
 } from '@gears-frontx/frontx-template-shell';
@@ -62,14 +63,16 @@ function targetRefOf(schema: JSONSchema): string {
 beforeAll(() => {
   // The process-wide `gtsPlugin` singleton, as the app itself uses it. Nothing
   // registered here is case-specific: the schemas and the two domain instances
-  // are static, registration is idempotent, and the actions the cases below
-  // register are anonymous, so no case can leave state another one reads.
+  // are static, registering a type that is already registered leaves it
+  // unchanged, and the actions the cases below register are anonymous, so no
+  // case can leave state another one reads.
   //
   // The shared-property and screen-extension schemas come first because both
   // layout domain instances reference them; without them the domains fail their
   // own admission and every case would refuse over a missing domain rather than
   // over the target pattern.
   gtsPlugin.registerSchema(themeSchema);
+  gtsPlugin.registerSchema(languageCodeSchema);
   gtsPlugin.registerSchema(languageSchema);
   gtsPlugin.registerSchema(extensionScreenSchema);
   for (const schema of CHROME_ACTION_SCHEMAS) {

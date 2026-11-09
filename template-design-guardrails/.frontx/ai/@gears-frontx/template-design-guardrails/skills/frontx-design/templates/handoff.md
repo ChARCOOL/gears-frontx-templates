@@ -1,0 +1,29 @@
+# Handoff: <task>
+
+Date: <YYYY-MM-DD> | Surface: <application screen, marketing page or documentation page>
+
+Review verdict: <blocked, revise, unverified or pass, per `references/review.md`; or "no review yet">
+
+## Built
+
+- <file or screen>: <what changed, one line each>
+
+## Checked
+
+Each line names the gate id, the outcome and the evidence.
+
+- <GATE-ID> pass: <what was observed, where, at which width and theme>
+- <GATE-ID> open: <finding and proposed correction>
+- <GATE-ID> waived: <the reason quoted from the screen's `design-waivers.json` entry (the one record of every waiver, checked or review-only); only for gates whose waiver is with-reason>
+
+## Not checked
+
+Everything that was not seen rendered, with the reason.
+
+- <GATE-ID or state or width>: <why it was not checked and how to check it>
+
+## Known gaps
+
+- Kit gaps (SYS-005): <pattern the kit lacks, how it was composed instead>
+- Product decisions pending: <decision, recommended default, who decides>
+- Conflicts with a never gate: <decision that collided with the gate, raised with whom>
