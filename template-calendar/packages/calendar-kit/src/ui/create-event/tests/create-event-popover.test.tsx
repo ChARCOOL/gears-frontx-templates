@@ -30,7 +30,6 @@ import styles from "../create-event.module.css";
 import createEventCss from "../create-event.module.css?raw";
 
 const DATE = calendarDate("2026-08-24");
-
 const NEXT_DATE = calendarDate("2026-08-25");
 
 const headerT: CalendarTranslate = (key) => {
@@ -188,7 +187,6 @@ const chooseSelectOption = (
 ): void => {
   const triggers = screen.getAllByRole("combobox", { name: triggerName });
   const trigger = triggers.find((_, index) => index === triggerIndex);
-
   if (trigger === undefined) {
     throw new Error(`Missing combobox ${triggerIndex}`);
   }
@@ -357,7 +355,6 @@ describe("CreateEventPopover draft and validation behaviour", () => {
     assert(onSubmit).not.toHaveBeenCalled();
 
     const form = getCreateDialog().querySelector<HTMLFormElement>("form");
-
     if (form === null) {
       throw new Error("Missing create event form");
     }
@@ -759,6 +756,7 @@ describe("CreateEventPopover coverage paths", () => {
     const interval = within(repeatView).getByRole("spinbutton", {
       name: /^(?:every|interval)$/iu,
     });
+
     // An empty field keeps the applied interval; below 1 falls back to 1, above 30 stops at 30.
     const enter = (value: string): void => {
       act(() => {
@@ -824,7 +822,6 @@ describe("CreateEventPopover coverage paths", () => {
     await user.click(save);
 
     const form = getCreateDialog().querySelector<HTMLFormElement>("form");
-
     if (form === null) {
       throw new Error("Missing create event form");
     }
@@ -903,7 +900,6 @@ describe("CreateEventPopover discard and submit behaviour", () => {
     );
 
     const discardButton = discardButtons.at(-1);
-
     if (discardButton === undefined) {
       throw new Error("Missing discard confirmation button");
     }
@@ -936,7 +932,6 @@ describe("CreateEventPopover discard and submit behaviour", () => {
 
     const discardButtons = within(discardDialog).getAllByRole("button");
     const discardButton = discardButtons.at(-1);
-
     if (discardButton === undefined) {
       throw new Error("Missing discard confirmation button");
     }
@@ -978,7 +973,6 @@ describe("CreateEventPopover discard and submit behaviour", () => {
     });
 
     const [calendar] = screen.getAllByRole("combobox");
-
     if (calendar === null) {
       throw new Error("Missing calendar select");
     }
@@ -1247,7 +1241,6 @@ describe("CreateEventPopover footer separator placement", () => {
       hidden: true,
     });
     const divider = dividers.at(-1);
-
     if (divider === undefined) {
       throw new Error("Missing footer separator");
     }

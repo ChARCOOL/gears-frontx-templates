@@ -230,7 +230,6 @@ const resolvePortalContainer = (
   element: HTMLSpanElement
 ): Element | DocumentFragment | null => {
   const root = element.getRootNode();
-
   // The shadow root is the stacking context; the anchor's parent would clip the panel.
   if (root instanceof ShadowRoot) {
     return root;
@@ -543,8 +542,18 @@ const CustomRepeatView = ({
   const unitId = `${idPrefix}-repeat-unit`;
   const endGroupName = `${idPrefix}-repeat-end`;
   const unitItems = repeatUnitOptions(t, state.interval);
+
   // The field may be empty while a number is typed over; it shows the applied interval on blur.
   const [intervalText, setIntervalText] = useState(String(state.interval));
+
+  const handleIntervalChange = (value: string): void => {
+    setIntervalText(value);
+
+    if (value !== "") {
+      onChangeInterval(value);
+    }
+  };
+
   const endsLabel = t("calendar.create_event.repeat.ends");
   const neverLabel = t("calendar.create_event.repeat.never");
   const onLabel = t("calendar.create_event.repeat.on_date");
@@ -612,12 +621,7 @@ const CustomRepeatView = ({
             value={intervalText}
             size="m"
             className={styles.repeatInterval}
-            onValueChange={(value) => {
-              setIntervalText(value);
-              if (value !== "") {
-                onChangeInterval(value);
-              }
-            }}
+            onValueChange={handleIntervalChange}
             onBlur={() => {
               setIntervalText(String(state.interval));
             }}
@@ -819,7 +823,6 @@ const belongsToCreatePopover = (
   }
 
   const popup = target.closest<HTMLElement>('[role="listbox"]');
-
   if (popup === null || popup.id === "") {
     return false;
   }
@@ -848,7 +851,6 @@ const usePopoverFocus = (
 
   useLayoutEffect(() => {
     const anchor = portalAnchorRef.current;
-
     if (anchor === null) {
       return noopCleanup;
     }
@@ -1759,7 +1761,6 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
   const changeRepeatEndDate = (value: CalendarDate | ""): void => {
     if (value === "") {
       changeCustomRepeat((current) => ({ ...current, endDate: null }));
-
       return;
     }
 
