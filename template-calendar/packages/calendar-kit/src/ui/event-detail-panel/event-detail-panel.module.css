@@ -129,7 +129,12 @@
 }
 
 .sectionLabel {
-  composes: srOnly from "../../styles/modules/sr-only.module.css";
+  color: var(--cal-color-text);
+  font-family: var(--cal-font-family);
+  font-size: var(--cal-text-grid-size);
+  font-weight: 500;
+  line-height: var(--cal-text-grid-line-height);
+  margin: 0;
 }
 
 .text,
