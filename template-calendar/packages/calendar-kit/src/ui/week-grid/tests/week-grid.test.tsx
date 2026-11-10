@@ -919,3 +919,112 @@ describe("WeekGrid ordinary grid rendering", () => {
     assert(screen.getByRole("grid")).toBeInTheDocument();
   });
 });
+
+describe("WeekGrid drag feedback", () => {
+  const draggableFrame = (id: string): HTMLElement => {
+    const frame = document.querySelector<HTMLElement>(
+      `[data-event-id="${id}"][draggable="true"]`
+    );
+
+    if (frame === null) {
+      throw new Error(`Expected ${id} to be draggable`);
+    }
+
+    return frame;
+  };
+
+  it("shows a ghost card and a dashed outline on the target slot and dims the dragged card", () => {
+    renderWeek({
+      events: [timedEvent("ghost")],
+      interactionMode: "paint-and-move",
+    });
+    const frame = draggableFrame("ghost");
+    const target = getTimedCell("11:00");
+
+    act(() => {
+      fireEvent.dragStart(frame);
+      fireEvent.dragOver(target);
+    });
+
+    assert(frame).toHaveAttribute("data-dragging");
+    assert(target.querySelector("[data-drop-target]")).not.toBeNull();
+    assert(target.querySelector("[data-drag-ghost]")?.textContent).toMatch(
+      /ghost/u
+    );
+    assert(target.querySelector("[data-drag-ghost]")).toHaveAttribute(
+      "aria-hidden",
+      "true"
+    );
+  });
+
+  it("clears the ghost, the outline and the dimming when the drop lands", () => {
+    const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
+    renderWeek({
+      events: [timedEvent("dropped")],
+      interactionMode: "paint-and-move",
+      onMoveRequest,
+    });
+    const frame = draggableFrame("dropped");
+    const target = getTimedCell("11:00");
+
+    act(() => {
+      fireEvent.dragStart(frame);
+      fireEvent.dragOver(target);
+      fireEvent.drop(target);
+    });
+
+    assert(onMoveRequest).toHaveBeenCalledOnce();
+    assert(document.querySelector("[data-drag-ghost]")).toBeNull();
+    assert(document.querySelector("[data-drop-target]")).toBeNull();
+    assert(frame).not.toHaveAttribute("data-dragging");
+  });
+
+  it("replaces the native drag image with a transparent one", () => {
+    const setDragImage = vi.fn<(image: Element, x: number, y: number) => void>();
+    renderWeek({
+      events: [timedEvent("native")],
+      interactionMode: "paint-and-move",
+    });
+    const button = screen.getByRole("button", { name: /native/u });
+
+    fireEvent.dragStart(button, { dataTransfer: { setDragImage } });
+
+    assert(setDragImage).toHaveBeenCalledExactlyOnceWith(
+      assert.any(HTMLImageElement),
+      0,
+      0
+    );
+  });
+
+  it("does not make a recurring event draggable until the occurrence-or-series choice exists", () => {
+    renderWeek({
+      events: [
+        { ...timedEvent("series"), recurrenceRule: "FREQ=WEEKLY;BYDAY=MO" },
+      ],
+      interactionMode: "paint-and-move",
+    });
+
+    assert(document.querySelector('[data-event-id="series"]')).toHaveAttribute(
+      "draggable",
+      "false"
+    );
+  });
+
+  it("keeps an event the host marks movable: false in place, and still opens it", () => {
+    const onEventSelect = vi.fn<() => void>();
+    renderWeek({
+      events: [{ ...timedEvent("pinned"), movable: false }],
+      interactionMode: "paint-and-move",
+      onEventSelect,
+    });
+
+    assert(document.querySelector('[data-event-id="pinned"]')).toHaveAttribute(
+      "draggable",
+      "false"
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /pinned/u }));
+
+    assert(onEventSelect).toHaveBeenCalledOnce();
+  });
+});
