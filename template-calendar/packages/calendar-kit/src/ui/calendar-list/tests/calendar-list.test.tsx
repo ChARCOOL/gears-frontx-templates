@@ -146,12 +146,12 @@ describe(CalendarList, () => {
       declarations(calendarListCss, ".colorBlue").get("--calendar-color")
     ).toBe("var(--cal-color-blue-accent)");
     expect(
-      declarations(calendarListCss, ".colorBlue[data-checked]").get(
+      declarations(calendarListCss, ".colorBlue:is([data-checked], [data-indeterminate])").get(
         "background-color"
       )
     ).toBe("var(--calendar-color)");
     expect(
-      declarations(forcedColors, ".colorBlue[data-checked]").get(
+      declarations(forcedColors, ".colorBlue:is([data-checked], [data-indeterminate])").get(
         "background-color"
       )
     ).toBe("Highlight");
@@ -423,6 +423,74 @@ describe(CalendarList, () => {
 
       expect(blue).toHaveFocus();
       expect(blue).toBeChecked();
+    });
+  });
+
+  describe("nested calendars and groups", () => {
+    const NESTED: readonly CalendarRef[] = [
+      { colorFamily: "turquoise", group: "My calendars", id: "school", name: "School" },
+      { colorFamily: "turquoise", id: "maths", name: "Maths", parentId: "school" },
+      { colorFamily: "turquoise", id: "art", name: "Art", parentId: "school" },
+      { colorFamily: "purple", group: "Shared calendars", id: "team", name: "Team" },
+    ];
+
+    it("lists children in a nested list under their parent and groups under headings", () => {
+      render(<CalendarList {...baseProps({ calendars: NESTED })} />);
+
+      expect(screen.getByRole("heading", { name: "My calendars" })).toBeVisible();
+      expect(screen.getByRole("heading", { name: "Shared calendars" })).toBeVisible();
+      expect(screen.getByRole("checkbox", { name: "Maths" }).closest("ul")).toHaveClass(
+        styles.nested
+      );
+    });
+
+    it("marks the parent indeterminate when only some children are visible", () => {
+      render(<CalendarList {...baseProps({ calendars: NESTED, hiddenCalendarIds: ["art"] })} />);
+
+      expect(screen.getByRole("checkbox", { name: "School" })).toBePartiallyChecked();
+      expect(screen.getByRole("checkbox", { name: "Maths" })).toBeChecked();
+    });
+
+    it("hides the parent and every child with one click, then shows them again", async () => {
+      const onHiddenCalendarIdsChange = vi.fn<(ids: readonly string[]) => void>();
+      const user = userEvent.setup();
+      const { rerender } = render(
+        <CalendarList {...baseProps({ calendars: NESTED, onHiddenCalendarIdsChange })} />
+      );
+
+      await user.click(screen.getByRole("checkbox", { name: "School" }));
+
+      expect(onHiddenCalendarIdsChange).toHaveBeenLastCalledWith(["school", "maths", "art"]);
+
+      rerender(
+        <CalendarList
+          {...baseProps({
+            calendars: NESTED,
+            hiddenCalendarIds: ["school", "maths", "art"],
+            onHiddenCalendarIdsChange,
+          })}
+        />
+      );
+      await user.click(screen.getByRole("checkbox", { name: "School" }));
+
+      expect(onHiddenCalendarIdsChange).toHaveBeenLastCalledWith([]);
+    });
+
+    it("shows all of a mixed parent on click", async () => {
+      const onHiddenCalendarIdsChange = vi.fn<(ids: readonly string[]) => void>();
+
+      render(
+        <CalendarList
+          {...baseProps({
+            calendars: NESTED,
+            hiddenCalendarIds: ["art", "team"],
+            onHiddenCalendarIdsChange,
+          })}
+        />
+      );
+      await userEvent.setup().click(screen.getByRole("checkbox", { name: "School" }));
+
+      expect(onHiddenCalendarIdsChange).toHaveBeenLastCalledWith(["team"]);
     });
   });
 });

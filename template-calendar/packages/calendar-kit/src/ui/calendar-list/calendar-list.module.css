@@ -26,6 +26,23 @@
   list-style: none;
 }
 
+.group {
+  display: flex;
+  min-inline-size: 0;
+  flex-direction: column;
+  gap: var(--cal-space-1);
+}
+
+.groupHeading {
+  composes: label from "../../styles/modules/text.module.css";
+  margin: 0;
+  color: var(--cal-color-muted);
+}
+
+.nested {
+  padding-inline-start: var(--cal-space-4);
+}
+
 .row {
   border-radius: var(--cal-radius-sm);
   min-inline-size: 0;
@@ -48,7 +65,7 @@
   cursor: pointer;
 }
 
-.hiddenCheckbox:not([data-checked]) {
+.hiddenCheckbox:not([data-checked], [data-indeterminate]) {
   border-color: var(--cal-color-muted);
 }
 
@@ -93,13 +110,13 @@
 }
 
 /* A surface-coloured tick contrasts with the accent fill in both themes. */
-.colorBlue[data-checked],
-.colorLavender[data-checked],
-.colorViolet[data-checked],
-.colorPurple[data-checked],
-.colorOrange[data-checked],
-.colorBrown[data-checked],
-.colorTurquoise[data-checked] {
+.colorBlue:is([data-checked], [data-indeterminate]),
+.colorLavender:is([data-checked], [data-indeterminate]),
+.colorViolet:is([data-checked], [data-indeterminate]),
+.colorPurple:is([data-checked], [data-indeterminate]),
+.colorOrange:is([data-checked], [data-indeterminate]),
+.colorBrown:is([data-checked], [data-indeterminate]),
+.colorTurquoise:is([data-checked], [data-indeterminate]) {
   border-color: var(--calendar-color);
   background-color: var(--calendar-color);
   color: var(--cal-color-surface);
@@ -256,13 +273,13 @@
     outline-color: Highlight;
   }
 
-  .colorBlue[data-checked],
-  .colorLavender[data-checked],
-  .colorViolet[data-checked],
-  .colorPurple[data-checked],
-  .colorOrange[data-checked],
-  .colorBrown[data-checked],
-  .colorTurquoise[data-checked] {
+  .colorBlue:is([data-checked], [data-indeterminate]),
+  .colorLavender:is([data-checked], [data-indeterminate]),
+  .colorViolet:is([data-checked], [data-indeterminate]),
+  .colorPurple:is([data-checked], [data-indeterminate]),
+  .colorOrange:is([data-checked], [data-indeterminate]),
+  .colorBrown:is([data-checked], [data-indeterminate]),
+  .colorTurquoise:is([data-checked], [data-indeterminate]) {
     background-color: Highlight;
     border-color: CanvasText;
   }

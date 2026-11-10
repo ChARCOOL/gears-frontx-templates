@@ -251,6 +251,10 @@ export interface CalendarRef {
   readonly canWrite?: boolean;
   /** True when the viewer may delete it; enables Delete. */
   readonly canDelete?: boolean;
+  /** Id of the calendar this one is nested under. A parent that is not in the list is ignored. */
+  readonly parentId?: string | null;
+  /** Heading the list groups this calendar under, for example "My calendars". The host localizes it. */
+  readonly group?: string | null;
 }
 
 export interface CalendarTimeZoneOption {

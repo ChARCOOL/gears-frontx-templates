@@ -14,6 +14,8 @@
 
 Use `renderCalendar` to replace a row's visible content, `renderCreateCalendar` to supply a consumer-owned creation action, or `onCreateCalendar` for the default labelled button. The kit never creates or persists calendars.
 
+Set `parentId` on a `CalendarRef` to nest it under another calendar in the list, and `group` to list it under a heading such as "My calendars" (the host localizes the text). A parent's checkbox covers itself and everything under it: it shows a dash when only some are visible, and one click hides all of them, or shows all of them unless they were all visible already. A `parentId` that is not in the list, or that points back into its own chain, leaves the calendar at the top level.
+
 Passing any option callback adds a three-dot button to each row, shown on hover and focus. Its menu offers:
 
 - Color: opens a picker with seven swatches and Cancel/Apply. Arrow keys move the selected swatch. Apply calls `onCalendarColorChange(id, colorFamily)` only when the color changed; Cancel returns to the menu without a call.

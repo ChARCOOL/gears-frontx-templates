@@ -17,6 +17,8 @@ import { Checkbox } from "../primitives/checkbox/checkbox";
 import { ListItem } from "../primitives/list/list";
 
 import { findCalendarColorOption } from "./calendar-color-options";
+import type { CalendarNode } from "./calendar-tree";
+import { buildCalendarTree, groupCalendarTree } from "./calendar-tree";
 import type { CalendarOptionsActions } from "./calendar-options-menu";
 import { CalendarOptionsMenu } from "./calendar-options-menu";
 import styles from "./calendar-list.module.css";
@@ -58,6 +60,10 @@ type CalendarListContentProps = Omit<
 interface CalendarListRowProps {
   readonly actions: CalendarOptionsActions;
   readonly calendar: CalendarRef;
+  /** Nested calendars, rendered under the row. */
+  readonly children?: ReactNode;
+  /** Ids the checkbox toggles: this calendar and everything nested under it. */
+  readonly scopeIds: readonly string[];
   readonly hidden: boolean;
   readonly renderCalendar?: (
     calendar: CalendarRef,
@@ -73,10 +79,12 @@ interface CalendarListRowProps {
 const CalendarListRowImpl = ({
   actions,
   calendar,
+  children,
   hidden,
   hiddenCalendarIds,
   onHiddenCalendarIdsChange,
   renderCalendar,
+  scopeIds,
   solo,
 }: CalendarListRowProps) => {
   const { t } = useCalendarLocalization();
@@ -89,11 +97,17 @@ const CalendarListRowImpl = ({
     (action) => action !== undefined
   );
 
+  const hiddenCount = scopeIds.filter((id) =>
+    hiddenCalendarIds.includes(id)
+  ).length;
+  const allVisible = hiddenCount === 0;
+  const someVisible = hiddenCount < scopeIds.length;
+
   const handleChange = (): void => {
     onHiddenCalendarIdsChange(
-      hidden
-        ? hiddenCalendarIds.filter((id) => id !== calendar.id)
-        : [...hiddenCalendarIds, calendar.id]
+      allVisible
+        ? [...hiddenCalendarIds, ...scopeIds]
+        : hiddenCalendarIds.filter((id) => !scopeIds.includes(id))
     );
   };
 
@@ -104,7 +118,8 @@ const CalendarListRowImpl = ({
         control={
           <Checkbox
             aria-label={calendar.name}
-            checked={!hidden}
+            checked={allVisible}
+            indeterminate={!allVisible && someVisible}
             className={clsx(colorClassName, hidden && styles.hiddenCheckbox)}
             id={inputId}
             onChange={handleChange}
@@ -142,6 +157,7 @@ const CalendarListRowImpl = ({
           ) : undefined
         }
       />
+      {children}
       {menuAnchor === null ? null : (
         <CalendarOptionsMenu
           actions={actions}
@@ -215,6 +231,26 @@ const CalendarListContent = ({
   const createAffordance = renderCreateAffordance();
   const hiddenCalendarIdSet = new Set(hiddenCalendarIds);
 
+  const renderNode = (node: CalendarNode): ReactNode => (
+    <CalendarListRow
+      actions={actions}
+      calendar={node.calendar}
+      hidden={hiddenCalendarIdSet.has(node.calendar.id)}
+      hiddenCalendarIds={hiddenCalendarIds}
+      key={node.calendar.id}
+      onHiddenCalendarIdsChange={onHiddenCalendarIdsChange}
+      renderCalendar={renderCalendar}
+      scopeIds={node.scopeIds}
+      solo={soloCalendarId === node.calendar.id}
+    >
+      {node.children.length === 0 ? null : (
+        <ul className={clsx(styles.list, styles.nested)}>
+          {node.children.map(renderNode)}
+        </ul>
+      )}
+    </CalendarListRow>
+  );
+
   return (
     <section
       aria-label={t("calendar.panel.calendars")}
@@ -223,20 +259,14 @@ const CalendarListContent = ({
     >
       <h2 className={styles.heading}>{t("calendar.panel.calendars")}</h2>
 
-      <ul className={styles.list}>
-        {calendars.map((calendar) => (
-          <CalendarListRow
-            actions={actions}
-            calendar={calendar}
-            hidden={hiddenCalendarIdSet.has(calendar.id)}
-            key={calendar.id}
-            renderCalendar={renderCalendar}
-            hiddenCalendarIds={hiddenCalendarIds}
-            onHiddenCalendarIdsChange={onHiddenCalendarIdsChange}
-            solo={soloCalendarId === calendar.id}
-          />
-        ))}
-      </ul>
+      {groupCalendarTree(buildCalendarTree(calendars)).map((group) => (
+        <div className={styles.group} key={group.label ?? ""}>
+          {group.label === null ? null : (
+            <h3 className={styles.groupHeading}>{group.label}</h3>
+          )}
+          <ul className={styles.list}>{group.nodes.map(renderNode)}</ul>
+        </div>
+      ))}
 
       {createAffordance === null || createAffordance === undefined ? null : (
         <div className={styles.create}>{createAffordance}</div>
