@@ -1,6 +1,7 @@
 import {
   useCallback,
   useDeferredValue,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -45,6 +46,33 @@ import {
 
 const DEFAULT_START_TIME = parseLocalTime("09:00");
 const DEFAULT_END_TIME = parseLocalTime("10:00");
+const DEFAULT_NOTIFY_LEAD_MINUTES = 10;
+const NOTIFY_LEAD_MINUTES = [5, 10, 15, 30, 60];
+
+const notifyLeadOptions = (t: CalendarTranslate): readonly ResourceItem[] => [
+  { label: t("calendar.create_event.notify.lead_now"), value: "0" },
+  ...NOTIFY_LEAD_MINUTES.map((minutes) => ({
+    label: t("calendar.create_event.notify.lead_minutes", { count: minutes }),
+    value: String(minutes),
+  })),
+];
+
+// Denied, missing and dismissed prompts all leave the reminder without a notification.
+const notifyPermissionGranted = async (): Promise<boolean> => {
+  if (typeof globalThis.Notification === "undefined") {
+    return false;
+  }
+
+  if (globalThis.Notification.permission === "granted") {
+    return true;
+  }
+
+  if (globalThis.Notification.permission === "denied") {
+    return false;
+  }
+
+  return (await globalThis.Notification.requestPermission()) === "granted";
+};
 
 type TimedTimes = Pick<CreateEventDraft, "endDate" | "endTime" | "startTime">;
 
@@ -269,6 +297,8 @@ export const useCreateEventPopoverContent = (
 
   const [peopleQuery, setPeopleQuery] = useState("");
 
+  const [notifyBlocked, setNotifyBlocked] = useState(false);
+
   const [locationEditorOpen, setLocationEditorOpen] = useState(() =>
     Boolean(controller.draft.location)
   );
@@ -295,6 +325,13 @@ export const useCreateEventPopoverContent = (
     endTime: controller.draft.endTime,
     startTime: controller.draft.startTime,
   });
+
+  // The notify prompt is awaited, so its write needs the draft as it is when the answer arrives.
+  const draftRef = useRef(controller.draft);
+
+  useEffect(() => {
+    draftRef.current = controller.draft;
+  }, [controller.draft]);
 
   const fieldId = useCallback(
     (name: string): string => `${idPrefix}-${name}`,
@@ -487,7 +524,7 @@ export const useCreateEventPopoverContent = (
   // Each kind's hidden fields must not survive into the other kind's draft.
   const onKindChangeWithReset = (nextKind: CreateEventKind): void => {
     if (nextKind === "event") {
-      setDraft({ ...controller.draft, url: null });
+      setDraft({ ...controller.draft, notify: null, url: null });
     } else {
       setDraft({
         ...controller.draft,
@@ -500,6 +537,31 @@ export const useCreateEventPopoverContent = (
     }
 
     onKindChange?.(nextKind);
+  };
+
+  const notifyLeadItems = useMemo(() => notifyLeadOptions(t), [t]);
+
+  const onNotifyChange = async (enabled: boolean): Promise<void> => {
+    setNotifyBlocked(false);
+
+    if (!enabled) {
+      setDraft({ ...controller.draft, notify: null });
+      return;
+    }
+
+    if (await notifyPermissionGranted()) {
+      setDraft({
+        ...draftRef.current,
+        notify: { leadMinutes: DEFAULT_NOTIFY_LEAD_MINUTES },
+      });
+      return;
+    }
+
+    setNotifyBlocked(true);
+  };
+
+  const onNotifyLeadChange = (value: string): void => {
+    setDraft({ ...controller.draft, notify: { leadMinutes: Number(value) } });
   };
 
   const handleShellOpenChange = (nextOpen: boolean): void => {
@@ -545,8 +607,12 @@ export const useCreateEventPopoverContent = (
     locationQuery,
     noOptionsLabel,
     onAllDayChange,
+    notifyBlocked,
+    notifyLeadItems,
     onKindChange: onKindChange === undefined ? undefined : onKindChangeWithReset,
     onLocationSelection,
+    onNotifyChange,
+    onNotifyLeadChange,
     onPeopleSelect,
     onRepeatPresetChange,
     onSubmit,

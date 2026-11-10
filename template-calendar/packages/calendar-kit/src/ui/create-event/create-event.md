@@ -39,7 +39,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 - The header shows an event-type title (`Event` by default), a slot for host header content, a close icon action with its accessible label, and a divider. The body scrolls inside its region above the Cancel/Save footer.
 - Title, schedule, time range, all-day switch, dates with a day count once they span a day, recurrence, timezone, people, conferencing, location, and description fields update one draft.
-- With `onKindChange`, the header shows an Event/Reminder switch and `kind` selects the form. Reminder shows title, URL, time range, all-day, and repeat; it hides calendar, time zone, people, conferencing, location, and description, and switching to it clears those draft fields. Switching to Event clears `url`. The URL must be an `http(s)` link without credentials, at most 2048 characters, and shows `Enter a valid value` while invalid.
+- With `onKindChange`, the header shows an Event/Reminder switch and `kind` selects the form. Reminder shows title, URL, time range, all-day, and repeat; it hides calendar, time zone, people, conferencing, location, and description, and switching to it clears those draft fields. Switching to Event clears `url`. The URL must be an `http(s)` link without credentials, at most 2048 characters, and shows `Enter a valid value` while invalid. Notify stores `notify: { leadMinutes }` (0, 5, 10, 15, 30 or 60, default 10) or `null` when off. Turning it on asks for browser permission only when the permission is `default`; a denied, missing or dismissed prompt keeps it off with an inline message. The form only stores the choice; the host delivers the notification.
 - Dates and times use the large icon-left field treatment; the schedule shows its calendar colour as a dot in the selected value and each option, and people tags use stroke tags with dismiss and clear-all actions.
 - Timed events leave the end date empty when it is the same as the start date; the day-span indicator is shown only for a positive span.
 - Date rows are masked date inputs: the locale's date mask is typed segment by segment and commits as soon as it parses, the calendar button ahead of the value (or `Alt+ArrowDown`) opens a picker whose selection writes the row directly, and the optional end date clears from the trailing clear button.
@@ -85,6 +85,8 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.field.end_date` | End date |  |
 | `calendar.create_event.field.end_time` | End time |  |
 | `calendar.create_event.field.location` | Location |  |
+| `calendar.create_event.field.notify` | Notify |  |
+| `calendar.create_event.field.notify_lead` | Notify before |  |
 | `calendar.create_event.field.people` | People |  |
 | `calendar.create_event.field.repeat` | Repeat |  |
 | `calendar.create_event.field.start_date` | Start date |  |
@@ -97,6 +99,10 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.kind.reminder` | Reminder |  |
 | `calendar.create_event.location.no_results` | No locations |  |
 | `calendar.create_event.no_options` | No options available |  |
+| `calendar.create_event.notify.blocked` | Notifications are blocked. Allow them in your browser settings to get reminders. |  |
+| `calendar.create_event.notify.lead_minutes_one` | {{count}} minute before | `count` |
+| `calendar.create_event.notify.lead_minutes_other` | {{count}} minutes before | `count` |
+| `calendar.create_event.notify.lead_now` | At time of event |  |
 | `calendar.create_event.people.no_results` | No people |  |
 | `calendar.create_event.placeholder.calendar` | Choose a calendar |  |
 | `calendar.create_event.placeholder.conferencing` | Add conferencing |  |

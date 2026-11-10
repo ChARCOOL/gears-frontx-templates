@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createRef } from "react";
-import { describe, expect as assert, it, vi } from "vitest";
+import { afterEach, describe, expect as assert, it, vi } from "vitest";
 
 import { declarations } from "../../../__test-utils__/css-declarations";
 import { UTC } from "../../../__test-utils__/fixtures";
@@ -1491,6 +1491,165 @@ describe("CreateEventPopover Event and Reminder kinds", () => {
     );
     await user.click(getSubmitButton());
 
-    assert(onSubmit).toHaveBeenCalledExactlyOnceWith({ ...BASE_DRAFT, url: null });
+    assert(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      ...BASE_DRAFT,
+      notify: null,
+      url: null,
+    });
+  });
+});
+
+describe("CreateEventPopover reminder notify", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const stubNotification = (
+    permission: NotificationPermission,
+    requestResult: NotificationPermission = "granted"
+  ) => {
+    const requestPermission = vi.fn(() => Promise.resolve(requestResult));
+
+    vi.stubGlobal("Notification", { permission, requestPermission });
+
+    return requestPermission;
+  };
+
+  it("asks for permission when Notify turns on and saves the default lead time", async () => {
+    const user = userEvent.setup({ delay: null });
+    const requestPermission = stubNotification("default");
+    const onSubmit = submitSpy();
+    renderPopover({ kind: "reminder", onKindChange: vi.fn(), onSubmit });
+
+    await user.click(screen.getByRole("switch", { name: "Notify" }));
+
+    await waitFor(() => {
+      assert(screen.getByRole("switch", { name: "Notify" })).toBeChecked();
+    });
+    assert(requestPermission).toHaveBeenCalledOnce();
+    assert(
+      screen.getByRole("combobox", { name: "Notify before" })
+    ).toHaveTextContent("10 minutes before");
+
+    await user.click(getSubmitButton());
+
+    assert(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      ...BASE_DRAFT,
+      notify: { leadMinutes: 10 },
+    });
+  });
+
+  it("keeps Notify on without a prompt when permission is already granted", async () => {
+    const user = userEvent.setup({ delay: null });
+    const requestPermission = stubNotification("granted");
+    renderPopover({ kind: "reminder", onKindChange: vi.fn() });
+
+    await user.click(screen.getByRole("switch", { name: "Notify" }));
+
+    assert(screen.getByRole("switch", { name: "Notify" })).toBeChecked();
+    assert(requestPermission).not.toHaveBeenCalled();
+  });
+
+  it("keeps Notify off and explains it when permission is denied", async () => {
+    const user = userEvent.setup({ delay: null });
+    const requestPermission = stubNotification("denied");
+    renderPopover({ kind: "reminder", onKindChange: vi.fn() });
+
+    await user.click(screen.getByRole("switch", { name: "Notify" }));
+
+    assert(screen.getByRole("switch", { name: "Notify" })).not.toBeChecked();
+    assert(requestPermission).not.toHaveBeenCalled();
+    assert(screen.getByText(/notifications are blocked/iu)).toBeInTheDocument();
+  });
+
+  it("keeps Notify off when the permission prompt is dismissed", async () => {
+    const user = userEvent.setup({ delay: null });
+    stubNotification("default", "default");
+    renderPopover({ kind: "reminder", onKindChange: vi.fn() });
+
+    await user.click(screen.getByRole("switch", { name: "Notify" }));
+
+    await waitFor(() => {
+      assert(screen.getByText(/notifications are blocked/iu)).toBeInTheDocument();
+    });
+    assert(screen.getByRole("switch", { name: "Notify" })).not.toBeChecked();
+  });
+
+  it("keeps Notify off with the message when the browser has no Notification API", async () => {
+    const user = userEvent.setup({ delay: null });
+    vi.stubGlobal("Notification", undefined);
+    renderPopover({ kind: "reminder", onKindChange: vi.fn() });
+
+    await user.click(screen.getByRole("switch", { name: "Notify" }));
+
+    assert(screen.getByRole("switch", { name: "Notify" })).not.toBeChecked();
+    assert(screen.getByText(/notifications are blocked/iu)).toBeInTheDocument();
+  });
+
+  it("saves the lead time chosen in Notify before", async () => {
+    const user = userEvent.setup({ delay: null });
+    stubNotification("granted");
+    const onSubmit = submitSpy();
+    renderPopover({ kind: "reminder", onKindChange: vi.fn(), onSubmit });
+
+    await user.click(screen.getByRole("switch", { name: "Notify" }));
+    chooseSelectOption(/notify before/iu, "At time of event");
+    await user.click(getSubmitButton());
+
+    assert(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      ...BASE_DRAFT,
+      notify: { leadMinutes: 0 },
+    });
+  });
+
+  it("keeps a title typed while the permission prompt is pending", async () => {
+    const user = userEvent.setup({ delay: null });
+    let answerPrompt: (permission: NotificationPermission) => void = () =>
+      undefined;
+    const requestPermission = vi.fn(
+      () =>
+        new Promise<NotificationPermission>((resolve) => {
+          answerPrompt = resolve;
+        })
+    );
+    vi.stubGlobal("Notification", { permission: "default", requestPermission });
+    renderPopover({ kind: "reminder", onKindChange: vi.fn() });
+
+    await user.click(screen.getByRole("switch", { name: "Notify" }));
+    await user.type(screen.getByLabelText("Title"), " review");
+    act(() => {
+      answerPrompt("granted");
+    });
+
+    await waitFor(() => {
+      assert(screen.getByRole("switch", { name: "Notify" })).toBeChecked();
+    });
+    assert(screen.getByLabelText("Title")).toHaveValue("Planning session review");
+  });
+
+  it("drops the reminder-only notify when the kind switches back to Event", async () => {
+    const user = userEvent.setup({ delay: null });
+    stubNotification("granted");
+    const onSubmit = submitSpy();
+    const { rerender } = renderPopover({
+      kind: "reminder",
+      onKindChange: vi.fn(),
+      onSubmit,
+    });
+
+    await user.click(screen.getByRole("switch", { name: "Notify" }));
+    await user.click(screen.getByRole("button", { name: "Event" }));
+    rerender(
+      <CreateEventPopover
+        {...popoverProps({ kind: "event", onKindChange: vi.fn(), onSubmit })}
+      />
+    );
+    await user.click(getSubmitButton());
+
+    assert(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      ...BASE_DRAFT,
+      notify: null,
+      url: null,
+    });
   });
 });

@@ -3,6 +3,7 @@
 import { clsx } from "clsx";
 import {
   ArrowRightIcon,
+  BellIcon,
   Clock3Icon,
   Globe2Icon,
   Link2Icon,
@@ -918,7 +919,11 @@ interface CreateEventFormProps {
   readonly firstError: string | null;
   readonly formId: string;
   readonly kind: CreateEventKind;
+  readonly notifyBlocked: boolean;
+  readonly notifyLeadItems: readonly ResourceItem[];
   readonly onKindChange?: (kind: CreateEventKind) => void;
+  readonly onNotifyChange: (enabled: boolean) => Promise<void>;
+  readonly onNotifyLeadChange: (value: string) => void;
   readonly onAllDayChange: (allDay: boolean) => void;
   readonly onLocationSelection: (value: string) => void;
   readonly onPeopleSelect: (option: ComboboxOption) => void;
@@ -1158,9 +1163,73 @@ const ReminderUrlField = ({
   );
 };
 
+interface NotifyFieldsProps {
+  readonly blocked: boolean;
+  readonly disabled: boolean;
+  readonly fieldId: (name: string) => string;
+  readonly leadItems: readonly ResourceItem[];
+  readonly notify: CreateEventDraft["notify"];
+  readonly onChange: (enabled: boolean) => Promise<void>;
+  readonly onLeadChange: (value: string) => void;
+}
+
+const NotifyFields = ({
+  blocked,
+  disabled,
+  fieldId,
+  leadItems,
+  notify,
+  onChange,
+  onLeadChange,
+}: NotifyFieldsProps) => {
+  const { t } = useCalendarLocalization();
+  const current = notify ?? null;
+
+  return (
+    <>
+      <Field className={styles.field}>
+        <Toggle
+          checked={current !== null}
+          disabled={disabled}
+          label={t("calendar.create_event.field.notify")}
+          size="m"
+          type="toggle-first"
+          onCheckedChange={(checked) => {
+            void onChange(checked);
+          }}
+        />
+      </Field>
+      {current === null ? null : (
+        <Field className={styles.field}>
+          <Select
+            id={fieldId("notify-lead")}
+            aria-label={t("calendar.create_event.field.notify_lead")}
+            options={leadItems}
+            value={String(current.leadMinutes)}
+            size="xl"
+            showSelectedCheck
+            iconLeft={<BellIcon aria-hidden="true" />}
+            disabled={disabled}
+            onValueChange={onLeadChange}
+          />
+        </Field>
+      )}
+      {blocked ? (
+        <FieldError id={fieldId("notify-error")} role="status">
+          {t("calendar.create_event.notify.blocked")}
+        </FieldError>
+      ) : null}
+    </>
+  );
+};
+
 const CreateEventFields = (props: CreateEventFieldsProps) => {
   const {
     kind,
+    notifyBlocked,
+    notifyLeadItems,
+    onNotifyChange,
+    onNotifyLeadChange,
     calendarItems,
     conferencingItems,
     controller,
@@ -1429,6 +1498,20 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
         {repeatField}
         {repeatEditor}
 
+        {isReminder ? (
+          <div className={styles.fields}>
+            <NotifyFields
+              blocked={notifyBlocked}
+              disabled={controller.isSubmitting}
+              fieldId={fieldId}
+              leadItems={notifyLeadItems}
+              notify={controller.draft.notify}
+              onChange={onNotifyChange}
+              onLeadChange={onNotifyLeadChange}
+            />
+          </div>
+        ) : null}
+
         <div className={styles.fields} inert={repeatEditing}>
           {isReminder ? null : timeZoneField}
           {isReminder ? null : (
@@ -1579,7 +1662,11 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
 
   const {
     kind,
+    notifyBlocked,
+    notifyLeadItems,
     onKindChange,
+    onNotifyChange,
+    onNotifyLeadChange,
     cancelCustomRepeat,
     changeCustomRepeat,
     closeCustomRepeat,
@@ -1729,7 +1816,11 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
       firstError={firstError ?? null}
       formId={formId}
       kind={kind}
+      notifyBlocked={notifyBlocked}
+      notifyLeadItems={notifyLeadItems}
       onKindChange={onKindChange}
+      onNotifyChange={onNotifyChange}
+      onNotifyLeadChange={onNotifyLeadChange}
       onAllDayChange={onAllDayChange}
       onLocationSelection={onLocationSelection}
       onPeopleSelect={onPeopleSelect}
