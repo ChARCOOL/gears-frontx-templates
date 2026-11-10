@@ -315,6 +315,7 @@ export type {
   CalendarEventSegment,
   CalendarEventGeometry,
   CalendarMoveRequest,
+  CalendarResizeRequest,
   WeekGridInteractionMode,
   CreateEventDraftBase,
   TimedCreateEventDraft,

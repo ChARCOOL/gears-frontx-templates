@@ -249,6 +249,43 @@
   block-size: auto;
 }
 
+/* A grab strip on the bottom edge; the card's own colour shows it on hover, focus and touch. */
+.eventFrame.timedFrame > .resizeHandle {
+  z-index: 1;
+  block-size: var(--cal-space-2);
+  cursor: ns-resize;
+  inset-block: auto 0;
+  inset-inline: 0;
+  touch-action: none;
+}
+
+.eventFrame.timedFrame > .resizeHandle:after {
+  position: absolute;
+  border-radius: var(--cal-radius-pill);
+  background: currentcolor;
+  block-size: calc(var(--cal-border-width-1) * 2);
+  content: "";
+  inset-block-end: var(--cal-border-width-1);
+  inset-inline: 30%;
+  opacity: 0;
+}
+
+.eventFrame:hover > .resizeHandle:after,
+.eventFrame:focus-within > .resizeHandle:after,
+.eventFrame > .resizeHandle:active:after {
+  opacity: 0.6;
+}
+
+@media (pointer: coarse) {
+  .eventFrame.timedFrame > .resizeHandle {
+    block-size: var(--cal-space-4);
+  }
+
+  .eventFrame > .resizeHandle:after {
+    opacity: 0.6;
+  }
+}
+
 .allDayFrame {
   inset-inline-start: 0;
   z-index: 3;

@@ -30,6 +30,8 @@ import type { CalendarContextProps } from "../../i18n/calendar-localization";
 import { useWeekGridController } from "../../react/controllers/use-week-grid-controller";
 import type { FocusedCell } from "../../react/controllers/use-week-grid-controller";
 import { useCurrentInstant } from "../../react/hooks/use-current-instant";
+import { useEventResize } from "../../react/hooks/use-event-resize";
+import type { ResizeTarget } from "../../react/hooks/use-event-resize";
 import type { WeekGridProps } from "./week-grid";
 import {
   buildAllDayPositions,
@@ -127,6 +129,7 @@ export const useWeekGridContent = <Payload = unknown>(
     onQuickCreate,
     onPaintSelect,
     onMoveRequest,
+    onResizeRequest,
     className,
   } = props;
 
@@ -475,6 +478,41 @@ export const useWeekGridContent = <Payload = unknown>(
     return { cell, element, meta };
   };
 
+  const timedCells = useMemo(
+    () =>
+      Array.from(gridData.cellByKey.values()).filter(
+        (cell) => gridData.metaByCell.get(cell)?.kind === "timed"
+      ),
+    [gridData]
+  );
+
+  // Frames lie over the cells they cover, so the slot under the pointer is found below them.
+  const resizeTargetAt = (
+    clientX: number,
+    clientY: number
+  ): ResizeTarget | null => {
+    for (const element of document.elementsFromPoint(clientX, clientY)) {
+      if (element.closest("[data-event-id]") === null) {
+        const target = cellAtTarget(element);
+
+        if (target !== null) {
+          return {
+            bottom: target.element.getBoundingClientRect().bottom,
+            cell: target.cell,
+          };
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const resize = useEventResize({
+    cells: timedCells,
+    onResizeRequest,
+    targetAt: resizeTargetAt,
+  });
+
   const handleGridActiveCellChange = (cell: CalendarCell): void => {
     const meta = gridData.metaByCell.get(cell);
 
@@ -791,6 +829,7 @@ export const useWeekGridContent = <Payload = unknown>(
     renderConflict,
     renderEvent,
     renderUnavailable,
+    resize,
     rootClassName,
     scrollRef,
     selectedEvent,

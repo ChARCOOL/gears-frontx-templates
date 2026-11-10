@@ -17,7 +17,7 @@ import type {
   Ref,
 } from "react";
 
-import { isEventMovable } from "../../core/actionability";
+import { isEventActionable, isEventMovable } from "../../core/actionability";
 import { formatGridTime } from "../../core/format";
 import { EVENT_CHIP_HEIGHT } from "../../core/grid";
 import type {
@@ -31,6 +31,7 @@ import type {
   CalendarEventSegment,
   CalendarGridRow,
   CalendarMoveRequest,
+  CalendarResizeRequest,
   CalendarSelectionRange,
   CalendarSlotMinutes,
   CalendarTimeWindow,
@@ -44,6 +45,7 @@ import {
 } from "../../i18n/calendar-localization";
 import type { CalendarContextProps } from "../../i18n/calendar-localization";
 import { CalendarScope } from "../../i18n/calendar-localization-provider";
+import type { useEventResize } from "../../react/hooks/use-event-resize";
 import type {
   CalendarConflictRenderer,
   CalendarDetailRenderer,
@@ -160,6 +162,8 @@ export interface WeekGridProps<Payload = unknown> extends CalendarContextProps {
   readonly onPaintSelect?: (range: CalendarSelectionRange) => void;
   /** An event was dropped on a new slot in `paint-and-move` mode. Call `confirm` or `cancel`. */
   readonly onMoveRequest?: (request: CalendarMoveRequest) => void;
+  /** A resize handle on timed, single-day, movable events asks the host to move the event's end. */
+  readonly onResizeRequest?: (request: CalendarResizeRequest) => void;
   /** Colour family of a painted range. Unset, the painted cells use the plain selection style. */
   readonly paintColorFamily?: CalendarColorFamily;
 }
@@ -555,6 +559,7 @@ interface EventFrameProps {
   readonly children: ReactNode;
   readonly dragging?: boolean;
   readonly draggable?: boolean;
+  readonly onKeyDown?: (event: ReactKeyboardEvent<HTMLDivElement>) => void;
 }
 
 const EventFrame = ({
@@ -566,6 +571,7 @@ const EventFrame = ({
   children,
   dragging = false,
   draggable = false,
+  onKeyDown,
 }: EventFrameProps) => (
   <div
     className={className}
@@ -573,6 +579,7 @@ const EventFrame = ({
     data-dragging={dragging ? "" : undefined}
     style={{ ...style, inlineSize, insetBlockStart }}
     draggable={draggable}
+    onKeyDown={onKeyDown}
   >
     {children}
   </div>
@@ -775,6 +782,8 @@ interface WeekGridCellContentProps<Payload> {
     anchor?: HTMLElement
   ) => void;
   readonly readOnly: boolean;
+  readonly resizable: boolean;
+  readonly resize: ReturnType<typeof useEventResize>;
   readonly renderCell?: CalendarGridProps["renderCell"];
   readonly renderConflict?: CalendarConflictRenderer;
   readonly renderEvent?: CalendarEventRenderer<Payload>;
@@ -832,6 +841,8 @@ const WeekGridCellContent = <Payload,>(
     overflow,
     paintColorFamily,
     paintInvalid,
+    resizable,
+    resize,
     selectedEventId,
     selectedPaintKeys,
     timedPositions,
@@ -926,35 +937,63 @@ const WeekGridCellContent = <Payload,>(
           />
         </EventFrame>
       ))}
-      {timedPositions.map((position) => (
-        <EventFrame
-          key={position.segment.event.id + position.segment.date}
-          eventId={position.event.id}
-          className={clsx(styles.eventFrame, styles.timedFrame)}
-          dragging={dragPreview?.eventId === position.event.id}
-          draggable={!readOnly && !unavailable && isEventMovable(position.event)}
-          style={{
-            blockSize: `${position.height}px`,
-            insetInlineStart: `${position.geometry.insetInlineStart}%`,
-            zIndex: position.geometry.zIndex,
-          }}
-          insetBlockStart={`${position.top}px`}
-          inlineSize={`${position.geometry.inlineSize}%`}
-        >
-          <WeekGridEvent<Payload>
-            currentInstant={currentInstant}
-            event={position.event}
-            geometry={position.geometry}
-            onSelect={onSelect}
-            readOnly={readOnly}
-            renderConflict={renderConflict}
-            renderEvent={renderEvent}
-            renderEventMetadata={renderEventMetadata}
-            selectedEventId={selectedEventId}
-            segment={position.segment}
-          />
-        </EventFrame>
-      ))}
+      {timedPositions.map((position) => {
+        const { event } = position;
+        const resizeProps =
+          resizable &&
+          !unavailable &&
+          position.segment.segment === null &&
+          isEventActionable(event) &&
+          isEventMovable(event)
+            ? resize.handleProps(event)
+            : null;
+        const resizeBlockSize =
+          resize.preview?.eventId === event.id
+            ? resize.preview.blockSize
+            : position.height;
+
+        return (
+          <EventFrame
+            key={position.segment.event.id + position.segment.date}
+            eventId={event.id}
+            className={clsx(styles.eventFrame, styles.timedFrame)}
+            dragging={dragPreview?.eventId === event.id}
+            draggable={!readOnly && !unavailable && isEventMovable(event)}
+            onKeyDown={resizeProps?.onKeyDown}
+            style={{
+              blockSize: `${resizeBlockSize}px`,
+              insetInlineStart: `${position.geometry.insetInlineStart}%`,
+              zIndex: position.geometry.zIndex,
+            }}
+            insetBlockStart={`${position.top}px`}
+            inlineSize={`${position.geometry.inlineSize}%`}
+          >
+            <WeekGridEvent<Payload>
+              currentInstant={currentInstant}
+              event={event}
+              geometry={position.geometry}
+              onSelect={onSelect}
+              readOnly={readOnly}
+              renderConflict={renderConflict}
+              renderEvent={renderEvent}
+              renderEventMetadata={renderEventMetadata}
+              selectedEventId={selectedEventId}
+              segment={position.segment}
+            />
+            {resizeProps !== null && (
+              <div
+                className={styles.resizeHandle}
+                data-resize-handle=""
+                onMouseDown={resizeProps.onMouseDown}
+                onPointerCancel={resizeProps.onPointerCancel}
+                onPointerDown={resizeProps.onPointerDown}
+                onPointerMove={resizeProps.onPointerMove}
+                onPointerUp={resizeProps.onPointerUp}
+              />
+            )}
+          </EventFrame>
+        );
+      })}
     </>
   );
   // @cpt-end:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-slots
@@ -1005,6 +1044,7 @@ const WeekGridContent = <Payload = unknown,>(
     selectedEvent,
     paintRefused,
     paintTouchesUnavailable,
+    resize,
     selectedPaintKeys,
     setPaintRefused,
     t,
@@ -1066,6 +1106,8 @@ const WeekGridContent = <Payload = unknown,>(
       meta={gridData.metaByCell.get(context.cell)}
       onSelect={handleEventSelect}
       readOnly={controller.interactionMode === "read-only"}
+      resizable={controller.interactionMode === "paint-and-move"}
+      resize={resize}
       renderCell={renderCell}
       renderConflict={renderConflict}
       renderEvent={renderEvent}

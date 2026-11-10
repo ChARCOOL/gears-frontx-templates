@@ -333,6 +333,18 @@ export interface CalendarMoveRequest {
   readonly cancel: () => void;
 }
 
+/** Nothing changes until the host calls `confirm`; `cancel` restores the card's size. */
+export interface CalendarResizeRequest {
+  /** The timed, single-day event whose end is being moved. */
+  readonly event: CalendarEvent;
+  /** Slot that holds the new end: the event ends where this slot ends. */
+  readonly to: CalendarCell;
+  /** Accept the new end. The host persists it. */
+  readonly confirm: () => void;
+  /** Reject the new end and restore the card. */
+  readonly cancel: () => void;
+}
+
 export type WeekGridInteractionMode =
   | "quick-create"
   | "paint-and-move"

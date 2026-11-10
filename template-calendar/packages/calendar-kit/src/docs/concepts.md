@@ -132,6 +132,8 @@ Time grids take an `interactionMode`:
 | `paint-and-move` | `onPaintSelect` with the one-cell range on Enter or Space | `onPaintSelect` with the range | `onMoveRequest`; host must `confirm` or `cancel` |
 | `read-only` | nothing | nothing | nothing |
 
+In `paint-and-move`, a handle on the bottom edge of a timed event also emits `onResizeRequest`, with the same `confirm` or `cancel` handshake.
+
 In every mode an available event still opens through `onEventSelect`. `DayGrid` supports `quick-create` and `read-only`.
 
 ## Drafts

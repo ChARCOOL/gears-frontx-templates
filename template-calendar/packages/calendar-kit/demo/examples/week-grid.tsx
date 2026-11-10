@@ -148,6 +148,9 @@ const WeekGridDemo = ({ direction }: { direction: CalendarDirection }) => {
           onMoveRequest={(request) => {
             request.confirm();
           }}
+          onResizeRequest={(request) => {
+            request.confirm();
+          }}
         />
       </DemoSection>
 
