@@ -1,7 +1,8 @@
 "use client";
 
 import { clsx } from "clsx";
-import { memo } from "react";
+import { EllipsisIcon } from "lucide-react";
+import { memo, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { CalendarRef } from "../../core/model";
@@ -15,9 +16,18 @@ import { Button } from "../primitives/button/button";
 import { Checkbox } from "../primitives/checkbox/checkbox";
 import { ListItem } from "../primitives/list/list";
 
+import type { CalendarOptionsActions } from "./calendar-options-menu";
+import { CalendarOptionsMenu } from "./calendar-options-menu";
 import styles from "./calendar-list.module.css";
 
-export interface CalendarListProps extends CalendarContextProps {
+/** Row menu callbacks and the calendar shown alone; the host owns their state. */
+export interface CalendarListOptionsProps extends CalendarOptionsActions {
+  /** Id of the calendar shown alone; its menu offers Show previously visible. */
+  readonly soloCalendarId?: string | null;
+}
+
+export interface CalendarListProps
+  extends CalendarContextProps, CalendarListOptionsProps {
   /** Class added to the component root. */
   readonly className?: string;
   /** Calendars to list. */
@@ -45,6 +55,7 @@ type CalendarListContentProps = Omit<
 >;
 
 interface CalendarListRowProps {
+  readonly actions: CalendarOptionsActions;
   readonly calendar: CalendarRef;
   readonly hidden: boolean;
   readonly renderCalendar?: (
@@ -55,6 +66,7 @@ interface CalendarListRowProps {
   readonly onHiddenCalendarIdsChange: (
     hiddenCalendarIds: readonly string[]
   ) => void;
+  readonly solo: boolean;
 }
 
 const COLOR_CLASSES = new Map<string, string>([
@@ -68,14 +80,21 @@ const COLOR_CLASSES = new Map<string, string>([
 ]);
 
 const CalendarListRowImpl = ({
+  actions,
   calendar,
   hidden,
   hiddenCalendarIds,
   onHiddenCalendarIdsChange,
   renderCalendar,
+  solo,
 }: CalendarListRowProps) => {
+  const { t } = useCalendarLocalization();
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const inputId = `calendar-list-${calendar.id}`;
   const colorClassName = COLOR_CLASSES.get(calendar.colorFamily);
+  const hasOptions = Object.values(actions).some(
+    (action) => action !== undefined
+  );
 
   const handleChange = (): void => {
     onHiddenCalendarIdsChange(
@@ -108,7 +127,37 @@ const CalendarListRowImpl = ({
           </label>
         }
         size="xs"
+        trailing={
+          hasOptions ? (
+            <Button
+              aria-expanded={menuAnchor !== null}
+              aria-haspopup="dialog"
+              aria-label={t("calendar.list.optionsFor", {
+                name: calendar.name,
+              })}
+              className={clsx(
+                styles.moreButton,
+                menuAnchor !== null && styles.moreButtonOpen
+              )}
+              onClick={(event) => setMenuAnchor(event.currentTarget)}
+              onlyIcon
+              size="xs"
+              variant="ghost"
+            >
+              <EllipsisIcon aria-hidden="true" />
+            </Button>
+          ) : undefined
+        }
       />
+      {menuAnchor === null ? null : (
+        <CalendarOptionsMenu
+          actions={actions}
+          anchorElement={menuAnchor}
+          calendar={calendar}
+          onClose={() => setMenuAnchor(null)}
+          solo={solo}
+        />
+      )}
     </li>
   );
 };
@@ -120,11 +169,30 @@ const CalendarListContent = ({
   className,
   hiddenCalendarIds,
   onCreateCalendar,
+  onDeleteCalendar,
   onHiddenCalendarIdsChange,
+  onMakeDefaultCalendar,
+  onShowOnlyCalendar,
+  onShowPreviouslyVisible,
   renderCalendar,
   renderCreateCalendar,
+  soloCalendarId,
 }: CalendarListContentProps) => {
   const { direction, t } = useCalendarLocalization();
+  const actions = useMemo<CalendarOptionsActions>(
+    () => ({
+      onDeleteCalendar,
+      onMakeDefaultCalendar,
+      onShowOnlyCalendar,
+      onShowPreviouslyVisible,
+    }),
+    [
+      onDeleteCalendar,
+      onMakeDefaultCalendar,
+      onShowOnlyCalendar,
+      onShowPreviouslyVisible,
+    ]
+  );
 
   const renderCreateAffordance = (): ReactNode => {
     if (renderCreateCalendar) {
@@ -162,12 +230,14 @@ const CalendarListContent = ({
       <ul className={styles.list}>
         {calendars.map((calendar) => (
           <CalendarListRow
+            actions={actions}
             calendar={calendar}
             hidden={hiddenCalendarIdSet.has(calendar.id)}
             key={calendar.id}
             renderCalendar={renderCalendar}
             hiddenCalendarIds={hiddenCalendarIds}
             onHiddenCalendarIdsChange={onHiddenCalendarIdsChange}
+            solo={soloCalendarId === calendar.id}
           />
         ))}
       </ul>

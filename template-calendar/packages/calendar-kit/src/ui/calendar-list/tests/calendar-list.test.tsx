@@ -206,4 +206,153 @@ describe(CalendarList, () => {
       declarations(calendarListCss, ".row:hover").get("background-color")
     ).toBe("var(--cal-state-hover)");
   });
+
+  describe("options menu", () => {
+    const OPTION_CALENDARS: readonly CalendarRef[] = [
+      {
+        canDelete: true,
+        canWrite: true,
+        colorFamily: "blue",
+        id: "cal-personal",
+        isDefault: false,
+        name: "Personal",
+      },
+      {
+        canDelete: false,
+        canWrite: true,
+        colorFamily: "orange",
+        id: "cal-events",
+        isDefault: true,
+        name: "Events",
+      },
+    ];
+
+    const optionActions = () => ({
+      onDeleteCalendar: vi.fn<(calendarId: string) => void>(),
+      onMakeDefaultCalendar: vi.fn<(calendarId: string) => void>(),
+      onShowOnlyCalendar: vi.fn<(calendarId: string) => void>(),
+      onShowPreviouslyVisible: vi.fn<() => void>(),
+    });
+
+    it("renders no options button when no option callback is passed", () => {
+      render(<CalendarList {...baseProps()} />);
+
+      expect(screen.queryByRole("button", { name: /Options for/ })).toBeNull();
+    });
+
+    it("opens the menu with Show only, Make default and Delete", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <CalendarList
+          {...baseProps({ calendars: OPTION_CALENDARS, ...optionActions() })}
+        />
+      );
+
+      await user.click(
+        screen.getByRole("button", { name: "Options for Personal" })
+      );
+
+      expect(
+        screen.getByRole("button", { name: "Show only this calendar" })
+      ).toBeEnabled();
+      expect(
+        screen.getByRole("button", { name: "Make default" })
+      ).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
+    });
+
+    it("disables Make default for the default calendar and Delete without permission", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <CalendarList
+          {...baseProps({ calendars: OPTION_CALENDARS, ...optionActions() })}
+        />
+      );
+
+      await user.click(screen.getByRole("button", { name: "Options for Events" }));
+
+      expect(
+        screen.getByRole("button", { name: "Make default" })
+      ).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Delete" })).toBeDisabled();
+    });
+
+    it("shows only the calendar and closes the menu", async () => {
+      const user = userEvent.setup();
+      const actions = optionActions();
+
+      render(
+        <CalendarList
+          {...baseProps({ calendars: OPTION_CALENDARS, ...actions })}
+        />
+      );
+
+      await user.click(
+        screen.getByRole("button", { name: "Options for Personal" })
+      );
+      await user.click(
+        screen.getByRole("button", { name: "Show only this calendar" })
+      );
+
+      expect(actions.onShowOnlyCalendar).toHaveBeenCalledWith("cal-personal");
+      expect(
+        screen.queryByRole("button", { name: "Make default" })
+      ).toBeNull();
+    });
+
+    it("offers Show previously visible on the calendar shown alone", async () => {
+      const user = userEvent.setup();
+      const actions = optionActions();
+
+      render(
+        <CalendarList
+          {...baseProps({
+            calendars: OPTION_CALENDARS,
+            soloCalendarId: "cal-personal",
+            ...actions,
+          })}
+        />
+      );
+
+      await user.click(
+        screen.getByRole("button", { name: "Options for Personal" })
+      );
+
+      expect(
+        screen.queryByRole("button", { name: "Show only this calendar" })
+      ).toBeNull();
+      await user.click(
+        screen.getByRole("button", { name: "Show previously visible" })
+      );
+
+      expect(actions.onShowPreviouslyVisible).toHaveBeenCalledOnce();
+    });
+
+    it("makes and deletes the calendar through its callbacks", async () => {
+      const user = userEvent.setup();
+      const actions = optionActions();
+
+      render(
+        <CalendarList
+          {...baseProps({ calendars: OPTION_CALENDARS, ...actions })}
+        />
+      );
+
+      await user.click(
+        screen.getByRole("button", { name: "Options for Personal" })
+      );
+      await user.click(screen.getByRole("button", { name: "Make default" }));
+
+      expect(actions.onMakeDefaultCalendar).toHaveBeenCalledWith("cal-personal");
+
+      await user.click(
+        screen.getByRole("button", { name: "Options for Personal" })
+      );
+      await user.click(screen.getByRole("button", { name: "Delete" }));
+
+      expect(actions.onDeleteCalendar).toHaveBeenCalledWith("cal-personal");
+    });
+  });
 });

@@ -1,1 +1,5 @@
-export { CalendarList, type CalendarListProps } from "./calendar-list";
+export {
+  CalendarList,
+  type CalendarListOptionsProps,
+  type CalendarListProps,
+} from "./calendar-list";

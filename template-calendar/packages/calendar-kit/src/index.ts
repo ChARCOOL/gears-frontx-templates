@@ -104,7 +104,10 @@ export type {
 } from "./ui/calendar-side-panel/public";
 
 export { CalendarList } from "./ui/calendar-list/public";
-export type { CalendarListProps } from "./ui/calendar-list/public";
+export type {
+  CalendarListOptionsProps,
+  CalendarListProps,
+} from "./ui/calendar-list/public";
 
 export { AvailabilityGrid } from "./ui/availability-grid/public";
 export type { AvailabilityGridProps } from "./ui/availability-grid/public";

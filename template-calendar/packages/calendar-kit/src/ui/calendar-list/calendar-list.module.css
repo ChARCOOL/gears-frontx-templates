@@ -123,6 +123,73 @@
   inline-size: 100%;
 }
 
+.moreButton {
+  flex-shrink: 0;
+  opacity: 0;
+}
+
+.row:hover .moreButton,
+.row:focus-within .moreButton,
+.moreButtonOpen {
+  opacity: 1;
+}
+
+.menu {
+  border-radius: var(--cal-radius-lg);
+  inline-size: 228px;
+}
+
+.menuList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--cal-space-2);
+  list-style: none;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  border-radius: var(--cal-radius-md);
+  background: none;
+  color: var(--cal-color-text);
+  cursor: pointer;
+  font: inherit;
+  gap: var(--cal-space-2);
+  inline-size: 100%;
+  min-block-size: 32px;
+  padding-block: 0;
+  padding-inline: var(--cal-space-2);
+  text-align: start;
+}
+
+.menuItem:hover {
+  background-color: var(--cal-state-hover);
+}
+
+.menuItem:focus-visible {
+  box-shadow: inset 0 0 0 var(--cal-border-width-focus)
+    var(--cal-color-focus-ring);
+}
+
+.menuItem:disabled {
+  background: none;
+  color: var(--cal-color-subtle);
+  cursor: default;
+}
+
+.menuItemStart {
+  justify-content: flex-start;
+}
+
+.menuIcon {
+  flex: none;
+  block-size: var(--cal-icon-size-sm);
+  inline-size: var(--cal-icon-size-sm);
+}
+
 @media (forced-colors: active) {
   .checkbox:focus-visible {
     outline-color: Highlight;

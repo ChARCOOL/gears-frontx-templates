@@ -470,10 +470,16 @@ Back and close in nested panels.
 
 <!-- generated:messages calendar.list -->
 
-| Translation ID              | English      | Values |
-| --------------------------- | ------------ | ------ |
-| `calendar.list.add`         | Add          |        |
-| `calendar.list.moreOptions` | More options |        |
+| Translation ID                        | English                 | Values |
+| ------------------------------------- | ----------------------- | ------ |
+| `calendar.list.add`                   | Add                     |        |
+| `calendar.list.delete`                | Delete                  |        |
+| `calendar.list.makeDefault`           | Make default            |        |
+| `calendar.list.moreOptions`           | More options            |        |
+| `calendar.list.options`               | Calendar options        |        |
+| `calendar.list.optionsFor`            | Options for {{name}}    | `name` |
+| `calendar.list.showOnly`              | Show only this calendar |        |
+| `calendar.list.showPreviouslyVisible` | Show previously visible |        |
 
 <!-- /generated -->
 

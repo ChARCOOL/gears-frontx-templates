@@ -14,6 +14,14 @@
 
 Use `renderCalendar` to replace a row's visible content, `renderCreateCalendar` to supply a consumer-owned creation action, or `onCreateCalendar` for the default labelled button. The kit never creates or persists calendars.
 
+Passing any option callback adds a three-dot button to each row, shown on hover and focus. Its menu offers:
+
+- Show only this calendar: calls `onShowOnlyCalendar(id)`. While the calendar is `soloCalendarId`, the menu offers Show previously visible instead, which calls `onShowPreviouslyVisible()`.
+- Make default: calls `onMakeDefaultCalendar(id)`. Disabled when `isDefault` is true or `canWrite` is not true.
+- Delete: calls `onDeleteCalendar(id)`. Disabled unless `canDelete` is true. The host confirms before it deletes.
+
+Each item appears only when its callback is passed. The host owns the state behind Show only: it passes `hiddenCalendarIds` and `soloCalendarId`, and the kit does not remember the previous visibility.
+
 Rows pair a label with a checkbox. The seven colour families (blue, lavender, violet, purple, orange, brown, turquoise) are carried by local colour classes; an unknown family falls back to the default action colour without inventing a token. A hidden calendar's name and unticked box are muted. Static row styling lives in this module's CSS rather than inline styles.
 
 ## Props
@@ -27,8 +35,13 @@ Rows pair a label with a checkbox. The seven colour families (blue, lavender, vi
 | `onHiddenCalendarIdsChange` | `(hiddenCalendarIds: readonly string[]) => void` | yes | Called with the new hidden ids after a toggle. |
 | `className` | `string` |  | Class added to the component root. |
 | `onCreateCalendar` | `() => void` |  | Shows a default create button that calls this. |
+| `onDeleteCalendar` | `(calendarId: string) => void` |  | Deletes the calendar. The host confirms before it deletes. |
+| `onMakeDefaultCalendar` | `(calendarId: string) => void` |  | Marks the calendar as the default for new events. |
+| `onShowOnlyCalendar` | `(calendarId: string) => void` |  | Hides every other calendar. |
+| `onShowPreviouslyVisible` | `() => void` |  | Restores the visibility from before the calendar was shown alone. |
 | `renderCalendar` | `(calendar: CalendarRef, hidden: boolean) => ReactNode` |  | Replaces a row's content. |
 | `renderCreateCalendar` | `() => ReactNode` |  | Replaces the create button. |
+| `soloCalendarId` | `string` |  | Id of the calendar shown alone; its menu offers Show previously visible. |
 
 Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`, `translations`; see [Internationalization](../../docs/i18n.md#per-component-overrides).
 <!-- /generated -->
@@ -39,10 +52,16 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 
 <!-- generated:messages calendar.list -->
 
-| Translation ID              | English      | Values |
-| --------------------------- | ------------ | ------ |
-| `calendar.list.add`         | Add          |        |
-| `calendar.list.moreOptions` | More options |        |
+| Translation ID                        | English                 | Values |
+| ------------------------------------- | ----------------------- | ------ |
+| `calendar.list.add`                   | Add                     |        |
+| `calendar.list.delete`                | Delete                  |        |
+| `calendar.list.makeDefault`           | Make default            |        |
+| `calendar.list.moreOptions`           | More options            |        |
+| `calendar.list.options`               | Calendar options        |        |
+| `calendar.list.optionsFor`            | Options for {{name}}    | `name` |
+| `calendar.list.showOnly`              | Show only this calendar |        |
+| `calendar.list.showPreviouslyVisible` | Show previously visible |        |
 
 <!-- /generated -->
 
