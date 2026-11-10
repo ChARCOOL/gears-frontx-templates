@@ -31,7 +31,7 @@ The component is controlled by neutral calendar-kit data. Provide `t`, `locale`,
 | `slotMinutes` | `CalendarSlotMinutes` |  | Length of one row. Default `60`. |
 | `trailingGutter` | `boolean` |  | Repeat the hour labels on the trailing edge, hidden from assistive technology. |
 | `visibleHours` | `CalendarTimeWindow` |  | Visible part of the day, on slot boundaries. Default: the whole day. |
-| `workingHours` | `CalendarTimeWindow` |  | Shaded business hours; also where the grid first scrolls to. Default 08:00–18:00. |
+| `workingHours` | `CalendarTimeWindow` |  | Working hours; cells outside them are hatched. Also where the grid first scrolls to. Default 08:00–18:00. |
 
 Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`, `translations`; see [Internationalization](../../docs/i18n.md#per-component-overrides).
 <!-- /generated -->
@@ -42,7 +42,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 `slotMinutes?: 15 | 20 | 30 | 60` sets the length of one row; the default is `60`. The gutter labels only rows that start on the hour. `visibleHours` must start and end on a slot boundary; otherwise the component throws a `RangeError`.
 
-`workingHours?: CalendarTimeWindow` sets the shaded business part of the day; the default is 08:00–18:00. It is independent of `visibleHours` and also sets where the grid first scrolls to. The grid fills the height its container gives it, like the week grid.
+`workingHours?: CalendarTimeWindow` sets the working part of the day; the default is 08:00–18:00. Cells outside it are hatched with diagonal stripes, and their accessible name says "non-working hour". It is independent of `visibleHours` and also sets where the grid first scrolls to. The grid fills the height its container gives it, like the week grid.
 
 Events are clipped to the visible hours, and events wholly outside them are not rendered. The now line is hidden while the current time is outside them. `now?: UtcInstant` sets the current time for the now line and past styling; when omitted, the grid follows the wall clock. Slots follow elapsed time, so a daylight-saving day has one slot fewer or more.
 
