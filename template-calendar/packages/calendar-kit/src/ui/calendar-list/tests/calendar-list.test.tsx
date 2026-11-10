@@ -140,17 +140,70 @@ describe(CalendarList, () => {
     );
 
     expect(screen.getByRole("checkbox", { name: "Blue" })).toHaveClass(
-      styles.accentBlue
+      styles.colorBlue
     );
     expect(
-      declarations(calendarListCss, ".accentBlue[data-checked]").get(
-        "background-color"
-      )
+      declarations(calendarListCss, ".colorBlue").get("--calendar-color")
     ).toBe("var(--cal-color-blue-accent)");
     expect(
-      declarations(forcedColors, ".accentBlue[data-checked]").get(
+      declarations(calendarListCss, ".colorBlue[data-checked]").get(
+        "background-color"
+      )
+    ).toBe("var(--calendar-color)");
+    expect(
+      declarations(forcedColors, ".colorBlue[data-checked]").get(
         "background-color"
       )
     ).toBe("Highlight");
+  });
+
+  it("gives lavender, violet and brown calendars their own accent class", () => {
+    render(
+      <CalendarList
+        {...baseProps({
+          calendars: [
+            { colorFamily: "lavender", id: "cal-lavender", name: "Lavender" },
+            { colorFamily: "violet", id: "cal-violet", name: "Violet" },
+            { colorFamily: "brown", id: "cal-brown", name: "Brown" },
+          ],
+        })}
+      />
+    );
+
+    expect(screen.getByRole("checkbox", { name: "Lavender" })).toHaveClass(
+      styles.colorLavender
+    );
+    expect(screen.getByRole("checkbox", { name: "Violet" })).toHaveClass(
+      styles.colorViolet
+    );
+    expect(screen.getByRole("checkbox", { name: "Brown" })).toHaveClass(
+      styles.colorBrown
+    );
+    expect(
+      declarations(calendarListCss, ".colorBrown").get("--calendar-color")
+    ).toBe("var(--cal-color-brown-accent)");
+  });
+
+  it("mutes the name and the unticked box of a hidden calendar", () => {
+    render(
+      <CalendarList
+        {...baseProps({ hiddenCalendarIds: ["cal-exams"] })}
+      />
+    );
+
+    expect(screen.getByText("Exams")).toHaveAttribute("data-hidden");
+    expect(screen.getByText("Courses")).not.toHaveAttribute("data-hidden");
+    expect(screen.getByRole("checkbox", { name: "Exams" })).toHaveClass(
+      styles.hiddenCheckbox
+    );
+    expect(
+      declarations(calendarListCss, ".name[data-hidden]").get("color")
+    ).toBe("var(--cal-color-muted)");
+  });
+
+  it("highlights a row on hover with the shared state colour", () => {
+    expect(
+      declarations(calendarListCss, ".row:hover").get("background-color")
+    ).toBe("var(--cal-state-hover)");
   });
 });

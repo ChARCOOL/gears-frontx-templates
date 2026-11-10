@@ -57,11 +57,14 @@ interface CalendarListRowProps {
   ) => void;
 }
 
-const ACCENT_CLASSES = new Map<string, string>([
-  ["turquoise", styles.accentTurquoise],
-  ["purple", styles.accentPurple],
-  ["orange", styles.accentOrange],
-  ["blue", styles.accentBlue],
+const COLOR_CLASSES = new Map<string, string>([
+  ["blue", styles.colorBlue],
+  ["lavender", styles.colorLavender],
+  ["violet", styles.colorViolet],
+  ["purple", styles.colorPurple],
+  ["orange", styles.colorOrange],
+  ["brown", styles.colorBrown],
+  ["turquoise", styles.colorTurquoise],
 ]);
 
 const CalendarListRowImpl = ({
@@ -72,7 +75,7 @@ const CalendarListRowImpl = ({
   renderCalendar,
 }: CalendarListRowProps) => {
   const inputId = `calendar-list-${calendar.id}`;
-  const accentClassName = ACCENT_CLASSES.get(calendar.colorFamily);
+  const colorClassName = COLOR_CLASSES.get(calendar.colorFamily);
 
   const handleChange = (): void => {
     onHiddenCalendarIdsChange(
@@ -90,14 +93,14 @@ const CalendarListRowImpl = ({
           <Checkbox
             aria-label={calendar.name}
             checked={!hidden}
-            className={accentClassName}
+            className={clsx(colorClassName, hidden && styles.hiddenCheckbox)}
             id={inputId}
             onChange={handleChange}
           />
         }
         label={
           <label className={styles.label} htmlFor={inputId}>
-            <span className={styles.name}>
+            <span className={styles.name} data-hidden={hidden || undefined}>
               {renderCalendar
                 ? renderCalendar(calendar, hidden)
                 : calendar.name}

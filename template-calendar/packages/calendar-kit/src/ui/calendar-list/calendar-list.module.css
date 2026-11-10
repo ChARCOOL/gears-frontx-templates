@@ -27,8 +27,13 @@
 }
 
 .row {
+  border-radius: var(--cal-radius-sm);
   min-inline-size: 0;
   color: var(--cal-color-text);
+}
+
+.row:hover {
+  background-color: var(--cal-state-hover);
 }
 
 .label {
@@ -43,46 +48,70 @@
   cursor: pointer;
 }
 
+.hiddenCheckbox:not([data-checked]) {
+  border-color: var(--cal-color-muted);
+}
+
+.colorBlue {
+  --calendar-color: var(--cal-color-blue-accent);
+}
+
+.colorLavender {
+  --calendar-color: var(--cal-color-lavender-accent);
+}
+
+.colorViolet {
+  --calendar-color: var(--cal-color-violet-accent);
+}
+
+.colorPurple {
+  --calendar-color: var(--cal-color-purple-accent);
+}
+
+.colorOrange {
+  --calendar-color: var(--cal-color-orange-accent);
+}
+
+.colorBrown {
+  --calendar-color: var(--cal-color-brown-accent);
+}
+
+.colorTurquoise {
+  --calendar-color: var(--cal-color-turquoise-accent);
+}
+
 /* ui-kit stretches the tick to the whole swatch. */
-.accentTurquoise :global(svg),
-.accentPurple :global(svg),
-.accentOrange :global(svg),
-.accentBlue :global(svg) {
+.colorBlue :global(svg),
+.colorLavender :global(svg),
+.colorViolet :global(svg),
+.colorPurple :global(svg),
+.colorOrange :global(svg),
+.colorBrown :global(svg),
+.colorTurquoise :global(svg) {
   block-size: var(--cal-icon-size-xs);
   inline-size: var(--cal-icon-size-xs);
 }
 
 /* A surface-coloured tick contrasts with the accent fill in both themes. */
-.accentTurquoise[data-checked],
-.accentPurple[data-checked],
-.accentOrange[data-checked],
-.accentBlue[data-checked] {
+.colorBlue[data-checked],
+.colorLavender[data-checked],
+.colorViolet[data-checked],
+.colorPurple[data-checked],
+.colorOrange[data-checked],
+.colorBrown[data-checked],
+.colorTurquoise[data-checked] {
+  border-color: var(--calendar-color);
+  background-color: var(--calendar-color);
   color: var(--cal-color-surface);
-}
-
-.accentTurquoise[data-checked] {
-  background-color: var(--cal-color-turquoise-accent);
-  border-color: var(--cal-color-turquoise-accent);
-}
-
-.accentPurple[data-checked] {
-  background-color: var(--cal-color-purple-accent);
-  border-color: var(--cal-color-purple-accent);
-}
-
-.accentOrange[data-checked] {
-  background-color: var(--cal-color-orange-accent);
-  border-color: var(--cal-color-orange-accent);
-}
-
-.accentBlue[data-checked] {
-  background-color: var(--cal-color-blue-accent);
-  border-color: var(--cal-color-blue-accent);
 }
 
 .name {
   composes: truncate from "../../styles/modules/text.module.css";
   min-inline-size: 0;
+}
+
+.name[data-hidden] {
+  color: var(--cal-color-muted);
 }
 
 .create {
@@ -99,10 +128,13 @@
     outline-color: Highlight;
   }
 
-  .accentTurquoise[data-checked],
-  .accentPurple[data-checked],
-  .accentOrange[data-checked],
-  .accentBlue[data-checked] {
+  .colorBlue[data-checked],
+  .colorLavender[data-checked],
+  .colorViolet[data-checked],
+  .colorPurple[data-checked],
+  .colorOrange[data-checked],
+  .colorBrown[data-checked],
+  .colorTurquoise[data-checked] {
     background-color: Highlight;
     border-color: CanvasText;
   }

@@ -14,7 +14,7 @@
 
 Use `renderCalendar` to replace a row's visible content, `renderCreateCalendar` to supply a consumer-owned creation action, or `onCreateCalendar` for the default labelled button. The kit never creates or persists calendars.
 
-Rows pair a label with a checkbox. The three contract colour families are carried by local accent classes; an unknown family falls back to the default action colour without inventing a token. Static row styling lives in this module's CSS rather than inline styles.
+Rows pair a label with a checkbox. The seven colour families (blue, lavender, violet, purple, orange, brown, turquoise) are carried by local colour classes; an unknown family falls back to the default action colour without inventing a token. A hidden calendar's name and unticked box are muted. Static row styling lives in this module's CSS rather than inline styles.
 
 ## Props
 
