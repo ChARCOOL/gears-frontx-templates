@@ -2,6 +2,7 @@ import { describe, expect as assert, it } from "vitest";
 
 import { availabilityCell as cell } from "../../__test-utils__/fixtures";
 import {
+  addAvailabilityCells,
   buildAvailabilityColumns,
   buildAvailabilityRange,
   buildAvailabilityRows,
@@ -249,5 +250,19 @@ describe(buildAvailabilityRange, () => {
     assert(
       buildAvailabilityRange([mon08, mon09, mon10, mon11], farAnchor, farActive)
     ).toBeNull();
+  });
+});
+
+describe(addAvailabilityCells, () => {
+  it("keeps the earlier selection and orders the union by start", () => {
+    const range = addAvailabilityCells(addAvailabilityCells(null, [mon09]), [
+      mon08,
+    ]);
+
+    assert(range).toStrictEqual({ cells: [mon08, mon09], end: mon09, start: mon08 });
+  });
+
+  it("returns null when nothing is added to an empty selection", () => {
+    assert(addAvailabilityCells(null, [])).toBeNull();
   });
 });
