@@ -7,6 +7,7 @@
 .root {
   position: relative;
   display: grid;
+  grid-template-columns: var(--calendar-grid-template-columns);
   min-inline-size: 0;
   min-block-size: 0;
   /* clip, not hidden: hidden makes this a scrollport and pins the sticky header to it. */
@@ -22,15 +23,25 @@
   letter-spacing: var(--cal-text-grid-tracking);
 }
 
+/* Rows share the root's tracks, so a label column is as wide as its widest label in every row. */
 .row {
   display: grid;
-  grid-template-columns: var(--calendar-grid-template-columns);
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   min-inline-size: 0;
 }
 
 .headerCell {
   composes: headerCell from "../../styles/modules/grid.module.css";
   min-inline-size: 0;
+}
+
+.rowLabel {
+  display: flex;
+  align-items: center;
+  color: var(--cal-color-muted);
+  padding-inline: var(--cal-space-2);
+  white-space: nowrap;
 }
 
 .cell {
