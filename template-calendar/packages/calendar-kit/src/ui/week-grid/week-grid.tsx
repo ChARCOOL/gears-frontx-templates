@@ -23,6 +23,7 @@ import { EVENT_CHIP_HEIGHT } from "../../core/grid";
 import type {
   CalendarCell,
   CalendarCellContext,
+  CalendarColorFamily,
   CalendarDate,
   CalendarEvent,
   CalendarEventGeometry,
@@ -159,6 +160,8 @@ export interface WeekGridProps<Payload = unknown> extends CalendarContextProps {
   readonly onPaintSelect?: (range: CalendarSelectionRange) => void;
   /** An event was dropped on a new slot in `paint-and-move` mode. Call `confirm` or `cancel`. */
   readonly onMoveRequest?: (request: CalendarMoveRequest) => void;
+  /** Colour family of a painted range. Unset, the painted cells use the plain selection style. */
+  readonly paintColorFamily?: CalendarColorFamily;
 }
 
 interface WeekGridInteractionLayerProps {
@@ -781,6 +784,7 @@ interface WeekGridCellContentProps<Payload> {
   readonly dropTargetKeys: ReadonlySet<string>;
   readonly onOverflowSelect?: WeekGridProps["onOverflowSelect"];
   readonly overflow?: SlotOverflow;
+  readonly paintColorFamily?: CalendarColorFamily;
   readonly paintInvalid: boolean;
   readonly selectedEventId: string | null;
   readonly selectedPaintKeys: ReadonlySet<string>;
@@ -826,6 +830,7 @@ const WeekGridCellContent = <Payload,>(
     renderUnavailable,
     onOverflowSelect,
     overflow,
+    paintColorFamily,
     paintInvalid,
     selectedEventId,
     selectedPaintKeys,
@@ -873,6 +878,7 @@ const WeekGridCellContent = <Payload,>(
           cellClassName
         )}
         data-paint={painted ? "" : undefined}
+        data-color-family={painted ? paintColorFamily : undefined}
         data-invalid={painted && paintInvalid ? "" : undefined}
         data-drop-target={dropTargetKeys.has(gridCellKey) ? "" : undefined}
       >
@@ -1013,6 +1019,7 @@ const WeekGridContent = <Payload = unknown,>(
     columnHeaderClassName,
     gutterClassName,
     onOverflowSelect,
+    paintColorFamily,
     renderDetail,
     renderEventMetadata,
     renderOverflow,
@@ -1065,6 +1072,7 @@ const WeekGridContent = <Payload = unknown,>(
       renderEventMetadata={renderEventMetadata}
       overflow={overflowByCell.get(gridCellKey(context.cell))}
       onOverflowSelect={onOverflowSelect}
+      paintColorFamily={paintColorFamily}
       paintInvalid={paintTouchesUnavailable}
       renderOverflow={renderOverflow}
       renderUnavailable={renderUnavailable}
