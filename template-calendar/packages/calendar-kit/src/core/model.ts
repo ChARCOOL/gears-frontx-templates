@@ -34,6 +34,9 @@ export type CalendarColorFamily =
   | "purple"
   | "orange"
   | "blue"
+  | "lavender"
+  | "violet"
+  | "brown"
   | (string & Record<never, never>);
 
 export interface CalendarAttendee {
@@ -116,6 +119,16 @@ export interface CalendarEventBase<Payload = unknown> {
   readonly roomId?: string | null;
   /** Meeting link. Join and Copy appear only for `http(s)` URLs; anything else is plain text. */
   readonly joinUrl?: string | null;
+  /** Detail rows after Participants; each shows only when its value is set. */
+  readonly classroom?: string | null;
+  /** Detail row after Classroom; shown only when set. */
+  readonly instructor?: string | null;
+  /** Detail row after Instructor; shown only when set. */
+  readonly course?: string | null;
+  /** Reminder link. The detail offers Go to page and Copy link for `http(s)` URLs only. */
+  readonly url?: string | null;
+  /** Reminder notification: the detail shows an early reminder notice when it is set. */
+  readonly notify?: { readonly leadMinutes: number } | null;
   /** RRULE body without `RRULE:`, e.g. `FREQ=WEEKLY;BYDAY=MO,WE`; summarized in the detail. */
   readonly recurrenceRule?: string | null;
   /** Id shared by all occurrences of a recurring series, carried through for the host. */
@@ -126,6 +139,8 @@ export interface CalendarEventBase<Payload = unknown> {
   readonly access?: "full" | "busy";
   /** `false` renders the event as unavailable and ignores activation. Default `true`. */
   readonly available?: boolean;
+  /** `false` keeps the card in place: it still opens, but cannot be dragged. Default `true`. */
+  readonly movable?: boolean;
   /** Aggregate RSVP counts for the detail panel. */
   readonly rsvp?: CalendarRsvp | null;
   /** Shown on the card and in the detail; the card's `conflicts` prop overrides them. */
@@ -158,6 +173,8 @@ export type CalendarEvent<Payload = unknown> =
 export interface CalendarAvailabilityCell extends CalendarCell {
   /** `false` blocks the cell: it cannot be painted and is drawn as unavailable. */
   readonly available: boolean;
+  /** Host-defined state id, passed to `renderCell` as `state`; the kit does not interpret it. */
+  readonly state?: string;
 }
 
 export interface CalendarCellContext {
@@ -228,6 +245,12 @@ export interface CalendarRef {
   readonly name: string;
   /** Palette for the calendar's swatch and its events. */
   readonly colorFamily: CalendarColorFamily;
+  /** True for the calendar new events preselect. */
+  readonly isDefault?: boolean;
+  /** False when the viewer cannot add events to it; blocks Make default. */
+  readonly canWrite?: boolean;
+  /** True when the viewer may delete it; enables Delete. */
+  readonly canDelete?: boolean;
 }
 
 export interface CalendarTimeZoneOption {
@@ -338,6 +361,10 @@ export interface CreateEventDraftBase {
   readonly recurrenceRule?: string | null;
   /** Free text. */
   readonly description?: string | null;
+  /** Link a reminder points to. Free text; the host decides what to do with it. */
+  readonly url?: string | null;
+  /** Browser notification for a reminder: minutes before it starts, or `null` when off. */
+  readonly notify?: { readonly leadMinutes: number } | null;
 }
 
 export interface TimedCreateEventDraft extends CreateEventDraftBase {
@@ -365,9 +392,12 @@ export type CreateEventDraft = TimedCreateEventDraft | AllDayCreateEventDraft;
 export interface CreateEventResult {
   /** Id of the created event. */
   readonly eventId?: string;
-  /** Why the create failed. The form stays open and shows `message`. */
+  /**
+   * Why the create failed. The form stays open. `field`, `form`, `denied` and `transport` show
+   * `message` inline; `conflict` shows nothing inline, because the host shows its own dialog.
+   */
   readonly error?: {
-    readonly kind: "field" | "form" | "denied" | "transport";
+    readonly kind: "field" | "form" | "denied" | "transport" | "conflict";
     readonly message: string;
   };
 }
