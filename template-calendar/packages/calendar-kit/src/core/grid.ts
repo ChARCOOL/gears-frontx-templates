@@ -172,6 +172,24 @@ const isoWeekNumber = (date: CalendarDate): number => {
   );
 };
 
+/** Weeks counted from the week that holds `termStart` as week 1; `null` for weeks before it. */
+export const termWeekNumber = (
+  weekStart: CalendarDate,
+  termStart: CalendarDate
+): number | null => {
+  const termWeekStart = addCalendarDays(
+    termStart,
+    -((weekdayIndex(termStart) + 6) % 7)
+  );
+  const weeks = Math.round(
+    (Date.parse(`${weekStart}T00:00:00.000Z`) -
+      Date.parse(`${termWeekStart}T00:00:00.000Z`)) /
+      (DAYS_PER_WEEK * MILLISECONDS_PER_DAY)
+  );
+
+  return weeks < 0 ? null : weeks + 1;
+};
+
 export interface AllDaySpan<T extends GridEvent = GridEvent> {
   readonly key: string;
   readonly event: T;

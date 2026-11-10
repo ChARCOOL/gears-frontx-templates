@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import {
+  addAvailabilityCells,
   buildAvailabilityColumns,
   buildAvailabilityRange,
   buildAvailabilityRows,
@@ -27,6 +28,8 @@ export interface UseAvailabilityGridControllerOptions {
     range: CalendarSelectionRange | null
   ) => void;
   readonly interactionMode?: "paint" | "read-only";
+  /** `span` paints everything between the drag ends; `cells` paints only what the drag passes and keeps earlier painting. */
+  readonly paintMode?: "span" | "cells";
   readonly onPaintSelect?: (range: CalendarSelectionRange) => void;
 }
 
@@ -60,6 +63,7 @@ export interface UseAvailabilityGridControllerResult {
 }
 
 const DEFAULT_INTERACTION_MODE = "paint" as const;
+const DEFAULT_PAINT_MODE = "span" as const;
 const FIRST_CELL: AvailabilityFocusedCell = { columnIndex: 0, rowIndex: 0 };
 
 export const useAvailabilityGridController = (
@@ -67,6 +71,7 @@ export const useAvailabilityGridController = (
 ): UseAvailabilityGridControllerResult => {
   const direction = options.direction ?? "ltr";
   const interactionMode = options.interactionMode ?? DEFAULT_INTERACTION_MODE;
+  const paintMode = options.paintMode ?? DEFAULT_PAINT_MODE;
 
   const columns = useMemo(
     () => buildAvailabilityColumns(options.cells),
@@ -186,6 +191,18 @@ export const useAvailabilityGridController = (
     return undefined;
   };
 
+  const paintBetween = (
+    anchor: CalendarAvailabilityCell,
+    cell: CalendarAvailabilityCell,
+    base: CalendarSelectionRange | null
+  ): CalendarSelectionRange | null => {
+    if (paintMode === "span") {
+      return buildAvailabilityRange(options.cells, anchor, cell);
+    }
+
+    return cell.available ? addAvailabilityCells(base, [cell]) : null;
+  };
+
   const commitRange = (range: CalendarSelectionRange): void => {
     selectedState.setValue(range);
     options.onPaintSelect?.(range);
@@ -196,7 +213,7 @@ export const useAvailabilityGridController = (
       return;
     }
 
-    const range = buildAvailabilityRange(options.cells, cell, cell);
+    const range = paintBetween(cell, cell, null);
     if (range === null) {
       return;
     }
@@ -215,7 +232,7 @@ export const useAvailabilityGridController = (
       return;
     }
 
-    const range = buildAvailabilityRange(options.cells, anchor, cell);
+    const range = paintBetween(anchor, cell, paintRef.current);
 
     if (range !== null) {
       setCurrentPaint(range);
@@ -223,18 +240,24 @@ export const useAvailabilityGridController = (
   };
 
   const endPaint = (): void => {
-    const range =
+    const painted =
       paintSignatureRef.current === cellsSignature ? paintRef.current : null;
-
-    if (interactionMode === "read-only" || range === null) {
-      paintAnchorRef.current = null;
-      setCurrentPaint(null);
-      return;
-    }
 
     paintAnchorRef.current = null;
     setCurrentPaint(null);
-    commitRange(range);
+
+    if (interactionMode === "read-only" || painted === null) {
+      return;
+    }
+
+    const range =
+      paintMode === "cells"
+        ? addAvailabilityCells(selectedState.value, painted.cells)
+        : painted;
+
+    if (range !== null) {
+      commitRange(range);
+    }
   };
 
   const cancelPaint = (): void => {
@@ -286,7 +309,7 @@ export const useAvailabilityGridController = (
     keyboardAnchorRef.current = { cell: anchor, signature: cellsSignature };
 
     // An unpaintable span keeps the previous selection.
-    const range = buildAvailabilityRange(options.cells, anchor, nextCell);
+    const range = paintBetween(anchor, nextCell, selectedState.value);
 
     if (range !== null) {
       commitRange(range);
@@ -313,7 +336,7 @@ export const useAvailabilityGridController = (
       const cell = getCell(rowIndex, columnIndex);
 
       if (cell !== undefined) {
-        const range = buildAvailabilityRange(options.cells, cell, cell);
+        const range = paintBetween(cell, cell, selectedState.value);
 
         if (range !== null) {
           commitRange(range);

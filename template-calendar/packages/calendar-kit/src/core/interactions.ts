@@ -292,6 +292,13 @@ const transitionPaintStart = (
   };
 };
 
+const isSameSelectionRange = (
+  left: CalendarSelectionRange,
+  right: CalendarSelectionRange
+): boolean =>
+  compareCalendarCells(left.start, right.start) === 0 &&
+  compareCalendarCells(left.end, right.end) === 0;
+
 const transitionPaintUpdate = (
   state: InteractionState,
   action: PaintUpdateAction
@@ -306,7 +313,12 @@ const transitionPaintUpdate = (
   }
 
   const paint = buildSelectionRange(state.paintAnchor, cell, state.timeZone);
-  return paint ? { ...state, paint } : state;
+  // Pointer moves within the same range keep the state, so the grid does not re-render per move.
+  if (!paint || (state.paint && isSameSelectionRange(state.paint, paint))) {
+    return state;
+  }
+
+  return { ...state, paint };
 };
 
 const transitionMoveStart = (
@@ -344,7 +356,13 @@ const transitionMoveTarget = (
   }
 
   const to = action.to ? normalizeCalendarCell(action.to) : null;
-  return { ...state, drag: { ...state.drag, to: to ?? state.drag.from } };
+  const target = to ?? state.drag.from;
+
+  if (compareCalendarCells(state.drag.to, target) === 0) {
+    return state;
+  }
+
+  return { ...state, drag: { ...state.drag, to: target } };
 };
 
 // @cpt-begin:cpt-template-calendar-calendar-kit-state-week-grid-pending-move:p2:inst-pm-idle-to-pending
