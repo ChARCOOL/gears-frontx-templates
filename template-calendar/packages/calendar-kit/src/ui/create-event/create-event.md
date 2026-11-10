@@ -42,8 +42,8 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 - The location control starts as a secondary `Add a location` action and opens the injected location combobox when requested.
 - The people and location comboboxes use the shared 36px form-field skin; selected people use 24px removable chips inside the same form-layer frame.
 - Timed and all-day ranges are validated by the React-free core helper before `onSubmit` runs. The Save action is disabled while the draft is invalid or submitting.
-- Repeat offers Does not repeat, Daily, Weekly, Biweekly, Monthly, Yearly and Custom. The Custom option's label never changes, whatever rule it holds.
-- Custom opens an anchored 406×325 card beside the Repeat field; the interval is a number field from 1 to 30. Every change is written to the draft immediately as an RFC 5545 rule body such as `FREQ=WEEKLY;BYDAY=MO,WE`; Back or the close button only closes the card. Weekday choices are toggle buttons in display order; `Ends: Never` omits an end and `Ends: On` appends `UNTIL=YYYYMMDD`.
+- Repeat offers Doesn’t repeat, Daily, Weekly, Biweekly, Monthly, Yearly and Custom. The Custom option's label never changes, whatever rule it holds.
+- Custom expands an editor inline under the Repeat field; the interval is a number field from 1 to 30. Every change is written to the draft immediately as an RFC 5545 rule body such as `FREQ=WEEKLY;BYDAY=MO,WE`. While it is open, the other fields and Save are disabled and Repeat stays live. Save keeps the rule, Cancel restores the preset and rule from when it opened, and Escape collapses it like Save. Choosing another preset closes it; choosing Custom again reopens the saved rule. Weekday choices are toggle buttons in display order; `Ends: Never` omits an end and `Ends: On` appends `UNTIL=YYYYMMDD`.
 - A one-line summary under the Repeat field describes the current rule for every choice, for example "Repeats every 2 weeks on Tuesday and Thursday until Wed, Sep 30, 2026". "Does not repeat" shows no summary.
 - A pending submit disables duplicate attempts. A host error is rendered without closing the form.
 - A clean cancel closes immediately. A dirty cancel opens an alert dialog with keep-editing and discard actions; the confirmation and custom-repeat layer are mounted in the active create shell so they overlay that popover, and confirmed discard closes the parent form.
@@ -113,7 +113,7 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.repeat.hint.yearlyEvery_other` | Repeats every {{count}} years on {{date}} | `count`, `date` |
 | `calendar.create_event.repeat.monthly` | Monthly |  |
 | `calendar.create_event.repeat.never` | Never |  |
-| `calendar.create_event.repeat.none` | Does not repeat |  |
+| `calendar.create_event.repeat.none` | Doesn’t repeat |  |
 | `calendar.create_event.repeat.on` | on {{weekday}} | `weekday` |
 | `calendar.create_event.repeat.on_date` | On |  |
 | `calendar.create_event.repeat.onWeekdays` | On |  |

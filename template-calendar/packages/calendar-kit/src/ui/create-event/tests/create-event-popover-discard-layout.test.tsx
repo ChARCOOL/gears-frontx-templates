@@ -113,7 +113,7 @@ describe("CreateEventPopover discard layout", () => {
     });
 
     assert(
-      screen.getByRole("dialog", { name: /repeat/iu })
+      screen.getByTestId("create-event-repeat-view")
     ).toBeInTheDocument();
     assert(screen.queryByRole("alertdialog")).toBeNull();
     assert(onCancel).not.toHaveBeenCalled();
@@ -141,7 +141,7 @@ describe("CreateEventPopover discard layout", () => {
     });
 
     assert(
-      screen.getByRole("dialog", { name: /repeat/iu })
+      screen.getByTestId("create-event-repeat-view")
     ).toBeInTheDocument();
     assert(screen.queryByRole("alertdialog")).toBeNull();
     assert(onCancel).not.toHaveBeenCalled();

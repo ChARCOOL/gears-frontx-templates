@@ -2,7 +2,6 @@
 
 import { clsx } from "clsx";
 import {
-  ChevronLeftIcon,
   ArrowRightIcon,
   Clock3Icon,
   Globe2Icon,
@@ -61,7 +60,6 @@ import { Button } from "../primitives/button/button";
 import { Combobox } from "../primitives/combobox/combobox";
 import type { ComboboxOption } from "../primitives/combobox/combobox";
 import { DateField as KitDateField } from "../primitives/date-field/date-field";
-import { Dialog, DialogContent } from "../primitives/dialog/dialog";
 import {
   Field,
   FieldError,
@@ -138,13 +136,14 @@ export interface ResourceItem {
 
 interface CustomRepeatViewProps {
   readonly idPrefix: string;
+  readonly repeatAnchorRef: RefObject<HTMLButtonElement | null>;
   readonly state: CustomRepeatState;
   readonly onChangeInterval: (value: string) => void;
   readonly onChangeUnit: (unit: RepeatUnit) => void;
   readonly onChangeEndKind: (kind: RepeatEndKind) => void;
   readonly onChangeEndDate: (value: CalendarDate | "") => void;
   readonly onToggleWeekday: (weekday: Weekday) => void;
-  readonly onClose: () => void;
+  readonly onCancel: () => void;
   readonly onApply: () => void;
 }
 
@@ -457,13 +456,14 @@ const TimeField = ({
 
 const CustomRepeatView = ({
   idPrefix,
+  repeatAnchorRef,
   state,
   onChangeInterval,
   onChangeUnit,
   onChangeEndKind,
   onChangeEndDate,
   onToggleWeekday,
-  onClose,
+  onCancel,
   onApply,
 }: CustomRepeatViewProps) => {
   const { t } = useCalendarLocalization();
@@ -471,9 +471,22 @@ const CustomRepeatView = ({
   const unitId = `${idPrefix}-repeat-unit`;
   const endGroupName = `${idPrefix}-repeat-end`;
   const unitItems = repeatUnitOptions(t, state.interval);
+  const intervalRef = useRef<HTMLInputElement>(null);
 
   // The field may be empty while a number is typed over; it shows the applied interval on blur.
   const [intervalText, setIntervalText] = useState(String(state.interval));
+
+  // Opening the editor moves focus into it; closing hands focus back to the Repeat field.
+  useEffect(() => {
+    intervalRef.current?.focus();
+  }, []);
+
+  useEffect(
+    () => () => {
+      repeatAnchorRef.current?.focus();
+    },
+    [repeatAnchorRef]
+  );
 
   const handleIntervalChange = (value: string): void => {
     setIntervalText(value);
@@ -489,39 +502,13 @@ const CustomRepeatView = ({
 
   return (
     <div className={styles.repeatView} data-testid="create-event-repeat-view">
-      <div className={styles.repeatHeader}>
-        <Button
-          aria-label={t("calendar.create_event.back")}
-          leftIcon={<ChevronLeftIcon aria-hidden="true" />}
-          onlyIcon
-          round
-          size="m"
-          type="button"
-          variant="ghost"
-          onClick={onApply}
-        />
-        <h2 className={styles.repeatTitle}>
-          {t("calendar.create_event.field.repeat")}
-        </h2>
-        <div className={styles.headerActions}>
-          <Button
-            aria-label={t("calendar.create_event.close")}
-            leftIcon={<XIcon aria-hidden="true" />}
-            onlyIcon
-            size="m"
-            type="button"
-            variant="ghost"
-            onClick={onClose}
-          />
-        </div>
-      </div>
-      <Separator decorative className={styles.headerDivider} />
       <FieldGroup className={styles.customBody}>
         <div className={styles.repeatIntervalRow}>
           <span className={styles.repeatInlineLabel}>
             {t("calendar.create_event.repeat.every")}
           </span>
           <Input
+            ref={intervalRef}
             id={intervalId}
             aria-label={t("calendar.create_event.repeat.every")}
             type="number"
@@ -617,6 +604,19 @@ const CustomRepeatView = ({
             />
           ) : null}
         </FieldSet>
+        <div className={styles.repeatActions}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="l"
+            onClick={onCancel}
+          >
+            {t("calendar.create_event.cancel")}
+          </Button>
+          <Button type="button" size="l" onClick={onApply}>
+            {t("calendar.create_event.save")}
+          </Button>
+        </div>
       </FieldGroup>
     </div>
   );
@@ -807,7 +807,9 @@ interface CreateEventFormProps {
   readonly locationQuery: string;
   readonly noOptionsLabel: string;
   readonly peopleQuery: string;
-  readonly overlayKind: "discard" | "custom-repeat" | "none";
+  readonly discardOpen: boolean;
+  readonly repeatEditing: boolean;
+  readonly repeatEditor: ReactNode;
   readonly renderFields?: () => ReactNode;
   readonly renderFooter?: () => ReactNode;
   readonly renderHeader?: () => ReactNode;
@@ -925,7 +927,7 @@ type CreateEventFieldsProps = Omit<
   | "canSubmit"
   | "formId"
   | "onSubmit"
-  | "overlayKind"
+  | "discardOpen"
   | "renderFooter"
   | "renderHeader"
 >;
@@ -1011,6 +1013,8 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
     locationQuery,
     renderFields,
     repeatAnchorRef,
+    repeatEditing,
+    repeatEditor,
     repeatHint,
     repeatItems,
     repeatPreset,
@@ -1068,30 +1072,58 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
     />
   );
 
-  const fields = (
-    <>
-      <Field className={styles.field}>
-        <Select
-          id={fieldId("calendar")}
-          aria-label={t("calendar.create_event.field.calendar")}
-          emptyMessage={noOptionsLabel}
-          options={calendarItems}
-          value={controller.draft.calendarId ?? ""}
-          size="xl"
-          showSelectedCheck
-          iconLeft={
-            selectedCalendar === undefined ? undefined : (
-              <CalendarColorDot colorFamily={selectedCalendar.colorFamily} />
-            )
-          }
-          disabled={controller.isSubmitting}
-          placeholder={t("calendar.create_event.placeholder.calendar")}
-          onValueChange={(value) => {
-            setDraft({ ...controller.draft, calendarId: value });
-          }}
-        />
-      </Field>
+  const titleField = (
+    <Field className={styles.field}>
+      <Input
+        id={fieldId("title")}
+        aria-label={t("calendar.create_event.field.title")}
+        placeholder={t("calendar.create_event.field.title")}
+        value={controller.draft.title}
+        size="xl"
+        invalid={fieldMessages.title !== null}
+        aria-describedby={fieldErrorId(
+          fieldMessages.title,
+          fieldId("title-error")
+        )}
+        disabled={controller.isSubmitting}
+        onValueChange={(value) => {
+          setDraft({ ...controller.draft, title: value });
+        }}
+      />
+      {fieldMessages.title === null ? null : (
+        <FieldError id={fieldId("title-error")} role="status">
+          {fieldMessages.title}
+        </FieldError>
+      )}
+    </Field>
+  );
 
+  const calendarField = (
+    <Field className={styles.field}>
+      <Select
+        id={fieldId("calendar")}
+        aria-label={t("calendar.create_event.field.calendar")}
+        emptyMessage={noOptionsLabel}
+        options={calendarItems}
+        value={controller.draft.calendarId ?? ""}
+        size="xl"
+        showSelectedCheck
+        iconLeft={
+          selectedCalendar === undefined ? undefined : (
+            <CalendarColorDot colorFamily={selectedCalendar.colorFamily} />
+          )
+        }
+        disabled={controller.isSubmitting}
+        placeholder={t("calendar.create_event.placeholder.calendar")}
+        onValueChange={(value) => {
+          setDraft({ ...controller.draft, calendarId: value });
+        }}
+      />
+    </Field>
+  );
+
+  const scheduleRows = (
+    <>
       <div className={styles.timeRow}>
         <TimeField
           id={fieldId("start-time")}
@@ -1160,114 +1192,107 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
             : null}
         </span>
       </div>
-
-      <Field className={styles.field}>
-        <Select
-          ref={repeatAnchorRef}
-          id={fieldId("repeat")}
-          aria-label={t("calendar.create_event.field.repeat")}
-          options={repeatItems}
-          value={repeatPreset}
-          size="xl"
-          showSelectedCheck
-          iconLeft={<RefreshCwIcon aria-hidden="true" />}
-          disabled={controller.isSubmitting}
-          placeholder={t("calendar.create_event.repeat.none")}
-          onValueChange={onRepeatPresetChange}
-          onReselect={onRepeatPresetChange}
-          aria-describedby={
-            repeatHint === undefined ? undefined : fieldId("repeat-hint")
-          }
-        />
-        {repeatHint === undefined ? null : (
-          <p id={fieldId("repeat-hint")} className={styles.repeatHint}>
-            {repeatHint}
-          </p>
-        )}
-        {fieldMessages.recurrenceRule === null ? null : (
-          <FieldError id={fieldId("repeat-error")} role="status">
-            {fieldMessages.recurrenceRule}
-          </FieldError>
-        )}
-      </Field>
-
-      <Field className={styles.field}>
-        <Input
-          id={fieldId("timezone")}
-          aria-label={timeZoneFieldLabel}
-          value={timeZoneLabel}
-          size="xl"
-          readOnly
-          iconLeft={<Globe2Icon aria-hidden="true" />}
-        />
-      </Field>
-      {peopleField}
-
-      <Field className={styles.field}>
-        <Select
-          id={fieldId("conferencing")}
-          aria-label={t("calendar.create_event.field.conferencing")}
-          emptyMessage={noOptionsLabel}
-          options={conferencingItems}
-          value={controller.draft.conferencingProviderId ?? ""}
-          size="xl"
-          showSelectedCheck
-          iconLeft={<Link2Icon aria-hidden="true" />}
-          disabled={controller.isSubmitting}
-          placeholder={t("calendar.create_event.placeholder.conferencing")}
-          onValueChange={changeConferencingProvider}
-        />
-      </Field>
-
-      <Separator decorative className={styles.separator} />
-
-      <CreateEventAdditionalFields
-        controller={controller}
-        fieldId={fieldId}
-        onLocationSelection={onLocationSelection}
-        locationEditorOpen={locationEditorOpen}
-        locationItems={locationItems}
-        locationQuery={locationQuery}
-        setDraft={setDraft}
-        setLocationEditorOpen={setLocationEditorOpen}
-        updateLocation={updateLocation}
-      />
-
-      {firstError === null ? null : (
-        <FieldError id={fieldId("form-error")}>{firstError}</FieldError>
-      )}
-      {submitErrorContent}
-      {renderFields?.()}
     </>
+  );
+
+  const repeatField = (
+    <Field className={styles.field}>
+      <Select
+        ref={repeatAnchorRef}
+        id={fieldId("repeat")}
+        aria-label={t("calendar.create_event.field.repeat")}
+        options={repeatItems}
+        value={repeatPreset}
+        size="xl"
+        showSelectedCheck
+        iconLeft={<RefreshCwIcon aria-hidden="true" />}
+        disabled={controller.isSubmitting}
+        placeholder={t("calendar.create_event.repeat.none")}
+        onValueChange={onRepeatPresetChange}
+        onReselect={onRepeatPresetChange}
+        aria-describedby={
+          repeatHint === undefined ? undefined : fieldId("repeat-hint")
+        }
+      />
+      {repeatHint === undefined ? null : (
+        <p id={fieldId("repeat-hint")} className={styles.repeatHint}>
+          {repeatHint}
+        </p>
+      )}
+      {fieldMessages.recurrenceRule === null ? null : (
+        <FieldError id={fieldId("repeat-error")} role="status">
+          {fieldMessages.recurrenceRule}
+        </FieldError>
+      )}
+    </Field>
+  );
+
+  const timeZoneField = (
+    <Field className={styles.field}>
+      <Input
+        id={fieldId("timezone")}
+        aria-label={timeZoneFieldLabel}
+        value={timeZoneLabel}
+        size="xl"
+        readOnly
+        iconLeft={<Globe2Icon aria-hidden="true" />}
+      />
+    </Field>
   );
 
   return (
     <ScrollRegion className={styles.body}>
       <FieldGroup className={styles.fields}>
-      <Field className={styles.field}>
-        <Input
-          id={fieldId("title")}
-          aria-label={t("calendar.create_event.field.title")}
-          placeholder={t("calendar.create_event.field.title")}
-          value={controller.draft.title}
-          size="xl"
-          invalid={fieldMessages.title !== null}
-          aria-describedby={fieldErrorId(
-            fieldMessages.title,
-            fieldId("title-error")
+        {/* The other fields take no input while the repeat editor is open, as in the design. */}
+        <div className={styles.fields} inert={repeatEditing}>
+          {titleField}
+          {calendarField}
+          {scheduleRows}
+        </div>
+
+        {repeatField}
+        {repeatEditor}
+
+        <div className={styles.fields} inert={repeatEditing}>
+          {timeZoneField}
+          {peopleField}
+
+          <Field className={styles.field}>
+            <Select
+              id={fieldId("conferencing")}
+              aria-label={t("calendar.create_event.field.conferencing")}
+              emptyMessage={noOptionsLabel}
+              options={conferencingItems}
+              value={controller.draft.conferencingProviderId ?? ""}
+              size="xl"
+              showSelectedCheck
+              iconLeft={<Link2Icon aria-hidden="true" />}
+              disabled={controller.isSubmitting}
+              placeholder={t("calendar.create_event.placeholder.conferencing")}
+              onValueChange={changeConferencingProvider}
+            />
+          </Field>
+
+          <Separator decorative className={styles.separator} />
+
+          <CreateEventAdditionalFields
+            controller={controller}
+            fieldId={fieldId}
+            onLocationSelection={onLocationSelection}
+            locationEditorOpen={locationEditorOpen}
+            locationItems={locationItems}
+            locationQuery={locationQuery}
+            setDraft={setDraft}
+            setLocationEditorOpen={setLocationEditorOpen}
+            updateLocation={updateLocation}
+          />
+
+          {firstError === null ? null : (
+            <FieldError id={fieldId("form-error")}>{firstError}</FieldError>
           )}
-          disabled={controller.isSubmitting}
-          onValueChange={(value) => {
-            setDraft({ ...controller.draft, title: value });
-          }}
-        />
-        {fieldMessages.title === null ? null : (
-          <FieldError id={fieldId("title-error")} role="status">
-            {fieldMessages.title}
-          </FieldError>
-        )}
-      </Field>
-      {fields}
+          {submitErrorContent}
+          {renderFields?.()}
+        </div>
       </FieldGroup>
     </ScrollRegion>
   );
@@ -1277,7 +1302,7 @@ const CreateEventForm = ({
   canSubmit,
   formId,
   onSubmit,
-  overlayKind,
+  discardOpen,
   renderFooter,
   renderHeader,
   ...fieldProps
@@ -1297,7 +1322,7 @@ const CreateEventForm = ({
         id={formId}
         className={styles.form}
         onSubmit={onSubmit}
-        inert={overlayKind !== "none"}
+        inert={discardOpen}
       >
         <CreateEventFields {...fieldProps} />
       </form>
@@ -1318,22 +1343,16 @@ interface CreateEventPopoverOverlayProps {
   readonly className?: string;
   readonly content: ReactNode;
   readonly controller: ReturnType<typeof useCreateEventController>;
-  readonly customRepeatOpen: boolean;
   readonly handleNativeSelectChange: (event: Event) => void;
   readonly handleShellOpenChange: (nextOpen: boolean) => void;
-  readonly onCloseCustomRepeat: () => void;
-  readonly repeatContent: ReactNode;
 }
 
 const CreateEventPopoverOverlay = ({
   className,
   content,
   controller,
-  customRepeatOpen,
   handleNativeSelectChange,
   handleShellOpenChange,
-  onCloseCustomRepeat,
-  repeatContent,
 }: CreateEventPopoverOverlayProps) => {
   const { direction, t } = useCalendarLocalization();
   const [root, setRoot] = useState<HTMLElement | null>(null);
@@ -1354,44 +1373,16 @@ const CreateEventPopoverOverlay = ({
     >
       {content}
       {root === null ? null : (
-        <>
-          {customRepeatOpen ? (
-            <>
-              {createPortal(
-                <div aria-hidden="true" className={styles.repeatBackdrop} />,
-                root
-              )}
-              <Dialog
-                open
-                onOpenChange={(nextOpen) => {
-                  if (!nextOpen) {
-                    onCloseCustomRepeat();
-                  }
-                }}
-              >
-                <DialogContent
-                  container={root}
-                  showBackdrop={false}
-                  showCloseButton={false}
-                  label={t("calendar.create_event.field.repeat")}
-                  className={styles.repeatPopover}
-                >
-                  {repeatContent}
-                </DialogContent>
-              </Dialog>
-            </>
-          ) : null}
-          <DiscardDialog
-            container={root}
-            open={controller.isDiscardDialogOpen}
-            onClose={() => {
-              controller.dismissDiscard();
-            }}
-            onConfirm={() => {
-              controller.confirmDiscard();
-            }}
-          />
-        </>
+        <DiscardDialog
+          container={root}
+          open={controller.isDiscardDialogOpen}
+          onClose={() => {
+            controller.dismissDiscard();
+          }}
+          onConfirm={() => {
+            controller.confirmDiscard();
+          }}
+        />
       )}
     </section>
   );
@@ -1401,6 +1392,7 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
   const view = useCreateEventPopoverContent(props);
 
   const {
+    cancelCustomRepeat,
     changeCustomRepeat,
     closeCustomRepeat,
     calendars,
@@ -1422,7 +1414,6 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
     locationItems,
     locationQuery,
     noOptionsLabel,
-    overlayKind,
     onAllDayChange,
     onLocationSelection,
     onPeopleSelect,
@@ -1479,48 +1470,6 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
     />
   );
 
-  const formContent = (
-    <CreateEventForm
-      calendarItems={calendarItems}
-      canSubmit={canSubmit}
-      conferencingItems={conferencingItems}
-      controller={controller}
-      displayedEndDate={displayedEndDate}
-      fieldId={fieldId}
-      fieldMessages={fieldMessages}
-      firstError={firstError ?? null}
-      formId={formId}
-      onAllDayChange={onAllDayChange}
-      onLocationSelection={onLocationSelection}
-      onPeopleSelect={onPeopleSelect}
-      onRepeatPresetChange={onRepeatPresetChange}
-      onSubmit={onSubmit}
-      locationEditorOpen={locationEditorOpen}
-      locationItems={locationItems}
-      locationQuery={locationQuery}
-      noOptionsLabel={noOptionsLabel}
-      peopleQuery={peopleQuery}
-      overlayKind={overlayKind}
-      renderFields={renderFields}
-      renderFooter={renderFooter}
-      renderHeader={renderHeader}
-      repeatAnchorRef={repeatAnchorRef}
-      repeatHint={repeatHint}
-      repeatItems={repeatItems}
-      repeatPreset={repeatPreset}
-      selectedCalendar={selectedCalendar}
-      selectedPeopleIds={selectedPeopleIds}
-      setPeopleQuery={setPeopleQuery}
-      setDraft={setDraft}
-      setLocationEditorOpen={setLocationEditorOpen}
-      submitErrorContent={submitErrorContent}
-      timeZoneFieldLabel={timeZoneFieldLabel}
-      timeZoneLabel={timeZoneLabel}
-      updateLocation={updateLocation}
-      visiblePeopleItems={visiblePeopleItems}
-    />
-  );
-
   const changeRepeatInterval = (value: string): void => {
     const parsed = Math.trunc(Number(value));
 
@@ -1563,17 +1512,62 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
     }));
   };
 
-  const repeatContent = (
+  const repeatEditor = customRepeatOpen ? (
     <CustomRepeatView
       idPrefix={idPrefix}
+      repeatAnchorRef={repeatAnchorRef}
       state={customRepeat}
       onChangeInterval={changeRepeatInterval}
       onChangeUnit={changeRepeatUnit}
       onChangeEndKind={changeRepeatEndKind}
       onChangeEndDate={changeRepeatEndDate}
       onToggleWeekday={toggleRepeatWeekday}
-      onClose={closeCustomRepeat}
+      onCancel={cancelCustomRepeat}
       onApply={closeCustomRepeat}
+    />
+  ) : null;
+
+  const formContent = (
+    <CreateEventForm
+      calendarItems={calendarItems}
+      canSubmit={canSubmit && !customRepeatOpen}
+      conferencingItems={conferencingItems}
+      controller={controller}
+      discardOpen={controller.isDiscardDialogOpen}
+      displayedEndDate={displayedEndDate}
+      fieldId={fieldId}
+      fieldMessages={fieldMessages}
+      firstError={firstError ?? null}
+      formId={formId}
+      onAllDayChange={onAllDayChange}
+      onLocationSelection={onLocationSelection}
+      onPeopleSelect={onPeopleSelect}
+      onRepeatPresetChange={onRepeatPresetChange}
+      onSubmit={onSubmit}
+      locationEditorOpen={locationEditorOpen}
+      locationItems={locationItems}
+      locationQuery={locationQuery}
+      noOptionsLabel={noOptionsLabel}
+      peopleQuery={peopleQuery}
+      renderFields={renderFields}
+      renderFooter={renderFooter}
+      renderHeader={renderHeader}
+      repeatAnchorRef={repeatAnchorRef}
+      repeatEditing={customRepeatOpen}
+      repeatEditor={repeatEditor}
+      repeatHint={customRepeatOpen ? undefined : repeatHint}
+      repeatItems={repeatItems}
+      repeatPreset={repeatPreset}
+      selectedCalendar={selectedCalendar}
+      selectedPeopleIds={selectedPeopleIds}
+      setPeopleQuery={setPeopleQuery}
+      setDraft={setDraft}
+      setLocationEditorOpen={setLocationEditorOpen}
+      submitErrorContent={submitErrorContent}
+      timeZoneFieldLabel={timeZoneFieldLabel}
+      timeZoneLabel={timeZoneLabel}
+      updateLocation={updateLocation}
+      visiblePeopleItems={visiblePeopleItems}
     />
   );
 
@@ -1582,11 +1576,8 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
       className={className}
       content={formContent}
       controller={controller}
-      customRepeatOpen={customRepeatOpen}
       handleNativeSelectChange={handleNativeSelectChange}
       handleShellOpenChange={handleShellOpenChange}
-      onCloseCustomRepeat={closeCustomRepeat}
-      repeatContent={repeatContent}
     />
   );
 };

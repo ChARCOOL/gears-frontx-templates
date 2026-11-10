@@ -22,7 +22,6 @@ import type { ComboboxOption } from "../primitives/combobox/combobox";
 import {
   formatTimeZone,
   parseCustomRepeatState,
-  resolveOverlayKind,
   formatRepeatHint,
   serializeCustomRepeat,
   REPEAT_PRESET,
@@ -281,6 +280,13 @@ export const useCreateEventPopoverContent = (
 
   const [customRepeatOpen, setCustomRepeatOpen] = useState(false);
 
+  // The editor's rule and preset as they were when it opened, for Cancel.
+  const customRepeatAtOpen = useRef<{
+    custom: CustomRepeatState;
+    preset: RepeatPreset;
+    recurrenceRule: CreateEventDraft["recurrenceRule"];
+  } | null>(null);
+
   const timedTimesRef = useRef<TimedTimes>({
     endDate: controller.draft.endDate,
     endTime: controller.draft.endTime,
@@ -292,10 +298,6 @@ export const useCreateEventPopoverContent = (
     [idPrefix]
   );
 
-  const overlayKind = resolveOverlayKind(
-    controller.isDiscardDialogOpen,
-    customRepeatOpen
-  );
   const fieldMessages = createEventErrorMessages(controller.errors, t);
   const firstError = firstCreateEventError(controller.errors, t);
   const canSubmit = validateCreateEventDraft(controller.draft).valid;
@@ -392,26 +394,41 @@ export const useCreateEventPopoverContent = (
     });
   };
 
+  const openCustomRepeat = (): void => {
+    const opened =
+      customRepeat.byDay.length > 0
+        ? customRepeat
+        : {
+            ...customRepeat,
+            byDay: [
+              WEEKDAY_ORDER[weekdayIndex(controller.draft.startDate)] ??
+                "monday",
+            ],
+          };
+
+    customRepeatAtOpen.current = {
+      custom: opened,
+      preset: repeatPreset,
+      recurrenceRule: controller.draft.recurrenceRule,
+    };
+    setCustomRepeat(opened);
+    setDraft({
+      ...controller.draft,
+      recurrenceRule: serializeCustomRepeat(opened),
+    });
+    setCustomRepeatOpen(true);
+  };
+
   const onRepeatPresetChange = (value: string): void => {
     const nextPreset = resolveRepeatPresetValue(value);
     setRepeatPreset(nextPreset);
 
     if (nextPreset === REPEAT_PRESET.custom) {
-      changeCustomRepeat((current) =>
-        current.byDay.length > 0
-          ? current
-          : {
-              ...current,
-              byDay: [
-                WEEKDAY_ORDER[weekdayIndex(controller.draft.startDate)] ??
-                  "monday",
-              ],
-            }
-      );
-      setCustomRepeatOpen(true);
+      openCustomRepeat();
       return;
     }
 
+    setCustomRepeatOpen(false);
     setDraft({
       ...controller.draft,
       recurrenceRule: recurrenceForPreset(nextPreset),
@@ -438,6 +455,21 @@ export const useCreateEventPopoverContent = (
   };
 
   const closeCustomRepeat = (): void => {
+    setCustomRepeatOpen(false);
+  };
+
+  const cancelCustomRepeat = (): void => {
+    const atOpen = customRepeatAtOpen.current;
+
+    if (atOpen !== null) {
+      setCustomRepeat(atOpen.custom);
+      setRepeatPreset(atOpen.preset);
+      setDraft({
+        ...controller.draft,
+        recurrenceRule: atOpen.recurrenceRule,
+      });
+    }
+
     setCustomRepeatOpen(false);
   };
 
@@ -468,6 +500,7 @@ export const useCreateEventPopoverContent = (
   return {
     calendars,
     canSubmit,
+    cancelCustomRepeat,
     changeCustomRepeat,
     className,
     closeCustomRepeat,
@@ -494,7 +527,6 @@ export const useCreateEventPopoverContent = (
     onPeopleSelect,
     onRepeatPresetChange,
     onSubmit,
-    overlayKind,
     peopleQuery,
     renderError,
     renderFields,

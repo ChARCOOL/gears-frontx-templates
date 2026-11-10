@@ -300,7 +300,7 @@ Event state words shared by the views.
 | `calendar.create_event.repeat.hint.yearlyEvery_other` | Repeats every {{count}} years on {{date}} | `count`, `date` |
 | `calendar.create_event.repeat.monthly` | Monthly |  |
 | `calendar.create_event.repeat.never` | Never |  |
-| `calendar.create_event.repeat.none` | Does not repeat |  |
+| `calendar.create_event.repeat.none` | Doesn’t repeat |  |
 | `calendar.create_event.repeat.on` | on {{weekday}} | `weekday` |
 | `calendar.create_event.repeat.on_date` | On |  |
 | `calendar.create_event.repeat.onWeekdays` | On |  |

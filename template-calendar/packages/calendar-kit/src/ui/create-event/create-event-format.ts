@@ -137,19 +137,6 @@ const parseRule = (rule: string): Map<string, string> => {
 const formatList = (values: readonly string[], locale: string): string =>
   listFormatter(locale, { style: "long", type: "conjunction" }).format(values);
 
-export const resolveOverlayKind = (
-  discardOpen: boolean,
-  customRepeatOpen: boolean
-): "discard" | "custom-repeat" | "none" => {
-  if (discardOpen) {
-    return "discard";
-  }
-  if (customRepeatOpen) {
-    return "custom-repeat";
-  }
-  return "none";
-};
-
 export const serializeCustomRepeat = (state: CustomRepeatState): string => {
   const frequency = frequencyForUnit(state.unit);
   const parts = [`FREQ=${frequency}`];

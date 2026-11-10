@@ -65,7 +65,6 @@ export {
   formatTimeZone,
   parseCustomRepeatState,
   initials,
-  resolveOverlayKind,
   serializeCustomRepeat,
   weekdayLabel,
   createEventErrorMessages,

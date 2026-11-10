@@ -8,7 +8,6 @@ import { calendarDate, parseLocalTime, utcInstant } from "../../../core/model";
 import type { TimedCreateEventDraft } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
 import {
-  REPEAT_PRESET,
   REPEAT_UNIT,
   WEEKDAY_ORDER,
   firstLetter,
@@ -18,7 +17,6 @@ import {
   formatRepeatSummary,
   formatTimeZone,
   initials,
-  resolveOverlayKind,
   serializeCustomRepeat,
   weekdayLabel,
 } from "../create-event-format";
@@ -159,13 +157,6 @@ describe("create-event-format", () => {
     assert(weekdayLabel("monday", t)).toBe("Monday");
   });
 
-  it("resolves nested overlay precedence", () => {
-    assert(resolveOverlayKind(false, true)).toBe("custom-repeat");
-    assert(resolveOverlayKind(true, true)).toBe("discard");
-    assert(resolveOverlayKind(false, false)).toBe("none");
-    assert(REPEAT_PRESET.none).toBe("none");
-  });
-
   it("guards malformed browser field values and dispatches clicked repeat units", () => {
     render(createElement(CreateEventPopover, popoverProps()));
 
@@ -189,9 +180,7 @@ describe("create-event-format", () => {
     act(() => {
       fireEvent.change(repeat, { target: { value: "custom" } });
     });
-    const repeatDialog = screen.getByRole("dialog", {
-      name: /custom|repeat/iu,
-    });
+    const repeatDialog = screen.getByTestId("create-event-repeat-view");
     const unit = within(repeatDialog).getByRole("combobox", {
       name: "every 1 week",
     });
@@ -214,9 +203,7 @@ describe("create-event-format", () => {
       fireEvent.change(repeat, { target: { value: "custom" } });
     });
 
-    const repeatDialog = screen.getByRole("dialog", {
-      name: /custom|repeat/iu,
-    });
+    const repeatDialog = screen.getByTestId("create-event-repeat-view");
     const unit = within(repeatDialog).getByLabelText("every 1 week");
     act(() => {
       fireEvent.change(unit, { target: { value: "day" } });
@@ -228,7 +215,7 @@ describe("create-event-format", () => {
       fireEvent.change(unit, { target: { value: "week" } });
     });
     await user.click(
-      within(repeatDialog).getByRole("button", { name: /back/iu })
+      within(repeatDialog).getByRole("button", { name: /save/iu })
     );
 
     assert(screen.queryByRole("combobox", { name: /location/iu })).toBeNull();

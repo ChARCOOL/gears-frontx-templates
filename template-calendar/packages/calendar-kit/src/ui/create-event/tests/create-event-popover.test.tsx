@@ -369,8 +369,8 @@ describe("CreateEventPopover draft and validation behaviour", () => {
 
     chooseSelectOption(/repeat/iu, /^custom/iu);
 
-    assert(screen.getAllByRole("dialog")).toHaveLength(1);
-    const repeatView = screen.getByRole("dialog", { name: /repeat/iu });
+    assert(screen.queryAllByRole("dialog")).toHaveLength(0);
+    const repeatView = screen.getByTestId("create-event-repeat-view");
 
     assert(
       within(repeatView).queryByRole("checkbox", { name: /monday/iu })
@@ -396,7 +396,7 @@ describe("CreateEventPopover draft and validation behaviour", () => {
 
     act(() => {
       fireEvent.click(
-        within(repeatView).getByRole("button", { name: /back/iu })
+        within(repeatView).getByRole("button", { name: /save/iu })
       );
     });
 
@@ -421,10 +421,10 @@ describe("CreateEventPopover draft and validation behaviour", () => {
 
     chooseSelectOption(/repeat/iu, /^custom/iu);
 
-    assert(screen.getAllByRole("dialog")).toHaveLength(1);
-    const repeatView = screen.getByRole("dialog", { name: /repeat/iu });
+    assert(screen.queryAllByRole("dialog")).toHaveLength(0);
+    const repeatView = screen.getByTestId("create-event-repeat-view");
     assert(
-      within(repeatView).getByRole("button", { name: /back/iu })
+      within(repeatView).getByRole("button", { name: /save/iu })
     ).toBeInTheDocument();
 
     act(() => {
@@ -447,17 +447,17 @@ describe("CreateEventPopover draft and validation behaviour", () => {
 
     chooseSelectOption(/repeat/iu, /^custom/iu);
     const createDialog = getCreateDialog();
-    const repeatDialog = screen.getByRole("dialog", { name: /repeat/iu });
+    const repeatDialog = screen.getByTestId("create-event-repeat-view");
 
     assert(createDialog).toContainElement(repeatDialog);
 
     act(() => {
       fireEvent.click(
-        within(repeatDialog).getByRole("button", { name: /back/iu })
+        within(repeatDialog).getByRole("button", { name: /save/iu })
       );
     });
 
-    assert(screen.queryByRole("dialog", { name: /repeat/iu })).toBeNull();
+    assert(screen.queryByTestId("create-event-repeat-view")).toBeNull();
     assert(getCreateDialog()).toBe(createDialog);
   });
 
@@ -480,7 +480,7 @@ describe("CreateEventPopover draft and validation behaviour", () => {
 
     chooseSelectOption(/repeat/iu, /^custom/iu);
 
-    const repeatDialog = screen.getByRole("dialog", { name: /repeat/iu });
+    const repeatDialog = screen.getByTestId("create-event-repeat-view");
     act(() => {
       fireEvent.click(
         within(repeatDialog).getByRole("button", { name: /wednesday/iu })
@@ -489,18 +489,21 @@ describe("CreateEventPopover draft and validation behaviour", () => {
 
     const repeat = screen.getByRole("combobox", { name: /repeat/iu });
     assert(repeat).toHaveTextContent("Custom");
-    assert(repeat).toHaveAccessibleDescription(
+    assert(repeat).not.toHaveAccessibleDescription(
       "Repeats every week on Monday and Wednesday"
     );
 
     act(() => {
       fireEvent.click(
-        within(repeatDialog).getByRole("button", { name: /close/iu })
+        within(repeatDialog).getByRole("button", { name: /save/iu })
       );
     });
 
-    assert(screen.queryByRole("dialog", { name: /repeat/iu })).toBeNull();
+    assert(screen.queryByTestId("create-event-repeat-view")).toBeNull();
     assert(getCreateDialog()).toBeInTheDocument();
+    assert(repeat).toHaveAccessibleDescription(
+      "Repeats every week on Monday and Wednesday"
+    );
 
     act(() => {
       fireEvent.click(getSubmitButton());
@@ -709,8 +712,8 @@ describe("CreateEventPopover coverage paths", () => {
     renderPopover({ onSubmit, t: repeatPresetT });
     chooseSelectOption(/repeat/iu, /^custom/iu);
 
-    assert(screen.getAllByRole("dialog")).toHaveLength(1);
-    const repeatView = screen.getByRole("dialog", { name: /repeat/iu });
+    assert(screen.queryAllByRole("dialog")).toHaveLength(0);
+    const repeatView = screen.getByTestId("create-event-repeat-view");
     const interval = within(repeatView).getByRole("spinbutton", {
       name: /^(?:every|interval)$/iu,
     });
@@ -744,7 +747,7 @@ describe("CreateEventPopover coverage paths", () => {
 
     act(() => {
       fireEvent.click(
-        within(repeatView).getByRole("button", { name: /back/iu })
+        within(repeatView).getByRole("button", { name: /save/iu })
       );
     });
     act(() => {
@@ -761,7 +764,7 @@ describe("CreateEventPopover coverage paths", () => {
     renderPopover();
     chooseSelectOption(/repeat/iu, /^custom/iu);
 
-    const repeatView = screen.getByRole("dialog", { name: /repeat/iu });
+    const repeatView = screen.getByTestId("create-event-repeat-view");
     assert(
       repeatView.querySelector('[id$="-repeat-on-label"]')
     ).toHaveTextContent("On");
@@ -902,20 +905,17 @@ describe("CreateEventPopover discard and submit behaviour", () => {
     assert(onCancel).toHaveBeenCalledOnce();
   });
 
-  it("keeps the custom repeat view in a card layered over the create popover", () => {
+  it("keeps the custom repeat editor inline inside the create form", () => {
     renderPopover();
 
     chooseSelectOption(/repeat/iu, /^custom/iu);
 
     const createDialog = getCreateDialog();
-    const repeatDialog = screen.getByRole("dialog", { name: /repeat/iu });
-    assert(repeatDialog).not.toBe(createDialog);
+    const repeatEditor = screen.getByTestId("create-event-repeat-view");
+
     assert(createDialog).toContainElement(screen.getByLabelText(/title/iu));
-    assert(createDialog).toContainElement(repeatDialog);
-    assert(repeatDialog).toHaveClass(styles.repeatPopover);
-    assert(
-      within(repeatDialog).getByRole("heading", { name: /repeat/iu })
-    ).toBeInTheDocument();
+    assert(createDialog).toContainElement(repeatEditor);
+    assert(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("renders each calendar colour in the selected value and option list", () => {
@@ -1011,7 +1011,7 @@ describe("CreateEventPopover discard and submit behaviour", () => {
     renderPopover({ onSubmit });
     chooseSelectOption(/repeat/iu, /^custom/iu);
 
-    const repeatDialog = screen.getByRole("dialog", { name: /repeat/iu });
+    const repeatDialog = screen.getByTestId("create-event-repeat-view");
     const repeatView = repeatDialog;
 
     assert(within(repeatView).getAllByRole("combobox")).toHaveLength(1);
@@ -1036,7 +1036,7 @@ describe("CreateEventPopover discard and submit behaviour", () => {
 
     act(() => {
       fireEvent.click(
-        within(repeatView).getByRole("button", { name: /back/iu })
+        within(repeatView).getByRole("button", { name: /save/iu })
       );
     });
     act(() => {
@@ -1053,12 +1053,12 @@ describe("CreateEventPopover discard and submit behaviour", () => {
     renderPopover({ onSubmit });
     chooseSelectOption(/repeat/iu, /^custom/iu);
 
-    const repeatView = screen.getByRole("dialog", { name: /repeat/iu });
+    const repeatView = screen.getByTestId("create-event-repeat-view");
     fireEvent.click(within(repeatView).getByRole("radio", { name: /^on$/iu }));
     pickDate(/end date/iu, /august 30, 2026/iu, repeatView);
     act(() => {
       fireEvent.click(
-        within(repeatView).getByRole("button", { name: /back/iu })
+        within(repeatView).getByRole("button", { name: /save/iu })
       );
     });
     act(() => {
@@ -1218,5 +1218,115 @@ describe("CreateEventPopover combobox fidelity", () => {
         name: /remove ada lovelace/iu,
       })
     ).toBeInTheDocument();
+  });
+});
+
+describe("CreateEventPopover inline custom repeat editor", () => {
+  it("restores the preset and rule from when the editor opened on Cancel", () => {
+    const onSubmit = submitSpy();
+    renderPopover({
+      defaultDraft: { ...BASE_DRAFT, recurrenceRule: "FREQ=DAILY" },
+      onSubmit,
+    });
+
+    chooseSelectOption(/repeat/iu, /^custom/iu);
+    const editor = screen.getByTestId("create-event-repeat-view");
+    act(() => {
+      fireEvent.click(
+        within(editor).getByRole("button", { name: /wednesday/iu })
+      );
+    });
+    act(() => {
+      fireEvent.click(
+        within(editor).getByRole("button", { name: /cancel/iu })
+      );
+    });
+
+    assert(screen.queryByTestId("create-event-repeat-view")).toBeNull();
+    assert(screen.getByRole("combobox", { name: /repeat/iu })).toHaveTextContent(
+      "Daily"
+    );
+
+    act(() => {
+      fireEvent.click(getSubmitButton());
+    });
+    assert(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      ...BASE_DRAFT,
+      recurrenceRule: "FREQ=DAILY",
+    });
+  });
+
+  it("collapses on Escape and keeps the rule, as Save does", () => {
+    renderPopover();
+
+    chooseSelectOption(/repeat/iu, /^custom/iu);
+    const editor = screen.getByTestId("create-event-repeat-view");
+    act(() => {
+      fireEvent.click(
+        within(editor).getByRole("button", { name: /wednesday/iu })
+      );
+    });
+    act(() => {
+      fireEvent.keyDown(editor, { key: "Escape" });
+    });
+
+    assert(screen.queryByTestId("create-event-repeat-view")).toBeNull();
+    assert(getCreateDialog()).toBeInTheDocument();
+    assert(
+      screen.getByRole("combobox", { name: /repeat/iu })
+    ).toHaveAccessibleDescription("Repeats every week on Monday and Wednesday");
+  });
+
+  it("closes the editor when another preset is chosen", () => {
+    renderPopover();
+
+    chooseSelectOption(/repeat/iu, /^custom/iu);
+    chooseSelectOption(/repeat/iu, /^weekly/iu);
+
+    assert(screen.queryByTestId("create-event-repeat-view")).toBeNull();
+    assert(
+      screen.getByRole("combobox", { name: /repeat/iu })
+    ).toHaveTextContent("Weekly");
+  });
+
+  it("reopens the saved custom rule when Custom is picked again", () => {
+    renderPopover();
+
+    chooseSelectOption(/repeat/iu, /^custom/iu);
+    act(() => {
+      fireEvent.click(
+        within(screen.getByTestId("create-event-repeat-view")).getByRole(
+          "button",
+          { name: /wednesday/iu }
+        )
+      );
+    });
+    act(() => {
+      fireEvent.click(
+        within(screen.getByTestId("create-event-repeat-view")).getByRole(
+          "button",
+          { name: /save/iu }
+        )
+      );
+    });
+    chooseSelectOption(/repeat/iu, /^weekly/iu);
+    chooseSelectOption(/repeat/iu, /^custom/iu);
+
+    const reopened = screen.getByTestId("create-event-repeat-view");
+    assert(
+      within(reopened).getByRole("button", { name: /wednesday/iu })
+    ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("disables the other fields and Save while the editor is open, and keeps Repeat live", () => {
+    renderPopover();
+
+    chooseSelectOption(/repeat/iu, /^custom/iu);
+
+    assert(screen.getByLabelText(/title/iu).closest("[inert]")).not.toBeNull();
+    assert(
+      screen.getByRole("combobox", { name: /repeat/iu })
+    ).toBeEnabled();
+    assert(document.querySelector('button[type="submit"]')).toBeDisabled();
   });
 });

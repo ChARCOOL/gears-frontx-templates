@@ -126,13 +126,20 @@ describe("CreateEventPopover attached shadow-root contract", () => {
       target: { value: "custom" },
     });
 
-    const repeatDialog = getShadowDialog(root, /custom|repeat/iu);
+    const repeatEditor = root.querySelector<HTMLElement>(
+      '[data-testid="create-event-repeat-view"]'
+    );
+    if (repeatEditor === null) {
+      throw new Error("Missing shadow-root repeat editor");
+    }
 
-    assert(repeatDialog.getRootNode()).toBe(root);
+    assert(repeatEditor.getRootNode()).toBe(root);
 
-    fireEvent.keyDown(repeatDialog, { key: "Escape" });
+    fireEvent.keyDown(repeatEditor, { key: "Escape" });
 
-    assert(queryShadowDialog(root, /custom|repeat/iu)).toBeNull();
+    assert(
+      root.querySelector('[data-testid="create-event-repeat-view"]')
+    ).toBeNull();
     assert(getShadowDialog(root, /create/iu)).toBeInTheDocument();
 
     host.remove();

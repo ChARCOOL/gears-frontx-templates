@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
@@ -154,7 +155,9 @@ const assertA19RepeatControls = (): void => {
     })
   ).toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "A19:calendar.create_event.back" })
+    within(screen.getByTestId("create-event-repeat-view")).getByRole("button", {
+      name: "A19:calendar.create_event.save",
+    })
   ).toBeInTheDocument();
   expect(
     screen.getByText("A19:calendar.create_event.repeat.ends")
@@ -277,7 +280,6 @@ describe("i18n acceptance: ownership and diagnostics", () => {
       "calendar.combobox.toggleOptions",
       // Covered by primitive-default-labels.test.tsx.
       "calendar.tag.remove",
-      "calendar.dialog.close",
       "calendar.month.weekPrefix",
       "calendar.create_event.submitError",
       "calendar.create_event.repeat.ends",
