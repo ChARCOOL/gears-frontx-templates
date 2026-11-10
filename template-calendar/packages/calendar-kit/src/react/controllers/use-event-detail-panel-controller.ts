@@ -37,7 +37,8 @@ export interface UseEventDetailPanelControllerResult {
   readonly isOpen: boolean;
   readonly close: () => void;
   readonly canCopyJoinLink: boolean;
-  readonly copyLink: () => void;
+  /** Copies `url`, or the join link when none is given. Unsafe URLs are not copied. */
+  readonly copyLink: (url?: string | null) => void;
   readonly copyStatus: EventDetailPanelCopyStatus;
   readonly visibleParticipants: readonly CalendarAttendee[];
   readonly participantOverflowCount: number;
@@ -201,8 +202,7 @@ export const useEventDetailPanelController = (
     }, COPY_STATUS_RESET_MS);
   };
 
-  const copyLink = (): void => {
-    const url = event?.joinUrl;
+  const copyLink = (url: string | null | undefined = event?.joinUrl): void => {
     if (!isSafeHttpUrl(url)) {
       return;
     }

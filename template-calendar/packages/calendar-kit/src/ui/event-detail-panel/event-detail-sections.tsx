@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { CheckIcon, CopyIcon } from "lucide-react";
+import { CheckIcon, CircleAlertIcon, CopyIcon } from "lucide-react";
 import { Fragment } from "react";
 import type { ReactNode } from "react";
 
@@ -13,6 +13,7 @@ import type {
 } from "../../core/model";
 import { useCalendarContext } from "../../i18n/calendar-context";
 import { useCalendarLocalization } from "../../i18n/calendar-localization";
+import { isSafeHttpUrl } from "../../react/controllers/use-event-detail-panel-controller";
 import type { EventDetailPanelCopyStatus } from "../../react/public";
 import { ConflictIndicator } from "../conflict-indicator/conflict-indicator";
 import { Avatar } from "../primitives/avatar/avatar";
@@ -114,7 +115,7 @@ const CopyLinkButton = ({ copyStatus, onCopy }: CopyLinkButtonProps) => {
 
 interface ConferencingSectionProps {
   readonly canCopyJoinLink: boolean;
-  readonly copyLink: () => void;
+  readonly copyLink: (url?: string | null) => void;
   readonly copyStatus: EventDetailPanelCopyStatus;
   readonly joinUrl: string;
 }
@@ -139,13 +140,83 @@ const ConferencingSection = ({
           >
             {t("calendar.detail.join")}
           </a>
-          <CopyLinkButton copyStatus={copyStatus} onCopy={copyLink} />
+          <CopyLinkButton
+            copyStatus={copyStatus}
+            onCopy={() => copyLink(joinUrl)}
+          />
         </div>
       ) : (
         <p className={styles.mutedText}>{joinUrl}</p>
       )}
     </DetailRow>
   );
+};
+
+const ActivitySection = ({
+  copyLink,
+  copyStatus,
+  url,
+}: {
+  readonly copyLink: (url?: string | null) => void;
+  readonly copyStatus: EventDetailPanelCopyStatus;
+  readonly url: string;
+}) => {
+  const { t } = useCalendarLocalization();
+
+  return (
+    <DetailRow label={t("calendar.detail.activity")}>
+      <div className={styles.conferencingRow}>
+        <a
+          className={styles.pageLink}
+          href={url}
+          rel="noreferrer"
+          target="_blank"
+        >
+          {t("calendar.detail.goToPage")}
+        </a>
+        <CopyLinkButton
+          copyStatus={copyStatus}
+          onCopy={() => copyLink(url)}
+        />
+      </div>
+    </DetailRow>
+  );
+};
+
+const EarlyReminderNotice = ({
+  leadMinutes,
+}: {
+  readonly leadMinutes: number;
+}) => {
+  const { t } = useCalendarLocalization();
+  const lead =
+    leadMinutes === 0
+      ? t("calendar.detail.reminderLead.now")
+      : t("calendar.detail.reminderLead.minutes", { count: leadMinutes });
+
+  return (
+    <div className={styles.notice}>
+      <CircleAlertIcon aria-hidden="true" className={styles.noticeIcon} />
+      <p className={styles.noticeText}>
+        {t("calendar.detail.earlyReminder", { lead })}
+      </p>
+    </div>
+  );
+};
+
+const CourseSection = ({ event }: { readonly event: CalendarEvent }) => {
+  const { t } = useCalendarLocalization();
+  const fields = [
+    { label: t("calendar.detail.classroom"), value: event.classroom ?? "" },
+    { label: t("calendar.detail.instructor"), value: event.instructor ?? "" },
+    { label: t("calendar.detail.course"), value: event.course ?? "" },
+  ].filter(({ value }) => value !== "");
+
+  return fields.map(({ label, value }) => (
+    <DetailRow key={label} label={label}>
+      <p className={styles.mutedText}>{value}</p>
+    </DetailRow>
+  ));
 };
 
 interface ParticipantsSectionProps {
@@ -335,7 +406,7 @@ const renderConflictDetail = (conflict: CalendarConflict) => (
 export interface DefaultDetailProps {
   readonly canCopyJoinLink: boolean;
   readonly comparisonTimeZone: IanaTimeZone | null;
-  readonly copyLink: () => void;
+  readonly copyLink: (url?: string | null) => void;
   readonly copyStatus: EventDetailPanelCopyStatus;
   readonly event: CalendarEvent;
   readonly joinUrl: string | undefined;
@@ -365,11 +436,16 @@ export const DefaultDetail = ({
   const conflicts = event.conflicts ?? [];
   const location = event.location ?? "";
   const description = event.description ?? "";
+  const isReminder = event.eventType === "reminder";
+  const reminderUrl = isSafeHttpUrl(event.url) ? event.url : undefined;
 
   // Groups render even when every row in them is empty; the stylesheet hides empty groups and
   // draws a rule only between groups that have content.
   return (
     <>
+      {event.notify ? (
+        <EarlyReminderNotice leadMinutes={event.notify.leadMinutes} />
+      ) : null}
       <div className={styles.group}>
         <DetailRow label={t("calendar.detail.dateTime")}>
           <p className={styles.mutedText}>
@@ -379,8 +455,8 @@ export const DefaultDetail = ({
             <p className={styles.mutedText}>{recurrenceSummary}</p>
           )}
         </DetailRow>
-        <OrganizerSection event={event} />
-        {joinUrl !== undefined && (
+        {isReminder ? null : <OrganizerSection event={event} />}
+        {joinUrl !== undefined && !isReminder && (
           <ConferencingSection
             canCopyJoinLink={canCopyJoinLink}
             copyLink={copyLink}
@@ -388,16 +464,28 @@ export const DefaultDetail = ({
             joinUrl={joinUrl}
           />
         )}
-        <ParticipantsSection
-          event={event}
-          showAllGuests={showAllGuests}
-          onShowAllGuests={onShowAllGuests}
-          participantOverflowCount={participantOverflowCount}
-          visibleParticipants={visibleParticipants}
-        />
+        {isReminder ? null : (
+          <ParticipantsSection
+            event={event}
+            showAllGuests={showAllGuests}
+            onShowAllGuests={onShowAllGuests}
+            participantOverflowCount={participantOverflowCount}
+            visibleParticipants={visibleParticipants}
+          />
+        )}
+        {reminderUrl === undefined ? null : (
+          <ActivitySection
+            copyLink={copyLink}
+            copyStatus={copyStatus}
+            url={reminderUrl}
+          />
+        )}
       </div>
       <div className={styles.group}>
-        {location !== "" && (
+        {isReminder ? null : <CourseSection event={event} />}
+      </div>
+      <div className={styles.group}>
+        {location !== "" && !isReminder && (
           <DetailRow label={t("calendar.detail.location")}>
             <p className={styles.mutedText}>{location}</p>
           </DetailRow>

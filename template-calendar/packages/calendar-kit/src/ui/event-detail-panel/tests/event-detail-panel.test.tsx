@@ -709,6 +709,97 @@ describe("EventDetailPanel keyboard and event absence", () => {
   });
 });
 
+describe("EventDetailPanel reminder, course and activity rows", () => {
+  it("shows a bell before the title of a reminder only", () => {
+    const { unmount } = renderPanel({
+      event: timedEvent({ ...BASE_EVENT, eventType: "reminder" }),
+    });
+
+    expect(
+      screen.getByRole("heading", { level: 2, name: EVENT_TITLE }).querySelector("svg")
+    ).not.toBeNull();
+
+    unmount();
+    renderPanel();
+
+    expect(
+      screen.getByRole("heading", { level: 2, name: EVENT_TITLE }).querySelector("svg")
+    ).toBeNull();
+  });
+
+  it("hides organizer, conferencing and participants for a reminder", () => {
+    renderPanel({
+      event: timedEvent({
+        ...BASE_EVENT,
+        attendees: makeAttendees(2),
+        eventType: "reminder",
+        joinUrl: SAFE_JOIN_URL,
+        organizer: "Dr. Rivera",
+      }),
+    });
+
+    expect(screen.queryByRole("heading", { name: "Organizer" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Conferencing" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Participants" })).toBeNull();
+  });
+
+  it("shows course rows only for the fields that are set", () => {
+    renderPanel({
+      event: timedEvent({
+        ...BASE_EVENT,
+        classroom: "Science Hall 204",
+        course: "CHEM-204",
+        instructor: null,
+      }),
+    });
+
+    expect(screen.getByRole("heading", { name: "Classroom" })).toBeTruthy();
+    expect(screen.getByText("Science Hall 204")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Course" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Instructor" })).toBeNull();
+  });
+
+  it("shows the early-reminder notice when the event sets notify", () => {
+    renderPanel({
+      event: timedEvent({ ...BASE_EVENT, notify: { leadMinutes: 10 } }),
+    });
+
+    expect(
+      screen.getByText("Early reminder: 10 minutes before")
+    ).toBeTruthy();
+  });
+
+  it("offers Go to page only for an http(s) activity URL", () => {
+    const { unmount } = renderPanel({
+      event: timedEvent({ ...BASE_EVENT, url: SAFE_HTTP_JOIN_URL }),
+    });
+
+    expect(screen.getByRole("link", { name: "Go to page" })).toHaveAttribute(
+      "href",
+      SAFE_HTTP_JOIN_URL
+    );
+
+    unmount();
+    renderPanel({
+      event: timedEvent({ ...BASE_EVENT, url: SCRIPT_JOIN_URL }),
+    });
+
+    expect(screen.queryByRole("link", { name: "Go to page" })).toBeNull();
+  });
+
+  it("copies the activity URL from its Copy link button", async () => {
+    const user = userEvent.setup();
+    const writeText = installClipboard();
+    renderPanel({
+      event: timedEvent({ ...BASE_EVENT, url: SAFE_HTTP_JOIN_URL }),
+    });
+
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+
+    expect(writeText).toHaveBeenCalledWith(SAFE_HTTP_JOIN_URL);
+  });
+});
+
 describe("EventDetailPanel slots", () => {
   it("calls the header, metadata, and footer slots with the exact event and mounts their outputs", () => {
     const event = timedEvent({ ...BASE_EVENT });

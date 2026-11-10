@@ -225,6 +225,25 @@ describe(useEventDetailPanelController, () => {
     expect(result.current.copyStatus).toBe("copied");
   });
 
+  it("copies the URL it is given instead of the join link", async () => {
+    const writeText = installClipboard();
+    const pageUrl = "https://example.com/page";
+
+    const { result } = renderHook(() =>
+      useEventDetailPanelController(
+        baseProps({ event: makeEvent({ joinUrl: SAFE_JOIN_URL }) })
+      )
+    );
+
+    await act(async () => {
+      result.current.copyLink(pageUrl);
+
+      await Promise.resolve();
+    });
+
+    expect(writeText).toHaveBeenCalledWith(pageUrl);
+  });
+
   it("fails closed for unsafe URLs without touching the clipboard", () => {
     const writeText = installClipboard();
 

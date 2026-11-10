@@ -4,6 +4,7 @@
 
 import { clsx } from "clsx";
 import {
+  BellIcon,
   PencilLineIcon,
   Trash2Icon,
   XIcon,
@@ -310,6 +311,9 @@ const EventDetailPanelContent = (props: EventDetailPanelContentProps) => {
           tabIndex={-1}
           className={styles.title}
         >
+          {eventValue?.eventType === "reminder" && (
+            <BellIcon className={styles.reminderIcon} aria-hidden="true" />
+          )}
           {title}
         </h2>
       </EventDetailPanelHeader>

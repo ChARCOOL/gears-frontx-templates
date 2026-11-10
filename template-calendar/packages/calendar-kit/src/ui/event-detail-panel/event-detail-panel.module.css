@@ -195,7 +195,8 @@
   gap: var(--cal-space-2);
 }
 
-.joinButton {
+.joinButton,
+.pageLink {
   align-items: center;
   background: var(--cal-color-action);
   block-size: var(--cal-control-height-sm);
@@ -210,9 +211,15 @@
 }
 
 .joinButton:focus-visible,
+.pageLink:focus-visible,
 .stackOverflow:focus-visible {
   outline: 2px solid var(--cal-color-focus-ring-strong);
   outline-offset: 2px;
+}
+
+.pageLink {
+  background: var(--cal-color-raised);
+  color: var(--cal-color-text);
 }
 
 /* Side by side rather than overlapped: at 24px an overlap covers half of each avatar's initials. */
@@ -330,4 +337,40 @@
 
 .visuallyHidden {
   composes: srOnly from "../../styles/modules/sr-only.module.css";
+}
+
+/* The reminder bell sits before the title, on its first line. */
+.reminderIcon {
+  block-size: var(--cal-icon-size-xs);
+  color: var(--cal-color-text);
+  display: inline-block;
+  inline-size: var(--cal-icon-size-xs);
+  margin-inline-end: var(--cal-space-1);
+  vertical-align: text-bottom;
+}
+
+.notice {
+  align-items: flex-start;
+  background: var(--cal-color-raised);
+  border: var(--cal-border-width-1) solid var(--cal-color-warning);
+  border-radius: var(--cal-radius-md);
+  column-gap: var(--cal-space-2);
+  display: flex;
+  margin-block-end: var(--cal-space-3);
+  padding-block: var(--cal-space-3);
+  padding-inline: var(--cal-space-4);
+}
+
+.noticeIcon {
+  block-size: var(--cal-icon-size-sm);
+  color: var(--cal-color-warning);
+  flex-shrink: 0;
+  inline-size: var(--cal-icon-size-sm);
+}
+
+.noticeText {
+  color: var(--cal-color-text);
+  font-size: var(--cal-text-label-size);
+  line-height: var(--cal-text-label-line-height);
+  margin: 0;
 }
