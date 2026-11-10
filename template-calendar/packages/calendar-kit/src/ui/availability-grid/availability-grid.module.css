@@ -35,6 +35,20 @@
     var(--cal-slot-selected-ring);
 }
 
+.labelButton {
+  composes: focusRingInset from "../../styles/modules/focus-ring.module.css";
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.labelButton:hover {
+  color: var(--cal-color-text);
+}
+
 .unavailable {
   composes: unavailable from "../../styles/modules/state.module.css";
 }

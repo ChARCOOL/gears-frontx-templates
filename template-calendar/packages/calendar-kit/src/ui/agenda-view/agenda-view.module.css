@@ -528,3 +528,23 @@ button.agendaEvent:not(.unavailable):hover {
     border-color: Highlight;
   }
 }
+
+@media print {
+  .agendaView {
+    block-size: auto;
+    print-color-adjust: exact;
+  }
+
+  .groups {
+    overflow: visible;
+  }
+
+  .dayGroup {
+    break-inside: avoid;
+    content-visibility: visible;
+  }
+
+  .nowLine.nowLine {
+    display: none;
+  }
+}

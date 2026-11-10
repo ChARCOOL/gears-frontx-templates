@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { UTC } from "../../../__test-utils__/fixtures";
 import { calendarDate, parseLocalTime } from "../../../core/model";
@@ -80,6 +80,45 @@ describe(useCreateEventController, () => {
     });
 
     expect(result.current.isDiscardDialogOpen).toBeFalsy();
+  });
+
+  it("stays clean when a URL or description is typed and cleared again", () => {
+    const { result } = renderHook(() => useCreateEventController(options()));
+
+    act(() => {
+      result.current.setDraft({ ...draft(), url: "https://example.com/prep" });
+    });
+    act(() => {
+      result.current.setDraft({ ...draft(), url: null });
+    });
+
+    act(() => {
+      result.current.setDraft({ ...draft(), description: "Agenda" });
+    });
+    act(() => {
+      result.current.setDraft({ ...draft(), description: "" });
+    });
+
+    expect(result.current.isDirty).toBeFalsy();
+
+    act(() => {
+      result.current.requestCancel();
+    });
+
+    expect(result.current.isDiscardDialogOpen).toBeFalsy();
+  });
+
+  it.each<CreateEventDraft>([
+    { ...draft(), notify: { leadMinutes: 10 } },
+    { ...draft(), url: "https://example.com/prep" },
+  ])("counts a changed notify or URL as an edit", (changed) => {
+    const { result } = renderHook(() => useCreateEventController(options()));
+
+    act(() => {
+      result.current.setDraft(changed);
+    });
+
+    expect(result.current.isDirty).toBeTruthy();
   });
 
   it("uses the controlled draft as the source of truth and emits the exact replacement", () => {
@@ -328,5 +367,101 @@ describe(useCreateEventController, () => {
 
     expect(onCancel).toHaveBeenCalledTimes(2);
     expect(result.current.isDiscardDialogOpen).toBeFalsy();
+  });
+
+  it("tells the host whether its close request closed the form", async () => {
+    const { result } = renderHook(() => useCreateEventController(options()));
+    let cleanClose = Promise.resolve(false);
+
+    act(() => {
+      cleanClose = result.current.requestCancel();
+    });
+
+    await expect(cleanClose).resolves.toBeTruthy();
+
+    act(() => {
+      result.current.setOpen(true);
+    });
+    act(() => {
+      result.current.setDraft({ ...draft(), title: "Unsaved" });
+    });
+
+    let kept = Promise.resolve(true);
+
+    act(() => {
+      kept = result.current.requestCancel();
+    });
+    act(() => {
+      result.current.dismissDiscard();
+    });
+
+    await expect(kept).resolves.toBeFalsy();
+
+    let discarded = Promise.resolve(false);
+
+    act(() => {
+      discarded = result.current.requestCancel();
+    });
+    act(() => {
+      result.current.confirmDiscard();
+    });
+
+    await expect(discarded).resolves.toBeTruthy();
+    expect(result.current.isOpen).toBeFalsy();
+  });
+
+  describe("focus return", () => {
+    let opener: HTMLButtonElement;
+
+    // A focused field inside the form is removed with the form on close. React keeps focus on a
+    // connected element after a commit, so the field must leave the document first.
+    let field: HTMLInputElement;
+
+    beforeEach(() => {
+      opener = document.createElement("button");
+      field = document.createElement("input");
+      document.body.append(opener, field);
+      opener.focus();
+    });
+
+    afterEach(() => {
+      document.body.innerHTML = "";
+    });
+
+    it("returns focus to the opener when the form closes", () => {
+      const { result } = renderHook(() => useCreateEventController(options()));
+      field.focus();
+      field.remove();
+
+      act(() => {
+        result.current.requestCancel();
+      });
+
+      expect(document.activeElement).toBe(opener);
+    });
+
+    it("returns focus to the opener when a host-controlled open turns false", () => {
+      const { rerender } = renderHook(
+        (controllerOptions: ControllerOptions) =>
+          useCreateEventController(controllerOptions),
+        { initialProps: options({ open: true }) }
+      );
+      field.focus();
+      field.remove();
+
+      rerender(options({ open: false }));
+
+      expect(document.activeElement).toBe(opener);
+    });
+
+    it("returns focus to the opener when the form unmounts", () => {
+      const { unmount } = renderHook(() => useCreateEventController(options()));
+      field.focus();
+      field.remove();
+
+      unmount();
+
+      expect(document.activeElement).toBe(opener);
+    });
   });
 });

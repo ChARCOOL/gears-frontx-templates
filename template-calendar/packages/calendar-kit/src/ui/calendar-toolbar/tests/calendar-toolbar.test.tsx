@@ -4,11 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { declarations } from "../../../__test-utils__/css-declarations";
 
-import {
-  AGENDA_WINDOW_DAYS,
-  addCalendarDays,
-  calendarDate,
-} from "../../../core/model";
+import { calendarDate } from "../../../core/model";
 import type { CalendarDate, CalendarView } from "../../../core/model";
 import type { CalendarTranslate } from "../../../i18n/calendar-localization";
 import { englishTranslate as t } from "../../../i18n/english";
@@ -226,7 +222,7 @@ describe("CalendarToolbar active view state", () => {
   });
 });
 
-describe("CalendarToolbar title and range", () => {
+describe("CalendarToolbar title", () => {
   it("renders the localized month and year title for non-agenda views", () => {
     renderToolbar({ activeView: "month" });
 
@@ -245,63 +241,36 @@ describe("CalendarToolbar title and range", () => {
     expect(heading).toHaveAccessibleName(/Selected date 2026-08-24/u);
   });
 
-  it("renders the agenda range through the same-year translation key", () => {
-    const recordedT = vi.fn<CalendarTranslate>(t);
+  it("titles the agenda with the month and year of its first day, as the other views do", () => {
+    renderToolbar({ activeView: "agenda" });
 
-    renderToolbar({ activeView: "agenda", t: recordedT });
-
-    expect(addCalendarDays(DATE, AGENDA_WINDOW_DAYS - 1)).toBe(
-      calendarDate("2026-09-22")
-    );
-    expect(recordedT).toHaveBeenCalledWith(
-      "calendar.agenda.range",
-      expect.objectContaining({
-        endDay: "22",
-        endMonth: "Sep",
-        startDay: "24",
-        startMonth: "Aug",
-      })
-    );
-    expect(recordedT).not.toHaveBeenCalledWith(
-      "calendar.agenda.rangeCrossYear",
-      expect.anything()
-    );
-    expect(screen.getByRole("heading")).toHaveTextContent("24 Aug – 22 Sep");
+    expect(screen.getByRole("heading")).toHaveTextContent("August 2026");
   });
 
-  it("switches to the cross-year translation key when the window crosses a year boundary", () => {
-    const recordedT = vi.fn<CalendarTranslate>(t);
-
+  it("titles the agenda with the month and year when the window crosses a year boundary", () => {
     renderToolbar({
       activeView: "agenda",
       currentDate: calendarDate("2025-12-15"),
-      t: recordedT,
     });
 
-    expect(recordedT).toHaveBeenCalledWith(
-      "calendar.agenda.rangeCrossYear",
-      expect.objectContaining({ endYear: "2026", startYear: "2025" })
-    );
-    expect(screen.getByRole("heading")).toHaveTextContent(
-      "15 Dec 2025 – 13 Jan 2026"
-    );
+    expect(screen.getByRole("heading")).toHaveTextContent("December 2025");
   });
 
   it("keeps the title anchored to the host date across view changes", async () => {
     const { rerender } = renderToolbar({ defaultActiveView: "day" });
 
-    expect(screen.getByRole("heading")).toHaveTextContent("August");
+    expect(screen.getByRole("heading")).toHaveTextContent("August 2026");
     const user = userEvent.setup();
 
     await user.click(radio("Agenda"));
 
-    expect(screen.getByRole("heading")).toHaveTextContent("24 Aug – 22 Sep");
+    expect(screen.getByRole("heading")).toHaveTextContent("August 2026");
 
     rerender(
       <CalendarToolbar {...toolbarProps({ defaultActiveView: "day" })} />
     );
 
-    expect(screen.getByRole("heading")).toHaveTextContent("24 Aug – 22 Sep");
+    expect(screen.getByRole("heading")).toHaveTextContent("August 2026");
   });
 });
 

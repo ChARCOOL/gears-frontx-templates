@@ -2,7 +2,7 @@
 
 `MonthGrid` renders a localized Monday-first month calendar. It builds complete week rows, dims outside-month days, marks today, preserves exclusive all-day end dates, and renders deterministic timed and all-day event lanes.
 
-By default the week column labels each row `W1`…`Wn`, the week's index inside the displayed month; `weekNumbering="iso"` shows the ISO week-of-year the model already keeps. Each event renders as a one-line `09:00 Title` strip in a fixed 21px track behind the 3px family colour bar, and excess events collapse into the overflow chip. All-day lanes occupy those same model rows before timed strips, and month strips omit location, organizer, and other metadata rows. Ordinary dates keep the day number in an unfilled pill; today uses the red strong variant. A today cell and a first-of-month cell carry the cell’s full label (`September 16`); every other day carries just the day number.
+By default the week column labels each row `W1`…`Wn`, the week's index inside the displayed month; `weekNumbering="iso"` shows the ISO week-of-year the model already keeps. Each event renders as a one-line `09:00 Title` strip in a fixed 21px track behind the 3px family colour bar, and excess events collapse into the overflow chip. All-day lanes occupy those same model rows before timed strips, and month strips omit location, organizer, and other metadata rows. Ordinary dates keep the day number in an unfilled pill; today uses the red strong variant. A today cell and a first-of-month cell carry the cell’s full label (`September 16`); every other day carries just the day number. In a grid narrower than 36rem, the day number and the overflow chip show short text (`24`, `+2`) in place of the full label, which stays in the DOM for screen readers.
 
 ## Usage
 
@@ -17,7 +17,7 @@ By default the week column labels each row `W1`…`Wn`, the week's index inside 
   now={now}
   monthData={{ densityCap: 3, overflowByDate: {} }}
   onEventSelect={handleEventSelect}
-  onOverflowSelect={({ date, anchorRect }) => openOverflow(date, anchorRect)}
+  onOverflowSelect={({ date, anchorRect }) => openOverflow(date, anchorRect)} // omit to use the kit list
 />
 ```
 
@@ -42,7 +42,8 @@ By default the week column labels each row `W1`…`Wn`, the week's index inside 
 | `now` | `UtcInstant` |  | Reference instant for the today marker and past styling. Omit to follow the wall clock. |
 | `onEmptyCellSelect` | `(cell: CalendarCell, anchorRect: DOMRectReadOnly) => void` |  | An empty part of a day was activated (in `selectionMode="none"`). `anchorRect` is the day cell's rectangle, for a popover. |
 | `onEventSelect` | `(event: CalendarEvent, context: CalendarEventRenderContext<unknown>, anchor?: HTMLElement…` |  | An available event was activated. `anchor` is the strip element. |
-| `onOverflowSelect` | `(payload: { readonly date: CalendarDate; readonly anchorRect?: DOMRectReadOnly \| undefine…` |  | The overflow chip was activated. `anchorRect` is the chip's rectangle, for a popover. |
+| `onMoveRequest` | `(request: CalendarMoveRequest) => void` |  | Enables dragging a timed event to another day, keeping its time of day and length. The host confirms or cancels, as with WeekGrid. Omit to disable dragging. |
+| `onOverflowSelect` | `(payload: { readonly date: CalendarDate; readonly anchorRect?: DOMRectReadOnly \| undefine…` |  | The overflow chip was activated. `anchorRect` is the chip's rectangle. Omit to let the chip open the kit's list of hidden events. |
 | `onSelectedDateRangeChange` | `(range: CalendarDateRange \| null) => void` |  | Called when a range is committed or cleared. |
 | `onSelectedEventIdChange` | `(eventId: string \| null) => void` |  | Called when an event is selected or deselected. |
 | `renderCell` | `(context: CalendarCellContext) => ReactNode` |  | Replaces the content of each day cell. |
@@ -67,9 +68,13 @@ Set `selectionMode="date-range"` to let the user pick whole days, as a term or e
 - The grid is `aria-multiselectable`, every day carries `aria-selected`, and the live region announces the committed range. `renderCell` receives `isSelected` for the days in range.
 - In this mode an empty day starts a range instead of calling `onEmptyCellSelect`; events and the overflow chip keep their own activation. Days the host marks as off stay host-drawn through `renderCell`.
 
+## Drag to move
+
+Pass `onMoveRequest` to move timed events by whole days. Dragging a timed event onto another day calls `onMoveRequest({ event, from, to, confirm, cancel })`. `from` is the event's current start cell and `to` is the same time of day on the drop day, with the event's length kept. The host must call `confirm` or `cancel`; the grid commits nothing before `confirm`, as with `WeekGrid`. The day cell the event would land on carries `data-drop-target` and the drop-target outline. The mark clears on drop or cancel, when the drag ends without a drop, and when the pointer leaves the grid. Dropping on the event's own day emits nothing. Without `onMoveRequest`, events are not draggable. All-day events are not draggable yet. Keyboard use is unchanged.
+
 ## Week numbers, trailing column, and part classes
 
-`weekNumbering="iso"` shows the ISO 8601 week of the year in the week column instead of the in-month `W1`…`Wn`. `trailingGutter` repeats that column on the trailing edge, hidden from assistive technology.
+`weekNumbering="iso"` shows the ISO 8601 week of the year in the week column instead of the in-month `W1`…`Wn`. `weekNumbering={{ termStart }}` counts weeks from the week that holds `termStart`, which is week 1; the weeks before it have no label. `trailingGutter` repeats that column on the trailing edge, hidden from assistive technology.
 
 `cellClassName`, `columnHeaderClassName`, and `weekNumberClassName` add host classes to the day cells, the weekday headers, and the week column (including its heading and the trailing copy). They are the stable styling hooks for these parts; the kit's own CSS Module class names are internal.
 
@@ -77,7 +82,7 @@ Set `selectionMode="date-range"` to let the user pick whole days, as a term or e
 
 The root is an ARIA grid with week row headers and localized column labels. Day cells use roving `tabIndex`; Arrow keys move between rows and columns, Home/End move to row boundaries, and RTL mirrors horizontal movement. Enter/Space on an empty cell calls `onEmptyCellSelect` with its `CalendarCell` and the cell's rectangle, for anchoring a popover.
 
-Event cards reuse `EventCard` and expose `data-event-id`, accessible names, selected/unavailable state, Enter/Space activation, and conflict content through `ConflictIndicator`. The overflow chip is a button that announces the hidden count and calls `onOverflowSelect` with the date and the chip's rectangle.
+Event cards reuse `EventCard` and expose `data-event-id`, accessible names, selected/unavailable state, Enter/Space activation, and conflict content through `ConflictIndicator`. The overflow chip is a button that announces the hidden count. With `onOverflowSelect`, it calls that handler with the date and the chip's rectangle, and the host opens its own list. Without it, the chip opens a kit popover listing the day's hidden events as event cards, anchored to the chip. Activating a card selects the event (`onEventSelect`) and closes the list; Escape closes it and returns focus to the chip. The list shows only events the grid has, so an `overflowByDate` count the host sent without events has no row.
 
 An empty event collection still renders the month cells, headers, overflow lanes, and independent focus/range announcements. The kit does not add loading, error, or empty-state shells, alerts, or status regions. Fetching and failure presentation remain host concerns.
 

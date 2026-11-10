@@ -94,6 +94,11 @@
     flex-direction: column;
   }
 
+  /* Stacked, the divider has no neighbour to separate. */
+  .divider {
+    display: none;
+  }
+
   .actions {
     justify-content: space-between;
   }
@@ -114,5 +119,12 @@
   /* Forced colours drop backgrounds, so the checked segment gets a ring. */
   .viewOption[aria-checked="true"]:not(:focus-visible) {
     box-shadow: inset 0 0 0 var(--cal-border-width-1) Highlight;
+  }
+}
+
+/* The controls do nothing on paper; the range title stays. */
+@media print {
+  .actions {
+    display: none;
   }
 }

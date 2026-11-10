@@ -117,3 +117,9 @@
     background: CanvasText;
   }
 }
+
+@media print {
+  .panel {
+    display: none;
+  }
+}

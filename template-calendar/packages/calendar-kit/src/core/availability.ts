@@ -2,6 +2,7 @@ import { arrayAt, sortCopy } from "./array";
 import { compareCalendarCells, normalizeCalendarCell } from "./calendar-cell";
 import type {
   CalendarAvailabilityCell,
+  CalendarCell,
   CalendarDate,
   CalendarSelectionRange,
 } from "./model";
@@ -146,4 +147,24 @@ export const buildAvailabilityRange = (
   }
 
   return { cells: sortedRangeCells, end, start };
+};
+
+/** Union of `range` and `added`, keyed by start; `null` when empty. */
+export const addAvailabilityCells = (
+  range: CalendarSelectionRange | null,
+  added: readonly CalendarCell[]
+): CalendarSelectionRange | null => {
+  const byStart = new Map<string, CalendarCell>();
+
+  for (const cell of [...(range?.cells ?? []), ...added]) {
+    byStart.set(cell.start, cell);
+  }
+
+  const cells = sortCopy([...byStart.values()], compareCalendarCells);
+  const start = arrayAt(cells, 0);
+  const end = arrayAt(cells, -1);
+
+  return start === undefined || end === undefined
+    ? null
+    : { cells, end, start };
 };

@@ -1,5 +1,9 @@
 import type { CalendarEvent } from "./model";
 
+export const isRecurringEvent = (
+  event: Pick<CalendarEvent, "recurrenceRule">
+): boolean => (event.recurrenceRule ?? "").trim() !== "";
+
 export type EventActionabilityInput = Pick<
   CalendarEvent,
   "available" | "access"
@@ -23,3 +27,8 @@ export const isEventActionable = (
   event: EventActionabilityInput,
   availableOverride?: boolean
 ): boolean => eventActionBlocker(event, availableOverride) === null;
+
+/** Recurring moves wait for the occurrence-or-series choice, so these cards stay where they are. */
+export const isEventMovable = (
+  event: Pick<CalendarEvent, "recurrenceRule" | "movable">
+): boolean => !isRecurringEvent(event) && event.movable !== false;

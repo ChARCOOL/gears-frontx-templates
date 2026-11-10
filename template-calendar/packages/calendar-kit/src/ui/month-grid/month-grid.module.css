@@ -1,6 +1,18 @@
 .container {
   composes: viewRoot from "../../styles/modules/layout.module.css";
+  container: cal-month / inline-size;
   overflow-y: auto;
+}
+
+.shortDayNumber,
+.shortOverflow {
+  display: none;
+}
+
+/* The short text rides in an attribute so the DOM text stays the one full label. */
+.shortDayNumber:before,
+.shortOverflow:before {
+  content: attr(data-short);
 }
 
 /* Week rows share the view's height. In a short view they shrink, down to the day number and one
@@ -117,6 +129,12 @@
     var(--cal-slot-selected-ring);
 }
 
+.dayCell[data-drop-target] {
+  background: var(--cal-slot-selected);
+  outline: var(--cal-border-width-1) dashed var(--cal-slot-selected-ring);
+  outline-offset: calc(-1 * var(--cal-border-width-1));
+}
+
 .fullDate {
   composes: srOnly from "../../styles/modules/sr-only.module.css";
 }
@@ -224,6 +242,12 @@
   white-space: nowrap;
 }
 
+.overflowList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cal-space-1);
+}
+
 .liveRegion {
   composes: srOnly from "../../styles/modules/sr-only.module.css";
 }
@@ -232,5 +256,34 @@
   .dayCell.inRange {
     outline: var(--cal-border-width-focus) solid Highlight;
     outline-offset: calc(-1 * var(--cal-border-width-focus));
+  }
+}
+
+/* A day cell is about 4rem wide here, too narrow for "August 1" or "+2 hidden". */
+@container cal-month (inline-size < 36rem) {
+  /* The full text stays in the DOM for screen readers; only its size drops to nothing. */
+  .dayNumber.dayNumber,
+  .overflow.overflow {
+    font-size: 0;
+  }
+
+  .shortDayNumber,
+  .shortOverflow {
+    display: inline;
+    font-size: var(--cal-text-meta-size);
+  }
+
+  .overflow.overflow {
+    justify-content: center;
+    padding-inline: var(--cal-space-1);
+  }
+}
+
+@media print {
+  .container,
+  .monthGrid {
+    overflow: visible;
+    block-size: auto;
+    print-color-adjust: exact;
   }
 }

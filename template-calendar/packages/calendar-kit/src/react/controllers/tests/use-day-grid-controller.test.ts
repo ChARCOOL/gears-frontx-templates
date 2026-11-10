@@ -8,6 +8,7 @@ import {
 import type {
   CalendarEvent,
   CalendarEventRenderContext,
+  CalendarSelectionRange,
 } from "../../../core/model";
 import {
   VIEWER_DAY_SEGMENT,
@@ -443,6 +444,36 @@ describe(useDayGridController, () => {
       anchorRect
     );
     expect(onEventSelect).toHaveBeenCalledOnce();
+  });
+
+  it("paints the activated cell instead of opening quick-create in paint-and-move mode", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    const onQuickCreate =
+      vi.fn<(payload: CalendarQuickCreatePayload) => void>();
+
+    const { result } = renderHook(() =>
+      useDayGridController({
+        date: DATE,
+        events: [],
+        interactionMode: "paint-and-move",
+        now: utcInstant("2026-08-24T12:00:00.000Z"),
+        onPaintSelect,
+        onQuickCreate,
+        timeZone: UTC,
+      })
+    );
+
+    act(() => {
+      result.current.selectEmptyCell(
+        8,
+        document.createElement("div"),
+        new DOMRect(10, 0, 10, 10)
+      );
+    });
+
+    expect(onQuickCreate).not.toHaveBeenCalled();
+    expect(onPaintSelect).toHaveBeenCalledOnce();
+    expect(onPaintSelect.mock.calls[0]?.[0].cells).toHaveLength(1);
   });
 });
 

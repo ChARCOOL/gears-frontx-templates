@@ -14,6 +14,7 @@ import type {
 } from "react";
 
 import { arrayAt } from "../../core/array";
+import { compareCalendarCells } from "../../core/calendar-cell";
 import type {
   CalendarCell,
   CalendarCellContext,
@@ -41,6 +42,7 @@ import {
   formatDayNumber,
   formatFullDateForDate,
   formatWeekday,
+  HOUR_ROW_HEIGHT,
 } from "./week-grid-layout";
 import type { CellMeta } from "./week-grid-layout";
 
@@ -58,6 +60,14 @@ export interface WeekGridHeaderColumn {
   readonly weekday: string | undefined;
 }
 
+export interface WeekGridDragPreview {
+  readonly eventId: string;
+  /** The dragged card's height in the grid, or `undefined` when it is not laid out. */
+  readonly height: number | undefined;
+  readonly targetKey: string;
+  readonly title: string;
+}
+
 export type WeekGridContentProps<Payload> = Omit<
   WeekGridProps<Payload>,
   keyof CalendarContextProps
@@ -65,6 +75,8 @@ export type WeekGridContentProps<Payload> = Omit<
 
 const DEFAULT_VISIBLE_DAYS = 5;
 const DEFAULT_MODE: WeekGridInteractionMode = "quick-create";
+export const transparentPixel =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 export const EMPTY_LIST: readonly never[] = [];
 
 const framesScroll = (element: HTMLElement): boolean =>
@@ -80,6 +92,9 @@ const eventIdAtTarget = (target: EventTarget | null): string | null => {
   );
 };
 
+const overflowAtTarget = (target: EventTarget | null): boolean =>
+  target instanceof Element && target.closest("[data-week-overflow]") !== null;
+
 export const useWeekGridContent = <Payload = unknown>(
   props: WeekGridContentProps<Payload>
 ) => {
@@ -94,6 +109,8 @@ export const useWeekGridContent = <Payload = unknown>(
     visibleDays = DEFAULT_VISIBLE_DAYS,
     visibleHours,
     slotMinutes,
+    rowHeight = HOUR_ROW_HEIGHT,
+    maxEventsPerSlot,
     workingHours,
     trailingGutter = false,
     interactionMode,
@@ -149,6 +166,8 @@ export const useWeekGridContent = <Payload = unknown>(
   );
 
   const [liveText, setLiveText] = useState("");
+
+  const [paintRefused, setPaintRefused] = useState(false);
 
   const positionedDateRef = useRef<CalendarDate | null>(null);
   const framePositionedDateRef = useRef<CalendarDate | null>(null);
@@ -301,10 +320,22 @@ export const useWeekGridContent = <Payload = unknown>(
     [controllerCellKey, gridData.cellKeyByCell]
   );
 
-  const timedPositionsByCell = useMemo(
+  const timedLayout = useMemo(
     () =>
-      buildTimedPositions(timedSegments, controller.dayColumns, gridCellKey),
-    [controller.dayColumns, gridCellKey, timedSegments]
+      buildTimedPositions(
+        timedSegments,
+        controller.dayColumns,
+        gridCellKey,
+        rowHeight,
+        maxEventsPerSlot
+      ),
+    [
+      controller.dayColumns,
+      gridCellKey,
+      maxEventsPerSlot,
+      rowHeight,
+      timedSegments,
+    ]
   );
 
   const allDayPositionsByCell = useMemo(
@@ -339,13 +370,15 @@ export const useWeekGridContent = <Payload = unknown>(
         controller.viewerDates,
         controller.dayColumns,
         timeZone,
-        gridCellKey
+        gridCellKey,
+        rowHeight
       ),
     [
       controller.dayColumns,
       controller.viewerDates,
       currentInstant,
       gridCellKey,
+      rowHeight,
       timeZone,
     ]
   );
@@ -362,6 +395,55 @@ export const useWeekGridContent = <Payload = unknown>(
 
     return keys;
   }, [gridCellKey, paintCells]);
+
+  const paintTouchesUnavailable = paintCells.some((cell) =>
+    unavailableCellKeys.has(gridCellKey(cell))
+  );
+
+  // A drag that has not left its origin drops nowhere, so it marks no span.
+  const { dayColumns, drag } = controller;
+  const dragPreview = useMemo<WeekGridDragPreview | null>(
+    () =>
+      drag === null
+        ? null
+        : {
+            eventId: drag.event.id,
+            height: timedLayout.byCell
+              .get(gridCellKey(drag.from))
+              ?.find((position) => position.event.id === drag.event.id)?.height,
+            targetKey: gridCellKey(drag.to),
+            title: drag.event.title,
+          },
+    [drag, gridCellKey, timedLayout.byCell]
+  );
+  const dropTargetKeys = useMemo(() => {
+    const keys = new Set<string>();
+
+    if (
+      !drag ||
+      drag.event.allDay ||
+      compareCalendarCells(drag.from, drag.to) === 0
+    ) {
+      return keys;
+    }
+
+    const spanStart = Date.parse(drag.to.start);
+    const spanEnd =
+      spanStart + Date.parse(drag.event.end) - Date.parse(drag.event.start);
+    const column = dayColumns.find((day) =>
+      day.slots.some((slot) => compareCalendarCells(slot, drag.to) === 0)
+    );
+
+    for (const slot of column?.slots ?? []) {
+      const slotStart = Date.parse(slot.start);
+
+      if (slotStart >= spanStart && slotStart < spanEnd) {
+        keys.add(gridCellKey(slot));
+      }
+    }
+
+    return keys;
+  }, [dayColumns, drag, gridCellKey]);
 
   const cellAtTarget = (
     target: EventTarget | null
@@ -435,7 +517,7 @@ export const useWeekGridContent = <Payload = unknown>(
 
     event.preventDefault();
 
-    if (controller.interactionMode === "quick-create") {
+    if (controller.interactionMode !== "read-only") {
       controller.activateCell(
         meta.columnIndex,
         meta.slotIndex,
@@ -447,7 +529,10 @@ export const useWeekGridContent = <Payload = unknown>(
 
   const handleClick = (event: ReactMouseEvent<HTMLDivElement>): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-quick-create
-    if (eventIdAtTarget(event.target) !== null) {
+    if (
+      eventIdAtTarget(event.target) !== null ||
+      overflowAtTarget(event.target)
+    ) {
       return;
     }
 
@@ -472,7 +557,10 @@ export const useWeekGridContent = <Payload = unknown>(
     event: ReactPointerEvent<HTMLDivElement>
   ): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-paint
-    if (eventIdAtTarget(event.target) !== null) {
+    if (
+      eventIdAtTarget(event.target) !== null ||
+      overflowAtTarget(event.target)
+    ) {
       return;
     }
 
@@ -491,7 +579,7 @@ export const useWeekGridContent = <Payload = unknown>(
   };
 
   const updatePaintFromTarget = (target: EventTarget | null): void => {
-    if (eventIdAtTarget(target) !== null) {
+    if (eventIdAtTarget(target) !== null || overflowAtTarget(target)) {
       return;
     }
 
@@ -507,6 +595,13 @@ export const useWeekGridContent = <Payload = unknown>(
   };
 
   const handlePointerUp = (): void => {
+    // A paint released over unavailable time creates nothing, so it is dropped rather than emitted.
+    if (controller.painting && paintTouchesUnavailable) {
+      controller.cancelPaint();
+      setPaintRefused(true);
+      return;
+    }
+
     controller.endPaint();
   };
 
@@ -537,6 +632,11 @@ export const useWeekGridContent = <Payload = unknown>(
       return;
     }
 
+    // The grid's own ghost card is the drag feedback, so the browser's copy of the card is blanked.
+    const blankImage = new Image();
+    blankImage.src = transparentPixel;
+    event.dataTransfer?.setDragImage(blankImage, 0, 0);
+
     draggedEventIdRef.current = eventId;
     controller.beginMove(eventId, target.cell);
     // @cpt-end:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-move-request
@@ -548,11 +648,22 @@ export const useWeekGridContent = <Payload = unknown>(
     }
 
     event.preventDefault();
-    const target = cellAtTarget(event.target);
+    controller.updateMove(cellAtTarget(event.target)?.cell);
+  };
 
-    if (target) {
-      controller.updateMove(target.cell);
+  const handleDragLeave = (event: ReactDragEvent<HTMLDivElement>): void => {
+    if (draggedEventIdRef.current === null) {
+      return;
     }
+
+    if (
+      event.relatedTarget instanceof Node &&
+      event.currentTarget.contains(event.relatedTarget)
+    ) {
+      return;
+    }
+
+    controller.updateMove();
   };
 
   const handleDrop = (event: ReactDragEvent<HTMLDivElement>): void => {
@@ -650,6 +761,7 @@ export const useWeekGridContent = <Payload = unknown>(
     controller,
     currentInstant,
     detailVisible,
+    dragPreview,
     firstTimedCellKey,
     frameRef,
     getCellLabel,
@@ -657,7 +769,9 @@ export const useWeekGridContent = <Payload = unknown>(
     gridData,
     handleCellKeyDown,
     handleClick,
+    dropTargetKeys,
     handleDragEnd,
+    handleDragLeave,
     handleDragOver,
     handleDragStart,
     handleDrop,
@@ -681,9 +795,13 @@ export const useWeekGridContent = <Payload = unknown>(
     scrollRef,
     selectedEvent,
     selectedPaintKeys,
+    setPaintRefused,
     t,
     timeZone,
-    timedPositionsByCell,
+    overflowByCell: timedLayout.overflowByCell,
+    paintRefused,
+    paintTouchesUnavailable,
+    timedPositionsByCell: timedLayout.byCell,
     trailingGutter,
     unavailableCellKeys,
     updatePaintFromTarget,

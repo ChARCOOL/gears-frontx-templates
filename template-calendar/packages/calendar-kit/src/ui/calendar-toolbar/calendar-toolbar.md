@@ -45,7 +45,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 ## Rendering rules
 
-- Non-agenda views show the localized long month name plus the numeric year of `currentDate` as a single text run in one style; agenda shows the 30-day window starting at `currentDate` through the translated `calendar.agenda.range` key, switching to `calendar.agenda.rangeCrossYear` when the window crosses a year boundary.
+- Every view, the agenda included, shows the localized long month name plus the numeric year of `currentDate`. The agenda's 30-day window starts at `currentDate`, and its title names the month of that first day.
 - The previous/next pair is labelled per active view ("Previous week" / "Next week", …) and grouped under a labelled group named after the change it performs ("Change week", …).
 - Missing host entries use the resolver's built-in English message; unknown IDs use the safe `Translation unavailable` fallback rather than exposing a raw key.
 - The title is derived from the viewer-local date string itself: the public props carry no time zone, so the date is interpreted at midnight UTC and formatted back in UTC — the displayed month/year always matches the supplied date.

@@ -70,7 +70,7 @@ Unavailable and busy events are disabled but stay in the tab order, so they rema
 - The accessible name carries the event title; an empty title falls back to the translated `calendar.eventCard.unnamed` string so the name is never empty.
 - A non-repeated Enter/Space activation calls `preventDefault()` so the native button activation does not double-fire the selection.
 - Past and read-only states are exposed through the accessible description (`aria-describedby` → visually-hidden translated marker), keeping them observable to screen readers without polluting the event's name.
-- Decorative time, metadata, and recurrence icons use `aria-hidden="true"`.
+- Decorative time, metadata, recurrence and reminder icons use `aria-hidden="true"`. A reminder (`eventType: "reminder"`) shows a bell icon before its title.
 - Focus ring: `:focus-visible` outline driven by `--cal-focus-ring-width` / `--cal-color-focus-ring`; the card suppresses any inset focus ring so the outline is the single focus indicator.
 
 ## Styling

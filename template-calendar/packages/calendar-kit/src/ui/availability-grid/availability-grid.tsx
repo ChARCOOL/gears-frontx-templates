@@ -34,6 +34,18 @@ export interface AvailabilityGridProps extends CalendarContextProps {
   readonly className?: string;
   /** Host availability decisions, one per slot. */
   readonly cells: readonly CalendarAvailabilityCell[];
+  /** `span` (default) paints everything between the drag ends; `cells` paints only the cells a drag passes and keeps earlier painting. */
+  readonly paintMode?: "span" | "cells";
+  /** Column header text: `date` (default) shows the weekday and date, `weekday` only the weekday. */
+  readonly headerFormat?: "date" | "weekday";
+  /** Draws each row's start time beside both edges of the grid. */
+  readonly showHourLabels?: boolean;
+  /** Makes the hour labels buttons. Receives every cell of that row. */
+  readonly onHourClick?: (rowCells: readonly CalendarAvailabilityCell[]) => void;
+  /** Makes the column headers buttons. Receives every cell of that day. */
+  readonly onDayClick?: (
+    columnCells: readonly CalendarAvailabilityCell[]
+  ) => void;
   /** Controlled painted range. */
   readonly selectedRange?: CalendarSelectionRange | null;
   /** Initial painted range when uncontrolled. */
@@ -44,26 +56,42 @@ export interface AvailabilityGridProps extends CalendarContextProps {
   ) => void;
   /** `read-only` keeps navigation but disables painting. Default `paint`. */
   readonly interactionMode?: "paint" | "read-only";
-  /** Replaces cell content. The context adds the cell's `available` flag. */
+  /** Replaces cell content. The context adds the cell's `available` flag and host `state`. */
   readonly renderCell?: (
-    context: CalendarCellContext & { readonly available: boolean }
+    context: CalendarCellContext & {
+      readonly available: boolean;
+      readonly state: string | undefined;
+    }
   ) => ReactNode;
   /** Called once when a paint gesture is committed. */
   readonly onPaintSelect?: (range: CalendarSelectionRange) => void;
 }
 
 const DEFAULT_MODE = "paint" as const;
+const DEFAULT_HEADER_FORMAT = "date" as const;
 
 const formatColumnLabel = (
   cell: CalendarAvailabilityCell,
   locale: string,
+  timeZone: NonNullable<CalendarContextProps["timeZone"]>,
+  headerFormat: NonNullable<AvailabilityGridProps["headerFormat"]>
+): string =>
+  dateTimeFormatter(
+    locale,
+    headerFormat === "weekday"
+      ? { timeZone, weekday: "short" }
+      : { day: "numeric", month: "short", timeZone, weekday: "short" }
+  ).format(new Date(cell.start));
+
+const formatHourLabel = (
+  cell: CalendarCell,
+  locale: string,
   timeZone: NonNullable<CalendarContextProps["timeZone"]>
 ): string =>
   dateTimeFormatter(locale, {
-    day: "numeric",
-    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
     timeZone,
-    weekday: "short",
   }).format(new Date(cell.start));
 
 const getCellKey = (cell: CalendarCell): string =>
@@ -96,11 +124,16 @@ const AvailabilityGridContent = ({
   cells,
   className,
   defaultSelectedRange,
+  headerFormat = DEFAULT_HEADER_FORMAT,
   interactionMode = DEFAULT_MODE,
+  onDayClick,
+  onHourClick,
   onPaintSelect,
   onSelectedRangeChange,
+  paintMode,
   renderCell,
   selectedRange,
+  showHourLabels = false,
 }: AvailabilityGridContentProps) => {
   const { direction, locale, t } = useCalendarLocalization();
   const { timeZone } = useCalendarContext();
@@ -112,6 +145,7 @@ const AvailabilityGridContent = ({
     interactionMode,
     onPaintSelect,
     onSelectedRangeChange,
+    paintMode,
     selectedRange,
   });
 
@@ -119,10 +153,57 @@ const AvailabilityGridContent = ({
     () =>
       controller.columns.map((column) => ({
         key: column.key,
-        label: formatColumnLabel(column.cells[0], locale, timeZone),
+        label: formatColumnLabel(column.cells[0], locale, timeZone, headerFormat),
       })),
-    [controller.columns, locale, timeZone]
+    [controller.columns, headerFormat, locale, timeZone]
   );
+
+  const renderColumnHeader = (column: CalendarGridColumn): ReactNode => {
+    if (onDayClick === undefined) {
+      return column.label;
+    }
+
+    const columnCells =
+      controller.columns.find((candidate) => candidate.key === column.key)
+        ?.cells ?? [];
+
+    return (
+      <button
+        type="button"
+        className={styles.labelButton}
+        aria-label={t("calendar.availability.selectDay", { day: column.label })}
+        onClick={() => onDayClick(columnCells)}
+      >
+        {column.label}
+      </button>
+    );
+  };
+
+  const renderRowLabel = (_row: CalendarGridRow, rowIndex: number): ReactNode => {
+    const rowCells = (controller.rows[rowIndex]?.cells ?? []).flatMap((cell) =>
+      cell === undefined ? [] : [cell]
+    );
+    const firstCell = rowCells[0];
+    if (firstCell === undefined) {
+      return null;
+    }
+
+    const label = formatHourLabel(firstCell, locale, timeZone);
+    if (onHourClick === undefined) {
+      return label;
+    }
+
+    return (
+      <button
+        type="button"
+        className={styles.labelButton}
+        aria-label={t("calendar.availability.selectHour", { time: label })}
+        onClick={() => onHourClick(rowCells)}
+      >
+        {label}
+      </button>
+    );
+  };
 
   // The controller's rows, so the fall-back hour's second 01:00 is drawn and reachable.
   const gridRows = useMemo<readonly CalendarGridRow[]>(
@@ -240,14 +321,15 @@ const AvailabilityGridContent = ({
     const isSelected =
       selectedKeys.has(context.key) || paintKeys.has(context.key);
 
-    const cellContext: CalendarCellContext & {
-      readonly available: boolean;
-    } = {
+    const cellContext: Parameters<
+      NonNullable<AvailabilityGridProps["renderCell"]>
+    >[0] = {
       ...context,
       available,
       isReadOnly: controller.interactionMode === "read-only",
       isSelected,
       isUnavailable: !available,
+      state: availabilityCell?.state,
     };
 
     return (
@@ -284,6 +366,8 @@ const AvailabilityGridContent = ({
           getCellLabel={(cell) => formatCellLabel(cell, locale, timeZone)}
           onCellKeyDown={handleCellKeyDown}
           renderCell={renderAvailabilityCell}
+          renderHeader={renderColumnHeader}
+          renderRowLabel={showHourLabels ? renderRowLabel : undefined}
           className={clsx(styles.grid, isEmpty && styles.emptyGrid)}
         />
       </CalendarScope>

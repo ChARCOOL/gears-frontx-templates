@@ -72,6 +72,10 @@ const renderWeek = (overrides: Partial<WeekGridProps<Payload>> = {}) =>
     />
   );
 
+const crowdedNineAm = [1, 2, 3, 4].map((number) =>
+  timedEvent(`event-${number}`)
+);
+
 const getTimedCell = (time: string): HTMLElement =>
   screen.getByRole("gridcell", {
     name: new RegExp(`Monday, August 24, 2026 ${time}`, "u"),
@@ -346,6 +350,123 @@ describe(WeekGrid, () => {
     assert(onMoveRequest).toHaveBeenCalledOnce();
   });
 
+  it("marks the slot under a dragged event as the drop target until the drop", () => {
+    const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
+    renderWeek({
+      events: [timedEvent("drop-target")],
+      interactionMode: "paint-and-move",
+      onMoveRequest,
+    });
+    const eventButton = screen.getByRole("button", { name: /drop-target/u });
+    const target = getTimedCell("10:00");
+
+    act(() => {
+      fireEvent.dragStart(eventButton);
+      fireEvent.dragOver(target);
+    });
+
+    assert(target.querySelector("[data-drop-target]")).not.toBeNull();
+    assert(getTimedCell("09:00").querySelector("[data-drop-target]")).toBeNull();
+
+    act(() => {
+      fireEvent.drop(target);
+    });
+
+    assert(onMoveRequest).toHaveBeenCalledOnce();
+    assert(target.querySelector("[data-drop-target]")).toBeNull();
+  });
+
+  it("marks every slot the dragged event spans from the pointer slot", () => {
+    renderWeek({
+      events: [
+        timedEvent({
+          end: utcInstant("2026-08-24T12:00:00.000Z"),
+          endTime: "12:00",
+          id: "span",
+          title: "span",
+        }),
+      ],
+      interactionMode: "paint-and-move",
+    });
+    const eventButton = screen.getByRole("button", { name: /span/u });
+
+    act(() => {
+      fireEvent.dragStart(eventButton);
+      fireEvent.dragOver(getTimedCell("10:00"));
+    });
+
+    assert(getTimedCell("10:00").querySelector("[data-drop-target]")).not.toBeNull();
+    assert(getTimedCell("11:00").querySelector("[data-drop-target]")).not.toBeNull();
+    assert(getTimedCell("12:00").querySelector("[data-drop-target]")).not.toBeNull();
+    assert(getTimedCell("13:00").querySelector("[data-drop-target]")).toBeNull();
+    assert(getTimedCell("09:00").querySelector("[data-drop-target]")).toBeNull();
+    assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(3);
+  });
+
+  it("clamps the marked span to the day column", () => {
+    renderWeek({
+      events: [
+        timedEvent({
+          end: utcInstant("2026-08-24T12:00:00.000Z"),
+          endTime: "12:00",
+          id: "span",
+          title: "span",
+        }),
+      ],
+      interactionMode: "paint-and-move",
+    });
+    const eventButton = screen.getByRole("button", { name: /span/u });
+
+    act(() => {
+      fireEvent.dragStart(eventButton);
+      fireEvent.dragOver(getTimedCell("23:00"));
+    });
+
+    assert(getTimedCell("23:00").querySelector("[data-drop-target]")).not.toBeNull();
+    assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(1);
+  });
+
+  it("clears the drop target when the pointer leaves the grid", () => {
+    renderWeek({
+      events: [
+        timedEvent({
+          end: utcInstant("2026-08-24T12:00:00.000Z"),
+          endTime: "12:00",
+          id: "span",
+          title: "span",
+        }),
+      ],
+      interactionMode: "paint-and-move",
+    });
+    const eventButton = screen.getByRole("button", { name: /span/u });
+
+    act(() => {
+      fireEvent.dragStart(eventButton);
+      fireEvent.dragOver(getTimedCell("10:00"));
+    });
+
+    assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(3);
+
+    // jsdom's drag events drop relatedTarget from the init dict, so it is set on the event itself.
+    const dragLeaveTo = (to: EventTarget): void => {
+      const leave = createEvent.dragLeave(getTimedCell("10:00"));
+      Object.defineProperty(leave, "relatedTarget", { value: to });
+      fireEvent(getTimedCell("10:00"), leave);
+    };
+
+    act(() => {
+      dragLeaveTo(getTimedCell("11:00"));
+    });
+
+    assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(3);
+
+    act(() => {
+      dragLeaveTo(document.body);
+    });
+
+    assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(0);
+  });
+
   it("emits the exact ordered paint range for reversed pointer travel", () => {
     const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
     renderWeek({
@@ -367,6 +488,45 @@ describe(WeekGrid, () => {
       cells: [cellAt("09:00"), cellAt("10:00"), cellAt("11:00")],
       end: cellAt("11:00"),
       start: cellAt("09:00"),
+    });
+  });
+
+  it("does not start a paint from the +N chip", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    renderWeek({
+      events: crowdedNineAm,
+      interactionMode: "paint-and-move",
+      maxEventsPerSlot: 1,
+      onOverflowSelect: vi.fn<(cell: CalendarCell, anchor: HTMLElement) => void>(),
+      onPaintSelect,
+    });
+    const chip = screen.getByRole("button", { name: "+3 hidden" });
+
+    fireEvent.pointerDown(chip);
+    fireEvent.pointerUp(chip);
+
+    assert(onPaintSelect).not.toHaveBeenCalled();
+  });
+
+  it("does not extend a paint over the +N chip", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    renderWeek({
+      events: crowdedNineAm,
+      interactionMode: "paint-and-move",
+      maxEventsPerSlot: 1,
+      onOverflowSelect: vi.fn<(cell: CalendarCell, anchor: HTMLElement) => void>(),
+      onPaintSelect,
+    });
+    const chip = screen.getByRole("button", { name: "+3 hidden" });
+
+    fireEvent.pointerDown(getTimedCell("11:00"));
+    fireEvent.pointerMove(chip);
+    fireEvent.pointerUp(chip);
+
+    assert(onPaintSelect).toHaveBeenCalledExactlyOnceWith({
+      cells: [cellAt("11:00")],
+      end: cellAt("11:00"),
+      start: cellAt("11:00"),
     });
   });
 });
@@ -757,5 +917,227 @@ describe("WeekGrid ordinary grid rendering", () => {
     renderWeek({ events: [timedEvent("settled")] });
 
     assert(screen.getByRole("grid")).toBeInTheDocument();
+  });
+});
+
+describe("WeekGrid drag feedback", () => {
+  const draggableFrame = (id: string): HTMLElement => {
+    const frame = document.querySelector<HTMLElement>(
+      `[data-event-id="${id}"][draggable="true"]`
+    );
+
+    if (frame === null) {
+      throw new Error(`Expected ${id} to be draggable`);
+    }
+
+    return frame;
+  };
+
+  it("shows a ghost card and a dashed outline on the target slot and dims the dragged card", () => {
+    renderWeek({
+      events: [timedEvent("ghost")],
+      interactionMode: "paint-and-move",
+    });
+    const frame = draggableFrame("ghost");
+    const target = getTimedCell("11:00");
+
+    act(() => {
+      fireEvent.dragStart(frame);
+      fireEvent.dragOver(target);
+    });
+
+    assert(frame).toHaveAttribute("data-dragging");
+    assert(target.querySelector("[data-drop-target]")).not.toBeNull();
+    assert(target.querySelector("[data-drag-ghost]")?.textContent).toMatch(
+      /ghost/u
+    );
+    assert(target.querySelector("[data-drag-ghost]")).toHaveAttribute(
+      "aria-hidden",
+      "true"
+    );
+  });
+
+  it("clears the ghost, the outline and the dimming when the drop lands", () => {
+    const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
+    renderWeek({
+      events: [timedEvent("dropped")],
+      interactionMode: "paint-and-move",
+      onMoveRequest,
+    });
+    const frame = draggableFrame("dropped");
+    const target = getTimedCell("11:00");
+
+    act(() => {
+      fireEvent.dragStart(frame);
+      fireEvent.dragOver(target);
+      fireEvent.drop(target);
+    });
+
+    assert(onMoveRequest).toHaveBeenCalledOnce();
+    assert(document.querySelector("[data-drag-ghost]")).toBeNull();
+    assert(document.querySelector("[data-drop-target]")).toBeNull();
+    assert(frame).not.toHaveAttribute("data-dragging");
+  });
+
+  it("replaces the native drag image with a transparent one", () => {
+    const setDragImage = vi.fn<(image: Element, x: number, y: number) => void>();
+    renderWeek({
+      events: [timedEvent("native")],
+      interactionMode: "paint-and-move",
+    });
+    const button = screen.getByRole("button", { name: /native/u });
+
+    fireEvent.dragStart(button, { dataTransfer: { setDragImage } });
+
+    assert(setDragImage).toHaveBeenCalledExactlyOnceWith(
+      assert.any(HTMLImageElement),
+      0,
+      0
+    );
+  });
+
+  it("does not make a recurring event draggable until the occurrence-or-series choice exists", () => {
+    renderWeek({
+      events: [
+        { ...timedEvent("series"), recurrenceRule: "FREQ=WEEKLY;BYDAY=MO" },
+      ],
+      interactionMode: "paint-and-move",
+    });
+
+    assert(document.querySelector('[data-event-id="series"]')).toHaveAttribute(
+      "draggable",
+      "false"
+    );
+  });
+
+  it("keeps an event the host marks movable: false in place, and still opens it", () => {
+    const onEventSelect = vi.fn<() => void>();
+    renderWeek({
+      events: [{ ...timedEvent("pinned"), movable: false }],
+      interactionMode: "paint-and-move",
+      onEventSelect,
+    });
+
+    assert(document.querySelector('[data-event-id="pinned"]')).toHaveAttribute(
+      "draggable",
+      "false"
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /pinned/u }));
+
+    assert(onEventSelect).toHaveBeenCalledOnce();
+  });
+});
+
+describe("WeekGrid paint colour family", () => {
+  it("paints the drag-create selection in the host colour family", () => {
+    renderWeek({
+      interactionMode: "paint-and-move",
+      paintColorFamily: "blue",
+    });
+
+    fireEvent.pointerDown(getTimedCell("09:00"));
+    fireEvent.pointerMove(getTimedCell("10:00"));
+
+    assert(
+      document.querySelectorAll('[data-paint][data-color-family="blue"]')
+    ).toHaveLength(2);
+
+    fireEvent.pointerUp(getTimedCell("10:00"));
+  });
+
+  it("leaves painted cells without a colour family when none is set", () => {
+    renderWeek({ interactionMode: "paint-and-move" });
+
+    fireEvent.pointerDown(getTimedCell("09:00"));
+    fireEvent.pointerMove(getTimedCell("10:00"));
+
+    assert(document.querySelectorAll("[data-paint]")).toHaveLength(2);
+    assert(document.querySelectorAll("[data-color-family]")).toHaveLength(0);
+
+    fireEvent.pointerUp(getTimedCell("10:00"));
+  });
+});
+
+describe("WeekGrid paint refusal", () => {
+  const busyEvent = () => ({ ...timedEvent("busy"), available: false });
+
+  it("paints the focused cell on Enter in paint-and-move mode", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    renderWeek({ interactionMode: "paint-and-move", onPaintSelect });
+    const cell = getTimedCell("09:00");
+
+    act(() => {
+      cell.focus();
+    });
+    fireEvent.keyDown(cell, { key: "Enter" });
+
+    assert(onPaintSelect).toHaveBeenCalledExactlyOnceWith({
+      cells: [cellAt("09:00")],
+      end: cellAt("09:00"),
+      start: cellAt("09:00"),
+    });
+  });
+
+  it("marks a paint over unavailable time invalid, and a release opens the dialog without painting", async () => {
+    const user = userEvent.setup();
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    renderWeek({
+      events: [busyEvent()],
+      interactionMode: "paint-and-move",
+      onPaintSelect,
+    });
+
+    fireEvent.pointerDown(getTimedCell("11:00"));
+    fireEvent.pointerMove(getTimedCell("09:00"));
+
+    assert(document.querySelectorAll("[data-invalid]").length).toBeGreaterThan(
+      0
+    );
+
+    fireEvent.pointerUp(getTimedCell("09:00"));
+
+    assert(onPaintSelect).not.toHaveBeenCalled();
+
+    const dialog = screen.getByRole("alertdialog");
+
+    assert(
+      within(dialog).getByText("Overlaps an unavailable period")
+    ).toBeVisible();
+
+    await user.click(within(dialog).getByRole("button", { name: "Continue" }));
+
+    assert(screen.queryByRole("alertdialog")).toBeNull();
+    assert(document.querySelector("[data-paint]")).toBeNull();
+  });
+
+  it("keeps a finished paint when unavailable time arrives under it", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    const { rerender } = renderWeek({
+      interactionMode: "paint-and-move",
+      onPaintSelect,
+    });
+
+    fireEvent.pointerDown(getTimedCell("09:00"));
+    fireEvent.pointerMove(getTimedCell("10:00"));
+    fireEvent.pointerUp(getTimedCell("10:00"));
+
+    rerender(
+      <WeekGrid
+        date={DATE}
+        events={[busyEvent()]}
+        timeZone={UTC}
+        locale="en-US"
+        t={t}
+        direction="ltr"
+        interactionMode="paint-and-move"
+        onPaintSelect={onPaintSelect}
+      />
+    );
+    fireEvent.pointerUp(getTimedCell("14:00"));
+
+    assert(screen.queryByRole("alertdialog")).toBeNull();
+    assert(document.querySelector("[data-paint]")).not.toBeNull();
+    assert(onPaintSelect).toHaveBeenCalledOnce();
   });
 });

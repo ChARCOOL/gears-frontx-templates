@@ -32,7 +32,7 @@ import {
   DEFAULT_WORKING_HOURS,
   FULL_DAY_TIME_WINDOW,
   addCalendarDays,
-  assertTimeWindow,
+  alignTimeWindow,
   buildSlotStarts,
   buildTimeWindowRange,
   buildWeekRange,
@@ -96,9 +96,12 @@ export interface UseWeekGridControllerResult<Payload = unknown> {
   readonly hiddenDateCount: number;
   readonly dayColumns: readonly WeekGridDayColumn[];
   readonly focusedCell: FocusedCell;
+  readonly drag: InteractionControllerInternals["state"]["drag"];
   readonly pendingMove: InteractionControllerInternals["state"]["pendingMove"];
   readonly committedMove: InteractionControllerInternals["state"]["committedMove"];
   readonly paint: CalendarSelectionRange | null;
+  /** A paint drag is in progress: `paint` keeps the last range after the drag ends. */
+  readonly painting: boolean;
   readonly setInteractionMode: (mode: WeekGridInteractionMode) => void;
   readonly workingHours: CalendarTimeWindow;
   readonly workingSlotIndex: number;
@@ -129,7 +132,7 @@ export interface UseWeekGridControllerResult<Payload = unknown> {
     from: CalendarCell,
     to?: CalendarCell
   ) => void;
-  readonly updateMove: (cell: CalendarCell) => void;
+  readonly updateMove: (cell?: CalendarCell) => void;
   readonly endMove: () => void;
   readonly confirmMove: () => void;
   readonly cancelMove: () => void;
@@ -310,12 +313,11 @@ export const useWeekGridController = <Payload = unknown>(
     [allViewerDates, visibleDayCount]
   );
 
-  const visibleHours = useMemo<CalendarTimeWindow>(() => {
-    const window = { end: visibleEnd, start: visibleStart };
-    assertTimeWindow(window, slotMinutes);
-
-    return window;
-  }, [slotMinutes, visibleEnd, visibleStart]);
+  const visibleHours = useMemo<CalendarTimeWindow>(
+    () =>
+      alignTimeWindow({ end: visibleEnd, start: visibleStart }, slotMinutes),
+    [slotMinutes, visibleEnd, visibleStart]
+  );
 
   const workingHours = useMemo<CalendarTimeWindow>(
     () => ({ end: workingEnd, start: workingStart }),
@@ -492,11 +494,6 @@ export const useWeekGridController = <Payload = unknown>(
       return;
     }
 
-    const event = findEventAtCell(cell);
-    if (event && !isEventActionable(event)) {
-      return;
-    }
-
     interaction.beginPaint(cell);
     // @cpt-end:cpt-template-calendar-calendar-kit-algo-week-grid-paint-range:p1:inst-paint-anchor
   };
@@ -505,11 +502,6 @@ export const useWeekGridController = <Payload = unknown>(
     // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-paint-range:p1:inst-paint-extend
     const cell = getCell(columnIndex, rowIndex);
     if (!cell) {
-      return;
-    }
-
-    const event = findEventAtCell(cell);
-    if (event && !isEventActionable(event)) {
       return;
     }
 
@@ -552,7 +544,7 @@ export const useWeekGridController = <Payload = unknown>(
     // @cpt-end:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-request
   };
 
-  const updateMove = (cell: CalendarCell): void => {
+  const updateMove = (cell?: CalendarCell): void => {
     interaction.updateMove(cell);
   };
 
@@ -623,9 +615,11 @@ export const useWeekGridController = <Payload = unknown>(
     getCell,
     getCellKey: cellKey,
     getInternals,
+    drag: interaction.drag,
     hiddenDateCount: allViewerDates.length - viewerDates.length,
     interactionMode: modeState.value,
     paint: interaction.paint,
+    painting: interaction.state.paintAnchor !== null,
     pendingMove: interaction.pendingMove,
     selectEvent,
     selectedEvent,

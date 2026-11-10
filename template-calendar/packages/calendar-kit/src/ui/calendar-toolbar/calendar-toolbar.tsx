@@ -9,13 +9,9 @@ import {
   omitCalendarContextProps,
   useCalendarLocalization,
 } from "../../i18n/calendar-localization";
-import type {
-  CalendarContextProps,
-  CalendarTranslate,
-} from "../../i18n/calendar-localization";
+import type { CalendarContextProps } from "../../i18n/calendar-localization";
 import { CalendarScope } from "../../i18n/calendar-localization-provider";
 import { useCalendarToolbarController } from "../../react/controllers/use-calendar-toolbar-controller";
-import type { ToolbarTitleRange } from "../../react/controllers/use-calendar-toolbar-controller";
 import { Button } from "../primitives/button/button";
 import { visibleViewOptions } from "./view-options";
 
@@ -53,14 +49,6 @@ export interface CalendarToolbarProps extends CalendarContextProps {
   readonly renderTrailing?: () => ReactNode;
 }
 
-const agendaRangeText = (
-  range: ToolbarTitleRange,
-  t: CalendarTranslate
-): string =>
-  range.startYear === range.endYear
-    ? t("calendar.agenda.range", range)
-    : t("calendar.agenda.rangeCrossYear", range);
-
 const CalendarToolbarContent = ({
   activeView,
   availableViews,
@@ -83,7 +71,6 @@ const CalendarToolbarContent = ({
     availableViews: visibleViews,
     titleMonth,
     titleYear,
-    titleRange,
     selectView,
     handleViewKeyDown,
     registerRadio,
@@ -103,9 +90,6 @@ const CalendarToolbarContent = ({
 
   const accessibleTitle = `${t(activeOption.viewNameKey)} — ${t("calendar.toolbar.selectedDate")} ${currentDate}`;
 
-  const titleText =
-    titleRange === null ? titleMonth : agendaRangeText(titleRange, t);
-
   return (
     <header
       className={clsx(styles.root, className)}
@@ -119,10 +103,8 @@ const CalendarToolbarContent = ({
           renderTitle(currentDate)
         ) : (
           <>
-            <span className={styles.titleText}>{titleText}</span>
-            {titleRange === null && (
-              <span className={styles.titleYear}>{` ${titleYear}`}</span>
-            )}
+            <span className={styles.titleText}>{titleMonth}</span>
+            <span className={styles.titleYear}>{` ${titleYear}`}</span>
           </>
         )}
       </h1>
