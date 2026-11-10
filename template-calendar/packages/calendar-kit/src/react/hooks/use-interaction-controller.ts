@@ -228,13 +228,19 @@ export const useInteractionController = (
       anchorRect?: DOMRectReadOnly
     ): CalendarSelectionRange | null => {
       // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-quick-create
-      if (mode !== "quick-create") {
+      if (mode === "read-only") {
         return null;
       }
 
       const range = buildSelectionRange(cell, cell);
       if (!range) {
         return null;
+      }
+
+      // Keyboard activation is the one-cell paint for users who cannot drag.
+      if (mode === "paint-and-move") {
+        paintSelectRef.current?.(range);
+        return range;
       }
 
       if (anchorRect) {
