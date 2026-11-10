@@ -239,6 +239,41 @@ describe(Dialog, () => {
     expect(onOutsideClick).not.toHaveBeenCalled();
   });
 
+  it("stays modal without a backdrop: aria-modal, Tab wraps and the outside press is swallowed", async () => {
+    const onOpenChange = vi.fn<() => void>();
+    const onOutsideClick = vi.fn<() => void>();
+
+    render(
+      <>
+        <button type="button" onClick={onOutsideClick}>
+          Outside
+        </button>
+        <Dialog open onOpenChange={onOpenChange}>
+          <DialogContent showBackdrop={false} showCloseButton={false}>
+            <DialogTitle>Repeat</DialogTitle>
+            <button type="button">First</button>
+            <button type="button">Last</button>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+
+    const outside = screen.getByText("Outside");
+    expect(fireEvent.pointerDown(outside, { bubbles: true, cancelable: true })).toBeFalsy();
+    fireEvent.pointerUp(outside);
+    fireEvent.click(outside);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onOutsideClick).not.toHaveBeenCalled();
+
+    const user = userEvent.setup();
+    screen.getByRole("button", { name: "Last" }).focus();
+    await user.tab();
+    expect(dialog.contains(document.activeElement)).toBe(true);
+  });
+
   it("keeps Escape for a nested listbox and traps focus that leaves the modal", async () => {
     const { dialog, onOpenChange } = renderDialog(
       <>

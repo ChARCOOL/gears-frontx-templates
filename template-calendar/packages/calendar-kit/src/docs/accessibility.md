@@ -13,7 +13,7 @@ The kit targets WCAG 2.1 AA. The package's automated accessibility tests run axe
 | `CalendarToolbar` | The view switcher is a radio group: arrows move and select, wrapping at the ends, Home/End jump |
 | `EventDetailPanel` | Its title takes focus when it opens or the event changes. Escape closes it, also while a header tooltip is open. The region is labelled by its title |
 | `CreateEventPanel` | Focus moves in on open and is trapped while open. Escape closes; a create form with unsaved changes asks before discarding. Focus returns to the element that opened it |
-| Date fields in the create form | Type the date segment by segment; Alt+ArrowDown opens the picker |
+| Date fields in the create form | Type the date segment by segment; Alt+ArrowDown opens the picker. In the open calendar, arrows move one day or one week, Home/End go to the week's ends, PageUp/PageDown move one month |
 
 `direction="rtl"` swaps Left and Right everywhere; Up and Down keep their meaning.
 

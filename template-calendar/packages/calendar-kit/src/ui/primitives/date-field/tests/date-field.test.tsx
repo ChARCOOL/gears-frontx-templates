@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect as assert, it, vi } from "vitest";
@@ -45,6 +45,21 @@ const StatefulField = ({
     </>
   );
 };
+
+// The popover panel takes focus after the calendar mounts, so tests focus a day first.
+const openCalendarByKeyboard = async () => {
+  const user = userEvent.setup();
+  await user.click(field());
+  await user.keyboard("{Alt>}{ArrowDown}{/Alt}");
+  act(() => {
+    dayButton(/august 24, 2026/iu).focus();
+  });
+
+  return user;
+};
+
+const dayButton = (name: RegExp): HTMLElement =>
+  within(screen.getByRole("grid")).getByRole("button", { name });
 
 const field = (): HTMLInputElement => {
   const input = screen.getByLabelText("Start date");
@@ -135,6 +150,34 @@ describe(DateField, () => {
     assert(
       screen.getByRole("dialog", { name: "Choose date" })
     ).toBeInTheDocument();
+  });
+
+  it("moves focus between days with arrow, Home and End keys", async () => {
+    renderField();
+    const user = await openCalendarByKeyboard();
+
+    await user.keyboard("{ArrowRight}");
+    assert(document.activeElement).toBe(dayButton(/august 25, 2026/iu));
+
+    await user.keyboard("{ArrowDown}");
+    assert(document.activeElement).toBe(dayButton(/september 1, 2026/iu));
+
+    await user.keyboard("{Home}");
+    assert(document.activeElement).toBe(dayButton(/august 31, 2026/iu));
+
+    await user.keyboard("{End}");
+    assert(document.activeElement).toBe(dayButton(/september 6, 2026/iu));
+  });
+
+  it("moves focus by month with PageUp and PageDown keys", async () => {
+    renderField();
+    const user = await openCalendarByKeyboard();
+
+    await user.keyboard("{PageDown}");
+    assert(document.activeElement).toBe(dayButton(/september 24, 2026/iu));
+
+    await user.keyboard("{PageUp}");
+    assert(document.activeElement).toBe(dayButton(/august 24, 2026/iu));
   });
 
   it("commits a date typed segment by segment", async () => {
