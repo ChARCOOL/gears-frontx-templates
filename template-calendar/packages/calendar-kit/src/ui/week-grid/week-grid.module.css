@@ -156,6 +156,12 @@
   cursor: not-allowed;
 }
 
+.cellContent[data-drop-target] {
+  background: var(--cal-slot-selected);
+  outline: var(--cal-border-width-1) dashed var(--cal-slot-selected-ring);
+  outline-offset: calc(-1 * var(--cal-border-width-1));
+}
+
 .eventFrame {
   position: absolute;
   z-index: 2;

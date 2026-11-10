@@ -96,6 +96,7 @@ export interface UseWeekGridControllerResult<Payload = unknown> {
   readonly hiddenDateCount: number;
   readonly dayColumns: readonly WeekGridDayColumn[];
   readonly focusedCell: FocusedCell;
+  readonly drag: InteractionControllerInternals["state"]["drag"];
   readonly pendingMove: InteractionControllerInternals["state"]["pendingMove"];
   readonly committedMove: InteractionControllerInternals["state"]["committedMove"];
   readonly paint: CalendarSelectionRange | null;
@@ -129,7 +130,7 @@ export interface UseWeekGridControllerResult<Payload = unknown> {
     from: CalendarCell,
     to?: CalendarCell
   ) => void;
-  readonly updateMove: (cell: CalendarCell) => void;
+  readonly updateMove: (cell?: CalendarCell) => void;
   readonly endMove: () => void;
   readonly confirmMove: () => void;
   readonly cancelMove: () => void;
@@ -552,7 +553,7 @@ export const useWeekGridController = <Payload = unknown>(
     // @cpt-end:cpt-template-calendar-calendar-kit-algo-week-grid-move-handshake:p1:inst-move-request
   };
 
-  const updateMove = (cell: CalendarCell): void => {
+  const updateMove = (cell?: CalendarCell): void => {
     interaction.updateMove(cell);
   };
 
@@ -623,6 +624,7 @@ export const useWeekGridController = <Payload = unknown>(
     getCell,
     getCellKey: cellKey,
     getInternals,
+    drag: interaction.drag,
     hiddenDateCount: allViewerDates.length - viewerDates.length,
     interactionMode: modeState.value,
     paint: interaction.paint,

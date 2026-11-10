@@ -14,6 +14,7 @@ import type {
 } from "react";
 
 import { arrayAt } from "../../core/array";
+import { compareCalendarCells } from "../../core/calendar-cell";
 import type {
   CalendarCell,
   CalendarCellContext,
@@ -363,6 +364,37 @@ export const useWeekGridContent = <Payload = unknown>(
     return keys;
   }, [gridCellKey, paintCells]);
 
+  // A drag that has not left its origin drops nowhere, so it marks no span.
+  const { dayColumns, drag } = controller;
+  const dropTargetKeys = useMemo(() => {
+    const keys = new Set<string>();
+
+    if (
+      !drag ||
+      drag.event.allDay ||
+      compareCalendarCells(drag.from, drag.to) === 0
+    ) {
+      return keys;
+    }
+
+    const spanStart = Date.parse(drag.to.start);
+    const spanEnd =
+      spanStart + Date.parse(drag.event.end) - Date.parse(drag.event.start);
+    const column = dayColumns.find((day) =>
+      day.slots.some((slot) => compareCalendarCells(slot, drag.to) === 0)
+    );
+
+    for (const slot of column?.slots ?? []) {
+      const slotStart = Date.parse(slot.start);
+
+      if (slotStart >= spanStart && slotStart < spanEnd) {
+        keys.add(gridCellKey(slot));
+      }
+    }
+
+    return keys;
+  }, [dayColumns, drag, gridCellKey]);
+
   const cellAtTarget = (
     target: EventTarget | null
   ): {
@@ -548,11 +580,22 @@ export const useWeekGridContent = <Payload = unknown>(
     }
 
     event.preventDefault();
-    const target = cellAtTarget(event.target);
+    controller.updateMove(cellAtTarget(event.target)?.cell);
+  };
 
-    if (target) {
-      controller.updateMove(target.cell);
+  const handleDragLeave = (event: ReactDragEvent<HTMLDivElement>): void => {
+    if (draggedEventIdRef.current === null) {
+      return;
     }
+
+    if (
+      event.relatedTarget instanceof Node &&
+      event.currentTarget.contains(event.relatedTarget)
+    ) {
+      return;
+    }
+
+    controller.updateMove();
   };
 
   const handleDrop = (event: ReactDragEvent<HTMLDivElement>): void => {
@@ -657,7 +700,9 @@ export const useWeekGridContent = <Payload = unknown>(
     gridData,
     handleCellKeyDown,
     handleClick,
+    dropTargetKeys,
     handleDragEnd,
+    handleDragLeave,
     handleDragOver,
     handleDragStart,
     handleDrop,

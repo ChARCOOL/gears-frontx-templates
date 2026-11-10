@@ -141,6 +141,7 @@ interface WeekGridInteractionLayerProps {
   readonly nowPosition: NowPosition | null;
   readonly onClick: (event: ReactMouseEvent<HTMLDivElement>) => void;
   readonly onDragEnd: (event: ReactDragEvent<HTMLDivElement>) => void;
+  readonly onDragLeave: (event: ReactDragEvent<HTMLDivElement>) => void;
   readonly onDragOver: (event: ReactDragEvent<HTMLDivElement>) => void;
   readonly onDragStart: (event: ReactDragEvent<HTMLDivElement>) => void;
   readonly onDrop: (event: ReactDragEvent<HTMLDivElement>) => void;
@@ -160,6 +161,7 @@ const WeekGridInteractionLayer = ({
   nowPosition,
   onClick,
   onDragEnd,
+  onDragLeave,
   onDragOver,
   onDragStart,
   onDrop,
@@ -195,6 +197,7 @@ const WeekGridInteractionLayer = ({
       onDragOver={onDragOver}
       onDrop={onDrop}
       onDragEnd={onDragEnd}
+      onDragLeave={onDragLeave}
     >
       {timedRows}
       {nowPosition !== null && (
@@ -694,6 +697,7 @@ interface WeekGridCellContentProps<Payload> {
   readonly renderConflict?: CalendarConflictRenderer;
   readonly renderEvent?: CalendarEventRenderer<Payload>;
   readonly renderUnavailable?: (cell: CalendarCell) => ReactNode;
+  readonly dropTargetKeys: ReadonlySet<string>;
   readonly selectedEventId: string | null;
   readonly selectedPaintKeys: ReadonlySet<string>;
   readonly timedPositions: readonly PositionedEvent<Payload>[];
@@ -723,6 +727,7 @@ const WeekGridCellContent = <Payload,>(
     cellClassName,
     context,
     currentInstant,
+    dropTargetKeys,
     gridCellKey,
     gutterClassName,
     meta,
@@ -773,6 +778,7 @@ const WeekGridCellContent = <Payload,>(
           unavailable && styles.unavailableSlot,
           cellClassName
         )}
+        data-drop-target={dropTargetKeys.has(gridCellKey) ? "" : undefined}
       >
         {renderCell?.(cellContext)}
         {unavailable && renderUnavailable?.(context.cell)}
@@ -848,7 +854,9 @@ const WeekGridContent = <Payload = unknown,>(
     gridData,
     handleCellKeyDown,
     handleClick,
+    dropTargetKeys,
     handleDragEnd,
+    handleDragLeave,
     handleDragOver,
     handleDragStart,
     handleDrop,
@@ -923,6 +931,7 @@ const WeekGridContent = <Payload = unknown,>(
       renderConflict={renderConflict}
       renderEvent={renderEvent}
       renderUnavailable={renderUnavailable}
+      dropTargetKeys={dropTargetKeys}
       selectedEventId={controller.selectedEventId}
       selectedPaintKeys={selectedPaintKeys}
       timedPositions={
@@ -939,6 +948,7 @@ const WeekGridContent = <Payload = unknown,>(
       nowPosition={nowPosition}
       onClick={handleClick}
       onDragEnd={handleDragEnd}
+      onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDragStart={handleDragStart}
       onDrop={handleDrop}

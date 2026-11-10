@@ -66,7 +66,7 @@ export interface UseInteractionControllerResult {
     from: CalendarCell,
     to?: CalendarCell
   ) => void;
-  readonly updateMove: (cell: CalendarCell) => void;
+  readonly updateMove: (cell?: CalendarCell) => void;
   readonly endMove: () => void;
   readonly confirmMove: () => void;
   readonly cancelMove: () => void;
@@ -322,7 +322,7 @@ export const useInteractionController = (
   );
 
   const updateMove = useCallback(
-    (cell: CalendarCell): void => {
+    (cell?: CalendarCell): void => {
       if (mode !== "paint-and-move") {
         return;
       }
