@@ -373,7 +373,16 @@ const MonthOverflowButton = ({
       aria-label={hiddenLabel}
       onClick={handleOverflowClick}
     >
-      {renderOverflow?.(cell.hiddenCount, cell.date) ?? hiddenLabel}
+      {renderOverflow?.(cell.hiddenCount, cell.date) ?? (
+        <>
+          {hiddenLabel}
+          <span
+            className={styles.shortOverflow}
+            aria-hidden="true"
+            data-short={`+${cell.hiddenCount}`}
+          />
+        </>
+      )}
     </Button>
   );
 };
@@ -951,9 +960,14 @@ interface MonthDayCellProps {
 interface MonthDayNumberProps {
   readonly isToday: boolean;
   readonly label: string;
+  readonly shortLabel: string;
 }
 
-const MonthDayNumber = ({ isToday, label }: MonthDayNumberProps) => (
+const MonthDayNumber = ({
+  isToday,
+  label,
+  shortLabel,
+}: MonthDayNumberProps) => (
   <Tag
     className={clsx(
       styles.dayNumber,
@@ -966,6 +980,11 @@ const MonthDayNumber = ({ isToday, label }: MonthDayNumberProps) => (
     variant={isToday ? "strong" : "regular"}
   >
     {label}
+    <span
+      className={styles.shortDayNumber}
+      aria-hidden="true"
+      data-short={shortLabel}
+    />
   </Tag>
 );
 
@@ -1086,7 +1105,11 @@ const MonthDayCell = ({
       }}
     >
       <span className={styles.fullDate}>{dayLabel}</span>
-      <MonthDayNumber isToday={isToday} label={tagLabel} />
+      <MonthDayNumber
+        isToday={isToday}
+        label={tagLabel}
+        shortLabel={formatMonthDayNumber(cell.date, locale)}
+      />
       {renderCell?.(cellContext)}
       <div className={styles.timedEvents} style={timedEventsStyle}>
         {cell.visibleTimedEvents.map((segment) => (

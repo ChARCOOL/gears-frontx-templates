@@ -421,6 +421,11 @@ describe(MonthGrid, () => {
         )
     ).toHaveLength(2);
     within(cell).getByText("+6 hidden");
+    // A narrow grid shows this short text in place of the full label, which stays for screen readers.
+    assert(cell.querySelector('[data-short="+6"]')).toHaveAttribute(
+      "aria-hidden",
+      "true"
+    );
     assert(cell.dataset.eventCount).toBe("8");
     assert(screen.getByRole("status").textContent).toContain("+6 hidden");
   });
@@ -1081,6 +1086,12 @@ describe("MonthGrid strip layout", () => {
     assert(today?.textContent).toBe("September 10");
     assert(firstOfMonth?.textContent).toBe("September 1");
     assert(ordinary?.textContent).toBe("2");
+    // A narrow grid shows the number alone; the full label stays in the text for screen readers.
+    assert(today?.querySelector('[data-short="10"]')).toHaveAttribute(
+      "aria-hidden",
+      "true"
+    );
+    assert(firstOfMonth?.querySelector('[data-short="1"]')).not.toBeNull();
   });
 
   it("uses the injected now for today and past event rendering", () => {
