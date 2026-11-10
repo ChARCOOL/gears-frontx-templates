@@ -117,6 +117,19 @@ describe(Select, () => {
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
   });
 
+  it("opens the list below the trigger, not over the selected option", () => {
+    renderSelect();
+    fireEvent.click(screen.getByRole("combobox"));
+
+    const popup = screen
+      .getByRole("listbox")
+      .closest<HTMLElement>(`.${selectStyles.popup}`);
+    expect({ align: popup?.dataset.align, side: popup?.dataset.side }).toStrictEqual({
+      align: "start",
+      side: "bottom",
+    });
+  });
+
   it("keeps the popup composition on the ui-kit Base UI nodes", () => {
     renderSelect({
       options: [
