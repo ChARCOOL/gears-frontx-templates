@@ -251,15 +251,14 @@ describe(EventDetailPanel, () => {
     expect(screen.getByText(SCRIPT_JOIN_URL)).toBeInTheDocument();
   });
 
-  it("summarises the supplied CalendarRsvp as guests and the responses given", () => {
+  it("reads the supplied CalendarRsvp as one participants line in the design's order", () => {
     renderPanel({
       event: timedEvent({ ...BASE_EVENT, rsvp: RSVP }),
     });
 
-    expect(screen.getByText(`${RSVP.invited} guests`)).toBeTruthy();
     expect(
       screen.getByText(
-        `${RSVP.yes} yes, ${RSVP.no} no, ${RSVP.maybe} maybe, ${RSVP.awaiting} awaiting`
+        `${RSVP.invited} invited · ${RSVP.yes} yes · ${RSVP.no} no · ${RSVP.awaiting} awaiting · ${RSVP.maybe} maybe`
       )
     ).toBeTruthy();
   });
@@ -272,8 +271,7 @@ describe(EventDetailPanel, () => {
       }),
     });
 
-    expect(screen.getByText("1 guest")).toBeTruthy();
-    expect(screen.getByText("1 yes")).toBeTruthy();
+    expect(screen.getByText("1 invited · 1 yes")).toBeTruthy();
     expect(screen.queryByText(/\b0 (?:yes|no|maybe|awaiting)/u)).toBeNull();
   });
 
@@ -283,7 +281,7 @@ describe(EventDetailPanel, () => {
     });
 
     expect(
-      screen.queryByText(/\d+ (?:guests?|yes|no|awaiting|maybe)/u)
+      screen.queryByText(/\d+ (?:invited|yes|no|awaiting|maybe)/u)
     ).toBeNull();
 
     rerender(
@@ -295,7 +293,7 @@ describe(EventDetailPanel, () => {
     );
 
     expect(
-      screen.queryByText(/\d+ (?:guests?|yes|no|awaiting|maybe)/u)
+      screen.queryByText(/\d+ (?:invited|yes|no|awaiting|maybe)/u)
     ).toBeNull();
   });
 

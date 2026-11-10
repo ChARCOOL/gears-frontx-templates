@@ -75,8 +75,9 @@ describe("EventDetailPanel inline layout", () => {
       "href",
       "https://join.example.com/sync"
     );
-    assert(within(preview).getByText("2 guests")).toBeInTheDocument();
-    assert(within(preview).getByText("1 yes, 1 no")).toBeInTheDocument();
+    assert(
+      within(preview).getByText("2 invited · 1 yes · 1 no")
+    ).toBeInTheDocument();
     assert(
       within(preview).getByText("GMT+0 UTC, 09:00 - 10:00")
     ).toBeInTheDocument();

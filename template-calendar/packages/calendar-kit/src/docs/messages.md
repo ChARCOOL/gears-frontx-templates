@@ -210,8 +210,7 @@ Event state words shared by the views.
 | `calendar.detail.group.no`          | Not going · {{count}} | `count` |
 | `calendar.detail.group.unknown`     | Invited · {{count}}   | `count` |
 | `calendar.detail.group.yes`         | Going · {{count}}     | `count` |
-| `calendar.detail.guests_one`        | {{count}} guest       | `count` |
-| `calendar.detail.guests_other`      | {{count}} guests      | `count` |
+| `calendar.detail.invited`           | {{count}} invited     | `count` |
 | `calendar.detail.join`              | Join                  |         |
 | `calendar.detail.location`          | Location              |         |
 | `calendar.detail.organizer`         | Organizer             |         |

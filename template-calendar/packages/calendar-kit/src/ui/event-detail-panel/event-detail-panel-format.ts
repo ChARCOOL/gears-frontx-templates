@@ -14,29 +14,43 @@ import type { CalendarTranslate } from "../../i18n/calendar-localization";
 import type { EventDetailPanelCopyStatus } from "../../react/public";
 import { formatRepeatHint } from "../create-event/create-event-format";
 
-// The responses in reading order; a zero count says nothing, so it is left out.
+// The responses in the design's order; a zero count says nothing, so it is left out.
 const RSVP_LABEL_KEYS = [
   ["yes", "calendar.detail.rsvp.yes"],
   ["no", "calendar.detail.rsvp.no"],
-  ["maybe", "calendar.detail.rsvp.maybe"],
   ["awaiting", "calendar.detail.rsvp.awaiting"],
+  ["maybe", "calendar.detail.rsvp.maybe"],
 ] as const;
 
 /** Invited guests: the host's RSVP total when it has one, otherwise the attendee list. */
 export const guestCount = (event: CalendarEvent): number =>
   event.rsvp?.invited ?? event.attendees?.length ?? 0;
 
-export const formatRsvpResponses = (
+const rsvpResponseParts = (
   event: CalendarEvent,
   t: CalendarTranslate
-): string =>
+): readonly string[] =>
   RSVP_LABEL_KEYS.map(([response, labelKey]) => ({
     count: event.rsvp?.[response] ?? 0,
     labelKey,
   }))
     .filter(({ count }) => count > 0)
-    .map(({ count, labelKey }) => t(labelKey, { count }))
-    .join(", ");
+    .map(({ count, labelKey }) => t(labelKey, { count }));
+
+/** The participants line as one part per count: "7 invited", "4 yes", "1 no". */
+export const attendanceSummaryParts = (
+  event: CalendarEvent,
+  t: CalendarTranslate
+): readonly string[] => [
+  t("calendar.detail.invited", { count: guestCount(event) }),
+  ...rsvpResponseParts(event, t),
+];
+
+/** "7 invited · 4 yes · 1 no", the participants line as text. */
+export const formatAttendanceSummary = (
+  event: CalendarEvent,
+  t: CalendarTranslate
+): string => attendanceSummaryParts(event, t).join(" · ");
 
 // The copy button names the result for a moment, as calendar apps do; the status region says it.
 export const COPY_STATUS_KEYS = {

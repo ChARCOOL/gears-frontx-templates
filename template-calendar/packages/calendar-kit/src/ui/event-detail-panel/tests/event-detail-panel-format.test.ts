@@ -13,7 +13,7 @@ import {
   formatComparisonLine,
   formatEventRange,
   formatRecurrenceSummary,
-  formatRsvpResponses,
+  formatAttendanceSummary,
   guestCount,
 } from "../event-detail-panel-format";
 import { englishTranslate } from "../../../i18n/english";
@@ -100,48 +100,50 @@ describe(formatComparisonLine, () => {
   });
 });
 
-describe(formatRsvpResponses, () => {
-  it("lists only the responses guests gave, in reading order and plain words", () => {
+describe(formatAttendanceSummary, () => {
+  it("lists the invited count, then the responses given, in the design's order", () => {
     expect(
-      formatRsvpResponses(
+      formatAttendanceSummary(
         makeTimedEvent({
-          rsvp: { awaiting: 8, invited: 31, maybe: 0, no: 3, yes: 17 },
+          rsvp: { awaiting: 8, invited: 31, maybe: 3, no: 3, yes: 17 },
         }),
         englishMessage("en-US")
       )
-    ).toBe("17 yes, 3 no, 8 awaiting");
+    ).toBe("31 invited · 17 yes · 3 no · 8 awaiting · 3 maybe");
   });
 
-  it("says nothing for absent or null RSVP", () => {
-    const t = englishMessage("en-US");
-
-    expect(formatRsvpResponses(makeTimedEvent(), t)).toBe("");
-    expect(formatRsvpResponses(makeTimedEvent({ rsvp: null }), t)).toBe("");
-  });
-
-  it("formats each count for the active locale", () => {
+  it("leaves zero response counts out of the line", () => {
     expect(
-      formatRsvpResponses(
+      formatAttendanceSummary(
+        makeTimedEvent({
+          rsvp: { awaiting: 0, invited: 2, maybe: 0, no: 0, yes: 1 },
+        }),
+        englishMessage("en-US")
+      )
+    ).toBe("2 invited · 1 yes");
+  });
+
+  it("formats counts in the active locale", () => {
+    expect(
+      formatAttendanceSummary(
         makeTimedEvent({
           rsvp: { awaiting: 0, invited: 2, maybe: 0, no: 0, yes: 2 },
         }),
         englishMessage("ar-EG")
       )
-    ).toBe("٢ yes");
+    ).toBe("٢ invited · ٢ yes");
   });
 
-  it("passes the raw count as the plural count", () => {
+  it("passes the raw count to each key", () => {
     const message = vi.fn<CalendarTranslate>(() => "count");
 
-    formatRsvpResponses(
-      makeTimedEvent({
-        rsvp: { awaiting: 0, invited: 3, maybe: 3, no: 0, yes: 0 },
-      }),
+    formatAttendanceSummary(
+      makeTimedEvent({ rsvp: { awaiting: 0, invited: 31, maybe: 3, no: 0, yes: 0 } }),
       message
     );
-    expect(message).toHaveBeenCalledWith("calendar.detail.rsvp.maybe", {
-      count: 3,
-    });
+
+    expect(message).toHaveBeenCalledWith("calendar.detail.invited", { count: 31 });
+    expect(message).toHaveBeenCalledWith("calendar.detail.rsvp.maybe", { count: 3 });
   });
 });
 

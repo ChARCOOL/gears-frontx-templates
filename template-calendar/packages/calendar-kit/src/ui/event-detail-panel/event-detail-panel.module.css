@@ -318,3 +318,27 @@
 .copyStatus {
   composes: srOnly from "../../styles/modules/sr-only.module.css";
 }
+
+/* The attendance line reads as one sentence; the dots are only its visual form. */
+.attendanceSummary {
+  align-items: center;
+  color: var(--cal-color-muted);
+  column-gap: var(--cal-space-1);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--cal-text-meta-size);
+  font-weight: var(--cal-text-meta-weight);
+  line-height: var(--cal-text-meta-line-height);
+  margin: 0;
+}
+
+.summaryDot {
+  color: var(--cal-color-subtle);
+  font-size: 4px;
+  inline-size: var(--cal-space-2);
+  text-align: center;
+}
+
+.visuallyHidden {
+  composes: srOnly from "../../styles/modules/sr-only.module.css";
+}

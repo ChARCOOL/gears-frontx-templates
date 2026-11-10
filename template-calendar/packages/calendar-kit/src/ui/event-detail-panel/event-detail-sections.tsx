@@ -13,6 +13,7 @@ import {
   UsersIcon,
   VideoIcon,
 } from "lucide-react";
+import { Fragment } from "react";
 import type { ReactNode } from "react";
 
 import type {
@@ -30,9 +31,10 @@ import { Button } from "../primitives/button/button";
 import { activationKeyDown } from "./event-detail-activation";
 import {
   COPY_STATUS_KEYS,
+  attendanceSummaryParts,
+  formatAttendanceSummary,
   formatEventRange,
   formatRecurrenceSummary,
-  formatRsvpResponses,
   formatZoneLine,
   guestCount,
 } from "./event-detail-panel-format";
@@ -145,23 +147,6 @@ const ConferencingSection = ({
   );
 };
 
-// "7 guests" over the responses given, as calendar apps summarise attendance.
-const GuestSummary = ({ event }: { readonly event: CalendarEvent }) => {
-  const { t } = useCalendarLocalization();
-  const responses = formatRsvpResponses(event, t);
-
-  return (
-    <>
-      <p className={styles.text}>
-        {t("calendar.detail.guests", { count: guestCount(event) })}
-      </p>
-      {responses === "" ? null : (
-        <p className={styles.mutedText}>{responses}</p>
-      )}
-    </>
-  );
-};
-
 interface ParticipantsSectionProps {
   readonly event: CalendarEvent;
   /** Lists every guest by response in place of the avatar stack. */
@@ -188,7 +173,6 @@ const ParticipantsSection = ({
 
   return (
     <DetailRow icon={<UsersIcon />} label={t("calendar.detail.participants")}>
-      <GuestSummary event={event} />
       {showAllGuests ? (
         <GuestGroups attendees={event.attendees ?? []} />
       ) : (
@@ -217,6 +201,22 @@ const ParticipantsSection = ({
           </ul>
         )
       )}
+      <p className={styles.attendanceSummary}>
+        {/* Read as one line; the dotted parts are only the visual form of it. */}
+        <span className={styles.visuallyHidden}>
+          {formatAttendanceSummary(event, t)}
+        </span>
+        {attendanceSummaryParts(event, t).map((part, index) => (
+          <Fragment key={part}>
+            {index > 0 && (
+              <span aria-hidden="true" className={styles.summaryDot}>
+                ●
+              </span>
+            )}
+            <span aria-hidden="true">{part}</span>
+          </Fragment>
+        ))}
+      </p>
     </DetailRow>
   );
 };

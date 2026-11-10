@@ -1,6 +1,6 @@
 # EventDetailPanel
 
-Event detail as an inline, labelled region (`<section>`). The host places it, for example in a side sheet; the panel opens no popover or dialog. The header is one row: the title, clamped to three lines, then icon buttons with tooltips (edit, delete, a divider, close); the header stays put while the body scrolls inside the panel. The body is icon-led rows in groups split by a rule: time with recurrence (in words, as the create form says it, for daily, weekly, monthly and yearly rules; any other rule goes to `calendar.detail.recurrence` as raw text), time zones and conferencing (Join and Copy link); location and conflicts; organizer with email and participants with the guest count, the responses that have guests and up to five avatars, whose +N swaps them for the full guest list grouped by response; description. Row names are screen-reader headings, not visible labels. Edit and delete are left to the host through `onEdit`/`onDelete` or `renderActions`.
+Event detail as an inline, labelled region (`<section>`). The host places it, for example in a side sheet; the panel opens no popover or dialog. The header is one row: the title, clamped to three lines, then icon buttons with tooltips (edit, delete, a divider, close); the header stays put while the body scrolls inside the panel. The body is icon-led rows in groups split by a rule: time with recurrence (in words, as the create form says it, for daily, weekly, monthly and yearly rules; any other rule goes to `calendar.detail.recurrence` as raw text), time zones and conferencing (Join and Copy link); location and conflicts; organizer with email and participants as one line (the invited count, then the responses given) above up to five avatars, whose +N swaps them for the full guest list grouped by response; description. Row names are screen-reader headings, not visible labels. Edit and delete are left to the host through `onEdit`/`onDelete` or `renderActions`.
 
 Import it from its own entry; the stylesheet arrives with the component:
 
@@ -78,8 +78,7 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.detail.group.no`          | Not going · {{count}} | `count` |
 | `calendar.detail.group.unknown`     | Invited · {{count}}   | `count` |
 | `calendar.detail.group.yes`         | Going · {{count}}     | `count` |
-| `calendar.detail.guests_one`        | {{count}} guest       | `count` |
-| `calendar.detail.guests_other`      | {{count}} guests      | `count` |
+| `calendar.detail.invited`           | {{count}} invited     | `count` |
 | `calendar.detail.join`              | Join                  |         |
 | `calendar.detail.location`          | Location              |         |
 | `calendar.detail.organizer`         | Organizer             |         |
