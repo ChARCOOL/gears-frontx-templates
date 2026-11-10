@@ -31,6 +31,7 @@ import type {
   CalendarEventSegment,
   IanaTimeZone,
   UtcInstant,
+  WeekGridInteractionMode,
 } from "../../core/model";
 import { compareUtcInstants, toViewerDateTime } from "../../core/temporal";
 import { useCalendarContext } from "../../i18n/calendar-context";
@@ -81,13 +82,11 @@ export interface DayGridProps extends CalendarContextProps {
   /** Class added to every gutter label. */
   readonly gutterClassName?: string;
   /** Controlled mode. `read-only` disables quick-create. Default `quick-create`. */
-  readonly interactionMode?: "quick-create" | "read-only";
+  readonly interactionMode?: WeekGridInteractionMode;
   /** Initial mode when uncontrolled. */
-  readonly defaultInteractionMode?: "quick-create" | "read-only";
+  readonly defaultInteractionMode?: WeekGridInteractionMode;
   /** Called when the grid asks to change mode. */
-  readonly onInteractionModeChange?: (
-    mode: "quick-create" | "read-only"
-  ) => void;
+  readonly onInteractionModeChange?: (mode: WeekGridInteractionMode) => void;
   /** Controlled selected event. */
   readonly selectedEventId?: string | null;
   /** Initial selected event when uncontrolled. */
@@ -548,6 +547,8 @@ const useDayGridContent = (props: DayGridContentProps) => {
     }
 
     if (event.key === "Enter" || event.key === " ") {
+      // The timed layout's keydown handler runs next and would activate this cell a second time.
+      event.preventDefault();
       selectEmptyCell(index, event.currentTarget);
     }
   };
@@ -555,6 +556,10 @@ const useDayGridContent = (props: DayGridContentProps) => {
   const handleTimedLayoutClick = (
     event: ReactMouseEvent<HTMLDivElement>
   ): void => {
+    // A click in paint-and-move mode paints by pointer gesture, so it must not open a form.
+    if (resolvedInteractionMode !== "quick-create") {
+      return;
+    }
     if (
       event.target instanceof Element &&
       event.target.closest("[data-event-id]") !== null

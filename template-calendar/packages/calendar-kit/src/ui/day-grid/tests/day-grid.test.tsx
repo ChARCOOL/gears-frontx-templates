@@ -453,6 +453,20 @@ describe(DayGrid, () => {
     assert(payload.anchorRect).toBeDefined();
   });
 
+  it("activates an empty cell once per Enter press", async () => {
+    const user = userEvent.setup();
+    const onQuickCreate =
+      vi.fn<(payload: CalendarQuickCreatePayload) => void>();
+    render(
+      <DayGrid {...BASE_PROPS} events={[]} onQuickCreate={onQuickCreate} />
+    );
+
+    screen.getByRole("gridcell", { name: /09:00.*working hour/iu }).focus();
+    await user.keyboard("{Enter}");
+
+    assert(onQuickCreate).toHaveBeenCalledOnce();
+  });
+
   it("opens an empty timed cell from the existing keyboard interaction", async () => {
     const user = userEvent.setup();
     const onQuickCreate =
