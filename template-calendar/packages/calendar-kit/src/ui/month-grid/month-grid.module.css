@@ -278,3 +278,12 @@
     padding-inline: var(--cal-space-1);
   }
 }
+
+@media print {
+  .container,
+  .monthGrid {
+    overflow: visible;
+    block-size: auto;
+    print-color-adjust: exact;
+  }
+}

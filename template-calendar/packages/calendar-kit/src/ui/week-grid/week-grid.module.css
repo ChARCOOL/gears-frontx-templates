@@ -317,3 +317,23 @@
   padding-inline: 6px;
   white-space: nowrap;
 }
+
+/* On paper the whole week prints, not the part that fits the scroll area. The current time is not useful there. */
+@media print {
+  .container,
+  .interactionSurface {
+    overflow: visible;
+    block-size: auto;
+    print-color-adjust: exact;
+  }
+
+  .weekGrid {
+    block-size: auto;
+    min-inline-size: 0;
+  }
+
+  .nowLine.nowLine,
+  .nowLabel.nowLabel {
+    display: none;
+  }
+}

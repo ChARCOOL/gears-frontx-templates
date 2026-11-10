@@ -363,3 +363,9 @@ button.card.unavailable {
 .srOnly {
   composes: srOnly from "../../styles/modules/sr-only.module.css";
 }
+
+@media print {
+  .card {
+    break-inside: avoid;
+  }
+}

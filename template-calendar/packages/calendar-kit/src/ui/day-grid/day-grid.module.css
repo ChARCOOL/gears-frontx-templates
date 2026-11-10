@@ -270,3 +270,16 @@
 .trailingGutterCell > .gutterHour {
   border-inline-end: 0;
 }
+
+@media print {
+  .dayGrid {
+    overflow: visible;
+    block-size: auto;
+    print-color-adjust: exact;
+  }
+
+  .nowLine.nowLine,
+  .nowLabel.nowLabel {
+    display: none;
+  }
+}
