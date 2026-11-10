@@ -8,24 +8,11 @@ import type {
   CalendarView,
   IanaTimeZone,
 } from "../../core/model";
-import {
-  AGENDA_WINDOW_DAYS,
-  addCalendarDays,
-  fromViewerDateTime,
-} from "../../core/temporal";
+import { fromViewerDateTime } from "../../core/temporal";
 import { parseIanaTimeZone } from "../../core/validation";
 
 const ALL_VIEWS: readonly CalendarView[] = ["day", "week", "month", "agenda"];
 const DEFAULT_TIME_ZONE = parseIanaTimeZone("UTC");
-
-export interface ToolbarTitleRange extends Readonly<Record<string, string>> {
-  readonly startDay: string;
-  readonly startMonth: string;
-  readonly startYear: string;
-  readonly endDay: string;
-  readonly endMonth: string;
-  readonly endYear: string;
-}
 
 export interface UseCalendarToolbarControllerOptions {
   readonly direction: CalendarDirection;
@@ -43,7 +30,6 @@ export interface UseCalendarToolbarControllerResult {
   readonly availableViews: readonly CalendarView[];
   readonly titleMonth: string;
   readonly titleYear: string;
-  readonly titleRange: ToolbarTitleRange | null;
   readonly selectView: (view: CalendarView) => void;
   readonly handleViewKeyDown: (
     event: ReactKeyboardEvent<HTMLButtonElement>,
@@ -162,44 +148,6 @@ export const useCalendarToolbarController = (
     };
   }, [titleFormatter, titleInstant]);
 
-  const titleRange = useMemo<ToolbarTitleRange | null>(() => {
-    if (resolvedView !== "agenda") {
-      return null;
-    }
-
-    const windowEnd = addCalendarDays(currentDate, AGENDA_WINDOW_DAYS - 1);
-
-    const formatter = dateTimeFormatter(locale, {
-      day: "numeric",
-      month: "short",
-      timeZone,
-      year: "numeric",
-    });
-
-    const formatEndpoint = (date: CalendarDate) => {
-      const instant = fromViewerDateTime({ date, time: "00:00", timeZone });
-      const parts = formatter.formatToParts(new Date(instant));
-
-      return {
-        day: partValue(parts, "day"),
-        month: partValue(parts, "month").slice(0, 3),
-        year: partValue(parts, "year"),
-      };
-    };
-
-    const start = formatEndpoint(currentDate);
-    const end = formatEndpoint(windowEnd);
-
-    return {
-      endDay: end.day,
-      endMonth: end.month,
-      endYear: end.year,
-      startDay: start.day,
-      startMonth: start.month,
-      startYear: start.year,
-    };
-  }, [resolvedView, locale, timeZone, currentDate]);
-
   const registerRadio = (
     view: CalendarView,
     element: HTMLButtonElement | null
@@ -258,7 +206,6 @@ export const useCalendarToolbarController = (
     registerRadio,
     selectView,
     titleMonth,
-    titleRange,
     titleYear,
   };
 };

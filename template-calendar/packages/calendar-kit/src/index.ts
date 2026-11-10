@@ -150,7 +150,6 @@ export type {
   UseAvailabilityGridControllerResult,
   CalendarSidePanelControllerOptions,
   CalendarSidePanelControllerResult,
-  ToolbarTitleRange,
   UseCalendarToolbarControllerOptions,
   UseCalendarToolbarControllerResult,
   CreateEventField,

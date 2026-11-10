@@ -51,7 +51,6 @@ export {
 
 export {
   useCalendarToolbarController,
-  type ToolbarTitleRange,
   type UseCalendarToolbarControllerOptions,
   type UseCalendarToolbarControllerResult,
 } from "./controllers/use-calendar-toolbar-controller";

@@ -129,21 +129,19 @@ Labels several components reuse.
 
 <!-- generated:messages calendar.agenda -->
 
-| Translation ID | English | Values |
-| --- | --- | --- |
-| `calendar.agenda.allDay` | All day |  |
-| `calendar.agenda.attendees` | Attendees |  |
-| `calendar.agenda.emptyDay` | No events |  |
-| `calendar.agenda.eventCount_one` | {{count}} event | `count` |
-| `calendar.agenda.eventCount_other` | {{count}} events | `count` |
-| `calendar.agenda.focus` | Agenda view |  |
-| `calendar.agenda.now` | Now |  |
-| `calendar.agenda.range` | {{startDay}} {{startMonth}} – {{endDay}} {{endMonth}} | `startDay`, `startMonth`, `endDay`, `endMonth` |
-| `calendar.agenda.rangeCrossYear` | {{startDay}} {{startMonth}} {{startYear}} – {{endDay}} {{endMonth}} {{endYear}} | `startDay`, `startMonth`, `startYear`, `endDay`, `endMonth`, `endYear` |
-| `calendar.agenda.startsIn` | Starts {{duration}} | `duration` |
-| `calendar.agenda.today` | Today |  |
-| `calendar.agenda.tomorrow` | Tomorrow |  |
-| `calendar.agenda.viewName` | Agenda view |  |
+| Translation ID                     | English             | Values     |
+| ---------------------------------- | ------------------- | ---------- |
+| `calendar.agenda.allDay`           | All day             |            |
+| `calendar.agenda.attendees`        | Attendees           |            |
+| `calendar.agenda.emptyDay`         | No events           |            |
+| `calendar.agenda.eventCount_one`   | {{count}} event     | `count`    |
+| `calendar.agenda.eventCount_other` | {{count}} events    | `count`    |
+| `calendar.agenda.focus`            | Agenda view         |            |
+| `calendar.agenda.now`              | Now                 |            |
+| `calendar.agenda.startsIn`         | Starts {{duration}} | `duration` |
+| `calendar.agenda.today`            | Today               |            |
+| `calendar.agenda.tomorrow`         | Tomorrow            |            |
+| `calendar.agenda.viewName`         | Agenda view         |            |
 
 <!-- /generated -->
 

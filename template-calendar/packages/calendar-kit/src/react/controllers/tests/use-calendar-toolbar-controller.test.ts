@@ -5,12 +5,7 @@ import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { UTC } from "../../../__test-utils__/fixtures";
-import {
-  AGENDA_WINDOW_DAYS,
-  addCalendarDays,
-  calendarDate,
-  parseIanaTimeZone,
-} from "../../../core/model";
+import { calendarDate, parseIanaTimeZone } from "../../../core/model";
 import type { CalendarView } from "../../../core/model";
 import { useCalendarToolbarController } from "../use-calendar-toolbar-controller";
 import type { UseCalendarToolbarControllerOptions } from "../use-calendar-toolbar-controller";
@@ -170,56 +165,15 @@ describe("useCalendarToolbarController title derivation", () => {
     expect(result.current.titleMonth).toBe("août");
   });
 
-  it("builds the agenda range over the 30-day window ending on its last day", () => {
+  it("titles the agenda with the month and year of its first day, as every view does", () => {
     const { result } = renderHook(() =>
       useCalendarToolbarController(options({ activeView: "agenda" }))
     );
 
-    expect(addCalendarDays(DATE, AGENDA_WINDOW_DAYS - 1)).toBe(
-      calendarDate("2026-09-22")
-    );
-
-    expect(result.current.titleRange).toStrictEqual({
-      endDay: "22",
-      endMonth: "Sep",
-      endYear: "2026",
-      startDay: "24",
-      startMonth: "Aug",
-      startYear: "2026",
-    });
-  });
-
-  it("spans the year boundary in the agenda range", () => {
-    const start = calendarDate("2025-12-15");
-
-    const { result } = renderHook(() =>
-      useCalendarToolbarController(
-        options({ activeView: "agenda", currentDate: start })
-      )
-    );
-
-    expect(addCalendarDays(start, AGENDA_WINDOW_DAYS - 1)).toBe(
-      calendarDate("2026-01-13")
-    );
-
-    expect(result.current.titleRange).toStrictEqual({
-      endDay: "13",
-      endMonth: "Jan",
-      endYear: "2026",
-      startDay: "15",
-      startMonth: "Dec",
-      startYear: "2025",
-    });
-  });
-
-  it("returns a null agenda range outside the agenda view", () => {
-    for (const view of ["day", "week", "month"] as const) {
-      const { result } = renderHook(() =>
-        useCalendarToolbarController(options({ activeView: view }))
-      );
-
-      expect(result.current.titleRange).toBeNull();
-    }
+    expect({
+      titleMonth: result.current.titleMonth,
+      titleYear: result.current.titleYear,
+    }).toStrictEqual({ titleMonth: "August", titleYear: "2026" });
   });
 
   it("never mutates the host date when the view changes", () => {
@@ -241,19 +195,9 @@ describe("useCalendarToolbarController title derivation", () => {
     expect(onViewChange).toHaveBeenCalledWith("agenda");
     expect(result.current.titleMonth).toBe(monthBefore);
     expect(result.current.titleYear).toBe(yearBefore);
-    expect(result.current.titleRange).toMatchObject({
-      startDay: "24",
-      startMonth: "Aug",
-      startYear: "2026",
-    });
-
     rerender(options({ defaultActiveView: "day", onViewChange }));
 
-    expect(result.current.titleRange).toMatchObject({
-      startDay: "24",
-      startMonth: "Aug",
-      startYear: "2026",
-    });
+    expect(result.current.titleMonth).toBe(monthBefore);
   });
 });
 
