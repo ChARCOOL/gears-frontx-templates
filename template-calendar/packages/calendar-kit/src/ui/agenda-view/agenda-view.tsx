@@ -1,7 +1,12 @@
 "use client";
 
 import { clsx } from "clsx";
-import { TimerIcon, UserIcon, UsersIcon } from "lucide-react";
+import {
+  CircleAlertIcon,
+  TimerIcon,
+  UserIcon,
+  UsersIcon,
+} from "lucide-react";
 import {
   createContext,
   Fragment,
@@ -225,11 +230,34 @@ const AgendaEventContent = ({ relativeHint, row }: AgendaEventContentProps) => {
   );
 };
 
+const AgendaReminderContent = ({ event }: { readonly event: CalendarEvent }) => {
+  const { t } = useCalendarLocalization();
+  const title =
+    event.title.trim() === "" ? t("calendar.event.type.default") : event.title;
+
+  return (
+    <>
+      <span className={styles.reminderTitle}>
+        {t("calendar.agenda.reminderTitle", { title })}
+      </span>
+      {event.notify && (
+        <span className={styles.reminderNotice}>
+          <CircleAlertIcon aria-hidden="true" className={styles.metadataIcon} />
+          <span>{t("calendar.agenda.earlyNotification")}</span>
+        </span>
+      )}
+    </>
+  );
+};
+
 const COLOR_CLASSES: ReadonlyMap<string, string> = new Map([
+  ["blue", styles.colorBlue],
+  ["lavender", styles.colorLavender],
+  ["violet", styles.colorViolet],
   ["turquoise", styles.colorTurquoise],
   ["purple", styles.colorPurple],
   ["orange", styles.colorOrange],
-  ["blue", styles.colorBlue],
+  ["brown", styles.colorBrown],
 ]);
 
 const SEGMENT_CLASSES: ReadonlyMap<AgendaEventRow["segment"], string> = new Map(
@@ -273,11 +301,13 @@ const AgendaEventButtonImpl = ({ row }: AgendaEventButtonProps) => {
   const description = buildEventDescription(row, locale, t);
   const relativeHint = buildRelativeHint(row, currentInstant, locale, t);
 
-  const eventContent = renderEvent ? (
-    renderEvent(context)
+  const isReminder = row.event.eventType === "reminder";
+  const defaultContent = isReminder ? (
+    <AgendaReminderContent event={row.event} />
   ) : (
     <AgendaEventContent relativeHint={relativeHint} row={row} />
   );
+  const eventContent = renderEvent ? renderEvent(context) : defaultContent;
 
   // As designed, only the event in progress offers Join.
   const joinUrl =
@@ -294,7 +324,9 @@ const AgendaEventButtonImpl = ({ row }: AgendaEventButtonProps) => {
         aria-pressed={selected ? "true" : "false"}
         className={clsx(
           styles.agendaEvent,
-          resolveColorClass(row.event.colorFamily),
+          isReminder
+            ? styles.reminder
+            : resolveColorClass(row.event.colorFamily),
           resolveSegmentClass(row.segment),
           selected && styles.selected,
           row.past && styles.past,
@@ -317,29 +349,34 @@ const AgendaEventButtonImpl = ({ row }: AgendaEventButtonProps) => {
         size="content"
         variant="outline"
       >
-        <span className={clsx(styles.slot, "slot")} data-agenda-slot>
-          <span
-            className={clsx(
-              styles.slotTimes,
-              "slotTimes",
-              row.kind === "allday" && styles.slotTimesAllDay
-            )}
-          >
-            {row.kind === "timed" ? (
-              <>
-                <span className={styles.slotTimeStart} data-slot-time>
-                  {formatAgendaTime(row.start, timeZone, locale)}
+        <span
+          className={clsx(styles.slot, isReminder && styles.slotReminder, "slot")}
+          data-agenda-slot
+        >
+          {!isReminder && (
+            <span
+              className={clsx(
+                styles.slotTimes,
+                "slotTimes",
+                row.kind === "allday" && styles.slotTimesAllDay
+              )}
+            >
+              {row.kind === "timed" ? (
+                <>
+                  <span className={styles.slotTimeStart} data-slot-time>
+                    {formatAgendaTime(row.start, timeZone, locale)}
+                  </span>
+                  <span className={styles.slotTimeEnd} data-slot-time>
+                    {formatAgendaTime(row.end, timeZone, locale)}
+                  </span>
+                </>
+              ) : (
+                <span className={styles.slotTimeAllDay} data-slot-time>
+                  {t("calendar.agenda.allDay")}
                 </span>
-                <span className={styles.slotTimeEnd} data-slot-time>
-                  {formatAgendaTime(row.end, timeZone, locale)}
-                </span>
-              </>
-            ) : (
-              <span className={styles.slotTimeAllDay} data-slot-time>
-                {t("calendar.agenda.allDay")}
-              </span>
-            )}
-          </span>
+              )}
+            </span>
+          )}
           <span aria-hidden="true" className={styles.slotBar} />
           <span className={clsx(styles.slotBody, "slotBody")}>
             {eventContent}

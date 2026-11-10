@@ -44,19 +44,21 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 
 <!-- generated:messages calendar.agenda -->
 
-| Translation ID                     | English             | Values     |
-| ---------------------------------- | ------------------- | ---------- |
-| `calendar.agenda.allDay`           | All day             |            |
-| `calendar.agenda.attendees`        | Attendees           |            |
-| `calendar.agenda.emptyDay`         | No events           |            |
-| `calendar.agenda.eventCount_one`   | {{count}} event     | `count`    |
-| `calendar.agenda.eventCount_other` | {{count}} events    | `count`    |
-| `calendar.agenda.focus`            | Agenda view         |            |
-| `calendar.agenda.now`              | Now                 |            |
-| `calendar.agenda.startsIn`         | Starts {{duration}} | `duration` |
-| `calendar.agenda.today`            | Today               |            |
-| `calendar.agenda.tomorrow`         | Tomorrow            |            |
-| `calendar.agenda.viewName`         | Agenda view         |            |
+| Translation ID                      | English             | Values     |
+| ----------------------------------- | ------------------- | ---------- |
+| `calendar.agenda.allDay`            | All day             |            |
+| `calendar.agenda.attendees`         | Attendees           |            |
+| `calendar.agenda.earlyNotification` | Early notification  |            |
+| `calendar.agenda.emptyDay`          | No events           |            |
+| `calendar.agenda.eventCount_one`    | {{count}} event     | `count`    |
+| `calendar.agenda.eventCount_other`  | {{count}} events    | `count`    |
+| `calendar.agenda.focus`             | Agenda view         |            |
+| `calendar.agenda.now`               | Now                 |            |
+| `calendar.agenda.reminderTitle`     | Reminder: {{title}} | `title`    |
+| `calendar.agenda.startsIn`          | Starts {{duration}} | `duration` |
+| `calendar.agenda.today`             | Today               |            |
+| `calendar.agenda.tomorrow`          | Tomorrow            |            |
+| `calendar.agenda.viewName`          | Agenda view         |            |
 
 <!-- /generated -->
 

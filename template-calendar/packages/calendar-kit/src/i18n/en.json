@@ -1,11 +1,13 @@
 {
   "calendar.agenda.allDay": "All day",
   "calendar.agenda.attendees": "Attendees",
+  "calendar.agenda.earlyNotification": "Early notification",
   "calendar.agenda.emptyDay": "No events",
   "calendar.agenda.eventCount_one": "{{count}} event",
   "calendar.agenda.eventCount_other": "{{count}} events",
   "calendar.agenda.focus": "Agenda view",
   "calendar.agenda.now": "Now",
+  "calendar.agenda.reminderTitle": "Reminder: {{title}}",
   "calendar.agenda.startsIn": "Starts {{duration}}",
   "calendar.agenda.today": "Today",
   "calendar.agenda.tomorrow": "Tomorrow",

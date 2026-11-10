@@ -14,6 +14,7 @@ import { englishTranslate as t } from "../../../i18n/english";
 import type { CalendarEventRenderer } from "../../../react/public";
 import { AgendaView } from "../agenda-view";
 import type { AgendaViewProps } from "../agenda-view";
+import agendaStyles from "../agenda-view.module.css";
 
 type CalendarEventRenderContext = Parameters<CalendarEventRenderer>[0];
 
@@ -445,5 +446,64 @@ describe(AgendaView, () => {
     renderAgenda({ events: [event, unknownColor] });
 
     expect(screen.getAllByText("Variant").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("renders a reminder as a titled row with its early notification and no time column", () => {
+    renderAgenda({
+      events: [
+        {
+          ...timedEvent(
+            "reminder",
+            "Fill in form",
+            "2026-08-24T08:00:00.000Z",
+            "2026-08-24T08:15:00.000Z"
+          ),
+          eventType: "reminder",
+          notify: { leadMinutes: 5 },
+        },
+      ],
+    });
+
+    const reminder = requiredElement(
+      document.querySelector<HTMLElement>('[data-event-id="reminder"]')
+    );
+
+    expect({
+      early: within(reminder).getByText("Early notification").textContent,
+      slotTimes: reminder.querySelectorAll("[data-slot-time]").length,
+      title: within(reminder).getByText("Reminder: Fill in form").textContent,
+    }).toStrictEqual({
+      early: "Early notification",
+      slotTimes: 0,
+      title: "Reminder: Fill in form",
+    });
+  });
+
+  it.each([
+    ["blue", agendaStyles.colorBlue],
+    ["lavender", agendaStyles.colorLavender],
+    ["violet", agendaStyles.colorViolet],
+    ["purple", agendaStyles.colorPurple],
+    ["orange", agendaStyles.colorOrange],
+    ["brown", agendaStyles.colorBrown],
+    ["turquoise", agendaStyles.colorTurquoise],
+  ])("gives the %s calendar its agenda colour class", (colorFamily, className) => {
+    renderAgenda({
+      events: [
+        {
+          ...timedEvent(
+            `colour-${colorFamily}`,
+            "Colour",
+            "2026-08-24T09:00:00.000Z",
+            "2026-08-24T10:00:00.000Z"
+          ),
+          colorFamily,
+        },
+      ],
+    });
+
+    expect(screen.getAllByRole("button", { name: /Colour/u })[0]).toHaveClass(
+      className
+    );
   });
 });

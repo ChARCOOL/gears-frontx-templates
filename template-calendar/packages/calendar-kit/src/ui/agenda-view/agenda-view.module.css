@@ -202,6 +202,25 @@ button.agendaEvent:not(.unavailable):hover {
   color: var(--cal-color-blue-foreground);
 }
 
+.agendaEvent.colorLavender {
+  --agenda-slot-accent: var(--cal-color-lavender-accent);
+  color: var(--cal-color-lavender-foreground);
+}
+
+.agendaEvent.colorViolet {
+  --agenda-slot-accent: var(--cal-color-violet-accent);
+  color: var(--cal-color-violet-foreground);
+}
+
+.agendaEvent.colorBrown {
+  --agenda-slot-accent: var(--cal-color-brown-accent);
+  color: var(--cal-color-brown-foreground);
+}
+
+.agendaEvent.reminder {
+  --agenda-slot-accent: var(--cal-color-warning);
+}
+
 .slotBar {
   align-self: stretch;
   margin-block: var(--cal-space-1);
@@ -217,9 +236,12 @@ button.agendaEvent:not(.unavailable):hover {
   background: var(--cal-slot-unavailable-ring);
 }
 
+.agendaEvent.colorLavender .slotBar,
+.agendaEvent.colorViolet .slotBar,
 .agendaEvent.colorTurquoise .slotBar,
 .agendaEvent.colorPurple .slotBar,
-.agendaEvent.colorOrange .slotBar {
+.agendaEvent.colorOrange .slotBar,
+.agendaEvent.colorBrown .slotBar {
   background: var(--agenda-slot-accent);
 }
 
@@ -282,6 +304,34 @@ button.agendaEvent:not(.unavailable):hover {
 
 .slotTimesAllDay {
   justify-content: center;
+}
+
+.slotReminder {
+  grid-template-columns: 3px minmax(0, 1fr);
+}
+
+.reminderTitle {
+  composes: truncate from "../../styles/modules/text.module.css";
+  max-inline-size: 100%;
+  color: var(--cal-color-orange-foreground);
+  font-size: var(--cal-text-meta-size);
+  font-weight: 700;
+  line-height: var(--cal-text-meta-line-height);
+  white-space: nowrap;
+}
+
+.reminderNotice {
+  display: flex;
+  align-items: center;
+  gap: var(--cal-space-1);
+  color: var(--cal-color-warning);
+  font-size: var(--cal-text-meta-size);
+  line-height: var(--cal-text-meta-line-height);
+}
+
+.agendaEvent.past .reminderTitle,
+.agendaEvent.past .reminderNotice {
+  color: var(--cal-color-muted);
 }
 
 .slotTimeStart,
