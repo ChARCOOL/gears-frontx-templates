@@ -747,6 +747,12 @@ describe("EventCard unit behaviour beyond the acceptance suite", () => {
 });
 
 describe("EventCard styles", () => {
+  it("colours the time row with the card's foreground over the composed muted text", () => {
+    expect(declarations(cardCss, ".time.time").get("color")).toBe(
+      "var(--button-fg)"
+    );
+  });
+
   it("colours metadata with the card's own foreground, so it stays readable on a filled card", () => {
     expect(declarations(cardCss, ".metadata").get("color")).toBe(
       "var(--button-fg)"
