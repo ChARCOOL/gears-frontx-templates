@@ -197,6 +197,38 @@
   border-block-end: 0;
 }
 
+.cellContent[data-paint] {
+  background: var(--cal-slot-selected);
+}
+
+.cellContent[data-paint][data-color-family="blue"] {
+  background: var(--cal-color-blue-background);
+}
+
+.cellContent[data-paint][data-color-family="lavender"] {
+  background: var(--cal-color-lavender-background);
+}
+
+.cellContent[data-paint][data-color-family="violet"] {
+  background: var(--cal-color-violet-background);
+}
+
+.cellContent[data-paint][data-color-family="brown"] {
+  background: var(--cal-color-brown-background);
+}
+
+.cellContent[data-paint][data-color-family="turquoise"] {
+  background: var(--cal-color-turquoise-background);
+}
+
+.cellContent[data-paint][data-color-family="purple"] {
+  background: var(--cal-color-purple-background);
+}
+
+.cellContent[data-paint][data-color-family="orange"] {
+  background: var(--cal-color-orange-background);
+}
+
 .eventLayer {
   position: absolute;
   inset: 0;

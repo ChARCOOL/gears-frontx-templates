@@ -6,6 +6,7 @@ import type {
   CSSProperties,
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
   ReactNode,
 } from "react";
 
@@ -22,6 +23,8 @@ import {
 import type {
   CalendarCell,
   CalendarCellContext,
+  CalendarColorFamily,
+  CalendarSelectionRange,
   CalendarSlotMinutes,
   CalendarTimeWindow,
   CalendarEvent,
@@ -81,12 +84,14 @@ export interface DayGridProps extends CalendarContextProps {
   readonly columnHeaderClassName?: string;
   /** Class added to every gutter label. */
   readonly gutterClassName?: string;
-  /** Controlled mode. `read-only` disables quick-create. Default `quick-create`. */
+  /** Controlled mode. `quick-create` opens a form on an empty cell, `paint-and-move` paints a range, `read-only` disables both. Default `quick-create`. */
   readonly interactionMode?: WeekGridInteractionMode;
   /** Initial mode when uncontrolled. */
   readonly defaultInteractionMode?: WeekGridInteractionMode;
   /** Called when the grid asks to change mode. */
   readonly onInteractionModeChange?: (mode: WeekGridInteractionMode) => void;
+  /** Colour family of a painted range. Unset, the range uses the plain selection style. */
+  readonly paintColorFamily?: CalendarColorFamily;
   /** Controlled selected event. */
   readonly selectedEventId?: string | null;
   /** Initial selected event when uncontrolled. */
@@ -107,6 +112,8 @@ export interface DayGridProps extends CalendarContextProps {
   ) => void;
   /** An empty slot was activated in `quick-create` mode. */
   readonly onQuickCreate?: (payload: CalendarQuickCreatePayload) => void;
+  /** A range was painted in `paint-and-move` mode. */
+  readonly onPaintSelect?: (range: CalendarSelectionRange) => void;
 }
 
 interface DayGridStyles extends CSSProperties {
@@ -214,6 +221,16 @@ const buildUnavailableCellKeys = (
 };
 
 const DAY_GRID_SLOT_HEIGHT = 43;
+
+const eventIdAtTarget = (target: EventTarget | null): string | null => {
+  if (!(target instanceof Element)) {
+    return null;
+  }
+
+  return (
+    target.closest<HTMLElement>("[data-event-id]")?.dataset.eventId ?? null
+  );
+};
 
 const dayEventGeometry = (
   geometry: {
@@ -398,6 +415,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     renderConflict,
     renderCell,
     onEventSelect,
+    onPaintSelect,
     onQuickCreate,
     now,
     slotMinutes,
@@ -411,6 +429,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     allDaySegments,
     axisRange,
     currentInstant,
+    interaction,
     slotStarts,
     interactionMode: resolvedInteractionMode,
     isToday,
@@ -433,6 +452,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     now,
     onEventSelect,
     onInteractionModeChange,
+    onPaintSelect,
     onQuickCreate,
     onSelectedEventIdChange,
     selectedEventId,
@@ -474,6 +494,33 @@ const useDayGridContent = (props: DayGridContentProps) => {
     () => buildUnavailableCellKeys(gridCells, timedEvents),
     [gridCells, timedEvents]
   );
+
+  const paintKeys = useMemo(
+    () => new Set((interaction.paint?.cells ?? []).map(cellKey)),
+    [interaction.paint]
+  );
+
+  const paintTouchesUnavailable = (interaction.paint?.cells ?? []).some(
+    (cell) => unavailableCellKeys.has(cellKey(cell))
+  );
+
+  // Event cards cover the cells, so the slot comes from the pointer's Y, not the event target.
+  const cellAtClientY = (
+    layout: HTMLElement,
+    clientY: number
+  ): CalendarCell | undefined => {
+    const element = Array.from(
+      layout.querySelectorAll<HTMLElement>('[role="gridcell"]')
+    ).find((candidate) => {
+      const rect = candidate.getBoundingClientRect();
+
+      return clientY >= rect.top && clientY < rect.bottom;
+    });
+    const key = element?.dataset.cellKey;
+    const index = key === undefined ? undefined : cellIndexByKey.get(key);
+
+    return index === undefined ? undefined : arrayAt(gridCells, index);
+  };
 
   const currentTimeLabel = formatGridTime(currentInstant, timeZone, locale);
   const defaultActiveCell = arrayAt(gridCells, 8);
@@ -617,6 +664,54 @@ const useDayGridContent = (props: DayGridContentProps) => {
     selectEmptyCell(index, cellElement);
   };
 
+  const handleTimedLayoutPointerDown = (
+    event: ReactPointerEvent<HTMLDivElement>
+  ): void => {
+    if (eventIdAtTarget(event.target) !== null) {
+      return;
+    }
+
+    const cell = cellAtClientY(event.currentTarget, event.clientY);
+
+    if (cell) {
+      interaction.beginPaint(cell);
+    }
+  };
+
+  const handleTimedLayoutPointerMove = (
+    event: ReactPointerEvent<HTMLDivElement>
+  ): void => {
+    if (
+      interaction.state.paintAnchor === null ||
+      eventIdAtTarget(event.target) !== null
+    ) {
+      return;
+    }
+
+    const cell = cellAtClientY(event.currentTarget, event.clientY);
+
+    if (cell) {
+      interaction.updatePaint(cell);
+    }
+  };
+
+  const handleTimedLayoutPointerUp = (): void => {
+    // A paint released over unavailable time creates nothing, so it is dropped rather than emitted.
+    if (paintTouchesUnavailable) {
+      interaction.reset();
+      return;
+    }
+
+    interaction.endPaint();
+  };
+
+  // Leaving ends a paint, so the range does not outlive the host's form over the grid.
+  const handleTimedLayoutPointerLeave = (): void => {
+    if (interaction.state.paintAnchor !== null || interaction.paint !== null) {
+      interaction.reset();
+    }
+  };
+
   const handleEventFocus = useCallback(
     (segment: CalendarEventSegment): void => {
       const announcement = buildEventAnnouncement(segment, timeZone, locale, t);
@@ -647,12 +742,17 @@ const useDayGridContent = (props: DayGridContentProps) => {
     handleEventFocus,
     handleTimedLayoutClick,
     handleTimedLayoutKeyDown,
+    handleTimedLayoutPointerDown,
+    handleTimedLayoutPointerLeave,
+    handleTimedLayoutPointerMove,
+    handleTimedLayoutPointerUp,
     isToday,
     isWorkingDay,
     liveRegionLabel,
     liveText,
     locale,
     nowPercent,
+    paintKeys,
     readOnly,
     renderCell,
     resolvedDirection,
@@ -689,6 +789,11 @@ const DayGridContent = (props: DayGridContentProps) => {
     handleEventFocus,
     handleTimedLayoutClick,
     handleTimedLayoutKeyDown,
+    handleTimedLayoutPointerDown,
+    handleTimedLayoutPointerLeave,
+    handleTimedLayoutPointerMove,
+    handleTimedLayoutPointerUp,
+    paintKeys,
     slotStarts,
     isToday,
     isWorkingDay,
@@ -714,6 +819,7 @@ const DayGridContent = (props: DayGridContentProps) => {
     className,
     columnHeaderClassName,
     gutterClassName,
+    paintColorFamily,
     trailingGutter = false,
   } = props;
 
@@ -757,6 +863,10 @@ const DayGridContent = (props: DayGridContentProps) => {
             : styles.nonWorkingHour,
           cellClassName
         )}
+        data-paint={paintKeys.has(context.key) ? "" : undefined}
+        data-color-family={
+          paintKeys.has(context.key) ? paintColorFamily : undefined
+        }
       >
         {renderCell?.(cellContext)}
       </div>
@@ -868,6 +978,11 @@ const DayGridContent = (props: DayGridContentProps) => {
         ref={setBodyRef}
         onClick={handleTimedLayoutClick}
         onKeyDown={handleTimedLayoutKeyDown}
+        onPointerCancel={handleTimedLayoutPointerLeave}
+        onPointerDown={handleTimedLayoutPointerDown}
+        onPointerLeave={handleTimedLayoutPointerLeave}
+        onPointerMove={handleTimedLayoutPointerMove}
+        onPointerUp={handleTimedLayoutPointerUp}
       >
         <div className={styles.gutter} aria-hidden="true">
           {gutterLabels}
