@@ -102,7 +102,7 @@ The exclusive end is the most common source of off-by-one bugs; see [Troubleshoo
 | Selection range | `CalendarSelectionRange` | An ordered run of slots, painted on a time grid or availability grid |
 | Date range | `CalendarDateRange` | Whole days picked on the month grid, both ends inclusive |
 
-`CalendarTimeWindow.end` is exclusive, and `00:00` as an end means the end of the day. Visible hours must start and end on a slot boundary, or the grid throws a `RangeError`.
+`CalendarTimeWindow.end` is exclusive, and `00:00` as an end means the end of the day. Visible hours snap outward to whole slots: the start rounds down and the end rounds up, so `08:30` with 60-minute slots shows the 08:00 row. An empty or reversed window throws a `RangeError`.
 
 <!-- generated:props CalendarCell -->
 

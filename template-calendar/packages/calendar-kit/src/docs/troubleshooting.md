@@ -42,7 +42,7 @@ The parse helpers validate their input. Validate where data enters your app, so 
 
 ### `RangeError` about visible hours
 
-`visibleHours` must start and end on a slot boundary: with `slotMinutes={30}`, `08:15` is rejected. Use `08:00` or `08:30`.
+`visibleHours` snaps outward to whole slots, so `slotMinutes={30}` with `08:15` shows from `08:00`. Only an empty or reversed window (start at or after end) throws.
 
 ## Interactions
 

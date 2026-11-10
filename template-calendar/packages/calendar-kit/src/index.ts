@@ -21,6 +21,7 @@ export type {
   MonthGridData,
   MonthGridProps,
   MonthGridSelectionMode,
+  MonthGridTermWeekNumbering,
   MonthGridWeekNumbering,
 } from "./ui/month-grid/public";
 

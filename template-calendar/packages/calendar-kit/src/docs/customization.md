@@ -116,7 +116,7 @@ A render slot replaces the content of one part and keeps the kit's positioning, 
 
 | Component | Slots |
 | --- | --- |
-| `WeekGrid` | `renderEvent`, `renderConflict`, `renderDetail`, `renderCell`, `renderUnavailable` |
+| `WeekGrid` | `renderEvent`, `renderEventMetadata`, `renderConflict`, `renderDetail`, `renderCell`, `renderUnavailable`, `renderOverflow` |
 | `DayGrid` | `renderEvent`, `renderConflict`, `renderCell` |
 | `MonthGrid` | `renderEvent`, `renderCell`, `renderOverflow` |
 | `AgendaView` | `renderEvent`, `renderDayHeader` |
@@ -157,7 +157,7 @@ Every component's state and behaviour is a hook exported from `@gears-frontx/cal
 ## What you cannot customize, and why
 
 - **Internal class names.** CSS Module names are private so the kit can restructure markup without breaking hosts. Style through tokens, part classes and the attributes above.
-- **Grid geometry.** The hour row height (43px) and the one-line event strip height (21px) are fixed because layout math in TypeScript depends on them. They are single-sourced constants, checked against the CSS by a test.
+- **Grid geometry.** The one-line event strip height (21px) and the `DayGrid` row height (43px) are fixed because layout math in TypeScript depends on them. `WeekGrid` takes `rowHeight` (default 43px). They are single-sourced constants, checked against the CSS by a test.
 - **Week start.** Week and month grids start on Monday; `MonthNavigator` starts on Sunday.
 - **Scheduling decisions.** Conflicts, availability and permissions are always the host's input.
 
