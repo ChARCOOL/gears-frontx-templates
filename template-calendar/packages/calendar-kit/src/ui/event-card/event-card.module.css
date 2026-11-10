@@ -147,6 +147,42 @@ button.card:focus-visible {
   border-color: var(--cal-color-blue-border);
 }
 
+.card.colorLavender,
+.card.selected.colorLavender {
+  --button-bg: var(--cal-color-lavender-background);
+  --button-fg: var(--cal-color-lavender-foreground);
+  --button-bg-hover: var(--cal-color-lavender-background);
+  --button-fg-hover: var(--cal-color-lavender-foreground);
+  --button-border: var(--cal-color-lavender-border);
+  --event-card-bar-color: var(--cal-color-lavender-accent);
+  background-color: var(--button-bg);
+  border-color: var(--cal-color-lavender-border);
+}
+
+.card.colorViolet,
+.card.selected.colorViolet {
+  --button-bg: var(--cal-color-violet-background);
+  --button-fg: var(--cal-color-violet-foreground);
+  --button-bg-hover: var(--cal-color-violet-background);
+  --button-fg-hover: var(--cal-color-violet-foreground);
+  --button-border: var(--cal-color-violet-border);
+  --event-card-bar-color: var(--cal-color-violet-accent);
+  background-color: var(--button-bg);
+  border-color: var(--cal-color-violet-border);
+}
+
+.card.colorBrown,
+.card.selected.colorBrown {
+  --button-bg: var(--cal-color-brown-background);
+  --button-fg: var(--cal-color-brown-foreground);
+  --button-bg-hover: var(--cal-color-brown-background);
+  --button-fg-hover: var(--cal-color-brown-foreground);
+  --button-border: var(--cal-color-brown-border);
+  --event-card-bar-color: var(--cal-color-brown-accent);
+  background-color: var(--button-bg);
+  border-color: var(--cal-color-brown-border);
+}
+
 /* The design's hover keeps the card's own colours at 90%; family cards set no other hover fill. */
 button.card:not(.unavailable):hover {
   background-color: var(--button-bg-hover);
@@ -215,6 +251,15 @@ button.card.unavailable {
   inline-size: var(--cal-icon-size-xs);
   block-size: var(--cal-icon-size-xs);
   color: var(--button-fg);
+}
+
+.reminderIcon {
+  display: inline-block;
+  block-size: var(--cal-icon-size-xs);
+  color: var(--button-fg);
+  inline-size: var(--cal-icon-size-xs);
+  margin-inline-end: var(--cal-space-1);
+  vertical-align: middle;
 }
 
 .card[data-event-card-layout="stacked"],
@@ -362,4 +407,10 @@ button.card.unavailable {
 
 .srOnly {
   composes: srOnly from "../../styles/modules/sr-only.module.css";
+}
+
+@media print {
+  .card {
+    break-inside: avoid;
+  }
 }

@@ -307,7 +307,7 @@ describe(DayGrid, () => {
     assert(screen.queryByRole("status", { name: /Current time/iu })).toBeNull();
   });
 
-  it("marks non-working days and hours in text without shading the cells", () => {
+  it("marks non-working days and hours in text and class names", () => {
     const { container } = render(
       <DayGrid {...BASE_PROPS} date={calendarDate("2026-08-23")} events={[]} />
     );
@@ -451,6 +451,20 @@ describe(DayGrid, () => {
     assert(payload.range.end).toStrictEqual(payload.range.start);
     assert(payload.range.cells).toHaveLength(1);
     assert(payload.anchorRect).toBeDefined();
+  });
+
+  it("activates an empty cell once per Enter press", async () => {
+    const user = userEvent.setup();
+    const onQuickCreate =
+      vi.fn<(payload: CalendarQuickCreatePayload) => void>();
+    render(
+      <DayGrid {...BASE_PROPS} events={[]} onQuickCreate={onQuickCreate} />
+    );
+
+    screen.getByRole("gridcell", { name: /09:00.*working hour/iu }).focus();
+    await user.keyboard("{Enter}");
+
+    assert(onQuickCreate).toHaveBeenCalledOnce();
   });
 
   it("opens an empty timed cell from the existing keyboard interaction", async () => {

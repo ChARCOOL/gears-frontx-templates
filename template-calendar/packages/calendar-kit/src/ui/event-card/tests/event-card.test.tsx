@@ -699,12 +699,15 @@ describe("EventCard unit behaviour beyond the acceptance suite", () => {
     expect(onKeyDown.mock.calls[0]?.[1]?.event.id).toBe("unit-1");
   });
 
-  it("uses CSS modifier classes for known colour families", () => {
+  it("uses CSS modifier classes for every calendar colour family", () => {
     const colours = [
-      { className: cardStyles.colorTurquoise, colorFamily: "turquoise" },
+      { className: cardStyles.colorBlue, colorFamily: "blue" },
+      { className: cardStyles.colorLavender, colorFamily: "lavender" },
+      { className: cardStyles.colorViolet, colorFamily: "violet" },
       { className: cardStyles.colorPurple, colorFamily: "purple" },
       { className: cardStyles.colorOrange, colorFamily: "orange" },
-      { className: cardStyles.colorBlue, colorFamily: "blue" },
+      { className: cardStyles.colorBrown, colorFamily: "brown" },
+      { className: cardStyles.colorTurquoise, colorFamily: "turquoise" },
     ] as const;
 
     for (const { colorFamily, className } of colours) {

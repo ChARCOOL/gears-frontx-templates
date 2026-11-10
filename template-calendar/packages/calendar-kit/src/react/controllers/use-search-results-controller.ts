@@ -15,7 +15,10 @@ import {
   rowAt,
   viewerToday,
 } from "../../ui/search-results/search-results-format";
-import type { SearchResultGroup } from "../../ui/search-results/search-results-format";
+import type {
+  SearchNarrowing,
+  SearchResultGroup,
+} from "../../ui/search-results/search-results-format";
 import { useControlledValue } from "../hooks/use-controlled-value";
 
 const DEBOUNCE_MS = 200;
@@ -28,7 +31,7 @@ export const SEARCH_STATE = {
 
 export type SearchState = (typeof SEARCH_STATE)[keyof typeof SEARCH_STATE];
 
-export interface SearchResultsControllerOptions {
+export interface SearchResultsControllerOptions extends SearchNarrowing {
   readonly events: readonly CalendarEvent[];
   readonly query?: string;
   readonly defaultQuery?: string;
@@ -74,8 +77,10 @@ export const useSearchResultsController = (
   options: SearchResultsControllerOptions
 ): SearchResultsController => {
   const {
+    calendarIds,
     events,
     query,
+    range,
     defaultQuery = "",
     onQueryChange,
     timeZone,
@@ -107,8 +112,12 @@ export const useSearchResultsController = (
   }, [queryState.value]);
 
   const groups = useMemo(
-    () => buildSearchGroups(events, debouncedQuery, timeZone),
-    [debouncedQuery, events, timeZone]
+    () =>
+      buildSearchGroups(events, debouncedQuery, timeZone, {
+        calendarIds,
+        range,
+      }),
+    [calendarIds, debouncedQuery, events, range, timeZone]
   );
 
   const resultCount = useMemo(() => countRows(groups), [groups]);

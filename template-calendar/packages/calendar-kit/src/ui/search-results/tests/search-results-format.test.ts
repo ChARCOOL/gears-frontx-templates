@@ -69,6 +69,68 @@ describe("search-results-format", () => {
     ).toBeFalsy();
   });
 
+  it.each([
+    ["description", { description: "Bring the lab coat" }, "lab coat"],
+    ["event type", { eventType: "Workshop" }, "workshop"],
+    [
+      "attendee name",
+      { attendees: [{ displayName: "Ada Lovelace", id: "a" }] },
+      "lovelace",
+    ],
+    [
+      "attendee email",
+      { attendees: [{ displayName: "Ada", email: "ada@x.org", id: "a" }] },
+      "x.org",
+    ],
+  ])("matches an event by its %s", (_field, overrides, needle) => {
+    const event = timedEvent({ id: "one", title: "Planning", ...overrides });
+
+    assert(eventMatches(event, needle)).toBeTruthy();
+    assert(
+      eventMatches(timedEvent({ id: "two", title: "Planning" }), needle)
+    ).toBeFalsy();
+  });
+
+  it("keeps only events on the chosen calendars", () => {
+    const groups = buildSearchGroups(
+      [
+        timedEvent({ calendarId: "work", id: "a", title: "Review" }),
+        timedEvent({ calendarId: "home", id: "b", title: "Review" }),
+        timedEvent({ id: "c", title: "Review" }),
+      ],
+      "review",
+      UTC,
+      { calendarIds: ["work"] }
+    );
+
+    assert(
+      groups.flatMap((group) => group.rows.map((row) => row.event.id))
+    ).toStrictEqual(["a"]);
+  });
+
+  it("keeps only the days inside the range, ends included", () => {
+    const groups = buildSearchGroups(
+      [
+        timedEvent("before", "Review", "2026-08-23", "09:00", "2026-08-23", "10:00"),
+        timedEvent("first", "Review", "2026-08-24", "09:00", "2026-08-24", "10:00"),
+        timedEvent("last", "Review", "2026-08-26", "09:00", "2026-08-26", "10:00"),
+        timedEvent("after", "Review", "2026-08-27", "09:00", "2026-08-27", "10:00"),
+      ],
+      "review",
+      UTC,
+      {
+        range: {
+          end: calendarDate("2026-08-26"),
+          start: calendarDate("2026-08-24"),
+        },
+      }
+    );
+
+    assert(
+      groups.flatMap((group) => group.rows.map((row) => row.event.id))
+    ).toStrictEqual(["first", "last"]);
+  });
+
   it("returns no rows for a query shorter than the minimum", () => {
     assert(buildSearchGroups([], "x", UTC)).toStrictEqual([]);
   });

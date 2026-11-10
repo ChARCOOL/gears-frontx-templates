@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import { validateCreateEventDraft } from "../../core/create-event";
 import type { CreateEventValidationErrors } from "../../core/create-event";
@@ -81,7 +81,8 @@ export interface UseCreateEventControllerResult {
   readonly setOpen: (open: boolean) => void;
   readonly setExpanded: (expanded: boolean) => void;
   readonly submit: () => Promise<CreateEventResult | undefined>;
-  readonly requestCancel: () => void;
+  /** Closes the form, asking first when it has unsaved edits. Resolves `true` once it closed. */
+  readonly requestCancel: () => Promise<boolean>;
   readonly dismissDiscard: () => void;
   readonly confirmDiscard: () => void;
 }
@@ -120,13 +121,26 @@ const COMPARED_DRAFT_FIELDS = [
   "conferencingProviderId",
   "recurrenceRule",
   "description",
+  "url",
 ] as const satisfies readonly (keyof CreateEventDraft)[];
+
+// A cleared text field writes '' or null over an unset default; both mean no value.
+const emptyAsNull = (value: unknown): unknown =>
+  value === undefined || value === "" ? null : value;
 
 const sameDraft = (
   left: CreateEventDraft,
   right: CreateEventDraft
 ): boolean => {
-  if (COMPARED_DRAFT_FIELDS.some((field) => left[field] !== right[field])) {
+  if (
+    COMPARED_DRAFT_FIELDS.some(
+      (field) => emptyAsNull(left[field]) !== emptyAsNull(right[field])
+    )
+  ) {
+    return false;
+  }
+
+  if (left.notify?.leadMinutes !== right.notify?.leadMinutes) {
     return false;
   }
 
@@ -175,12 +189,36 @@ export const useCreateEventController = (
 
   const submittingRef = useRef(false);
 
+  const originFocusRef = useRef<HTMLElement | null>(null);
+
+  const settleDiscardRef = useRef<((closed: boolean) => void) | null>(null);
+
   const isDraftControlled = options.draft !== undefined;
   const isOpenControlled = options.open !== undefined;
   const isExpandedControlled = options.expanded !== undefined;
   const draft = isDraftControlled ? options.draft : internalDraft;
   const isOpen = isOpenControlled ? options.open : internalOpen;
   const isExpanded = isExpandedControlled ? options.expanded : internalExpanded;
+
+  // Every close returns focus to the opener, including a host-controlled `open` and an unmount.
+  // An opener that left the document gets nothing.
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    originFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    return () => {
+      if (originFocusRef.current?.isConnected) {
+        originFocusRef.current.focus();
+      }
+    };
+  }, [isOpen]);
+
   const isDirty = isEdited && !sameDraft(draft, initialDraft);
 
   const [previousOpen, setPreviousOpen] = useState(isOpen);
@@ -278,22 +316,34 @@ export const useCreateEventController = (
     return result;
   };
 
-  const requestCancel = (): void => {
+  const settleDiscard = (closed: boolean): void => {
+    settleDiscardRef.current?.(closed);
+    settleDiscardRef.current = null;
+  };
+
+  const requestCancel = (): Promise<boolean> => {
     if (isSubmitting || submittingRef.current) {
-      return;
+      return Promise.resolve(false);
     }
 
     if (isDirty) {
+      settleDiscard(false);
       setIsDiscardDialogOpen(true);
-      return;
+
+      return new Promise((resolve) => {
+        settleDiscardRef.current = resolve;
+      });
     }
 
     setOpen(false);
     options.onCancel();
+
+    return Promise.resolve(true);
   };
 
   const dismissDiscard = (): void => {
     setIsDiscardDialogOpen(false);
+    settleDiscard(false);
   };
 
   const confirmDiscard = (): void => {
@@ -302,6 +352,7 @@ export const useCreateEventController = (
     writeDraft(initialDraft);
     setOpen(false);
     options.onCancel();
+    settleDiscard(true);
   };
 
   return {

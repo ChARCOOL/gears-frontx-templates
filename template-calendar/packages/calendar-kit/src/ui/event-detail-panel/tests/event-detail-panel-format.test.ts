@@ -197,6 +197,27 @@ describe(formatRecurrenceSummary, () => {
     });
   });
 
+  it("keeps the raw rule for a frequency the summary does not describe", () => {
+    const t = vi.fn<CalendarTranslate>(
+      (_key, values) => `Repeats ${String(values?.rule)}`
+    );
+
+    expect(
+      formatRecurrenceSummary(
+        makeTimedEvent({ recurrenceRule: "FREQ=HOURLY;INTERVAL=2" }),
+        t,
+        "en-US"
+      )
+    ).toBe("Repeats FREQ=HOURLY;INTERVAL=2");
+    expect(
+      formatRecurrenceSummary(
+        makeTimedEvent({ recurrenceRule: "FREQ=MINUTELY" }),
+        t,
+        "en-US"
+      )
+    ).toBe("Repeats FREQ=MINUTELY");
+  });
+
   it("yields no summary for missing, empty, or blank rules", () => {
     const t = vi.fn<CalendarTranslate>(() => "Repeats weekly");
 

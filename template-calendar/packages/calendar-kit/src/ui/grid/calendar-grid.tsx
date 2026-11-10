@@ -59,6 +59,8 @@ export interface CalendarGridProps extends CalendarContextProps {
   readonly renderCell: (context: CalendarCellContext) => ReactNode;
   /** Replaces a column header's content. */
   readonly renderHeader?: (column: CalendarGridColumn) => ReactNode;
+  /** Adds a label beside both edges of every row. Omit for no row labels. */
+  readonly renderRowLabel?: (row: CalendarGridRow, rowIndex: number) => ReactNode;
 }
 
 interface CalendarGridStyle extends CSSProperties {
@@ -79,6 +81,8 @@ interface CalendarGridCellProps {
   readonly onFocusCell: (key: string) => void;
   readonly record: GridCellRecord;
   readonly renderCell: CalendarGridProps["renderCell"];
+  /** Columns taken by row labels before the first data column. */
+  readonly leadingColumns: number;
   readonly rowIndex: number;
   readonly setCellElement: (
     key: string,
@@ -92,6 +96,7 @@ const CalendarGridCell = ({
   currentActiveCellKey,
   getCellLabel,
   labelsByCell,
+  leadingColumns,
   onCellKeyDown,
   onFocusCell,
   record,
@@ -130,7 +135,7 @@ const CalendarGridCell = ({
       }}
       role="gridcell"
       data-cell-key={key}
-      aria-colindex={record.columnIndex + 1}
+      aria-colindex={record.columnIndex + leadingColumns + 1}
       aria-rowindex={rowIndex + 2}
       aria-label={label}
       tabIndex={isFocused ? 0 : -1}
@@ -159,6 +164,7 @@ const CalendarGridContent = ({
   onCellKeyDown,
   renderCell,
   renderHeader,
+  renderRowLabel,
   rows,
 }: CalendarGridContentProps) => {
   const { direction, t } = useCalendarLocalization();
@@ -177,6 +183,13 @@ const CalendarGridContent = ({
     getCellLabel,
     rows,
   });
+
+  const leadingColumns = renderRowLabel ? 1 : 0;
+
+  const dataTracks = `repeat(${Math.max(columns.length, 1)}, minmax(0, 1fr))`;
+  const gridTemplate = renderRowLabel
+    ? `auto ${dataTracks} auto`
+    : dataTracks;
 
   const cellElementsRef = useRef(new Map<string, HTMLDivElement>());
 
@@ -264,22 +277,24 @@ const CalendarGridContent = ({
         dir={direction}
         style={
           {
-            "--calendar-grid-template-columns": `repeat(${Math.max(columns.length, 1)}, minmax(0, 1fr))`,
+            "--calendar-grid-template-columns": gridTemplate,
           } as CalendarGridStyle
         }
       >
         {columns.length > 0 ? (
           <div className={styles.row} role="row" aria-rowindex={1}>
+            {renderRowLabel ? <div /> : null}
             {columns.map((column, columnIndex) => (
               <div
                 className={styles.headerCell}
                 key={column.key}
                 role="columnheader"
-                aria-colindex={columnIndex + 1}
+                aria-colindex={columnIndex + leadingColumns + 1}
               >
                 {renderHeader ? renderHeader(column) : column.label}
               </div>
             ))}
+            {renderRowLabel ? <div /> : null}
           </div>
         ) : null}
 
@@ -290,6 +305,11 @@ const CalendarGridContent = ({
             role="row"
             aria-rowindex={rowIndex + 2}
           >
+            {renderRowLabel ? (
+              <div className={styles.rowLabel} role="rowheader">
+                {renderRowLabel(row, rowIndex)}
+              </div>
+            ) : null}
             {row.cells.map((cell) => {
               const record = recordsByKey.get(getCellKey(cell));
               if (!record) {
@@ -304,6 +324,7 @@ const CalendarGridContent = ({
                   getCellLabel={getCellLabel}
                   key={record.key}
                   labelsByCell={labelsByCell}
+                  leadingColumns={leadingColumns}
                   onCellKeyDown={handleCellKeyDown}
                   onFocusCell={handleCellFocus}
                   record={record}
@@ -313,6 +334,11 @@ const CalendarGridContent = ({
                 />
               );
             })}
+            {renderRowLabel ? (
+              <div className={styles.rowLabel} inert>
+                {renderRowLabel(row, rowIndex)}
+              </div>
+            ) : null}
           </div>
         ))}
       </div>

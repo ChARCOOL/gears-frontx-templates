@@ -36,6 +36,7 @@ import { CalendarGrid } from "@gears-frontx/calendar-kit/grid";
 | `onActiveCellChange` | `(cell: CalendarCell) => void` |  | Called with the domain cell when focus moves. |
 | `onCellKeyDown` | `CalendarGridCellKeyDownHandler` |  | Runs before built-in navigation; call `preventDefault()` to consume the key. |
 | `renderHeader` | `(column: CalendarGridColumn) => ReactNode` |  | Replaces a column header's content. |
+| `renderRowLabel` | `(row: CalendarGridRow, rowIndex: number) => ReactNode` |  | Adds a label beside both edges of every row. Omit for no row labels. |
 
 Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`, `translations`; see [Internationalization](../../docs/i18n.md#per-component-overrides).
 <!-- /generated -->
@@ -50,6 +51,7 @@ The grid renders only the supplied rows and cell content. It does not own loadin
 
 - `getCellLabel` receives both the domain `CalendarCell` and its `CalendarCellContext`.
 - `renderCell` receives the complete `CalendarCellContext`.
+- `renderRowLabel` adds a label beside both edges of each row and an empty corner above them; the leading label is a `rowheader`, the trailing copy is inert.
 - `onActiveCellChange` returns the domain cell, never a DOM element.
 - The component only renders host-provided content and callbacks.
 

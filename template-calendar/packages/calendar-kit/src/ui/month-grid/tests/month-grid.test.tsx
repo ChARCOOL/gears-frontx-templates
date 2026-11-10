@@ -421,6 +421,11 @@ describe(MonthGrid, () => {
         )
     ).toHaveLength(2);
     within(cell).getByText("+6 hidden");
+    // A narrow grid shows this short text in place of the full label, which stays for screen readers.
+    assert(cell.querySelector('[data-short="+6"]')).toHaveAttribute(
+      "aria-hidden",
+      "true"
+    );
     assert(cell.dataset.eventCount).toBe("8");
     assert(screen.getByRole("status").textContent).toContain("+6 hidden");
   });
@@ -803,7 +808,59 @@ describe(MonthGrid, () => {
     assert(onEmptyCellSelect).not.toHaveBeenCalled();
   });
 
-  it("opens an empty month cell from the existing keyboard interaction", () => {
+  it("lists hidden events in a popover when the host has no overflow handler", () => {
+  const date = calendarDate("2025-09-04");
+
+  const events = Array.from({ length: 4 }, (_, index) =>
+    eventFixture({
+      end: instant(date, `${String(10 + index).padStart(2, "0")}:00`),
+      id: `hidden-list-${index}`,
+      start: instant(date, `${String(9 + index).padStart(2, "0")}:00`),
+      title: `Hidden list ${index}`,
+    })
+  );
+
+  renderMonth({ events, monthData: { densityCap: 2, overflowByDate: {} } });
+
+  const overflow = monthOverflow("2");
+  overflow.focus();
+  fireEvent.click(overflow);
+
+  const panel = screen.getByRole("dialog");
+  within(panel).getByText("Hidden list 2");
+  within(panel).getByText("Hidden list 3");
+  assert(within(panel).queryByText("Hidden list 0")).toBeNull();
+
+  fireEvent.keyDown(panel, { key: "Escape" });
+
+  assert(screen.queryByRole("dialog")).toBeNull();
+  assert(document.activeElement).toBe(overflow);
+});
+
+it("closes the hidden-events popover on an outside press", () => {
+  const date = calendarDate("2025-09-04");
+
+  const events = Array.from({ length: 3 }, (_, index) =>
+    eventFixture({
+      end: instant(date, `${String(10 + index).padStart(2, "0")}:00`),
+      id: `outside-list-${index}`,
+      start: instant(date, `${String(9 + index).padStart(2, "0")}:00`),
+      title: `Outside list ${index}`,
+    })
+  );
+
+  renderMonth({ events, monthData: { densityCap: 1, overflowByDate: {} } });
+
+  fireEvent.click(monthOverflow("2"));
+  assert(screen.queryByRole("dialog")).not.toBeNull();
+
+  fireEvent.pointerDown(document.body);
+  fireEvent.mouseDown(document.body);
+
+  assert(screen.queryByRole("dialog")).toBeNull();
+});
+
+it("opens an empty month cell from the existing keyboard interaction", () => {
     const onEmptyCellSelect =
       vi.fn<(cell: CalendarCell, anchorRect: DOMRectReadOnly) => void>();
     renderMonth({
@@ -1029,6 +1086,12 @@ describe("MonthGrid strip layout", () => {
     assert(today?.textContent).toBe("September 10");
     assert(firstOfMonth?.textContent).toBe("September 1");
     assert(ordinary?.textContent).toBe("2");
+    // A narrow grid shows the number alone; the full label stays in the text for screen readers.
+    assert(today?.querySelector('[data-short="10"]')).toHaveAttribute(
+      "aria-hidden",
+      "true"
+    );
+    assert(firstOfMonth?.querySelector('[data-short="1"]')).not.toBeNull();
   });
 
   it("uses the injected now for today and past event rendering", () => {

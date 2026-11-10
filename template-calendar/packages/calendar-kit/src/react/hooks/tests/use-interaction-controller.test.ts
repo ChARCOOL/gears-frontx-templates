@@ -7,6 +7,7 @@ import type {
   CalendarCell,
   CalendarEvent,
   CalendarMoveRequest,
+  CalendarSelectionRange,
 } from "../../../core/model";
 import { useInteractionController } from "../use-interaction-controller";
 
@@ -87,6 +88,43 @@ describe(useInteractionController, () => {
     expect(onQuickCreate).toHaveBeenCalledOnce();
     expect(onPaintSelect).not.toHaveBeenCalled();
     expect(onMoveRequest).not.toHaveBeenCalled();
+  });
+
+  it("activates a paint-and-move cell as a one-cell paint", () => {
+    const onQuickCreate = vi.fn<() => void>();
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    const { result } = renderHook(() =>
+      useInteractionController({
+        interactionMode: "paint-and-move",
+        onPaintSelect,
+        onQuickCreate,
+      })
+    );
+
+    let range = null;
+    act(() => {
+      range = result.current.activateCell(first);
+    });
+
+    expect(range).toStrictEqual({ cells: [first], end: first, start: first });
+    expect(onPaintSelect).toHaveBeenCalledWith(range);
+    expect(onQuickCreate).not.toHaveBeenCalled();
+  });
+
+  it("blocks cell activation in read-only mode", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    const onQuickCreate = vi.fn<() => void>();
+    const { result } = renderHook(() =>
+      useInteractionController({
+        interactionMode: "read-only",
+        onPaintSelect,
+        onQuickCreate,
+      })
+    );
+
+    expect(result.current.activateCell(first)).toBeNull();
+    expect(onPaintSelect).not.toHaveBeenCalled();
+    expect(onQuickCreate).not.toHaveBeenCalled();
   });
 
   it("emits one ordered paint range and safely handles invalid cancellation", () => {

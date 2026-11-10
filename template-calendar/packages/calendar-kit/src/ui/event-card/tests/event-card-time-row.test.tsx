@@ -192,6 +192,29 @@ describe("EventCard default metadata rows", () => {
   });
 });
 
+describe("EventCard reminder marker", () => {
+  it("shows the bell icon before the title of a reminder", () => {
+    const event = { ...timedEvent(TIMED_EVENT), eventType: "reminder" };
+
+    renderCard({ event });
+
+    const title = screen
+      .getByRole("button", { name: /Chemistry lab/u })
+      .querySelector("[data-event-card-title]");
+    const icon = title?.querySelector("svg.lucide-bell");
+
+    expect(icon).not.toBeNull();
+    expect(icon).toHaveAttribute("aria-hidden", "true");
+    expect(title?.firstElementChild).toBe(icon);
+  });
+
+  it("shows no bell icon for other events", () => {
+    renderCard();
+
+    expect(document.querySelector("svg.lucide-bell")).toBeNull();
+  });
+});
+
 describe("EventCard recurrence indicator", () => {
   it("shows the recurrence icon only for a non-empty recurrence rule", () => {
     const event = { ...timedEvent(TIMED_EVENT), recurrenceRule: "FREQ=WEEKLY" };

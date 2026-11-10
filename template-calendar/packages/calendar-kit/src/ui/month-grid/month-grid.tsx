@@ -4,6 +4,7 @@ import { clsx } from "clsx";
 import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type {
   CSSProperties,
+  DragEvent as ReactDragEvent,
   FocusEvent as ReactFocusEvent,
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
@@ -12,7 +13,10 @@ import type {
   ReactNode,
 } from "react";
 
+import { isEventActionable } from "../../core/actionability";
 import { formatCalendarList, formatGridTime } from "../../core/format";
+import { termWeekNumber } from "../../core/grid";
+import type { MonthWeekRow } from "../../core/grid";
 import { dateTimeFormatter } from "../../core/intl-cache";
 import type {
   CalendarCell,
@@ -23,6 +27,7 @@ import type {
   CalendarEventGeometry,
   CalendarEventRenderContext,
   CalendarEventSegment,
+  CalendarMoveRequest,
   IanaTimeZone,
   UtcInstant,
 } from "../../core/model";
@@ -54,6 +59,7 @@ import { ConflictIndicator } from "../conflict-indicator/conflict-indicator";
 import { EventCard } from "../event-card/event-card";
 import { Button } from "../primitives/button/button";
 import { noopCleanup } from "../primitives/global-event-listener";
+import { Popover } from "../primitives/popover/popover";
 import { Tag } from "../primitives/tag/tag";
 import {
   buildLiveAnnouncement,
@@ -76,7 +82,13 @@ export interface MonthGridData {
 
 export type MonthGridSelectionMode = "none" | "date-range";
 
-export type MonthGridWeekNumbering = "month" | "iso";
+export interface MonthGridTermWeekNumbering {
+  /** The week holding this date is week 1; earlier weeks have no number. */
+  readonly termStart: CalendarDate;
+}
+
+export type MonthGridWeekNumbering =
+  "month" | "iso" | MonthGridTermWeekNumbering;
 
 export interface MonthGridProps extends CalendarContextProps {
   /** Class added to the component root. */
@@ -133,11 +145,13 @@ export interface MonthGridProps extends CalendarContextProps {
     cell: CalendarCell,
     anchorRect: DOMRectReadOnly
   ) => void;
-  /** The overflow chip was activated. `anchorRect` is the chip's rectangle, for a popover. */
+  /** The overflow chip was activated. `anchorRect` is the chip's rectangle. Omit to let the chip open the kit's list of hidden events. */
   readonly onOverflowSelect?: (payload: {
     readonly date: CalendarDate;
     readonly anchorRect?: DOMRectReadOnly;
   }) => void;
+  /** Enables dragging a timed event to another day, keeping its time of day and length. The host confirms or cancels, as with WeekGrid. Omit to disable dragging. */
+  readonly onMoveRequest?: (request: CalendarMoveRequest) => void;
 }
 
 interface MonthEventSlotProps {
@@ -148,6 +162,7 @@ interface MonthEventSlotProps {
   readonly past: boolean;
   readonly focused: boolean;
   readonly allDay?: boolean;
+  readonly draggable?: boolean;
   readonly startColumn: number;
   readonly endColumn: number;
   readonly lane: number;
@@ -157,6 +172,7 @@ interface MonthEventSlotProps {
     context: CalendarEventRenderContext,
     anchor: HTMLElement
   ) => void;
+  readonly onDragStart?: () => void;
   readonly onFocus: () => void;
   readonly onArrowKey: (event: ReactKeyboardEvent<HTMLDivElement>) => void;
 }
@@ -230,11 +246,13 @@ const MonthEventSlot = ({
   past,
   focused,
   allDay = false,
+  draggable,
   startColumn,
   endColumn,
   lane,
   renderEvent,
   onSelect,
+  onDragStart,
   onFocus,
   onArrowKey,
 }: MonthEventSlotProps): ReactElement => {
@@ -291,6 +309,8 @@ const MonthEventSlot = ({
       aria-rowindex={allDay ? rowIndex + 2 : undefined}
       className={clsx(styles.eventSlot, "event", allDay && styles.allDaySlot)}
       style={gridStyle}
+      draggable={draggable}
+      onDragStart={onDragStart}
       onFocus={onFocus}
       onKeyDown={handleKeyDown}
     >
@@ -302,9 +322,15 @@ const MonthEventSlot = ({
 type MonthTimedSegment =
   MonthGridRow["cells"][number]["visibleTimedEvents"][number];
 
+type MonthOverflowListOpen = (
+  cell: MonthGridCell,
+  anchorElement: HTMLElement
+) => void;
+
 interface MonthOverflowButtonProps {
   readonly cell: MonthGridCell;
   readonly hiddenLabel: string;
+  readonly onOpenList: MonthOverflowListOpen;
   readonly onOverflowSelect?: MonthGridProps["onOverflowSelect"];
   readonly renderOverflow?: MonthGridProps["renderOverflow"];
 }
@@ -312,6 +338,7 @@ interface MonthOverflowButtonProps {
 const MonthOverflowButton = ({
   cell,
   hiddenLabel,
+  onOpenList,
   onOverflowSelect,
   renderOverflow,
 }: MonthOverflowButtonProps): ReactElement | null => {
@@ -324,7 +351,13 @@ const MonthOverflowButton = ({
   ): void => {
     clickEvent.stopPropagation();
 
-    onOverflowSelect?.({
+    if (onOverflowSelect === undefined) {
+      onOpenList(cell, clickEvent.currentTarget);
+
+      return;
+    }
+
+    onOverflowSelect({
       anchorRect: clickEvent.currentTarget.getBoundingClientRect(),
       date: cell.date,
     });
@@ -340,7 +373,16 @@ const MonthOverflowButton = ({
       aria-label={hiddenLabel}
       onClick={handleOverflowClick}
     >
-      {renderOverflow?.(cell.hiddenCount, cell.date) ?? hiddenLabel}
+      {renderOverflow?.(cell.hiddenCount, cell.date) ?? (
+        <>
+          {hiddenLabel}
+          <span
+            className={styles.shortOverflow}
+            aria-hidden="true"
+            data-short={`+${cell.hiddenCount}`}
+          />
+        </>
+      )}
     </Button>
   );
 };
@@ -355,14 +397,18 @@ interface MonthTimedEventProps
   extends
     Pick<MonthEventSlotProps, "focused" | "past" | "renderEvent" | "selected">,
     MonthEventControllerProps {
+  readonly beginMove: MonthGridControllerResult["beginMove"];
   readonly columnIndex: number;
+  readonly draggable?: boolean;
   readonly key: string;
   readonly rowIndex: number;
   readonly segment: MonthTimedSegment;
 }
 
 const MonthTimedEventImpl = ({
+  beginMove,
   columnIndex,
+  draggable,
   focused,
   focusEvent,
   onGridKeyDown,
@@ -399,6 +445,10 @@ const MonthTimedEventImpl = ({
     selectEvent(event.id, context, anchor);
   };
 
+  const handleDragStart = (): void => {
+    beginMove(segment.event);
+  };
+
   return (
     <MonthEventSlot
       event={segment.event}
@@ -407,11 +457,13 @@ const MonthTimedEventImpl = ({
       selected={selected}
       past={past}
       focused={focused}
+      draggable={draggable}
       startColumn={columnIndex}
       endColumn={columnIndex + 1}
       lane={0}
       renderEvent={renderEvent}
       onSelect={handleSelect}
+      onDragStart={handleDragStart}
       onFocus={handleFocus}
       onArrowKey={handleArrowKey}
     />
@@ -493,6 +545,21 @@ const cellAnnouncement = (
     t("calendar.month.eventCount", { count: cell.eventCount }),
   ]);
 
+const monthWeekNumber = (
+  row: Pick<MonthWeekRow, "rowIndex" | "weekNumber" | "weekStart">,
+  weekNumbering: MonthGridWeekNumbering
+): number | null => {
+  if (weekNumbering === "iso") {
+    return row.weekNumber;
+  }
+
+  if (weekNumbering === "month") {
+    return row.rowIndex + 1;
+  }
+
+  return termWeekNumber(row.weekStart, weekNumbering.termStart);
+};
+
 const dayStart = (date: CalendarDate, timeZone: IanaTimeZone): UtcInstant =>
   toUtcRange(buildDayRange(date, timeZone)).start;
 
@@ -543,6 +610,7 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     onSelectedEventIdChange,
     onEventSelect,
     onEmptyCellSelect,
+    onMoveRequest,
     selectionMode = "none",
     selectedDateRange,
     defaultSelectedDateRange,
@@ -561,6 +629,7 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     events,
     now,
     onEventSelect,
+    onMoveRequest,
     onSelectedEventIdChange,
     overflowByDate: monthData?.overflowByDate,
     selectedEventId,
@@ -663,18 +732,64 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     [getCellKey, rows]
   );
 
-  const dayAtTarget = (
+  const dateAtTarget = (
     target: EventTarget | null
   ): CalendarDate | undefined => {
-    if (
-      !(target instanceof Element) ||
-      target.closest(`[data-event-id], .${styles.overflow}`) !== null
-    ) {
+    if (!(target instanceof Element)) {
       return undefined;
     }
 
     const key = target.closest<HTMLElement>("[data-cell-key]")?.dataset.cellKey;
     return key === undefined ? undefined : cellsByKey.get(key)?.date;
+  };
+
+  const dayAtTarget = (target: EventTarget | null): CalendarDate | undefined =>
+    target instanceof Element &&
+    target.closest(`[data-event-id], .${styles.overflow}`) !== null
+      ? undefined
+      : dateAtTarget(target);
+
+  // Event cards sit inside a day cell, so a drag over one resolves to that day.
+  const handleMoveDragOver = (event: ReactDragEvent<HTMLDivElement>): void => {
+    if (!controller.isMoving()) {
+      return;
+    }
+
+    event.preventDefault();
+    controller.updateMove(dateAtTarget(event.target));
+  };
+
+  const handleMoveDrop = (event: ReactDragEvent<HTMLDivElement>): void => {
+    if (!controller.isMoving()) {
+      return;
+    }
+
+    event.preventDefault();
+    const dropDate = dateAtTarget(event.target);
+
+    if (dropDate === undefined) {
+      controller.cancelMove();
+
+      return;
+    }
+
+    controller.updateMove(dropDate);
+    controller.endMove();
+  };
+
+  const handleMoveDragLeave = (event: ReactDragEvent<HTMLDivElement>): void => {
+    if (
+      event.relatedTarget instanceof Node &&
+      event.currentTarget.contains(event.relatedTarget)
+    ) {
+      return;
+    }
+
+    controller.updateMove();
+  };
+
+  const handleMoveDragEnd = (): void => {
+    controller.cancelMove();
   };
 
   const handleRangePointerDown = (
@@ -793,6 +908,10 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     handleCellClick,
     handleCellFocus,
     handleCellKeyDown,
+    handleMoveDragEnd,
+    handleMoveDragLeave,
+    handleMoveDragOver,
+    handleMoveDrop,
     handleRangePointerDown,
     handleRangePointerMove,
     handleRangePointerUp,
@@ -824,6 +943,7 @@ interface MonthDayCellProps {
   readonly handleCellFocus: MonthGridView["handleCellFocus"];
   readonly handleCellKeyDown: MonthGridView["handleCellKeyDown"];
   readonly locale: string;
+  readonly onOpenOverflowList: MonthOverflowListOpen;
   readonly onOverflowSelect: MonthGridProps["onOverflowSelect"];
   readonly rangeMode: boolean;
   readonly renderCell: MonthGridProps["renderCell"];
@@ -840,9 +960,14 @@ interface MonthDayCellProps {
 interface MonthDayNumberProps {
   readonly isToday: boolean;
   readonly label: string;
+  readonly shortLabel: string;
 }
 
-const MonthDayNumber = ({ isToday, label }: MonthDayNumberProps) => (
+const MonthDayNumber = ({
+  isToday,
+  label,
+  shortLabel,
+}: MonthDayNumberProps) => (
   <Tag
     className={clsx(
       styles.dayNumber,
@@ -855,6 +980,11 @@ const MonthDayNumber = ({ isToday, label }: MonthDayNumberProps) => (
     variant={isToday ? "strong" : "regular"}
   >
     {label}
+    <span
+      className={styles.shortDayNumber}
+      aria-hidden="true"
+      data-short={shortLabel}
+    />
   </Tag>
 );
 
@@ -885,6 +1015,7 @@ const MonthDayCell = ({
   handleCellFocus,
   handleCellKeyDown,
   locale,
+  onOpenOverflowList,
   onOverflowSelect,
   rangeMode,
   renderCell,
@@ -956,6 +1087,9 @@ const MonthDayCell = ({
       aria-selected={rangeMode ? inRange : undefined}
       data-event-count={cell.eventCount}
       data-all-day-row-count={allDayRowCount}
+      data-drop-target={
+        controller.moveTargetDate === cell.date ? "" : undefined
+      }
       data-outside-month={String(cell.isOutsideMonth)}
       data-today={String(isToday)}
       tabIndex={isFocused ? 0 : -1}
@@ -971,12 +1105,22 @@ const MonthDayCell = ({
       }}
     >
       <span className={styles.fullDate}>{dayLabel}</span>
-      <MonthDayNumber isToday={isToday} label={tagLabel} />
+      <MonthDayNumber
+        isToday={isToday}
+        label={tagLabel}
+        shortLabel={formatMonthDayNumber(cell.date, locale)}
+      />
       {renderCell?.(cellContext)}
       <div className={styles.timedEvents} style={timedEventsStyle}>
         {cell.visibleTimedEvents.map((segment) => (
           <MonthTimedEvent
+            beginMove={controller.beginMove}
             columnIndex={columnIndex}
+            draggable={
+              controller.moveEnabled && isEventActionable(segment.event)
+                ? true
+                : undefined
+            }
             focusEvent={controller.focusEvent}
             focused={
               controller.focusedCell.eventId === segment.event.id &&
@@ -1006,6 +1150,7 @@ const MonthDayCell = ({
             timeZone,
             t
           )}
+          onOpenList={onOpenOverflowList}
           onOverflowSelect={onOverflowSelect}
           renderOverflow={renderOverflow}
         />
@@ -1014,8 +1159,16 @@ const MonthDayCell = ({
   );
 };
 
+interface MonthOverflowListState {
+  readonly anchorElement: HTMLElement;
+  readonly anchorRect: DOMRect;
+  readonly cell: MonthGridCell;
+}
+
 const MonthGridContent = (props: MonthGridContentProps) => {
   const view = useMonthGridContent(props);
+  const [overflowList, setOverflowList] =
+    useState<MonthOverflowListState | null>(null);
 
   const {
     allDayRowCountsByRow,
@@ -1029,6 +1182,10 @@ const MonthGridContent = (props: MonthGridContentProps) => {
     handleCellClick,
     handleCellFocus,
     handleCellKeyDown,
+    handleMoveDragEnd,
+    handleMoveDragLeave,
+    handleMoveDragOver,
+    handleMoveDrop,
     handleRangePointerDown,
     handleRangePointerMove,
     handleRangePointerUp,
@@ -1054,6 +1211,21 @@ const MonthGridContent = (props: MonthGridContentProps) => {
     weekNumberClassName,
     weekNumbering = "month",
   } = props;
+
+  const openOverflowList: MonthOverflowListOpen = (cell, anchorElement) => {
+    setOverflowList({
+      anchorElement,
+      anchorRect: anchorElement.getBoundingClientRect(),
+      cell,
+    });
+  };
+
+  // The list sits beside the grid, not in a day cell, so its clicks and keys skip the cell handlers.
+  // Closing focuses the chip again; a press outside then moves focus to the pressed target.
+  const closeOverflowList = (): void => {
+    overflowList?.anchorElement.focus();
+    setOverflowList(null);
+  };
 
   const weekdayDates = controller.rows[0]?.row.dates ?? [];
   const rootClassName = clsx(
@@ -1105,6 +1277,10 @@ const MonthGridContent = (props: MonthGridContentProps) => {
         aria-multiselectable={rangeMode ? true : undefined}
         aria-rowcount={controller.rows.length + 1}
         dir={direction}
+        onDragEnd={handleMoveDragEnd}
+        onDragLeave={handleMoveDragLeave}
+        onDragOver={handleMoveDragOver}
+        onDrop={handleMoveDrop}
         onPointerDown={handleRangePointerDown}
         onPointerEnter={handleRangePointerMove}
         onPointerMove={handleRangePointerMove}
@@ -1143,13 +1319,15 @@ const MonthGridContent = (props: MonthGridContentProps) => {
         </div>
 
         {controller.rows.map((row) => {
-          const weekNumber = formatMonthWeekNumber(
-            weekNumbering === "iso" ? row.row.weekNumber : row.row.rowIndex + 1,
-            locale
-          );
-          const weekLabel = t("calendar.month.weekPrefix", {
-            week: weekNumber,
-          });
+          const weekNumber = monthWeekNumber(row.row, weekNumbering);
+          const weekText =
+            weekNumber === null
+              ? ""
+              : formatMonthWeekNumber(weekNumber, locale);
+          const weekLabel =
+            weekNumber === null
+              ? ""
+              : t("calendar.month.weekPrefix", { week: weekText });
 
           return (
             <div
@@ -1162,7 +1340,11 @@ const MonthGridContent = (props: MonthGridContentProps) => {
                 className={clsx(styles.weekNumber, weekNumberClassName)}
                 role="rowheader"
                 aria-rowindex={row.row.rowIndex + 2}
-                aria-label={`${t("calendar.month.week")} ${weekNumber}`}
+                aria-label={
+                  weekNumber === null
+                    ? undefined
+                    : `${t("calendar.month.week")} ${weekText}`
+                }
               >
                 {weekLabel}
               </div>
@@ -1182,6 +1364,7 @@ const MonthGridContent = (props: MonthGridContentProps) => {
                   handleCellKeyDown={handleCellKeyDown}
                   key={controller.getCellKey(cell.cell)}
                   locale={locale}
+                  onOpenOverflowList={openOverflowList}
                   onOverflowSelect={onOverflowSelect}
                   rangeMode={rangeMode}
                   renderCell={renderCell}
@@ -1231,6 +1414,47 @@ const MonthGridContent = (props: MonthGridContentProps) => {
           );
         })}
       </div>
+      {overflowList === null ? null : (
+        <Popover
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              closeOverflowList();
+            }
+          }}
+          anchorElement={overflowList.anchorElement}
+          anchorRect={overflowList.anchorRect}
+          label={dayLabelFormatter.format(
+            new Date(overflowList.cell.cell.start)
+          )}
+        >
+          <div className={styles.overflowList}>
+            {overflowList.cell.hiddenEvents.map((segment) => (
+              <EventCard
+                key={`${segment.event.id}:${segment.date}`}
+                event={segment.event}
+                segment={segment}
+                geometry={MONTH_STRIP_GEOMETRY}
+                positioned={false}
+                data-color-family={segment.event.colorFamily}
+                renderConflict={buildEventConflict}
+                renderTime={
+                  segment.event.allDay ? undefined : renderDefaultSlotTime
+                }
+                renderTitle={renderEvent}
+                onSelect={(event, context) => {
+                  controller.selectEvent(
+                    event.id,
+                    context,
+                    overflowList.anchorElement
+                  );
+                  closeOverflowList();
+                }}
+              />
+            ))}
+          </div>
+        </Popover>
+      )}
       <div
         className={styles.liveRegion}
         role="status"

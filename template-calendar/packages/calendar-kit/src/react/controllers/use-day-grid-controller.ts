@@ -4,7 +4,6 @@ import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { isEventActionable } from "../../core/actionability";
 import { arrayAt } from "../../core/array";
 import { rangesOverlap } from "../../core/event-overlap";
-import { buildSelectionRange } from "../../core/interactions";
 import { layoutTimedEvents } from "../../core/layout";
 import type {
   CalendarCell,
@@ -12,19 +11,22 @@ import type {
   CalendarDirection,
   CalendarEvent,
   CalendarEventRenderContext,
+  CalendarMoveRequest,
+  CalendarSelectionRange,
   CalendarSlotMinutes,
   CalendarTimeWindow,
   IanaTimeZone,
   UtcInstant,
   UtcRange,
   ViewerDaySegment,
+  WeekGridInteractionMode,
 } from "../../core/model";
 import {
   DEFAULT_SLOT_MINUTES,
   DEFAULT_WORKING_HOURS,
   FULL_DAY_TIME_WINDOW,
   addCalendarDays,
-  assertTimeWindow,
+  alignTimeWindow,
   buildDayRange,
   buildSlotStarts,
   buildTimeWindowRange,
@@ -36,6 +38,7 @@ import {
 } from "../../core/temporal";
 import { useControlledValue } from "../hooks/use-controlled-value";
 import { useCurrentInstant } from "../hooks/use-current-instant";
+import { useInteractionController } from "../hooks/use-interaction-controller";
 import type { CalendarQuickCreatePayload } from "../slots";
 import { buildDayGridViewModel } from "./day-grid-view-model";
 import type {
@@ -64,11 +67,9 @@ export interface DayGridControllerParams {
   readonly visibleHours?: CalendarTimeWindow;
   readonly slotMinutes?: CalendarSlotMinutes;
   readonly workingHours?: CalendarTimeWindow;
-  readonly interactionMode?: "quick-create" | "read-only";
-  readonly defaultInteractionMode?: "quick-create" | "read-only";
-  readonly onInteractionModeChange?: (
-    mode: "quick-create" | "read-only"
-  ) => void;
+  readonly interactionMode?: WeekGridInteractionMode;
+  readonly defaultInteractionMode?: WeekGridInteractionMode;
+  readonly onInteractionModeChange?: (mode: WeekGridInteractionMode) => void;
   readonly selectedEventId?: string | null;
   readonly defaultSelectedEventId?: string | null;
   readonly onSelectedEventIdChange?: (eventId: string | null) => void;
@@ -78,6 +79,8 @@ export interface DayGridControllerParams {
     anchor?: HTMLElement
   ) => void;
   readonly onQuickCreate?: (payload: CalendarQuickCreatePayload) => void;
+  readonly onPaintSelect?: (range: CalendarSelectionRange) => void;
+  readonly onMoveRequest?: (request: CalendarMoveRequest) => void;
 }
 
 export interface DayGridControllerInternals {
@@ -101,9 +104,10 @@ export interface UseDayGridControllerResult {
   readonly nowPercent: number | null;
   readonly focusedCellIndex: number;
   readonly announcement: string;
-  readonly interactionMode: "quick-create" | "read-only";
+  readonly interaction: ReturnType<typeof useInteractionController>;
+  readonly interactionMode: WeekGridInteractionMode;
   readonly selectedEventId: string | null;
-  readonly setInteractionMode: (mode: "quick-create" | "read-only") => void;
+  readonly setInteractionMode: (mode: WeekGridInteractionMode) => void;
   readonly setCellRef: (index: number, element: HTMLDivElement | null) => void;
   readonly setBodyRef: (element: HTMLDivElement | null) => void;
   readonly focusCell: (index: number) => void;
@@ -124,8 +128,6 @@ export interface UseDayGridControllerResult {
   ) => void;
   readonly getInternals: () => Readonly<DayGridControllerInternals>;
 }
-
-const DEFAULT_MODE = "quick-create" as const;
 
 const resolveAllDaySegment = (
   continuesBefore: boolean,
@@ -258,13 +260,15 @@ export const useDayGridController = (
     timeZone,
     now,
     interactionMode,
-    defaultInteractionMode = DEFAULT_MODE,
+    defaultInteractionMode,
     onInteractionModeChange,
     selectedEventId,
     defaultSelectedEventId = null,
     onSelectedEventIdChange,
     onEventSelect,
     onQuickCreate,
+    onMoveRequest,
+    onPaintSelect,
   } = options;
 
   const slotMinutes = options.slotMinutes ?? DEFAULT_SLOT_MINUTES;
@@ -273,10 +277,15 @@ export const useDayGridController = (
   const { end: workingEnd, start: workingStart } =
     options.workingHours ?? DEFAULT_WORKING_HOURS;
 
-  const modeState = useControlledValue<"quick-create" | "read-only">({
-    defaultValue: defaultInteractionMode,
-    onChange: onInteractionModeChange,
-    value: interactionMode,
+  // Shares the week grid's interaction controller, so paint, move and mode have one implementation.
+  const interaction = useInteractionController({
+    defaultInteractionMode,
+    interactionMode,
+    onInteractionModeChange,
+    onMoveRequest,
+    onPaintSelect,
+    onQuickCreate,
+    timeZone,
   });
 
   const selectedState = useControlledValue<string | null>({
@@ -305,12 +314,15 @@ export const useDayGridController = (
 
   const utcDayRange = useMemo(() => toUtcRange(dayRange), [dayRange]);
 
-  const axisRange = useMemo(() => {
-    const window = { end: visibleEnd, start: visibleStart };
-    assertTimeWindow(window, slotMinutes);
-
-    return buildTimeWindowRange(date, timeZone, window);
-  }, [date, slotMinutes, timeZone, visibleEnd, visibleStart]);
+  const axisRange = useMemo(
+    () =>
+      buildTimeWindowRange(
+        date,
+        timeZone,
+        alignTimeWindow({ end: visibleEnd, start: visibleStart }, slotMinutes)
+      ),
+    [date, slotMinutes, timeZone, visibleEnd, visibleStart]
+  );
 
   const slotStarts = useMemo(
     () => buildSlotStarts(axisRange, slotMinutes),
@@ -422,7 +434,7 @@ export const useDayGridController = (
       currentInstant,
       date,
       daySegments,
-      readOnly: modeState.value === "read-only",
+      readOnly: interaction.interactionMode === "read-only",
       selectedEventId: selectedEventIdValue,
       timeZone,
       timedGeometryByEventId,
@@ -436,7 +448,7 @@ export const useDayGridController = (
     axisDuration,
     daySegments,
     axisStartEpoch,
-    modeState.value,
+    interaction.interactionMode,
     selectedEventIdValue,
     timeZone,
     timedGeometryByEventId,
@@ -529,32 +541,22 @@ export const useDayGridController = (
     [dayViewModel, eventById, onEventSelect, setSelectedEventId]
   );
 
+  const { activateCell } = interaction;
+
   const selectEmptyCell = useCallback(
     (
       index: number,
       anchor: HTMLDivElement,
       anchorRect?: DOMRectReadOnly
     ): void => {
-      if (modeState.value !== "quick-create") {
-        return;
-      }
-
       const cell = cellForIndex(index);
       if (!cell || findTimedEventAtCell(cell)) {
         return;
       }
 
-      const range = buildSelectionRange(cell, cell);
-      if (!range) {
-        return;
-      }
-
-      onQuickCreate?.({
-        anchorRect: anchorRect ?? anchor.getBoundingClientRect(),
-        range,
-      });
+      activateCell(cell, anchorRect ?? anchor.getBoundingClientRect());
     },
-    [cellForIndex, findTimedEventAtCell, modeState.value, onQuickCreate]
+    [activateCell, cellForIndex, findTimedEventAtCell]
   );
 
   const handleCellKeyDown = useCallback(
@@ -598,7 +600,8 @@ export const useDayGridController = (
     getInternals,
     handleCellKeyDown,
     hasEvents: daySegments.length > 0,
-    interactionMode: modeState.value,
+    interaction,
+    interactionMode: interaction.interactionMode,
     isToday,
     isWorkingDay,
     nowPercent,
@@ -608,7 +611,7 @@ export const useDayGridController = (
     setAnnouncement,
     setBodyRef,
     setCellRef,
-    setInteractionMode: modeState.setValue,
+    setInteractionMode: interaction.setInteractionMode,
     slotStarts,
     timedEvents,
     utcDayRange,

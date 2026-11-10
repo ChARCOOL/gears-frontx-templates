@@ -23,6 +23,7 @@ import {
   formatSearchResultDetails,
 } from "./search-results-format";
 import type {
+  SearchNarrowing,
   SearchResultGroup as SearchResultGroupData,
   SearchResultRow,
 } from "./search-results-format";
@@ -36,7 +37,9 @@ export interface SearchResultContext {
   readonly index: number;
 }
 
-export interface SearchResultsProps extends CalendarContextProps {
+export interface SearchResultsProps
+  extends CalendarContextProps,
+    SearchNarrowing {
   /** Class added to the component root. */
   readonly className?: string;
   /** Events to search. */
@@ -208,6 +211,7 @@ const SearchResultGroup = ({
 };
 
 const SearchResultsContent = ({
+  calendarIds,
   className,
   defaultQuery,
   events,
@@ -216,6 +220,7 @@ const SearchResultsContent = ({
   onReveal,
   now,
   query,
+  range,
   renderGroupHeader,
   renderResult,
 }: SearchResultsContentProps) => {
@@ -223,6 +228,7 @@ const SearchResultsContent = ({
   const { timeZone } = useCalendarContext();
 
   const controller = useSearchResultsController({
+    calendarIds,
     defaultQuery,
     events,
     now,
@@ -230,6 +236,7 @@ const SearchResultsContent = ({
     onQueryChange,
     onReveal,
     query,
+    range,
     timeZone,
   });
 

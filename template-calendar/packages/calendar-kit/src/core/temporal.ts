@@ -482,10 +482,11 @@ const assertSlotMinutes = (slotMinutes: CalendarSlotMinutes): void => {
   }
 };
 
-export const assertTimeWindow = (
+// Returns the window's bounds in minutes of the day, with an end of 00:00 as 24:00.
+const checkedWindowMinutes = (
   window: CalendarTimeWindow,
   slotMinutes: CalendarSlotMinutes
-): void => {
+): { readonly end: number; readonly start: number } => {
   assertSlotMinutes(slotMinutes);
 
   const start = minutesOfDay(window.start);
@@ -496,11 +497,42 @@ export const assertTimeWindow = (
     );
   }
 
+  return { end, start };
+};
+
+export const assertTimeWindow = (
+  window: CalendarTimeWindow,
+  slotMinutes: CalendarSlotMinutes
+): void => {
+  const { end, start } = checkedWindowMinutes(window, slotMinutes);
+
   if (start % slotMinutes !== 0 || end % slotMinutes !== 0) {
     throw invalidTemporalValue(
       `Time window ${window.start} -> ${window.end} is not aligned to ${slotMinutes}-minute slots`
     );
   }
+};
+
+const formatMinutesOfDay = (minutes: number): string =>
+  `${padTwo(Math.floor(minutes / 60))}:${padTwo(minutes % 60)}`;
+
+/**
+ * Widens a window outward to whole slots: the start rounds down and the end rounds up, so a
+ * host's hours are never cut. Only an empty or reversed window throws.
+ */
+export const alignTimeWindow = (
+  window: CalendarTimeWindow,
+  slotMinutes: CalendarSlotMinutes
+): CalendarTimeWindow => {
+  const { end, start } = checkedWindowMinutes(window, slotMinutes);
+
+  const alignedStart = Math.floor(start / slotMinutes) * slotMinutes;
+  const alignedEnd = Math.ceil(end / slotMinutes) * slotMinutes;
+
+  return {
+    end: parseLocalTime(formatMinutesOfDay(alignedEnd % MINUTES_PER_DAY)),
+    start: parseLocalTime(formatMinutesOfDay(alignedStart)),
+  };
 };
 
 /** Nominal slot count of the window in wall-clock time, for a time axis without a date.
