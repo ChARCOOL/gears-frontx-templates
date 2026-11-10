@@ -238,6 +238,9 @@ const CALENDAR_COLOR_CLASSES: ReadonlyMap<string, string> = new Map([
   ["orange", styles.calendarColorOrange],
   ["green", styles.calendarColorGreen],
   ["blue", styles.calendarColorBlue],
+  ["lavender", styles.calendarColorLavender],
+  ["violet", styles.calendarColorViolet],
+  ["brown", styles.calendarColorBrown],
   ["pink", styles.calendarColorPink],
 ]);
 
@@ -1022,7 +1025,7 @@ const CreateEventAdditionalFields = (
         <Button
           type="button"
           variant="secondary"
-          size="xl"
+          size="l"
           leftIcon={<MapPinIcon aria-hidden="true" />}
           className={styles.locationButton}
           onClick={() => {

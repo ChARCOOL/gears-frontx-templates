@@ -1260,6 +1260,86 @@ describe("CreateEventPopover combobox fidelity", () => {
       })
     ).toBeInTheDocument();
   });
+
+  it("removes one person chip and clears every chip from the people field", () => {
+    const onSubmit = submitSpy();
+
+    renderPopover({
+      defaultDraft: {
+        ...BASE_DRAFT,
+        attendeeIds: ["person-1", "person-2"],
+      },
+      onSubmit,
+    });
+
+    const peopleControl = screen
+      .getByRole("combobox", { name: /people/iu })
+      .closest<HTMLElement>("[data-calendar-combobox-control]");
+
+    if (peopleControl === null) {
+      throw new Error("Missing people combobox control");
+    }
+
+    act(() => {
+      fireEvent.click(
+        within(peopleControl).getByRole("button", {
+          name: /remove ada lovelace/iu,
+        })
+      );
+    });
+    assert(within(peopleControl).queryByText("Ada Lovelace")).toBeNull();
+
+    act(() => {
+      fireEvent.keyDown(screen.getByRole("combobox", { name: /people/iu }), {
+        key: "Escape",
+      });
+    });
+    act(() => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Clear selected people" })
+      );
+    });
+    act(() => {
+      fireEvent.click(getSubmitButton());
+    });
+
+    assert(onSubmit).toHaveBeenCalledWith({
+      ...BASE_DRAFT,
+      attendeeIds: [],
+    });
+  });
+
+  it("opens the location combobox from the Add a location action", () => {
+    renderPopover();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Add a location" }));
+    });
+
+    assert(
+      screen.getByRole("combobox", { name: /location/iu })
+    ).toBeInTheDocument();
+    assert(
+      screen.queryByRole("button", { name: "Add a location" })
+    ).toBeNull();
+  });
+
+  it.each([
+    ["lavender", styles.calendarColorLavender],
+    ["violet", styles.calendarColorViolet],
+    ["brown", styles.calendarColorBrown],
+  ] as const)(
+    "paints the %s calendar dot from its accent",
+    (colorFamily, className) => {
+      renderPopover({
+        calendars: [{ colorFamily, id: "calendar-1", name: "Teaching" }],
+      });
+
+      assert(
+        document.querySelector(`[data-calendar-color="${colorFamily}"]`)
+      ).toHaveClass(className);
+    }
+  );
 });
 
 describe("CreateEventPopover inline custom repeat editor", () => {

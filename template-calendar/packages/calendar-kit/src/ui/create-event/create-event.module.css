@@ -146,6 +146,18 @@
   line-height: var(--cal-text-label-line-height);
 }
 
+/* A disabled people or location box greys the whole box, as the other fields do. */
+.comboboxFieldControl:has(:disabled) {
+  border-color: var(--cal-color-grid-line);
+  background: var(--cal-color-input-disabled);
+  color: var(--cal-color-muted);
+}
+
+.comboboxFieldControl:has(:disabled) :global(input) {
+  background: transparent;
+  color: inherit;
+}
+
 .comboboxFieldTags {
   block-size: auto;
   min-block-size: calc(var(--cal-space-6) + (var(--cal-space-2) * 2));
@@ -239,6 +251,18 @@
 
 .calendarColorBlue {
   background: var(--cal-color-blue-accent);
+}
+
+.calendarColorLavender {
+  background: var(--cal-color-lavender-accent);
+}
+
+.calendarColorViolet {
+  background: var(--cal-color-violet-accent);
+}
+
+.calendarColorBrown {
+  background: var(--cal-color-brown-accent);
 }
 
 .calendarColorPink {
