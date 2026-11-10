@@ -7,7 +7,6 @@
 
 /* The segment under the caret is always selected, so hide the caret. */
 .control.control {
-  background: var(--cal-color-surface);
   caret-color: transparent;
   font-variant-numeric: tabular-nums;
 }

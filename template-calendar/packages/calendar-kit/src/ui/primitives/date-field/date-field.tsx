@@ -111,9 +111,13 @@ export interface DateFieldProps {
   readonly disabled?: boolean;
   readonly invalid?: boolean;
   /** Control height; the compact size matches the design's inline form rows. */
-  readonly size?: "m" | "xl";
+  readonly size?: "m" | "l" | "xl";
   /** Shows a clear control while the field holds a value; the row can go empty again. */
   readonly clearable?: boolean;
+  /** Shown in the empty field; the mask replaces it once the field is focused. */
+  readonly placeholder?: string;
+  /** Shown instead of the typed mask while the field is not focused and holds a value. */
+  readonly displayFormat?: (value: CalendarDate) => string;
   readonly clearLabel?: string;
   readonly openCalendarLabel?: string;
   readonly calendarLabel?: string;
@@ -139,6 +143,8 @@ const DateField = ({
   openCalendarLabel,
   calendarLabel,
   className,
+  placeholder,
+  displayFormat,
   "aria-label": ariaLabel,
   "aria-describedby": ariaDescribedBy,
 }: DateFieldProps) => {
@@ -193,6 +199,7 @@ const DateField = ({
   }, []);
 
   const entry = useDateEntry({
+    blankWhenEmpty: placeholder !== undefined,
     clearable,
     inputRef,
     locale,
@@ -231,7 +238,12 @@ const DateField = ({
         inputMode="numeric"
         autoComplete="off"
         spellCheck={false}
-        value={entry.text}
+        value={
+          displayFormat !== undefined && value !== "" && !entry.focused
+            ? displayFormat(value)
+            : entry.text
+        }
+        placeholder={placeholder}
         disabled={disabled}
         invalid={invalid}
         aria-label={ariaLabel}

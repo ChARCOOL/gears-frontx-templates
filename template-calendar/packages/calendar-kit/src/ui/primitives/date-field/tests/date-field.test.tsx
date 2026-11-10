@@ -68,6 +68,29 @@ describe(DateField, () => {
     assert(field().value).toBe("dd.mm.yyyy");
   });
 
+  it("shows the placeholder in an empty field until focus, then the mask", async () => {
+    const user = userEvent.setup();
+    renderField({ placeholder: "End date", value: "" });
+
+    assert(field().value).toBe("");
+    assert(field()).toHaveAttribute("placeholder", "End date");
+
+    await user.click(field());
+
+    assert(field().value).toBe("mm/dd/yyyy");
+  });
+
+  it("shows displayFormat text while unfocused and filled, the mask while focused", async () => {
+    const user = userEvent.setup();
+    renderField({ displayFormat: () => "Mon, 24 Aug" });
+
+    assert(field().value).toBe("Mon, 24 Aug");
+
+    await user.click(field());
+
+    assert(field().value).toBe("08/24/2026");
+  });
+
   it("opens the calendar from the opener button and selects a day", async () => {
     const user = userEvent.setup();
     render(<StatefulField />);

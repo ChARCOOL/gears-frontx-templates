@@ -47,6 +47,8 @@ interface DateEntryOptions {
   readonly onValueChange: (value: CalendarDate | "") => void;
   readonly locale: string;
   readonly clearable: boolean;
+  /** An empty field stays blank, for its native placeholder, until focus shows the mask. */
+  readonly blankWhenEmpty: boolean;
   /** Fills the parts pasted text leaves out, e.g. the year in `30 Sep`. */
   readonly reference: CalendarDate;
   readonly inputRef: RefObject<HTMLInputElement | null>;
@@ -57,6 +59,7 @@ interface DateEntry {
   /** The masked value, e.g. `09/23/2026`, or the locale's placeholder. */
   readonly text: string;
   readonly filled: boolean;
+  readonly focused: boolean;
   /** Drops any half-typed segment, e.g. once the calendar sets the date. */
   readonly reset: () => void;
   readonly handleFocus: () => void;
@@ -74,6 +77,7 @@ export const useDateEntry = ({
   onValueChange,
   locale,
   clearable,
+  blankWhenEmpty,
   reference,
   inputRef,
   onOpenCalendar,
@@ -86,7 +90,9 @@ export const useDateEntry = ({
 
   const entryRef = useRef<SegmentEntry | null>(null);
 
-  const text = draft ?? maskedText(value, mask);
+  const text =
+    draft ??
+    (blankWhenEmpty && value === "" && !focused ? "" : maskedText(value, mask));
 
   const selectSegment = useCallback(
     (target: number): void => {
@@ -261,6 +267,7 @@ export const useDateEntry = ({
 
   return {
     filled: value !== "",
+    focused,
     handleBlur,
     handleChange,
     handleClick,

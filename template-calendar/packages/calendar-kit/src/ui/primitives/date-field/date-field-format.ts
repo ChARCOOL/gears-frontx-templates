@@ -17,6 +17,26 @@ export const formatDateFieldLabel = (
     year: includeYear ? "numeric" : undefined,
   }).format(new Date(`${date}T12:00:00Z`));
 
+// Design reads "Mon, 1 Sep": the locale's own names, only the order is fixed.
+export const formatDateInputLabel = (
+  date: CalendarDate,
+  locale: string,
+  includeYear = false
+): string => {
+  const parts = dateTimeFormatter(locale, {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+    weekday: "short",
+    year: includeYear ? "numeric" : undefined,
+  }).formatToParts(new Date(`${date}T12:00:00Z`));
+  const part = (type: string): string =>
+    parts.find((item) => item.type === type)?.value ?? "";
+  const year = includeYear ? `, ${part("year")}` : "";
+
+  return `${part("weekday")}, ${part("day")} ${part("month")}${year}`;
+};
+
 export const formatCalendarCaption = (month: Date, locale: string): string =>
   dateTimeFormatter(locale, { month: "long", year: "numeric" }).format(month);
 

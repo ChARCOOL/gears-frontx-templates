@@ -29,6 +29,7 @@ A typed date input with a calendar popover. The mask is the locale's own date (`
 
 - Digits fill the segment under the caret and move on once no further digit fits (`1`, `3` in a month is `03`). `ArrowLeft`/`ArrowRight` move between segments, `ArrowUp`/`ArrowDown` step them (month and day wrap, the year clamps), `Backspace` empties one, a paste spreads its digits, `Alt+ArrowDown` opens the calendar. `Tab` and `Enter` stay with the form.
 - The value commits as soon as the mask parses; an impossible day clamps (`02/31` becomes the last day). Half-typed text stays until blur, then the field shows the committed value again.
+- `placeholder` shows in an empty field until focus. `displayFormat` replaces the mask while the field is unfocused and holds a value, e.g. `formatDateInputText` gives `Mon, 1 Sep`.
 - The kit owns everything around ui-kit's `Calendar`: the `Input` shell, the kit `Popover` (shadow-root portal, focus return), Monday-first weeks, `Intl` formatters instead of date-fns locales, and the month-navigator labels for previous and next.
 
 ## Kit-owned
