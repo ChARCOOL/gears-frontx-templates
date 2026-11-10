@@ -3,6 +3,7 @@ import { formatGridTime } from "../../core/format";
 import { dateTimeFormatter } from "../../core/intl-cache";
 import type {
   CalendarDate,
+  CalendarDateRange,
   CalendarEvent,
   IanaTimeZone,
   UtcInstant,
@@ -127,7 +128,17 @@ export const normalizeQuery = (query: string): string =>
 
 export const eventMatches = (event: CalendarEvent, needle: string): boolean => {
   const normalizedNeedle = normalizeQuery(needle);
-  const fields = [event.title, event.organizer, event.location];
+  const fields = [
+    event.title,
+    event.organizer,
+    event.location,
+    event.description,
+    event.eventType,
+    ...(event.attendees ?? []).flatMap((attendee) => [
+      attendee.displayName,
+      attendee.email,
+    ]),
+  ];
 
   for (const field of fields) {
     const resolvedField = field ?? undefined;
@@ -142,10 +153,25 @@ export const eventMatches = (event: CalendarEvent, needle: string): boolean => {
   return false;
 };
 
+/** Narrows search results by calendar and by day range. */
+export interface SearchNarrowing {
+  /** Search only events on these calendars. */
+  readonly calendarIds?: readonly string[];
+  /** Keep only matches on days inside this range. */
+  readonly range?: CalendarDateRange;
+}
+
+const inRange = (
+  date: CalendarDate,
+  range: CalendarDateRange | undefined
+): boolean =>
+  range === undefined || (date >= range.start && date <= range.end);
+
 export const buildSearchGroups = (
   events: readonly CalendarEvent[],
   query: string,
-  timeZone: IanaTimeZone
+  timeZone: IanaTimeZone,
+  narrowing: SearchNarrowing = {}
 ): readonly SearchResultGroup[] => {
   const needle = normalizeQuery(query);
   if (needle.length < MIN_QUERY_LENGTH) {
@@ -155,7 +181,11 @@ export const buildSearchGroups = (
   const rowsByDate = new Map<CalendarDate, SearchResultRow[]>();
 
   for (const event of events) {
-    if (!eventMatches(event, needle)) {
+    if (
+      !eventMatches(event, needle) ||
+      (narrowing.calendarIds !== undefined &&
+        !narrowing.calendarIds.includes(event.calendarId ?? ""))
+    ) {
       continue;
     }
 
@@ -176,6 +206,12 @@ export const buildSearchGroups = (
         key: `${event.id}:${segment.date}`,
         start: segment.start,
       });
+    }
+  }
+
+  for (const date of rowsByDate.keys()) {
+    if (!inRange(date, narrowing.range)) {
+      rowsByDate.delete(date);
     }
   }
 

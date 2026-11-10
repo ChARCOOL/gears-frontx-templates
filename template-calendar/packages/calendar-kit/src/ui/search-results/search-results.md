@@ -28,10 +28,12 @@ import { SearchResults } from "@gears-frontx/calendar-kit/search-results";
 | `now` | `UtcInstant` | yes | Reference instant for the Today group. |
 | `onDismiss` | `() => void` | yes | Escape was pressed on a result. |
 | `onReveal` | `(eventId: string, date: CalendarDate) => void` | yes | A result was activated. Receives the event id and the viewer day of the row. |
+| `calendarIds` | `readonly string[]` |  | Search only events on these calendars. |
 | `className` | `string` |  | Class added to the component root. |
 | `defaultQuery` | `string` |  | Initial query when uncontrolled. |
 | `onQueryChange` | `(query: string) => void` |  | Called when the query changes. |
 | `query` | `string` |  | Controlled query. |
+| `range` | `CalendarDateRange` |  | Keep only matches on days inside this range. |
 | `renderGroupHeader` | `(group: string, count: number) => ReactNode` |  | Replaces a day heading. |
 | `renderResult` | `(event: CalendarEvent, context: SearchResultContext) => ReactNode` |  | Replaces a row's content. |
 
@@ -40,7 +42,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 ## Query and announcements
 
-Queries are trimmed, lowercased, and diacritic-folded before matching the event title, organizer, and location. Results require two characters and settle after 200 ms; the previous result set remains visible while a new query is pending. The result list is always rendered, and contains no rows for a too-short query or when no event matches. The result count remains a separate polite, atomic status announcement. Fetching and failure presentation remain host concerns.
+Queries are trimmed, lowercased, and diacritic-folded before matching the event title, organizer, location, description, event type, and attendee names and emails. Pass `calendarIds` to search only events on those calendars, and `range` (inclusive days) to keep only matches inside it; the host owns the controls that set them. Results require two characters and settle after 200 ms; the previous result set remains visible while a new query is pending. The result list is always rendered, and contains no rows for a too-short query or when no event matches. The result count remains a separate polite, atomic status announcement. Fetching and failure presentation remain host concerns.
 
 Timed events are grouped by viewer day, including midnight-spanning segments; all-day events appear on each date in their exclusive-end range.
 
