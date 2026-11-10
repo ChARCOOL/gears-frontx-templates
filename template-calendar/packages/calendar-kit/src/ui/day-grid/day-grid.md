@@ -15,13 +15,13 @@ The component is controlled by neutral calendar-kit data. Provide `t`, `locale`,
 | `cellClassName` | `string` |  | Class added to every time cell. |
 | `className` | `string` |  | Class added to the component root. |
 | `columnHeaderClassName` | `string` |  | Class added to the day header. |
-| `defaultInteractionMode` | `"read-only" \| "quick-create"` |  | Initial mode when uncontrolled. |
+| `defaultInteractionMode` | `WeekGridInteractionMode` |  | Initial mode when uncontrolled. |
 | `defaultSelectedEventId` | `string` |  | Initial selected event when uncontrolled. |
 | `gutterClassName` | `string` |  | Class added to every gutter label. |
-| `interactionMode` | `"read-only" \| "quick-create"` |  | Controlled mode. `read-only` disables quick-create. Default `quick-create`. |
+| `interactionMode` | `WeekGridInteractionMode` |  | Controlled mode. `read-only` disables quick-create. Default `quick-create`. |
 | `now` | `UtcInstant` |  | Reference instant for the now line and past styling. Default: the wall clock. |
 | `onEventSelect` | `(event: CalendarEvent, context: CalendarEventRenderContext<unknown>, anchor?: HTMLElement…` |  | An available event was activated. `anchor` is the card element. |
-| `onInteractionModeChange` | `(mode: "read-only" \| "quick-create") => void` |  | Called when the grid asks to change mode. |
+| `onInteractionModeChange` | `(mode: WeekGridInteractionMode) => void` |  | Called when the grid asks to change mode. |
 | `onQuickCreate` | `(payload: CalendarQuickCreatePayload) => void` |  | An empty slot was activated in `quick-create` mode. |
 | `onSelectedEventIdChange` | `(eventId: string \| null) => void` |  | Called when an event is selected or deselected. |
 | `renderCell` | `(context: CalendarCellContext) => ReactNode` |  | Replaces the content of each empty time cell. |
