@@ -158,6 +158,8 @@ export type CalendarEvent<Payload = unknown> =
 export interface CalendarAvailabilityCell extends CalendarCell {
   /** `false` blocks the cell: it cannot be painted and is drawn as unavailable. */
   readonly available: boolean;
+  /** Host-defined state id, passed to `renderCell` as `state`; the kit does not interpret it. */
+  readonly state?: string;
 }
 
 export interface CalendarCellContext {
