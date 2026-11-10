@@ -68,7 +68,7 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 | --- | --- | --- | --- |
 | `--primary` | Primary action, active state | `#8257e6` | `#19213a` |
 | `--now` | Current-time line. Falls back to `--primary` so existing consumers are unaffected | `var(--primary)` | `#ff7065` |
-| `--now-label` | Current-time gutter label. Falls back to `--primary-foreground` | `var(--primary-foreground)` | `#d40834` / `#ff8fa3` |
+| `--now-label` | Current-time gutter label. Falls back to `--primary`, the colour of the line it labels | `var(--primary)` | `#d40834` / `#ff8fa3` |
 | `--primary-foreground` | Text on a primary fill | `#ffffff` | `#ffffff` |
 
 ### Status
@@ -104,7 +104,8 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 | --- | --- | --- | --- |
 | `--info` | Info status; turquoise category foreground, border, accent, pattern | `#0284c7` | `#266068` / `#dbdcd3` |
 | `--info-soft` | Turquoise category background · **dark** | `#eaf6ff` | `#e0f3f6` / `#414e5c` |
-| `--warning` | Warning status; orange category foreground, border, accent, pattern | `#d97706` | `#9a3316` / `#e6dac7` |
+| `--warning` | Warning status; orange category border, accent, pattern | `#d97706` | `#9a3316` / `#e6dac7` |
+| `--warning-foreground` | Orange category text. Falls back to `--warning` | `var(--warning)` | `#9a3316` / `#e6dac7` |
 | `--warning-soft` | Orange category background · **dark** | `#fdf3e2` | `#ffeadb` / `#51485a` |
 | `--accent` | Purple category background; dragging state | `#f3e8ff` | `#f8eaff` / `#484b5e` |
 | `--accent-foreground` | Purple category foreground, border, accent; dragging text | `#6d28d9` | `#841dba` / `#f3d7bf` |
