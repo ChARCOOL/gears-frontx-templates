@@ -44,6 +44,7 @@ const tue10 = cell(TUESDAY, "10:00");
 const cells = [mon08, mon09Blocked, mon10, tue08, tue09, tue10] as const;
 const keyboardMon09 = cell(MONDAY, "09:00");
 const keyboardCells = [mon08, keyboardMon09, mon10] as const;
+const openCells = [mon08, mon10, tue08, tue09] as const;
 
 const renderCell = (
   context: CalendarCellContext & { readonly available: boolean }
@@ -378,3 +379,145 @@ describe(AvailabilityGrid, () => {
   });
 });
 
+describe("AvailabilityGrid cell paint mode", () => {
+  it("paints only the cells a drag passes instead of the span between its ends", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+
+    renderAvailability({ cells: openCells, onPaintSelect, paintMode: "cells" });
+
+    fireEvent.pointerDown(getRenderedCell(MONDAY, "08:00"));
+    fireEvent.pointerEnter(getRenderedCell(TUESDAY, "08:00"));
+    fireEvent.pointerUp(getRenderedCell(TUESDAY, "08:00"));
+
+    expect(onPaintSelect).toHaveBeenCalledExactlyOnceWith(
+      expectedRange(mon08, tue08, [mon08, tue08])
+    );
+  });
+
+  it("keeps earlier painting when a new drag starts", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    const renderSlot = vi.fn<typeof renderCell>(renderCell);
+
+    renderAvailability({
+      cells: openCells,
+      onPaintSelect,
+      paintMode: "cells",
+      renderCell: renderSlot,
+    });
+
+    fireEvent.pointerDown(getRenderedCell(MONDAY, "08:00"));
+    fireEvent.pointerUp(getRenderedCell(MONDAY, "08:00"));
+
+    fireEvent.pointerDown(getRenderedCell(TUESDAY, "09:00"));
+    fireEvent.pointerUp(getRenderedCell(TUESDAY, "09:00"));
+
+    expect(onPaintSelect).toHaveBeenLastCalledWith(
+      expectedRange(mon08, tue09, [mon08, tue09])
+    );
+
+    const lastMon08Render = renderSlot.mock.calls
+      .filter(([context]) => context.cell === mon08)
+      .at(-1);
+
+    expect(lastMon08Render?.[0]).toMatchObject({ isSelected: true });
+  });
+
+  it("paints a cell with Enter on top of the existing selection", async () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+
+    renderAvailability({ cells: openCells, onPaintSelect, paintMode: "cells" });
+
+    const user = userEvent.setup();
+    getRenderedCell(MONDAY, "08:00").focus();
+    await user.keyboard("{Enter}");
+    getRenderedCell(TUESDAY, "08:00").focus();
+    await user.keyboard("{Enter}");
+
+    expect(onPaintSelect).toHaveBeenLastCalledWith(
+      expectedRange(mon08, tue08, [mon08, tue08])
+    );
+  });
+
+  it("paints only Shift+Arrow destination cells and keeps earlier painting", async () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+
+    renderAvailability({
+      cells: keyboardCells,
+      onPaintSelect,
+      paintMode: "cells",
+    });
+
+    const user = userEvent.setup();
+    getRenderedCell(MONDAY, "08:00").focus();
+    await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
+
+    expect(onPaintSelect).toHaveBeenLastCalledWith(
+      expectedRange(keyboardMon09, keyboardMon09, [keyboardMon09])
+    );
+
+    getRenderedCell(MONDAY, "09:00").focus();
+    await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
+
+    expect(onPaintSelect).toHaveBeenLastCalledWith(
+      expectedRange(keyboardMon09, mon10, [keyboardMon09, mon10])
+    );
+  });
+});
+
+describe("AvailabilityGrid hour and day labels", () => {
+  it("draws the hour label on both sides of every row", () => {
+    renderAvailability({ renderCell: undefined, showHourLabels: true });
+
+    expect(screen.getAllByText(/8:00/u)).toHaveLength(2);
+    expect(screen.getAllByText(/9:00/u)).toHaveLength(2);
+  });
+
+  it("selects every cell of an hour row when its label is clicked", async () => {
+    const onHourClick = vi.fn<(rowCells: readonly CalendarAvailabilityCell[]) => void>();
+
+    renderAvailability({ onHourClick, renderCell: undefined, showHourLabels: true });
+
+    const user = userEvent.setup();
+    await user.click(screen.getAllByRole("button", { name: /8:00/u })[0]);
+
+    expect(onHourClick).toHaveBeenCalledExactlyOnceWith([mon08, tue08]);
+  });
+
+  it("selects every cell of a day column when its header is clicked", async () => {
+    const onDayClick = vi.fn<(columnCells: readonly CalendarAvailabilityCell[]) => void>();
+
+    renderAvailability({ headerFormat: "weekday", onDayClick, renderCell: undefined });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /Mon/u }));
+
+    expect(onDayClick).toHaveBeenCalledExactlyOnceWith([mon08, mon09Blocked, mon10]);
+  });
+
+  it("shows day names without dates in weekday header format", () => {
+    renderAvailability({ headerFormat: "weekday", renderCell: undefined });
+
+    expect(
+      screen.getAllByRole("columnheader").map((header) => header.textContent)
+    ).toStrictEqual(["Mon", "Tue"]);
+  });
+
+  it("passes each cell state to renderCell without interpreting it", () => {
+    const renderSlot = vi.fn<typeof renderCell>(renderCell);
+
+    renderAvailability({
+      cells: [{ ...mon08, state: "partial" }, mon10],
+      renderCell: renderSlot,
+    });
+
+    expect(renderSlot).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cell: expect.objectContaining({ state: "partial" }),
+        state: "partial",
+      })
+    );
+    expect(renderSlot).toHaveBeenCalledWith(
+      expect.objectContaining({ cell: mon10, state: undefined })
+    );
+  });
+});

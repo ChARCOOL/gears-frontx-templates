@@ -14,6 +14,8 @@
   "calendar.agenda.viewName": "Agenda view",
   "calendar.availability.empty": "No time slots",
   "calendar.availability.label": "Availability",
+  "calendar.availability.selectDay": "Select all of {{day}}",
+  "calendar.availability.selectHour": "Select all at {{time}}",
   "calendar.combobox.clearSelectedPeople": "Clear selected people",
   "calendar.combobox.toggleOptions": "Toggle options",
   "calendar.common.add": "Add",
