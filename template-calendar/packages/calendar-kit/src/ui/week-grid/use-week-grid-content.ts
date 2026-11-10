@@ -13,6 +13,7 @@ import type {
   PointerEvent as ReactPointerEvent,
 } from "react";
 
+import { isEventActionable, isEventMovable } from "../../core/actionability";
 import { arrayAt } from "../../core/array";
 import { compareCalendarCells } from "../../core/calendar-cell";
 import type {
@@ -32,6 +33,7 @@ import type { FocusedCell } from "../../react/controllers/use-week-grid-controll
 import { useCurrentInstant } from "../../react/hooks/use-current-instant";
 import { useEventResize } from "../../react/hooks/use-event-resize";
 import type { ResizeTarget } from "../../react/hooks/use-event-resize";
+import { useTouchMove } from "../../react/hooks/use-touch-move";
 import type { WeekGridProps } from "./week-grid";
 import {
   buildAllDayPositions,
@@ -513,6 +515,41 @@ export const useWeekGridContent = <Payload = unknown>(
     targetAt: resizeTargetAt,
   });
 
+  const startTouchMove = useTouchMove({
+    begin: (eventId, pressed) => {
+      const pressedEvent = events.find((candidate) => candidate.id === eventId);
+      const origin = cellAtTarget(pressed);
+
+      if (
+        controller.interactionMode !== "paint-and-move" ||
+        pressedEvent === undefined ||
+        !isEventActionable(pressedEvent) ||
+        !isEventMovable(pressedEvent) ||
+        origin === null ||
+        origin.meta.slotIndex === null
+      ) {
+        return false;
+      }
+
+      draggedEventIdRef.current = eventId;
+      controller.beginMove(eventId, origin.cell);
+
+      return true;
+    },
+    cancel: () => {
+      controller.cancelMove();
+      draggedEventIdRef.current = null;
+    },
+    cellAt: (clientX, clientY) => resizeTargetAt(clientX, clientY)?.cell ?? null,
+    end: () => {
+      controller.endMove();
+      draggedEventIdRef.current = null;
+    },
+    update: (cell) => {
+      controller.updateMove(cell);
+    },
+  });
+
   const handleGridActiveCellChange = (cell: CalendarCell): void => {
     const meta = gridData.metaByCell.get(cell);
 
@@ -595,10 +632,14 @@ export const useWeekGridContent = <Payload = unknown>(
     event: ReactPointerEvent<HTMLDivElement>
   ): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-paint
-    if (
-      eventIdAtTarget(event.target) !== null ||
-      overflowAtTarget(event.target)
-    ) {
+    const pressedEventId = eventIdAtTarget(event.target);
+
+    if (pressedEventId !== null) {
+      startTouchMove(event, pressedEventId);
+      return;
+    }
+
+    if (overflowAtTarget(event.target)) {
       return;
     }
 
