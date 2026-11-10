@@ -199,6 +199,63 @@ describe(useWeekGridController, () => {
     });
   });
 
+  it("keeps an over-busy paint for the UI error state but does not emit it", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+
+    const { result } = renderHook(() =>
+      useWeekGridController({
+        date: DATE,
+        events: [{ ...event("busy"), available: false }],
+        interactionMode: "paint-and-move",
+        onPaintSelect,
+        timeZone: UTC,
+      })
+    );
+
+    act(() => {
+      result.current.beginPaint(0, 9);
+    });
+
+    expect(result.current.paint).not.toBeNull();
+
+    act(() => {
+      result.current.endPaint();
+    });
+
+    expect(onPaintSelect).not.toHaveBeenCalled();
+  });
+
+  it("reports painting during a paint drag and the pending drag during a move", () => {
+    const { result } = renderHook(() =>
+      useWeekGridController({
+        date: DATE,
+        events: [event()],
+        interactionMode: "paint-and-move",
+        timeZone: UTC,
+      })
+    );
+    const from = requiredCell(result.current.dayColumns[0]?.slots[9]);
+
+    act(() => {
+      result.current.beginPaint(0, 9);
+    });
+
+    expect(result.current.painting).toBeTruthy();
+
+    act(() => {
+      result.current.endPaint();
+    });
+
+    expect(result.current.painting).toBeFalsy();
+    expect(result.current.paint).not.toBeNull();
+
+    act(() => {
+      result.current.beginMove("event-1", from);
+    });
+
+    expect(result.current.drag).toStrictEqual({ event: event(), from, to: from });
+  });
+
   it("cancels a pending move without committing it", () => {
     const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
     const { result } = renderHook(() =>

@@ -100,6 +100,8 @@ export interface UseWeekGridControllerResult<Payload = unknown> {
   readonly pendingMove: InteractionControllerInternals["state"]["pendingMove"];
   readonly committedMove: InteractionControllerInternals["state"]["committedMove"];
   readonly paint: CalendarSelectionRange | null;
+  /** A paint drag is in progress: `paint` keeps the last range after the drag ends. */
+  readonly painting: boolean;
   readonly setInteractionMode: (mode: WeekGridInteractionMode) => void;
   readonly workingHours: CalendarTimeWindow;
   readonly workingSlotIndex: number;
@@ -492,11 +494,6 @@ export const useWeekGridController = <Payload = unknown>(
       return;
     }
 
-    const event = findEventAtCell(cell);
-    if (event && !isEventActionable(event)) {
-      return;
-    }
-
     interaction.beginPaint(cell);
     // @cpt-end:cpt-template-calendar-calendar-kit-algo-week-grid-paint-range:p1:inst-paint-anchor
   };
@@ -505,11 +502,6 @@ export const useWeekGridController = <Payload = unknown>(
     // @cpt-begin:cpt-template-calendar-calendar-kit-algo-week-grid-paint-range:p1:inst-paint-extend
     const cell = getCell(columnIndex, rowIndex);
     if (!cell) {
-      return;
-    }
-
-    const event = findEventAtCell(cell);
-    if (event && !isEventActionable(event)) {
       return;
     }
 
@@ -627,6 +619,7 @@ export const useWeekGridController = <Payload = unknown>(
     hiddenDateCount: allViewerDates.length - viewerDates.length,
     interactionMode: modeState.value,
     paint: interaction.paint,
+    painting: interaction.state.paintAnchor !== null,
     pendingMove: interaction.pendingMove,
     selectEvent,
     selectedEvent,
