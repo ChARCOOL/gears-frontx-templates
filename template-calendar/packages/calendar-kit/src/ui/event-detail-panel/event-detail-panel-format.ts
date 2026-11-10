@@ -9,7 +9,6 @@ import type {
   IanaTimeZone,
 } from "../../core/model";
 import { addCalendarDays, fromViewerDateTime } from "../../core/temporal";
-import { formatTimeOfDay } from "../../core/time-input";
 import type { CalendarTranslate } from "../../i18n/calendar-localization";
 import type { EventDetailPanelCopyStatus } from "../../react/public";
 import { formatRepeatHint } from "../create-event/create-event-format";
@@ -130,12 +129,14 @@ export const formatEventRange = (
       : `${firstLabel} – ${formatViewerDay(lastDay, timeZone, locale)}`;
   }
 
+  // Date and times come from the same instants in one zone; mixing the viewer's date with the
+  // event's own wall-clock times shows a range on the wrong day.
   const date = formatViewerDate(event.start, timeZone, locale);
-  const startTime = formatTimeOfDay(event.startTime, locale);
+  const startTime = formatViewerTime(event.start, timeZone, locale);
   if (event.endTime === null) {
     return `${date}, ${startTime}`;
   }
-  return `${date}, ${startTime} – ${formatTimeOfDay(event.endTime, locale)}`;
+  return `${date}, ${startTime} – ${formatViewerTime(event.end, timeZone, locale)}`;
 };
 
 export const formatComparisonLine = (

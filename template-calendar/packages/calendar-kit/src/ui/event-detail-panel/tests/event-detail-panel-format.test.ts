@@ -67,6 +67,23 @@ describe(formatEventRange, () => {
     ).toBe("Aug 24, 2026, 9:00 AM");
   });
 
+  it("keeps the date and clock range in the viewer zone when the event has its own zone", () => {
+    const sofia = parseIanaTimeZone("Europe/Sofia");
+    const overnight = makeTimedEvent({
+      end: utcInstant("2026-11-10T00:00:00.000Z"),
+      endDate: calendarDate("2026-11-10"),
+      endTime: parseLocalTime("01:00"),
+      start: utcInstant("2026-11-09T22:00:00.000Z"),
+      startDate: calendarDate("2026-11-09"),
+      startTime: parseLocalTime("23:00"),
+      timeZone: BERLIN,
+    });
+
+    expect(formatEventRange(overnight, sofia, "en-US")).toBe(
+      "Nov 10, 2026, 12:00 AM – 2:00 AM"
+    );
+  });
+
   it("formats a single all-day event as one date", () => {
     expect(formatEventRange(makeAllDayEvent("2026-08-25"), UTC, "en-US")).toBe(
       "Aug 24, 2026"
