@@ -52,6 +52,7 @@ import type {
 import { CalendarScope } from "../../i18n/calendar-localization-provider";
 import { useDayGridController } from "../../react/controllers/use-day-grid-controller";
 import { useEventResize } from "../../react/hooks/use-event-resize";
+import { useTouchMove } from "../../react/hooks/use-touch-move";
 import type {
   CalendarConflictRenderer,
   CalendarEventRenderer,
@@ -776,10 +777,61 @@ const useDayGridContent = (props: DayGridContentProps) => {
     selectEmptyCell(index, cellElement);
   };
 
+  const touchLayoutRef = useRef<HTMLElement | null>(null);
+
+  const startTouchMove = useTouchMove({
+    begin: (eventId, pressed) => {
+      const placement = timedEvents.find(
+        (candidate) => candidate.segment.event.id === eventId
+      );
+      const from = gridCells.find(
+        (cell) =>
+          placement !== undefined &&
+          compareUtcInstants(cell.start, placement.segment.start) <= 0 &&
+          compareUtcInstants(placement.segment.start, cell.end) < 0
+      );
+
+      if (
+        resolvedInteractionMode !== "paint-and-move" ||
+        placement === undefined ||
+        from === undefined ||
+        !isEventActionable(placement.segment.event) ||
+        !isEventMovable(placement.segment.event) ||
+        !(pressed instanceof Element)
+      ) {
+        return false;
+      }
+
+      touchLayoutRef.current = pressed.closest<HTMLElement>(".timedLayout");
+      draggedEventIdRef.current = eventId;
+      interaction.beginMove(placement.segment.event, from);
+
+      return true;
+    },
+    cancel: () => {
+      interaction.cancelMove();
+      draggedEventIdRef.current = null;
+    },
+    cellAt: (_clientX, clientY) =>
+      touchLayoutRef.current === null
+        ? null
+        : (cellAtClientY(touchLayoutRef.current, clientY) ?? null),
+    end: () => {
+      interaction.endMove();
+      draggedEventIdRef.current = null;
+    },
+    update: (cell) => {
+      interaction.updateMove(cell);
+    },
+  });
+
   const handleTimedLayoutPointerDown = (
     event: ReactPointerEvent<HTMLDivElement>
   ): void => {
-    if (eventIdAtTarget(event.target) !== null) {
+    const pressedEventId = eventIdAtTarget(event.target);
+
+    if (pressedEventId !== null) {
+      startTouchMove(event, pressedEventId);
       return;
     }
 
