@@ -60,6 +60,14 @@ export interface WeekGridHeaderColumn {
   readonly weekday: string | undefined;
 }
 
+export interface WeekGridDragPreview {
+  readonly eventId: string;
+  /** The dragged card's height in the grid, or `undefined` when it is not laid out. */
+  readonly height: number | undefined;
+  readonly targetKey: string;
+  readonly title: string;
+}
+
 export type WeekGridContentProps<Payload> = Omit<
   WeekGridProps<Payload>,
   keyof CalendarContextProps
@@ -67,6 +75,8 @@ export type WeekGridContentProps<Payload> = Omit<
 
 const DEFAULT_VISIBLE_DAYS = 5;
 const DEFAULT_MODE: WeekGridInteractionMode = "quick-create";
+export const transparentPixel =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 export const EMPTY_LIST: readonly never[] = [];
 
 const framesScroll = (element: HTMLElement): boolean =>
@@ -386,6 +396,20 @@ export const useWeekGridContent = <Payload = unknown>(
 
   // A drag that has not left its origin drops nowhere, so it marks no span.
   const { dayColumns, drag } = controller;
+  const dragPreview = useMemo<WeekGridDragPreview | null>(
+    () =>
+      drag === null
+        ? null
+        : {
+            eventId: drag.event.id,
+            height: timedLayout.byCell
+              .get(gridCellKey(drag.from))
+              ?.find((position) => position.event.id === drag.event.id)?.height,
+            targetKey: gridCellKey(drag.to),
+            title: drag.event.title,
+          },
+    [drag, gridCellKey, timedLayout.byCell]
+  );
   const dropTargetKeys = useMemo(() => {
     const keys = new Set<string>();
 
@@ -595,6 +619,11 @@ export const useWeekGridContent = <Payload = unknown>(
       return;
     }
 
+    // The grid's own ghost card is the drag feedback, so the browser's copy of the card is blanked.
+    const blankImage = new Image();
+    blankImage.src = transparentPixel;
+    event.dataTransfer?.setDragImage(blankImage, 0, 0);
+
     draggedEventIdRef.current = eventId;
     controller.beginMove(eventId, target.cell);
     // @cpt-end:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-move-request
@@ -719,6 +748,7 @@ export const useWeekGridContent = <Payload = unknown>(
     controller,
     currentInstant,
     detailVisible,
+    dragPreview,
     firstTimedCellKey,
     frameRef,
     getCellLabel,

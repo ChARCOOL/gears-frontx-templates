@@ -17,6 +17,7 @@ import type {
   Ref,
 } from "react";
 
+import { isEventMovable } from "../../core/actionability";
 import { formatGridTime } from "../../core/format";
 import { EVENT_CHIP_HEIGHT } from "../../core/grid";
 import type {
@@ -61,6 +62,7 @@ import { ScrollRegion } from "../primitives/scroll-region/scroll-region";
 import { EMPTY_LIST, useWeekGridContent } from "./use-week-grid-content";
 import type {
   WeekGridContentProps,
+  WeekGridDragPreview,
   WeekGridHeaderColumn,
   WeekGridNowLineStyle,
 } from "./use-week-grid-content";
@@ -539,6 +541,7 @@ interface EventFrameProps {
   readonly inlineSize?: string;
   readonly style?: CSSProperties;
   readonly children: ReactNode;
+  readonly dragging?: boolean;
   readonly draggable?: boolean;
 }
 
@@ -549,11 +552,13 @@ const EventFrame = ({
   inlineSize,
   style,
   children,
+  dragging = false,
   draggable = false,
 }: EventFrameProps) => (
   <div
     className={className}
     data-event-id={eventId}
+    data-dragging={dragging ? "" : undefined}
     style={{ ...style, inlineSize, insetBlockStart }}
     draggable={draggable}
   >
@@ -644,7 +649,7 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
         aria-disabled={isAvailable ? undefined : "true"}
         aria-pressed={context.isSelected ? "true" : "false"}
         aria-description={description}
-        draggable={isAvailable && !readOnly}
+        draggable={isAvailable && !readOnly && isEventMovable(event)}
         disabled={!isAvailable}
         focusableWhenDisabled
         onClick={(clickEvent) => {
@@ -746,6 +751,7 @@ const WeekGridOverflowButton = ({
 interface WeekGridCellContentProps<Payload> {
   readonly allDayPositions: readonly AllDayPosition<Payload>[];
   readonly cellClassName?: string;
+  readonly dragPreview: WeekGridDragPreview | null;
   readonly gutterClassName?: string;
   readonly context: CalendarCellContext;
   readonly currentInstant: UtcInstant;
@@ -795,6 +801,7 @@ const WeekGridCellContent = <Payload,>(
     cellClassName,
     context,
     currentInstant,
+    dragPreview,
     dropTargetKeys,
     gridCellKey,
     gutterClassName,
@@ -834,6 +841,8 @@ const WeekGridCellContent = <Payload,>(
   }
 
   const unavailable = unavailableCellKeys.has(gridCellKey);
+  const dropTarget =
+    dragPreview?.targetKey === gridCellKey ? dragPreview : null;
 
   const cellContext: CalendarCellContext = {
     ...context,
@@ -855,6 +864,16 @@ const WeekGridCellContent = <Payload,>(
       >
         {renderCell?.(cellContext)}
         {unavailable && renderUnavailable?.(context.cell)}
+        {dropTarget?.height !== undefined && (
+          <div
+            className={styles.dragGhost}
+            aria-hidden="true"
+            data-drag-ghost=""
+            style={{ blockSize: `${dropTarget.height}px` }}
+          >
+            {dropTarget.title}
+          </div>
+        )}
       </div>
       {overflow !== undefined && (
         <WeekGridOverflowButton
@@ -868,7 +887,8 @@ const WeekGridCellContent = <Payload,>(
           key={`${position.event.id}:${position.startColumn}:${position.endColumn}`}
           eventId={position.event.id}
           className={clsx(styles.eventFrame, styles.allDayFrame)}
-          draggable={!readOnly && !unavailable}
+          dragging={dragPreview?.eventId === position.event.id}
+          draggable={!readOnly && !unavailable && isEventMovable(position.event)}
           insetBlockStart={`${position.lane * (EVENT_CHIP_HEIGHT + 2)}px`}
           inlineSize={`${position.endColumn - position.startColumn}00%`}
         >
@@ -891,7 +911,8 @@ const WeekGridCellContent = <Payload,>(
           key={position.segment.event.id + position.segment.date}
           eventId={position.event.id}
           className={clsx(styles.eventFrame, styles.timedFrame)}
-          draggable={!readOnly && !unavailable}
+          dragging={dragPreview?.eventId === position.event.id}
+          draggable={!readOnly && !unavailable && isEventMovable(position.event)}
           style={{
             blockSize: `${position.height}px`,
             insetInlineStart: `${position.geometry.insetInlineStart}%`,
@@ -929,6 +950,7 @@ const WeekGridContent = <Payload = unknown,>(
     controller,
     currentInstant,
     detailVisible,
+    dragPreview,
     firstTimedCellKey,
     frameRef,
     getCellLabel,
@@ -1011,6 +1033,7 @@ const WeekGridContent = <Payload = unknown,>(
         allDayPositionsByCell.get(gridCellKey(context.cell)) ?? EMPTY_LIST
       }
       cellClassName={cellClassName}
+      dragPreview={dragPreview}
       gutterClassName={gutterClassName}
       context={context}
       currentInstant={currentInstant}
