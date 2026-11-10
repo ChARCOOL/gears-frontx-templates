@@ -1,5 +1,6 @@
 export {
   CreateEventPanel,
+  type CalendarLocationNode,
   type CreateEventKind,
   type CreateEventPanelHandle,
   type CreateEventPanelProps,

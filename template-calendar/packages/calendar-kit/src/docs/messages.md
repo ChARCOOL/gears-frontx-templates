@@ -269,6 +269,7 @@ Event state words shared by the views.
 | `calendar.create_event.field.end_time` | End time |  |
 | `calendar.create_event.field.event_type` | Event type |  |
 | `calendar.create_event.field.location` | Location |  |
+| `calendar.create_event.field.location_level` | Location level {{level}} | `level` |
 | `calendar.create_event.field.notify` | Notify |  |
 | `calendar.create_event.field.notify_lead` | Notify before |  |
 | `calendar.create_event.field.people` | People |  |
@@ -288,10 +289,12 @@ Event state words shared by the views.
 | `calendar.create_event.notify.lead_minutes_other` | {{count}} minutes before | `count` |
 | `calendar.create_event.notify.lead_now` | At time of event |  |
 | `calendar.create_event.people.no_results` | No people |  |
+| `calendar.create_event.people.optional` | Optional |  |
 | `calendar.create_event.placeholder.calendar` | Choose a calendar |  |
 | `calendar.create_event.placeholder.conferencing` | Add conferencing |  |
 | `calendar.create_event.placeholder.event_type` | Choose an event type |  |
 | `calendar.create_event.placeholder.location` | Add a location |  |
+| `calendar.create_event.placeholder.location_level` | Choose a location |  |
 | `calendar.create_event.placeholder.people` | Add people |  |
 | `calendar.create_event.placeholder.url` | Add a URL |  |
 | `calendar.create_event.repeat.biweekly` | Biweekly |  |

@@ -26,6 +26,7 @@ import type { CalendarTranslate } from "../../../i18n/calendar-localization";
 import { englishTranslate as t } from "../../../i18n/english";
 import { CreateEventPanel } from "../create-event-panel";
 import type {
+  CalendarLocationNode,
   CreateEventKind,
   CreateEventPanelHandle,
   CreateEventPanelProps,
@@ -236,6 +237,15 @@ describe("CreateEventPanel public shell", () => {
     );
 
     assert(screen.queryByRole("region", { name: /create/iu })).toBeNull();
+  });
+
+  it("hands the current draft to renderFields so hosts can vary fields by event type", () => {
+    renderPopover({
+      defaultDraft: { ...BASE_DRAFT, eventTypeId: "interview" },
+      renderFields: (draft) => <span>Fields for {draft.eventTypeId}</span>,
+    });
+
+    assert(screen.getByText("Fields for interview")).toBeInTheDocument();
   });
 
   it("renders injected directory resources and a consumer field slot without app adapters", () => {
@@ -1518,6 +1528,7 @@ describe("CreateEventPanel combobox fidelity", () => {
     assert(onSubmit).toHaveBeenCalledWith({
       ...BASE_DRAFT,
       attendeeIds: [],
+      optionalAttendeeIds: [],
     });
   });
 
@@ -1944,5 +1955,172 @@ describe("CreateEventPanel reminder notify", () => {
       notify: null,
       url: null,
     });
+  });
+});
+
+describe("CreateEventPanel optional attendees", () => {
+  it("marks a selected attendee optional from its chip and submits the optional ids", () => {
+    const onSubmit = submitSpy();
+
+    renderPopover({
+      defaultDraft: { ...BASE_DRAFT, attendeeIds: ["person-1", "person-2"] },
+      onSubmit,
+    });
+
+    const ada = screen.getByRole("button", { name: "Optional Ada Lovelace" });
+    assert(ada).toHaveAttribute("aria-pressed", "false");
+
+    act(() => {
+      fireEvent.click(ada);
+    });
+    assert(ada).toHaveAttribute("aria-pressed", "true");
+
+    act(() => {
+      fireEvent.click(getSubmitButton());
+    });
+
+    assert(onSubmit).toHaveBeenCalledWith({
+      ...BASE_DRAFT,
+      attendeeIds: ["person-1", "person-2"],
+      optionalAttendeeIds: ["person-1"],
+    });
+  });
+
+  it("drops an attendee from the optional ids when the attendee chip is removed", () => {
+    const onSubmit = submitSpy();
+
+    renderPopover({
+      defaultDraft: {
+        ...BASE_DRAFT,
+        attendeeIds: ["person-1", "person-2"],
+        optionalAttendeeIds: ["person-1"],
+      },
+      onSubmit,
+    });
+
+    act(() => {
+      fireEvent.click(
+        screen.getByRole("button", { name: /remove ada lovelace/iu })
+      );
+    });
+
+    assert(
+      screen.queryByRole("button", { name: "Optional Ada Lovelace" })
+    ).toBeNull();
+
+    act(() => {
+      fireEvent.keyDown(screen.getByRole("combobox", { name: /people/iu }), {
+        key: "Escape",
+      });
+    });
+    act(() => {
+      fireEvent.click(getSubmitButton());
+    });
+
+    assert(onSubmit).toHaveBeenCalledWith({
+      ...BASE_DRAFT,
+      attendeeIds: ["person-2"],
+      optionalAttendeeIds: [],
+    });
+  });
+
+  it("selects a group option like a person and reports its id", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSubmit = submitSpy();
+
+    renderPopover({
+      onSubmit,
+      people: [{ id: "team-design", kind: "group", label: "Design team" }],
+    });
+
+    await user.click(screen.getByRole("combobox", { name: /people/iu }));
+    await user.click(screen.getByRole("option", { name: "Design team" }));
+
+    act(() => {
+      fireEvent.click(getSubmitButton());
+    });
+
+    assert(onSubmit).toHaveBeenCalledWith({
+      ...BASE_DRAFT,
+      attendeeIds: ["team-design"],
+    });
+  });
+});
+
+describe("CreateEventPanel location hierarchy", () => {
+  const locationHierarchy: readonly CalendarLocationNode[] = [
+    {
+      children: [
+        {
+          children: [{ id: "room-204", label: "Room 204" }],
+          id: "building-a",
+          label: "Building A",
+        },
+      ],
+      id: "campus-north",
+      label: "North campus",
+    },
+    { id: "virtual", label: "Virtual" },
+  ];
+
+  const locationLevels = (): HTMLElement[] =>
+    screen.getAllByRole("combobox", { name: /location/iu });
+
+  it("reveals each level after a choice and writes only the leaf id to the draft", () => {
+    const onSubmit = submitSpy();
+    renderPopover({ locationHierarchy, onSubmit });
+
+    assert(locationLevels()).toHaveLength(1);
+    chooseSelectOption(/location/iu, "North campus", 0);
+    chooseSelectOption(/location/iu, "Building A", 1);
+    chooseSelectOption(/location/iu, "Room 204", 2);
+
+    act(() => {
+      fireEvent.click(getSubmitButton());
+    });
+
+    assert(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      ...BASE_DRAFT,
+      location: "room-204",
+    });
+  });
+
+  it("names each revealed location level by its depth", () => {
+    renderPopover({ locationHierarchy });
+
+    chooseSelectOption(/location/iu, "North campus", 0);
+
+    assert(
+      screen.getByRole("combobox", { name: "Location level 1" })
+    ).toBeInTheDocument();
+    assert(
+      screen.getByRole("combobox", { name: "Location level 2" })
+    ).toBeInTheDocument();
+  });
+
+  it("shows the levels of a location the host sets after the form is open", () => {
+    const { rerender } = render(
+      <CreateEventPanel
+        {...popoverProps({
+          draft: { ...BASE_DRAFT, location: null },
+          locationHierarchy,
+        })}
+      />
+    );
+
+    rerender(
+      <CreateEventPanel
+        {...popoverProps({
+          draft: { ...BASE_DRAFT, location: "room-204" },
+          locationHierarchy,
+        })}
+      />
+    );
+
+    const levels = locationLevels();
+    assert(levels).toHaveLength(3);
+    assert(levels[0]?.textContent).toContain("North campus");
+    assert(levels[1]?.textContent).toContain("Building A");
+    assert(levels[2]?.textContent).toContain("Room 204");
   });
 });

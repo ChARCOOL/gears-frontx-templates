@@ -111,6 +111,8 @@ interface ComboboxProps extends Omit<
   readonly closeOnSelect?: boolean;
   readonly selectedValues?: readonly string[];
   readonly renderOption?: (option: ComboboxOption) => ReactNode;
+  /** Extra control rendered inside each selected chip in tags mode, after its label. */
+  readonly renderTagAction?: (option: ComboboxOption) => ReactNode;
   readonly loading?: boolean;
   readonly emptyMessage?: ReactNode;
   readonly loadingMessage?: ReactNode;
@@ -242,6 +244,7 @@ interface ComboboxTagsBodyProps extends ComboboxBodyProps {
   readonly clearTagsLabel?: string;
   readonly embedded: boolean;
   readonly onClearTags: (() => void) | undefined;
+  readonly renderTagAction: ((option: ComboboxOption) => ReactNode) | undefined;
 }
 
 const ComboboxTagsBody = ({
@@ -256,6 +259,7 @@ const ComboboxTagsBody = ({
   name,
   onClearTags,
   readOnly,
+  renderTagAction,
   required,
 }: ComboboxTagsBodyProps) => {
   const {
@@ -312,6 +316,7 @@ const ComboboxTagsBody = ({
             removeLabel={`${t("calendar.tag.remove")} ${textFromNode(option.label) || option.value}`}
           >
             {option.label}
+            {renderTagAction?.(option)}
           </UiComboboxChip>
         ))}
         <UiComboboxChipsInput {...inputProps} className={styles.chipsInput} />
@@ -442,6 +447,7 @@ export const Combobox = ({
   closeOnSelect = true,
   selectedValues,
   renderOption,
+  renderTagAction,
   loading = false,
   emptyMessage,
   loadingMessage,
@@ -593,6 +599,7 @@ export const Combobox = ({
             name={name}
             onClearTags={onClearTags}
             readOnly={readOnly}
+            renderTagAction={renderTagAction}
             required={required}
           />
         ) : (

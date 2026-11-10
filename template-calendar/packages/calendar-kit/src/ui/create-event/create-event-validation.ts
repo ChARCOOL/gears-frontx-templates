@@ -15,6 +15,7 @@ const VALIDATION_FIELDS: readonly CreateEventField[] = [
   "startTime",
   "endTime",
   "recurrenceRule",
+  "optionalAttendeeIds",
   "url",
 ];
 
@@ -66,6 +67,7 @@ export const createEventErrorMessages = (
   endDate: messageFor(errors, "endDate", t),
   endTime: messageFor(errors, "endTime", t),
   eventTypeId: messageFor(errors, "eventTypeId", t),
+  optionalAttendeeIds: messageFor(errors, "optionalAttendeeIds", t),
   recurrenceRule: messageFor(errors, "recurrenceRule", t),
   startDate: messageFor(errors, "startDate", t),
   startTime: messageFor(errors, "startTime", t),

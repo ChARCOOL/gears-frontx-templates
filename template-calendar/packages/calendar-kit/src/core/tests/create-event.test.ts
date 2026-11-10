@@ -154,4 +154,25 @@ describe(validateCreateEventDraft, () => {
       );
     }
   );
+
+  it("accepts optional attendees that are also selected attendees", () => {
+    const validation = validateCreateEventDraft({
+      ...timedDraft(),
+      attendeeIds: ["person-1", "person-2"],
+      optionalAttendeeIds: ["person-2"],
+    });
+
+    assert(validation.valid).toBeTruthy();
+  });
+
+  it("rejects an optional attendee id that is not a selected attendee", () => {
+    const validation = validateCreateEventDraft({
+      ...timedDraft(),
+      attendeeIds: ["person-1"],
+      optionalAttendeeIds: ["person-2"],
+    });
+
+    assert(validation.valid).toBeFalsy();
+    assert(validation.errors.optionalAttendeeIds).toBe("invalid");
+  });
 });

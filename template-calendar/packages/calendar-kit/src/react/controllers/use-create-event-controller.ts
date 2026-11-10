@@ -27,6 +27,8 @@ export interface CalendarResourceOption {
   readonly id: string;
   /** Display text, also what the combobox filters on. */
   readonly label: string;
+  /** Shows a group icon. The host expands a group into people itself. Default `person`. */
+  readonly kind?: "person" | "group";
 }
 
 export interface UseCreateEventControllerOptions {
@@ -137,6 +139,12 @@ const COMPARED_DRAFT_FIELDS = [
 const emptyAsNull = (value: unknown): unknown =>
   value === undefined || value === "" ? null : value;
 
+const sameIds = (
+  left: readonly string[] = [],
+  right: readonly string[] = []
+): boolean =>
+  left.length === right.length && left.every((id, index) => id === right[index]);
+
 const sameDraft = (
   left: CreateEventDraft,
   right: CreateEventDraft
@@ -153,12 +161,9 @@ const sameDraft = (
     return false;
   }
 
-  const leftAttendees = left.attendeeIds ?? [];
-  const rightAttendees = right.attendeeIds ?? [];
-
   return (
-    leftAttendees.length === rightAttendees.length &&
-    leftAttendees.every((id, index) => id === rightAttendees[index])
+    sameIds(left.attendeeIds, right.attendeeIds) &&
+    sameIds(left.optionalAttendeeIds, right.optionalAttendeeIds)
   );
 };
 

@@ -153,6 +153,7 @@ In every mode an available event still opens through `onEventSelect`. `DayGrid` 
 | `eventTypeId` | `string` |  | Host event-type id. |
 | `location` | `string` |  | Selected or typed location. |
 | `notify` | `{ readonly leadMinutes: number; }` |  | Browser notification for a reminder: minutes before it starts, or `null` when off. |
+| `optionalAttendeeIds` | `readonly string[]` |  | Ids of attendees marked optional. Each must be in `attendeeIds`; empty means all are required. |
 | `recurrenceRule` | `string` |  | RRULE body built by the Repeat field, or `null` for a one-off event. |
 | `url` | `string` |  | Link a reminder points to. Free text; the host decides what to do with it. |
 

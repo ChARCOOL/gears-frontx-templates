@@ -24,6 +24,7 @@ The form renders inline in the host container and is shadow-root safe; the host 
 | `eventTypeRequired` | `boolean` |  | Blocks submit until an event type is picked. Ignored when `eventTypeIds` is empty. |
 | `eventTypes` | `readonly CreateEventTypeOption[]` |  | Event types offered in the event-type field. The field is not rendered when empty or omitted. |
 | `kind` | `CreateEventKind` |  | Kind the form edits. `reminder` shows the reminder fields and hides the event-only ones. |
+| `locationHierarchy` | `readonly CalendarLocationNode[]` |  | Nested locations, one select per level in place of the flat location combobox. |
 | `now` | `UtcInstant` |  | Reference instant for the time-zone offset label. |
 | `onDraftChange` | `(draft: CreateEventDraft) => void` |  | Called on every field edit. |
 | `onKindChange` | `(kind: CreateEventKind) => void` |  | Shows the Event/Reminder switch in the header and reports the kind the user picks. |
@@ -31,7 +32,7 @@ The form renders inline in the host container and is shadow-root safe; the host 
 | `open` | `boolean` |  | Controlled open state. |
 | `ref` | `((instance: CreateEventPanelHandle \| null) => void \| (() => VoidOrUndefinedOnly)) \| RefOb…` |  | Lets the host close the form through its own unsaved-changes prompt. |
 | `renderError` | `(error: CreateEventSubmitError) => ReactNode` |  | Replaces how a submit error is shown. |
-| `renderFields` | `() => ReactNode` |  | Extra host fields rendered after the kit's fields. |
+| `renderFields` | `(draft: CreateEventDraft) => ReactNode` |  | Extra host fields rendered after the kit's fields. Receives the current draft. |
 | `renderFooter` | `() => ReactNode` |  | Content added above the Cancel/Save row. |
 | `renderHeader` | `() => ReactNode` |  | Content added below the header row. |
 
@@ -46,8 +47,9 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 - Dates and times use the large icon-left field treatment; the schedule shows its calendar colour as a dot in the selected value and each option, and people tags use stroke tags with dismiss and clear-all actions.
 - Timed events leave the end date empty when it is the same as the start date; the day-span indicator is shown only for a positive span.
 - Date rows are masked date inputs: the locale's date mask is typed segment by segment and commits as soon as it parses, the calendar button ahead of the value (or `Alt+ArrowDown`) opens a picker whose selection writes the row directly, and the optional end date clears from the trailing clear button.
-- The location control starts as a secondary `Add a location` action and opens the injected location combobox when requested.
+- The location control starts as a secondary `Add a location` action and opens the injected location combobox when requested. With `locationHierarchy`, one select per level replaces it: the next level appears after a choice, and the leaf id is written to `draft.location`.
 - The people and location comboboxes use the shared 36px form-field skin; selected people use 24px removable chips inside the same form-layer frame.
+- Each selected person chip has an `Optional` toggle (`aria-pressed`, keyboard operable). Toggled ids go to `draft.optionalAttendeeIds`; removing a person also removes its id, and clearing all people clears both lists. Everyone is required until marked. Groups (`kind: 'group'`) show a group icon and are selected like people; the host expands them into attendees itself.
 - Timed and all-day ranges are validated by the React-free core helper before `onSubmit` runs. The Save action is disabled while the draft is invalid or submitting.
 - Repeat offers Doesn’t repeat, Daily, Weekly, Biweekly, Monthly, Yearly and Custom. The Custom option's label never changes, whatever rule it holds.
 - Custom expands an editor inline under the Repeat field; the interval is a number field from 1 to 30. Every change is written to the draft immediately as an RFC 5545 rule body such as `FREQ=WEEKLY;BYDAY=MO,WE`. While it is open, the other fields and Save are disabled and Repeat stays live. Save keeps the rule, Cancel restores the preset and rule from when it opened, and Escape collapses it like Save. Choosing another preset closes it; choosing Custom again reopens the saved rule. Weekday choices are toggle buttons in display order; `Ends: Never` omits an end and `Ends: On` appends `UNTIL=YYYYMMDD`.
@@ -56,6 +58,61 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 - A clean cancel closes immediately. A dirty cancel, or an outside press in a dirty form, opens an alert dialog with keep-editing and discard actions; that press does not reach its target. An outside press in a clean form does nothing. Confirmed discard closes the form.
 - `ref` takes a `CreateEventPanelHandle`; its `requestCancel()` runs the same cancel path as the close control and resolves `true` once the form closed, or `false` when the user kept editing or a save is running.
 - `renderHeader`, `renderFields`, `renderFooter`, `renderError`, and shell render props provide host composition without app imports.
+- `renderFields(draft)` receives the current draft, so the host can render event-type fields from `draft.eventTypeId`. The kit does not know which types exist:
+
+```tsx
+const fieldsByEventType: Record<string, () => ReactNode> = {
+  interview: () => <InterviewFields />,
+  review: () => <ReviewFields />,
+};
+
+<CreateEventPanel
+  {...props}
+  renderFields={(draft) => fieldsByEventType[draft.eventTypeId ?? '']?.()}
+/>;
+```
+
+Mark attendees optional and show a group in the people list by passing options and reading the draft back:
+
+```tsx
+<CreateEventPanel
+  {...props}
+  people={[
+    { id: 'ada', label: 'Ada Lovelace' },
+    { id: 'design', label: 'Design team', kind: 'group' },
+  ]}
+  defaultDraft={{ ...draft, attendeeIds: ['ada', 'design'], optionalAttendeeIds: ['ada'] }}
+  onSubmit={(submitted) => {
+    // submitted.optionalAttendeeIds is ['ada'] when Ada is marked optional.
+    return save(submitted);
+  }}
+/>
+```
+
+Offer nested locations as one select per level. The leaf id is written to the draft, so `Room 204` submits as `room-204`:
+
+```tsx
+<CreateEventPanel
+  {...props}
+  locationHierarchy={[
+    {
+      id: 'north-campus',
+      label: 'North campus',
+      children: [
+        {
+          id: 'building-a',
+          label: 'Building A',
+          children: [{ id: 'room-204', label: 'Room 204' }],
+        },
+      ],
+    },
+    { id: 'virtual', label: 'Virtual' },
+  ]}
+  onSubmit={(submitted) => save(submitted)} // submitted.location is 'room-204' for Room 204
+/>
+```
+
+Without `locationHierarchy` the flat location combobox stays. With it, the `locations` prop is not shown.
 
 All labels come from `t`; `locale`, `timeZone`, `direction`, and `now` are presentation inputs. When `now` is omitted, the time-zone label follows the wall clock. The title is plain text.
 
@@ -92,6 +149,7 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.field.end_time` | End time |  |
 | `calendar.create_event.field.event_type` | Event type |  |
 | `calendar.create_event.field.location` | Location |  |
+| `calendar.create_event.field.location_level` | Location level {{level}} | `level` |
 | `calendar.create_event.field.notify` | Notify |  |
 | `calendar.create_event.field.notify_lead` | Notify before |  |
 | `calendar.create_event.field.people` | People |  |
@@ -111,10 +169,12 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.notify.lead_minutes_other` | {{count}} minutes before | `count` |
 | `calendar.create_event.notify.lead_now` | At time of event |  |
 | `calendar.create_event.people.no_results` | No people |  |
+| `calendar.create_event.people.optional` | Optional |  |
 | `calendar.create_event.placeholder.calendar` | Choose a calendar |  |
 | `calendar.create_event.placeholder.conferencing` | Add conferencing |  |
 | `calendar.create_event.placeholder.event_type` | Choose an event type |  |
 | `calendar.create_event.placeholder.location` | Add a location |  |
+| `calendar.create_event.placeholder.location_level` | Choose a location |  |
 | `calendar.create_event.placeholder.people` | Add people |  |
 | `calendar.create_event.placeholder.url` | Add a URL |  |
 | `calendar.create_event.repeat.biweekly` | Biweekly |  |

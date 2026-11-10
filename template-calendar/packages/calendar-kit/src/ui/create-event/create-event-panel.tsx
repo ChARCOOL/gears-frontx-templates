@@ -77,6 +77,7 @@ import {
   subscribeGlobalEvent,
 } from "../primitives/global-event-listener";
 import { isNestedLayerEvent } from "../primitives/portal-layer";
+import { textFromNode } from "../primitives/react-node-text";
 import { swallowNextClick } from "../primitives/popover/popover-internals";
 import { Input } from "../primitives/input/input";
 import { Radio, RadioGroup } from "../primitives/radio/radio";
@@ -140,12 +141,14 @@ export interface CreateEventPanelProps
   readonly people: readonly CalendarResourceOption[];
   /** Locations offered in the location combobox. */
   readonly locations: readonly CalendarResourceOption[];
+  /** Nested locations, one select per level in place of the flat location combobox. */
+  readonly locationHierarchy?: readonly CalendarLocationNode[];
   /** Conferencing providers offered in the conferencing select. */
   readonly conferencingProviders: readonly CalendarResourceOption[];
   /** Content added below the header row. */
   readonly renderHeader?: () => ReactNode;
-  /** Extra host fields rendered after the kit's fields. */
-  readonly renderFields?: () => ReactNode;
+  /** Extra host fields rendered after the kit's fields. Receives the current draft. */
+  readonly renderFields?: (draft: CreateEventDraft) => ReactNode;
   /** Content added above the Cancel/Save row. */
   readonly renderFooter?: () => ReactNode;
   /** Replaces how a submit error is shown. */
@@ -162,8 +165,22 @@ export type CreateEventKind = "event" | "reminder";
 
 export interface ResourceItem {
   readonly value: string;
-  readonly label: string;
+  readonly label: ReactNode;
   readonly dividerAfter?: boolean;
+}
+
+export interface CalendarLocationNode {
+  /** Stable id written to the draft location when this node is the chosen leaf. */
+  readonly id: string;
+  /** Display text in the level's select. */
+  readonly label: string;
+  /** Options for the next level. A node without children is a leaf. */
+  readonly children?: readonly CalendarLocationNode[];
+}
+
+export interface CalendarLocationLevel {
+  readonly options: readonly CalendarLocationNode[];
+  readonly selectedId: string | undefined;
 }
 
 interface CustomRepeatViewProps {
@@ -940,6 +957,12 @@ const useNativeSelectChange = (
   }, [root]);
 };
 
+// The location level state rides on the controller so it reaches the fields without extra props.
+type CreateEventFormController = ReturnType<typeof useCreateEventController> & {
+  readonly locationLevels: readonly CalendarLocationLevel[] | undefined;
+  readonly onLocationLevelSelect: (level: number, id: string) => void;
+};
+
 interface CreateEventFormProps {
   readonly calendarItems: readonly {
     readonly icon: ReactNode;
@@ -948,7 +971,7 @@ interface CreateEventFormProps {
   }[];
   readonly canSubmit: boolean;
   readonly conferencingItems: readonly ResourceItem[];
-  readonly controller: ReturnType<typeof useCreateEventController>;
+  readonly controller: CreateEventFormController;
   readonly displayedEndDate: CalendarDate | "";
   readonly eventTypeItems: readonly {
     readonly icon: ReactNode | undefined;
@@ -978,7 +1001,7 @@ interface CreateEventFormProps {
   readonly discardOpen: boolean;
   readonly repeatEditing: boolean;
   readonly repeatEditor: ReactNode;
-  readonly renderFields?: () => ReactNode;
+  readonly renderFields?: (draft: CreateEventDraft) => ReactNode;
   readonly renderFooter?: () => ReactNode;
   readonly renderHeader?: () => ReactNode;
   readonly repeatAnchorRef: RefObject<HTMLButtonElement | null>;
@@ -1035,7 +1058,31 @@ const CreateEventAdditionalFields = (
 
   return (
     <>
-      {locationEditorOpen ? (
+      {controller.locationLevels !== undefined ? (
+        controller.locationLevels.map((level, index) => (
+          <Field className={styles.field} key={index}>
+            <Select
+              id={fieldId(`location-${index}`)}
+              aria-label={t("calendar.create_event.field.location_level", {
+                level: index + 1,
+              })}
+              options={level.options.map((option) => ({
+                label: option.label,
+                value: option.id,
+              }))}
+              value={level.selectedId}
+              size="l"
+              iconLeft={<MapPinIcon aria-hidden="true" />}
+              showSelectedCheck
+              disabled={controller.isSubmitting}
+              placeholder={t("calendar.create_event.placeholder.location_level")}
+              onValueChange={(id) => {
+                controller.onLocationLevelSelect(index, id);
+              }}
+            />
+          </Field>
+        ))
+      ) : locationEditorOpen ? (
         <Field className={styles.field}>
           <Combobox
             id={fieldId("location")}
@@ -1124,6 +1171,7 @@ const CreateEventPeopleField = ({
   visiblePeopleItems,
 }: CreateEventPeopleFieldProps) => {
   const { t } = useCalendarLocalization();
+  const optionalIds = controller.draft.optionalAttendeeIds ?? [];
 
   return (
     <Field className={styles.field}>
@@ -1155,7 +1203,36 @@ const CreateEventPeopleField = ({
           onPeopleSelect({ label: value, value });
         }}
         onClearTags={() => {
-          setDraft({ ...controller.draft, attendeeIds: [] });
+          setDraft({
+            ...controller.draft,
+            attendeeIds: [],
+            optionalAttendeeIds: [],
+          });
+        }}
+        renderTagAction={(option) => {
+          const isOptional = optionalIds.includes(option.value);
+          const optionalLabel = t("calendar.create_event.people.optional");
+
+          return (
+            <button
+              type="button"
+              aria-pressed={isOptional}
+              aria-label={`${optionalLabel} ${textFromNode(option.label) || option.value}`}
+              disabled={controller.isSubmitting}
+              className={styles.optionalToggle}
+              onClick={(event) => {
+                event.stopPropagation();
+                setDraft({
+                  ...controller.draft,
+                  optionalAttendeeIds: isOptional
+                    ? optionalIds.filter((id) => id !== option.value)
+                    : [...optionalIds, option.value],
+                });
+              }}
+            >
+              {optionalLabel}
+            </button>
+          );
         }}
       />
     </Field>
@@ -1644,7 +1721,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
             <FieldError id={fieldId("form-error")}>{firstError}</FieldError>
           )}
           {submitErrorContent}
-          {renderFields?.()}
+          {renderFields?.(controller.draft)}
         </div>
       </FieldGroup>
     </ScrollRegion>

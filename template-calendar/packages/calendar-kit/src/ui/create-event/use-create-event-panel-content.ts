@@ -1,4 +1,6 @@
 import {
+  createElement,
+  Fragment,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -7,8 +9,9 @@ import {
   useRef,
   useState,
 } from "react";
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import type * as React from "react";
+import { UsersIcon } from "lucide-react";
 
 import { validateCreateEventDraft } from "../../core/create-event";
 import type { CalendarDate, CreateEventDraft } from "../../core/model";
@@ -35,6 +38,8 @@ import type {
   RepeatUnit,
 } from "./create-event-format";
 import type {
+  CalendarLocationLevel,
+  CalendarLocationNode,
   CreateEventKind,
   CreateEventPanelProps,
   ResourceItem,
@@ -89,20 +94,30 @@ const rememberTimedTimes = (
   }
 };
 
-const filteredResourceItems = (
-  items: readonly ResourceItem[],
+const filteredResources = (
+  resources: readonly CalendarResourceOption[],
   query: string
-): readonly ResourceItem[] => {
+): readonly CalendarResourceOption[] => {
   if (query === "") {
-    return items;
+    return resources;
   }
 
   const normalizedQuery = query.toLocaleLowerCase();
 
-  return items.filter((item) =>
-    item.label.toLocaleLowerCase().includes(normalizedQuery)
+  return resources.filter((resource) =>
+    resource.label.toLocaleLowerCase().includes(normalizedQuery)
   );
 };
+
+const resourceLabel = (resource: CalendarResourceOption): ReactNode =>
+  resource.kind === "group"
+    ? createElement(
+        Fragment,
+        null,
+        createElement(UsersIcon, { "aria-hidden": "true" }),
+        resource.label
+      )
+    : resource.label;
 
 const selectedPeopleForDraft = (
   attendeeIds: readonly string[] | undefined,
@@ -120,9 +135,43 @@ const resourcesToItems = (
   resources: readonly CalendarResourceOption[]
 ): readonly ResourceItem[] =>
   resources.map((resource) => ({
-    label: resource.label,
+    label: resourceLabel(resource),
     value: resource.id,
   }));
+
+const locationPathTo = (
+  nodes: readonly CalendarLocationNode[],
+  leafId: string | null | undefined
+): readonly string[] => {
+  for (const node of nodes) {
+    if (node.id === leafId) {
+      return [node.id];
+    }
+
+    const childPath = locationPathTo(node.children ?? [], leafId);
+    if (childPath.length > 0) {
+      return [node.id, ...childPath];
+    }
+  }
+
+  return [];
+};
+
+const resolveLocationLevels = (
+  nodes: readonly CalendarLocationNode[],
+  path: readonly string[]
+): readonly CalendarLocationLevel[] => {
+  const levels: CalendarLocationLevel[] = [];
+  let options = nodes;
+
+  for (let depth = 0; options.length > 0; depth++) {
+    const selectedId = path[depth];
+    levels.push({ options, selectedId });
+    options = options.find((node) => node.id === selectedId)?.children ?? [];
+  }
+
+  return levels;
+};
 
 const repeatOptions = (t: CalendarTranslate): readonly ResourceItem[] => [
   {
@@ -280,6 +329,7 @@ export const useCreateEventPanelContent = (
     calendars,
     people,
     locations,
+    locationHierarchy,
     conferencingProviders,
     className,
     renderHeader,
@@ -312,6 +362,20 @@ export const useCreateEventPanelContent = (
   const [locationEditorOpen, setLocationEditorOpen] = useState(() =>
     Boolean(controller.draft.location)
   );
+
+  const draftLocation = controller.draft.location ?? null;
+
+  const [locationPathState, setLocationPathState] = useState(() => ({
+    location: draftLocation,
+    path: locationPathTo(locationHierarchy ?? [], draftLocation),
+  }));
+
+  // A host can set the location after the form opens. The stored path only applies to the
+  // location it was built for; otherwise the path is read from the draft again.
+  const locationPath =
+    locationPathState.location === draftLocation
+      ? locationPathState.path
+      : locationPathTo(locationHierarchy ?? [], draftLocation);
 
   const [repeatPreset, setRepeatPreset] = useState<RepeatPreset>(() =>
     resolveRepeatPreset(controller.draft.recurrenceRule)
@@ -372,7 +436,7 @@ export const useCreateEventPanelContent = (
   const deferredPeopleQuery = useDeferredValue(peopleQuery);
 
   const visiblePeopleItems = useMemo(
-    () => filteredResourceItems(resourcesToItems(people), deferredPeopleQuery),
+    () => resourcesToItems(filteredResources(people, deferredPeopleQuery)),
     [deferredPeopleQuery, people]
   );
 
@@ -383,6 +447,11 @@ export const useCreateEventPanelContent = (
   const locationQuery = controller.draft.location ?? "";
 
   const locationItems = useMemo(() => resourcesToItems(locations), [locations]);
+
+  const locationLevels =
+    locationHierarchy === undefined
+      ? undefined
+      : resolveLocationLevels(locationHierarchy, locationPath);
 
   const conferencingItems = useMemo(
     () => resourcesToItems(conferencingProviders),
@@ -526,6 +595,22 @@ export const useCreateEventPanelContent = (
     setCustomRepeatOpen(false);
   };
 
+  const onLocationLevelSelect = (level: number, id: string): void => {
+    const node = locationLevels?.[level]?.options.find(
+      (option) => option.id === id
+    );
+    if (node === undefined) {
+      return;
+    }
+
+    const location = (node.children ?? []).length > 0 ? "" : id;
+    setLocationPathState({
+      location: location || null,
+      path: [...locationPath.slice(0, level), id],
+    });
+    updateLocation(location);
+  };
+
   const onLocationSelection = (value: string): void => {
     const location = locations.find((candidate) => candidate.id === value);
 
@@ -588,9 +673,14 @@ export const useCreateEventPanelContent = (
 
   const onPeopleSelect = (option: ComboboxOption): void => {
     const selectedIds = selectedPeopleIds ?? [];
+    const attendeeIds = toggleAttendee(selectedIds, option.value);
+
     setDraft({
       ...controller.draft,
-      attendeeIds: toggleAttendee(selectedIds, option.value),
+      attendeeIds,
+      optionalAttendeeIds: controller.draft.optionalAttendeeIds?.filter((id) =>
+        attendeeIds.includes(id)
+      ),
     });
   };
 
@@ -602,7 +692,7 @@ export const useCreateEventPanelContent = (
     className,
     closeCustomRepeat,
     conferencingItems,
-    controller,
+    controller: { ...controller, locationLevels, onLocationLevelSelect },
     customRepeat,
     customRepeatOpen,
     direction,

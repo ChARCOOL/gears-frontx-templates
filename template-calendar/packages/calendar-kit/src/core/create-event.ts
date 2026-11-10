@@ -34,6 +34,7 @@ export type CreateEventField =
   | "startTime"
   | "endTime"
   | "recurrenceRule"
+  | "optionalAttendeeIds"
   | "url";
 
 export type CreateEventValidationError =
@@ -246,6 +247,11 @@ export const validateCreateEventDraft = (
 
   if (typeof draft.url === "string" && !isValidReminderUrl(draft.url)) {
     errors.url = "invalid";
+  }
+
+  const attendeeIds = new Set(draft.attendeeIds ?? []);
+  if ((draft.optionalAttendeeIds ?? []).some((id) => !attendeeIds.has(id))) {
+    errors.optionalAttendeeIds = "invalid";
   }
 
   if (draft.allDay) {

@@ -353,6 +353,8 @@ export interface CreateEventDraftBase {
   readonly eventTypeId?: string | null;
   /** Ids of the selected people. */
   readonly attendeeIds?: readonly string[];
+  /** Ids of attendees marked optional. Each must be in `attendeeIds`; empty means all are required. */
+  readonly optionalAttendeeIds?: readonly string[];
   /** Selected or typed location. */
   readonly location?: string | null;
   /** Selected conferencing provider. */

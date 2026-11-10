@@ -63,6 +63,24 @@ describe(useCreateEventController, () => {
     expect(result.current.isDirty).toBeTruthy();
   });
 
+  it("reports dirty state when only the optional attendee ids change", () => {
+    const { result } = renderHook(() =>
+      useCreateEventController(
+        options({ defaultDraft: { ...draft(), attendeeIds: ["person-1"] } })
+      )
+    );
+
+    act(() => {
+      result.current.setDraft({
+        ...draft(),
+        attendeeIds: ["person-1"],
+        optionalAttendeeIds: ["person-1"],
+      });
+    });
+
+    expect(result.current.isDirty).toBeTruthy();
+  });
+
   it("stays clean when the host resolves its own defaults after the card is open", () => {
     const initialDraft = draft();
     const { rerender, result } = renderHook(
