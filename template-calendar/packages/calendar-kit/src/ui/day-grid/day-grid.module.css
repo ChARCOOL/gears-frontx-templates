@@ -28,7 +28,7 @@
   background-image: repeating-linear-gradient(
     -45deg,
     var(--cal-slot-non-working-stripe) 0 2px,
-    transparent 2px 7px
+    transparent 2px 7.07px
   );
 }
 
