@@ -17,6 +17,7 @@ import {
   buildDayWindow,
   DEFAULT_WORKING_HOURS,
   FULL_DAY_TIME_WINDOW,
+  alignTimeWindow,
   assertTimeWindow,
   buildSlotStarts,
   buildTimeWindowRange,
@@ -358,6 +359,27 @@ describe("calendar temporal algorithms", () => {
       assertTimeWindow(timeWindow("06:00", "23:10"), 20);
     }).toThrow(RangeError);
     assert(countWindowSlots(timeWindow("06:00", "23:00"), 30)).toBe(34);
+  });
+
+  it("widens a window outward to whole slots and rejects empty or inverted ones", () => {
+    assert(alignTimeWindow(timeWindow("06:30", "22:00"), 60)).toStrictEqual(
+      timeWindow("06:00", "22:00")
+    );
+    assert(alignTimeWindow(timeWindow("06:00", "23:10"), 20)).toStrictEqual(
+      timeWindow("06:00", "23:20")
+    );
+    assert(alignTimeWindow(timeWindow("08:30", "00:00"), 60)).toStrictEqual(
+      timeWindow("08:00", "00:00")
+    );
+    assert(alignTimeWindow(FULL_DAY_TIME_WINDOW, 15)).toStrictEqual(
+      FULL_DAY_TIME_WINDOW
+    );
+    assert(() => alignTimeWindow(timeWindow("10:00", "10:00"), 60)).toThrow(
+      RangeError
+    );
+    assert(() => alignTimeWindow(timeWindow("18:00", "08:00"), 60)).toThrow(
+      RangeError
+    );
   });
 
   it("orders a date range and tests membership inclusively", () => {
