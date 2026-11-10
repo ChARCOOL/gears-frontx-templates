@@ -121,3 +121,10 @@
     box-shadow: inset 0 0 0 var(--cal-border-width-1) Highlight;
   }
 }
+
+/* The controls do nothing on paper; the range title stays. */
+@media print {
+  .actions {
+    display: none;
+  }
+}
