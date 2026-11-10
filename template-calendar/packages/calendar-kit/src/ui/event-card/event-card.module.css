@@ -299,10 +299,14 @@ button.card.unavailable {
 .time {
   composes: metaText from "../../styles/modules/text.module.css";
   min-inline-size: 0;
-  color: var(--button-fg);
   font-size: var(--cal-text-meta-size);
   font-weight: var(--cal-text-meta-weight);
   line-height: var(--cal-text-meta-line-height);
+}
+
+/* Doubled class outranks the composed metaText, which sets the muted colour. */
+.time.time {
+  color: var(--button-fg);
 }
 
 /* Icons sit 4px from their text, as in the agenda and the detail rows. */
