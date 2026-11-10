@@ -3,6 +3,7 @@ import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { isEventActionable } from "../../core/actionability";
 import { arrayAt } from "../../core/array";
+import { compareCalendarCells } from "../../core/calendar-cell";
 import {
   bucketSegmentsByMonthWeekRow,
   segmentAllDayEventAcrossViewerDates,
@@ -17,16 +18,21 @@ import type {
   CalendarEvent,
   CalendarEventRenderContext,
   CalendarEventSegment,
+  CalendarMoveRequest,
   IanaTimeZone,
   UtcInstant,
 } from "../../core/model";
 import {
   buildDayRange,
   buildMonthRange,
+  fromViewerDateTime,
   toUtcRange,
+  toViewerDateTime,
 } from "../../core/temporal";
+import { datePartsInZone, padTwo, utcInstant } from "../../core/validation";
 import { useControlledValue } from "../hooks/use-controlled-value";
 import { useCurrentInstant } from "../hooks/use-current-instant";
+import { useInteractionController } from "../hooks/use-interaction-controller";
 import { buildMonthGridRows } from "./month-grid-view-model";
 import type {
   MonthGridCell,
@@ -81,6 +87,7 @@ export interface UseMonthGridControllerOptions {
     context: CalendarEventRenderContext,
     anchor?: HTMLElement
   ) => void;
+  readonly onMoveRequest?: (request: CalendarMoveRequest) => void;
 }
 
 export interface UseMonthGridControllerResult {
@@ -119,6 +126,15 @@ export interface UseMonthGridControllerResult {
   ) => void;
   readonly clearSelection: () => void;
   readonly getCellKey: (cell: CalendarCell) => string;
+  readonly moveEnabled: boolean;
+  /** Day the dragged event would land on, while that differs from its current day. */
+  readonly moveTargetDate: CalendarDate | undefined;
+  readonly beginMove: (event: TimedCalendarEvent) => void;
+  /** Without a date, the drag points back at its origin. */
+  readonly updateMove: (date?: CalendarDate) => void;
+  readonly endMove: () => void;
+  readonly cancelMove: () => void;
+  readonly isMoving: () => boolean;
 }
 
 const DEFAULT_DIRECTION: CalendarDirection = "ltr";
@@ -147,6 +163,32 @@ const buildEventSegment = (
     event,
     segment: null,
     start: event.start,
+  };
+};
+
+// `toViewerDateTime().time` is HH:mm only, so the seconds are read from the zone directly.
+const eventCellOnDate = (
+  event: TimedCalendarEvent,
+  date: CalendarDate,
+  timeZone: IanaTimeZone
+): CalendarCell => {
+  const zoned = datePartsInZone(Date.parse(event.start), timeZone);
+  const start = fromViewerDateTime({
+    date,
+    time: `${padTwo(zoned.hour)}:${padTwo(zoned.minute)}:${padTwo(zoned.second)}`,
+    timeZone,
+  });
+  const end = utcInstant(
+    new Date(Date.parse(start) + Date.parse(event.end) - Date.parse(event.start))
+  );
+  const viewerStart = toViewerDateTime(start, timeZone);
+
+  return {
+    date: viewerStart.date,
+    end,
+    endTime: toViewerDateTime(end, timeZone).time,
+    start,
+    startTime: viewerStart.time,
   };
 };
 
@@ -243,6 +285,14 @@ export const useMonthGridController = (
     now: options.now,
   });
   const { onEventSelect, timeZone } = options;
+
+  const moveEnabled = options.onMoveRequest !== undefined;
+
+  const moveInteraction = useInteractionController({
+    defaultInteractionMode: "paint-and-move",
+    onMoveRequest: options.onMoveRequest,
+    timeZone,
+  });
 
   const [cellHeight, setCellHeight] = useState(
     options.cellHeight ?? DEFAULT_CELL_HEIGHT
@@ -576,17 +626,70 @@ export const useMonthGridController = (
       }
     : null;
 
+  const beginMove = useCallback(
+    (event: TimedCalendarEvent): void => {
+      if (!moveEnabled) {
+        return;
+      }
+
+      const startDate = toViewerDateTime(event.start, timeZone).date;
+
+      moveInteraction.beginMove(
+        event,
+        eventCellOnDate(event, startDate, timeZone)
+      );
+    },
+    [moveEnabled, moveInteraction, timeZone]
+  );
+
+  const updateMove = useCallback(
+    (date?: CalendarDate): void => {
+      const current = moveInteraction.getInternals().state.drag;
+
+      moveInteraction.updateMove(
+        date !== undefined && current?.event.allDay === false
+          ? eventCellOnDate(current.event, date, timeZone)
+          : undefined
+      );
+    },
+    [moveInteraction, timeZone]
+  );
+
+  const cancelMove = useCallback((): void => {
+    // Once a drop is pending, cancelling would reject the host's move request.
+    if (moveInteraction.getInternals().state.drag !== null) {
+      moveInteraction.cancelMove();
+    }
+  }, [moveInteraction]);
+
+  const isMoving = useCallback(
+    (): boolean => moveInteraction.getInternals().state.drag !== null,
+    [moveInteraction]
+  );
+
+  const { drag } = moveInteraction;
+  const moveTargetDate =
+    drag !== null && compareCalendarCells(drag.from, drag.to) !== 0
+      ? drag.to.date
+      : undefined;
+
   return {
     allViewerDates,
     announcement,
+    beginMove,
+    cancelMove,
     cellHeight,
     clearSelection,
     currentInstant,
+    endMove: moveInteraction.endMove,
     focusEvent,
     focusedCell: publicFocusedCell,
     getCellKey,
     handleGridKeyDown,
+    isMoving,
     monthRange,
+    moveEnabled,
+    moveTargetDate,
     rows,
     segments: timedSegments,
     selectEvent,
@@ -595,5 +698,6 @@ export const useMonthGridController = (
     setCellRef,
     setFocusedCell,
     setMeasuredCellHeight,
+    updateMove,
   };
 };

@@ -47,6 +47,15 @@
   --blue: #37569c;
   --blue-soft: #e8eefe;
   --blue-accent: #7498f8;
+  --lavender: #6b4fbb;
+  --lavender-soft: #f3efff;
+  --lavender-accent: #9d85e0;
+  --violet: #7e2fa8;
+  --violet-soft: #f6eafc;
+  --violet-accent: #a64fd0;
+  --brown: #6b4a2e;
+  --brown-soft: #f5ece4;
+  --brown-accent: #a0744a;
 
   --font-sans: "Inter Variable", Inter, sans-serif;
   --text-heading-1-size: 18px;

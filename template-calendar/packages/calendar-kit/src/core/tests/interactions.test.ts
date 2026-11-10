@@ -114,6 +114,25 @@ describe("core interaction state machine", () => {
     });
   });
 
+  it("returns the same state while the pointer stays inside the painted range", () => {
+    const started = transitionInteraction(createInteractionState("paint-and-move"), {
+      cell: second,
+      type: "paint-start",
+    });
+
+    assert(transitionInteraction(started, { cell: second, type: "paint-update" })).toBe(started);
+  });
+
+  it("returns the same state while a drag target stays on the same cell", () => {
+    const dragging = run(
+      createInteractionState("paint-and-move"),
+      { event, from: first, type: "move-start" },
+      { to: second, type: "move-target" }
+    );
+
+    assert(transitionInteraction(dragging, { to: second, type: "move-target" })).toBe(dragging);
+  });
+
   it("does not emit a paint result from read-only mode", () => {
     const state = createInteractionState("read-only");
     const started = transitionInteraction(state, {

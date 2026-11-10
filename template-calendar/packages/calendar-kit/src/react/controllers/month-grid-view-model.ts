@@ -47,6 +47,7 @@ export interface MonthGridCell {
   readonly eventCount: number;
   readonly capacity: number;
   readonly hiddenCount: number;
+  readonly hiddenEvents: readonly CalendarEventSegment[];
   readonly visibleTimedEvents: readonly TimedMonthSegment[];
   readonly allDayEventIds: readonly string[];
 }
@@ -184,6 +185,27 @@ const indexAllDaySegmentsByRow = (
 
   return allDaySegmentsByRow;
 };
+
+const hiddenSegments = (
+  candidate: {
+    readonly allDaySpans: readonly MonthGridAllDaySpan[];
+    readonly timedEvents: readonly TimedMonthSegment[];
+  },
+  visibleIds: ReadonlySet<string>
+): readonly CalendarEventSegment[] => [
+  ...candidate.allDaySpans
+    .filter((span) => !visibleIds.has(span.event.id))
+    .map((span) => span.segment),
+  ...candidate.timedEvents
+    .filter((segment) => !visibleIds.has(segment.event.id))
+    .map((segment) => ({
+      date: segment.date,
+      end: segment.end,
+      event: segment.event,
+      segment: segment.segment,
+      start: segment.start,
+    })),
+];
 
 const visibleCountForCell = (
   cellHeight: number,
@@ -336,6 +358,7 @@ export const buildMonthGridRows = (
         date: candidate.date,
         eventCount,
         hiddenCount,
+        hiddenEvents: hiddenSegments(candidate, visibleIds),
         isOutsideMonth: candidate.isOutsideMonth,
         visibleTimedEvents,
       });
