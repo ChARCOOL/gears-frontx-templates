@@ -31,6 +31,7 @@ import type {
   Weekday,
 } from "../../core/model";
 import { addCalendarDays } from "../../core/temporal";
+import { isValidReminderUrl } from "../../core/create-event";
 import { parseLocalTime } from "../../core/validation";
 import {
   omitCalendarContextProps,
@@ -135,9 +136,15 @@ export interface CreateEventPopoverProps
   readonly renderFooter?: () => ReactNode;
   /** Replaces how a submit error is shown. */
   readonly renderError?: (error: CreateEventSubmitError) => ReactNode;
+  /** Kind the form edits. `reminder` shows the reminder fields and hides the event-only ones. */
+  readonly kind?: CreateEventKind;
+  /** Shows the Event/Reminder switch in the header and reports the kind the user picks. */
+  readonly onKindChange?: (kind: CreateEventKind) => void;
   /** Lets the host close the form through its own unsaved-changes prompt. */
   readonly ref?: Ref<CreateEventPopoverHandle>;
 }
+
+export type CreateEventKind = "event" | "reminder";
 
 export interface ResourceItem {
   readonly value: string;
@@ -164,7 +171,9 @@ interface DraftChangeProps {
 }
 
 interface FormHeaderProps {
+  readonly kind: CreateEventKind;
   readonly onClose: () => void;
+  readonly onKindChange?: (kind: CreateEventKind) => void;
   readonly renderHeader?: () => ReactNode;
   readonly titleId: string;
 }
@@ -310,8 +319,53 @@ const updateTimeField = (
   }
 };
 
+interface KindSwitchProps {
+  readonly kind: CreateEventKind;
+  readonly onKindChange: (kind: CreateEventKind) => void;
+}
+
+const CREATE_EVENT_KINDS: readonly CreateEventKind[] = ["event", "reminder"];
+
+const KIND_LABEL_IDS: Readonly<Record<CreateEventKind, string>> = {
+  event: "calendar.create_event.kind.event",
+  reminder: "calendar.create_event.kind.reminder",
+};
+
+const KindSwitch = ({ kind, onKindChange }: KindSwitchProps) => {
+  const { t } = useCalendarLocalization();
+
+  return (
+    <div
+      className={styles.kindSwitch}
+      role="group"
+      aria-label={t("calendar.create_event.kind.label")}
+    >
+      {CREATE_EVENT_KINDS.map((option) => {
+        const selected = option === kind;
+
+        return (
+          <Button
+            key={option}
+            type="button"
+            variant="tertiary"
+            size="m"
+            aria-pressed={selected}
+            onClick={() => {
+              onKindChange(option);
+            }}
+          >
+            {t(KIND_LABEL_IDS[option])}
+          </Button>
+        );
+      })}
+    </div>
+  );
+};
+
 const FormHeader = ({
+  kind,
   onClose,
+  onKindChange,
   renderHeader,
   titleId,
 }: FormHeaderProps) => {
@@ -336,9 +390,13 @@ const FormHeader = ({
   return (
     <div className={styles.header}>
       <div className={styles.heading}>
-        <h2 id={titleId} className={styles.title}>
-          {title}
-        </h2>
+        {onKindChange === undefined ? (
+          <h2 id={titleId} className={styles.title}>
+            {title}
+          </h2>
+        ) : (
+          <KindSwitch kind={kind} onKindChange={onKindChange} />
+        )}
         {renderHeader?.()}
         {actions}
       </div>
@@ -859,6 +917,8 @@ interface CreateEventFormProps {
   readonly fieldMessages: ReturnType<typeof createEventErrorMessages>;
   readonly firstError: string | null;
   readonly formId: string;
+  readonly kind: CreateEventKind;
+  readonly onKindChange?: (kind: CreateEventKind) => void;
   readonly onAllDayChange: (allDay: boolean) => void;
   readonly onLocationSelection: (value: string) => void;
   readonly onPeopleSelect: (option: ComboboxOption) => void;
@@ -988,6 +1048,7 @@ type CreateEventFieldsProps = Omit<
   CreateEventFormProps,
   | "canSubmit"
   | "formId"
+  | "onKindChange"
   | "onSubmit"
   | "discardOpen"
   | "renderFooter"
@@ -1055,8 +1116,51 @@ const CreateEventPeopleField = ({
   );
 };
 
+interface ReminderUrlFieldProps {
+  readonly draft: CreateEventDraft;
+  readonly disabled: boolean;
+  readonly fieldId: (name: string) => string;
+  readonly setDraft: (draft: CreateEventDraft) => void;
+}
+
+const ReminderUrlField = ({
+  draft,
+  disabled,
+  fieldId,
+  setDraft,
+}: ReminderUrlFieldProps) => {
+  const { t } = useCalendarLocalization();
+  // Save is off while the link is wrong, so the reason shows as the user types.
+  const invalid = typeof draft.url === "string" && !isValidReminderUrl(draft.url);
+
+  return (
+    <Field className={styles.field}>
+      <Input
+        id={fieldId("url")}
+        aria-label={t("calendar.create_event.field.url")}
+        invalid={invalid}
+        aria-describedby={invalid ? fieldId("url-error") : undefined}
+        placeholder={t("calendar.create_event.placeholder.url")}
+        value={draft.url ?? ""}
+        size="xl"
+        disabled={disabled}
+        iconLeft={<Link2Icon aria-hidden="true" />}
+        onValueChange={(value) => {
+          setDraft({ ...draft, url: value === "" ? null : value });
+        }}
+      />
+      {invalid ? (
+        <FieldError id={fieldId("url-error")} role="status">
+          {t("calendar.create_event.error.invalid")}
+        </FieldError>
+      ) : null}
+    </Field>
+  );
+};
+
 const CreateEventFields = (props: CreateEventFieldsProps) => {
   const {
+    kind,
     calendarItems,
     conferencingItems,
     controller,
@@ -1093,6 +1197,8 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
   } = props;
 
   const { t } = useCalendarLocalization();
+
+  const isReminder = kind === "reminder";
 
   const dayCount = dateRangeDayCount(
     controller.draft.startDate,
@@ -1308,7 +1414,15 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
         {/* The other fields take no input while the repeat editor is open, as in the design. */}
         <div className={styles.fields} inert={repeatEditing}>
           {titleField}
-          {calendarField}
+          {isReminder ? (
+            <ReminderUrlField
+              draft={controller.draft}
+              disabled={controller.isSubmitting}
+              fieldId={fieldId}
+              setDraft={setDraft}
+            />
+          ) : null}
+          {isReminder ? null : calendarField}
           {scheduleRows}
         </div>
 
@@ -1316,8 +1430,10 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
         {repeatEditor}
 
         <div className={styles.fields} inert={repeatEditing}>
-          {timeZoneField}
-          {peopleField}
+          {isReminder ? null : timeZoneField}
+          {isReminder ? null : (
+            <>
+              {peopleField}
 
           <Field className={styles.field}>
             <Select
@@ -1348,6 +1464,8 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
             setLocationEditorOpen={setLocationEditorOpen}
             updateLocation={updateLocation}
           />
+            </>
+          )}
 
           {firstError === null ? null : (
             <FieldError id={fieldId("form-error")}>{firstError}</FieldError>
@@ -1365,18 +1483,21 @@ const CreateEventForm = ({
   formId,
   onSubmit,
   discardOpen,
+  onKindChange,
   renderFooter,
   renderHeader,
   ...fieldProps
 }: CreateEventFormProps) => {
-  const { controller, fieldId } = fieldProps;
+  const { controller, fieldId, kind } = fieldProps;
 
   return (
     <>
       <FormHeader
+        kind={kind}
         onClose={() => {
           void controller.requestCancel();
         }}
+        onKindChange={onKindChange}
         renderHeader={renderHeader}
         titleId={fieldId("title-heading")}
       />
@@ -1457,6 +1578,8 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
   const view = useCreateEventPopoverContent(props);
 
   const {
+    kind,
+    onKindChange,
     cancelCustomRepeat,
     changeCustomRepeat,
     closeCustomRepeat,
@@ -1605,6 +1728,8 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
       fieldMessages={fieldMessages}
       firstError={firstError ?? null}
       formId={formId}
+      kind={kind}
+      onKindChange={onKindChange}
       onAllDayChange={onAllDayChange}
       onLocationSelection={onLocationSelection}
       onPeopleSelect={onPeopleSelect}

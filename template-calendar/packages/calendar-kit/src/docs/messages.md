@@ -273,6 +273,10 @@ Event state words shared by the views.
 | `calendar.create_event.field.start_time` | Start time |  |
 | `calendar.create_event.field.timezone` | Time zone |  |
 | `calendar.create_event.field.title` | Title |  |
+| `calendar.create_event.field.url` | URL |  |
+| `calendar.create_event.kind.event` | Event |  |
+| `calendar.create_event.kind.label` | Event type |  |
+| `calendar.create_event.kind.reminder` | Reminder |  |
 | `calendar.create_event.location.no_results` | No locations |  |
 | `calendar.create_event.no_options` | No options available |  |
 | `calendar.create_event.people.no_results` | No people |  |
@@ -280,6 +284,7 @@ Event state words shared by the views.
 | `calendar.create_event.placeholder.conferencing` | Add conferencing |  |
 | `calendar.create_event.placeholder.location` | Add a location |  |
 | `calendar.create_event.placeholder.people` | Add people |  |
+| `calendar.create_event.placeholder.url` | Add a URL |  |
 | `calendar.create_event.repeat.biweekly` | Biweekly |  |
 | `calendar.create_event.repeat.custom` | Custom… |  |
 | `calendar.create_event.repeat.daily` | Daily |  |

@@ -132,4 +132,26 @@ describe(validateCreateEventDraft, () => {
       validateCreateEventDraft({ ...timedDraft(), recurrenceRule }).valid
     ).toBe(valid);
   });
+
+  it.each([
+    "ftp://example.com/file",
+    "javascript:alert(1)",
+    "https://user@example.com/",
+    "not a link",
+    `https://example.com/${"a".repeat(2048)}`,
+  ])("rejects the reminder link %s", (url) => {
+    const validation = validateCreateEventDraft({ ...timedDraft(), url });
+
+    assert(validation.valid).toBe(false);
+    assert(validation.errors.url).toBe("invalid");
+  });
+
+  it.each(["https://example.com/prep?x=1", "http://example.com", null])(
+    "accepts the reminder link %s",
+    (url) => {
+      assert(validateCreateEventDraft({ ...timedDraft(), url }).valid).toBe(
+        true
+      );
+    }
+  );
 });

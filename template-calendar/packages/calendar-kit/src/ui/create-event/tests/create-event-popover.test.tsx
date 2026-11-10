@@ -26,6 +26,7 @@ import type { CalendarTranslate } from "../../../i18n/calendar-localization";
 import { englishTranslate as t } from "../../../i18n/english";
 import { CreateEventPopover } from "../create-event-popover";
 import type {
+  CreateEventKind,
   CreateEventPopoverHandle,
   CreateEventPopoverProps,
 } from "../create-event-popover";
@@ -1368,5 +1369,128 @@ describe("CreateEventPopover inline custom repeat editor", () => {
       screen.getByRole("combobox", { name: /repeat/iu })
     ).toBeEnabled();
     assert(document.querySelector('button[type="submit"]')).toBeDisabled();
+  });
+});
+
+describe("CreateEventPopover Event and Reminder kinds", () => {
+  it("switches kind from the header and marks the current kind as pressed", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onKindChange = vi.fn<(kind: CreateEventKind) => void>();
+    renderPopover({ kind: "event", onKindChange });
+
+    assert(screen.getByRole("button", { name: "Event" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+
+    await user.click(screen.getByRole("button", { name: "Reminder" }));
+
+    assert(onKindChange).toHaveBeenCalledExactlyOnceWith("reminder");
+  });
+
+  it("shows the title, URL and repeat fields only for a reminder", () => {
+    renderPopover({ kind: "reminder", onKindChange: vi.fn() });
+
+    assert(screen.getByLabelText("Title")).toBeInTheDocument();
+    assert(screen.getByLabelText("URL")).toBeInTheDocument();
+    assert(screen.queryByRole("combobox", { name: "Calendar" })).toBeNull();
+    assert(screen.queryByRole("combobox", { name: "People" })).toBeNull();
+    assert(
+      screen.queryByRole("combobox", { name: "Conferencing" })
+    ).toBeNull();
+    assert(screen.queryByLabelText("Time zone")).toBeNull();
+    assert(screen.queryByRole("button", { name: "Add a location" })).toBeNull();
+  });
+
+  it("saves the reminder URL with the draft", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSubmit = submitSpy();
+    renderPopover({ kind: "reminder", onKindChange: vi.fn(), onSubmit });
+
+    await setInputValue(user, screen.getByLabelText("URL"), "https://example.com/prep");
+    await user.click(getSubmitButton());
+
+    assert(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      ...BASE_DRAFT,
+      url: "https://example.com/prep",
+    });
+  });
+
+  it("refuses a reminder URL that is not a web link and says so", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderPopover({ kind: "reminder", onKindChange: vi.fn(), onSubmit: submitSpy() });
+
+    const url = screen.getByLabelText("URL");
+    await setInputValue(user, url, "ftp://example.com/file");
+
+    assert(url).toHaveAttribute("aria-invalid", "true");
+    assert(url).toHaveAccessibleDescription("Enter a valid value");
+    assert(getSubmitButton()).toBeDisabled();
+
+    await setInputValue(user, url, "https://example.com/prep");
+
+    assert(url).not.toHaveAttribute("aria-invalid", "true");
+    assert(getSubmitButton()).toBeEnabled();
+  });
+
+  it("clears the event-only draft fields when the kind switches to Reminder", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSubmit = submitSpy();
+    const defaultDraft: CreateEventDraft = {
+      ...BASE_DRAFT,
+      attendeeIds: ["person-1"],
+      conferencingProviderId: "team-sync",
+      description: "Agenda",
+      location: "Science Hall 204",
+    };
+    const { rerender } = renderPopover({
+      defaultDraft,
+      kind: "event",
+      onKindChange: vi.fn(),
+      onSubmit,
+    });
+
+    await user.click(screen.getByRole("button", { name: "Reminder" }));
+    rerender(
+      <CreateEventPopover
+        {...popoverProps({
+          defaultDraft,
+          kind: "reminder",
+          onKindChange: vi.fn(),
+          onSubmit,
+        })}
+      />
+    );
+    await user.click(getSubmitButton());
+
+    assert(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      ...BASE_DRAFT,
+      attendeeIds: [],
+      calendarId: null,
+      conferencingProviderId: null,
+      description: null,
+      location: null,
+    });
+  });
+
+  it("drops the reminder URL when the kind switches back to Event", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSubmit = submitSpy();
+    const { rerender } = renderPopover({
+      kind: "reminder",
+      onKindChange: vi.fn(),
+      onSubmit,
+    });
+
+    await setInputValue(user, screen.getByLabelText("URL"), "https://example.com/prep");
+    await user.click(screen.getByRole("button", { name: "Event" }));
+    rerender(
+      <CreateEventPopover
+        {...popoverProps({ kind: "event", onKindChange: vi.fn(), onSubmit })}
+      />
+    );
+    await user.click(getSubmitButton());
+
+    assert(onSubmit).toHaveBeenCalledExactlyOnceWith({ ...BASE_DRAFT, url: null });
   });
 });

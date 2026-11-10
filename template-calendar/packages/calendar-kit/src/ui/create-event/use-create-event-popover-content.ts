@@ -34,6 +34,7 @@ import type {
   RepeatUnit,
 } from "./create-event-format";
 import type {
+  CreateEventKind,
   CreateEventPopoverProps,
   ResourceItem,
 } from "./create-event-popover";
@@ -258,6 +259,8 @@ export const useCreateEventPopoverContent = (
     renderFields,
     renderFooter,
     renderError,
+    kind = "event",
+    onKindChange,
   } = props;
 
   const idPrefix = useId();
@@ -481,6 +484,24 @@ export const useCreateEventPopoverContent = (
     }
   };
 
+  // Each kind's hidden fields must not survive into the other kind's draft.
+  const onKindChangeWithReset = (nextKind: CreateEventKind): void => {
+    if (nextKind === "event") {
+      setDraft({ ...controller.draft, url: null });
+    } else {
+      setDraft({
+        ...controller.draft,
+        attendeeIds: [],
+        calendarId: null,
+        conferencingProviderId: null,
+        description: null,
+        location: null,
+      });
+    }
+
+    onKindChange?.(nextKind);
+  };
+
   const handleShellOpenChange = (nextOpen: boolean): void => {
     closeShell(nextOpen, controller.isDiscardDialogOpen, customRepeatOpen, {
       closeCustomRepeat,
@@ -517,12 +538,14 @@ export const useCreateEventPopoverContent = (
     handleNativeSelectChange,
     handleShellOpenChange,
     idPrefix,
+    kind,
     locale,
     locationEditorOpen,
     locationItems,
     locationQuery,
     noOptionsLabel,
     onAllDayChange,
+    onKindChange: onKindChange === undefined ? undefined : onKindChangeWithReset,
     onLocationSelection,
     onPeopleSelect,
     onRepeatPresetChange,

@@ -20,8 +20,10 @@ The form renders inline in the host container and is shadow-root safe; the host 
 | `defaultDraft` | `CreateEventDraft` |  | Initial draft when uncontrolled. Also the baseline for the unsaved-changes check. |
 | `defaultOpen` | `boolean` |  | Initial open state when uncontrolled. |
 | `draft` | `CreateEventDraft` |  | Controlled draft. |
+| `kind` | `CreateEventKind` |  | Kind the form edits. `reminder` shows the reminder fields and hides the event-only ones. |
 | `now` | `UtcInstant` |  | Reference instant for the time-zone offset label. |
 | `onDraftChange` | `(draft: CreateEventDraft) => void` |  | Called on every field edit. |
+| `onKindChange` | `(kind: CreateEventKind) => void` |  | Shows the Event/Reminder switch in the header and reports the kind the user picks. |
 | `onOpenChange` | `(open: boolean) => void` |  | Called on open and close, including after submit and a confirmed discard. |
 | `open` | `boolean` |  | Controlled open state. |
 | `ref` | `((instance: CreateEventPopoverHandle \| null) => void \| (() => VoidOrUndefinedOnly)) \| Ref…` |  | Lets the host close the form through its own unsaved-changes prompt. |
@@ -37,6 +39,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 - The header shows an event-type title (`Event` by default), a slot for host header content, a close icon action with its accessible label, and a divider. The body scrolls inside its region above the Cancel/Save footer.
 - Title, schedule, time range, all-day switch, dates with a day count once they span a day, recurrence, timezone, people, conferencing, location, and description fields update one draft.
+- With `onKindChange`, the header shows an Event/Reminder switch and `kind` selects the form. Reminder shows title, URL, time range, all-day, and repeat; it hides calendar, time zone, people, conferencing, location, and description, and switching to it clears those draft fields. Switching to Event clears `url`. The URL must be an `http(s)` link without credentials, at most 2048 characters, and shows `Enter a valid value` while invalid.
 - Dates and times use the large icon-left field treatment; the schedule shows its calendar colour as a dot in the selected value and each option, and people tags use stroke tags with dismiss and clear-all actions.
 - Timed events leave the end date empty when it is the same as the start date; the day-span indicator is shown only for a positive span.
 - Date rows are masked date inputs: the locale's date mask is typed segment by segment and commits as soon as it parses, the calendar button ahead of the value (or `Alt+ArrowDown`) opens a picker whose selection writes the row directly, and the optional end date clears from the trailing clear button.
@@ -88,6 +91,10 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.field.start_time` | Start time |  |
 | `calendar.create_event.field.timezone` | Time zone |  |
 | `calendar.create_event.field.title` | Title |  |
+| `calendar.create_event.field.url` | URL |  |
+| `calendar.create_event.kind.event` | Event |  |
+| `calendar.create_event.kind.label` | Event type |  |
+| `calendar.create_event.kind.reminder` | Reminder |  |
 | `calendar.create_event.location.no_results` | No locations |  |
 | `calendar.create_event.no_options` | No options available |  |
 | `calendar.create_event.people.no_results` | No people |  |
@@ -95,6 +102,7 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.placeholder.conferencing` | Add conferencing |  |
 | `calendar.create_event.placeholder.location` | Add a location |  |
 | `calendar.create_event.placeholder.people` | Add people |  |
+| `calendar.create_event.placeholder.url` | Add a URL |  |
 | `calendar.create_event.repeat.biweekly` | Biweekly |  |
 | `calendar.create_event.repeat.custom` | Custom… |  |
 | `calendar.create_event.repeat.daily` | Daily |  |

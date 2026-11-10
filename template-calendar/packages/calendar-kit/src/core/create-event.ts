@@ -32,7 +32,8 @@ export type CreateEventField =
   | "endDate"
   | "startTime"
   | "endTime"
-  | "recurrenceRule";
+  | "recurrenceRule"
+  | "url";
 
 export type CreateEventValidationError =
   | "required"
@@ -200,6 +201,14 @@ export const isValidRecurrenceRule = (rule: string): boolean => {
   );
 };
 
+const MAX_REMINDER_URL_LENGTH = 2048;
+// The host ends at the first `/`, `?` or `#`; an `@` before that is a user name or password.
+const REMINDER_URL_PATTERN = /^https?:\/\/[^\s/?#@]+(?:[/?#]\S*)?$/iu;
+
+/** A reminder link the calendar API accepts: http or https, no credentials, at most 2048 characters. */
+export const isValidReminderUrl = (url: string): boolean =>
+  url.length <= MAX_REMINDER_URL_LENGTH && REMINDER_URL_PATTERN.test(url);
+
 export const validateCreateEventDraft = (
   draft: CreateEventDraft
 ): CreateEventValidation => {
@@ -213,6 +222,10 @@ export const validateCreateEventDraft = (
 
   if (recurrenceRule !== undefined && !isValidRecurrenceRule(recurrenceRule)) {
     errors.recurrenceRule = "invalid";
+  }
+
+  if (typeof draft.url === "string" && !isValidReminderUrl(draft.url)) {
+    errors.url = "invalid";
   }
 
   if (draft.allDay) {
