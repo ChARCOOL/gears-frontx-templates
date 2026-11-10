@@ -110,6 +110,11 @@
   color: var(--cal-color-subtle);
 }
 
+.controlLocked :global(input),
+.controlLocked :global(input::placeholder) {
+  color: var(--cal-color-subtle);
+}
+
 .iconLeft {
   composes: fieldIcon from "../../../styles/modules/field.module.css";
 }

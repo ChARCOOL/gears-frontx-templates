@@ -12,10 +12,22 @@ interface ScrollRegionProps extends Omit<
 
 export const ScrollRegion = ({
   className,
+  onScroll,
   ref,
   ...props
 }: ScrollRegionProps) => (
-  <div ref={ref} className={clsx(styles.scrollRegion, className)} {...props} />
+  <div
+    ref={ref}
+    className={clsx(styles.scrollRegion, className)}
+    onScroll={(event) => {
+      event.currentTarget.toggleAttribute(
+        "data-scrolled",
+        event.currentTarget.scrollTop > 0
+      );
+      onScroll?.(event);
+    }}
+    {...props}
+  />
 );
 
 ScrollRegion.displayName = "ScrollRegion";

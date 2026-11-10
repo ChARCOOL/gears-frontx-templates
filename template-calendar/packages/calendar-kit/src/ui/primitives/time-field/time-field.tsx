@@ -178,6 +178,8 @@ export const TimeField = ({
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === "Escape" && draft !== null) {
+        // Reverting the draft must not also close an enclosing dialog.
+        event.preventDefault();
         setDraft(null);
         setDraftRejected(false);
       }

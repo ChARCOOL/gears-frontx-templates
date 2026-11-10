@@ -321,6 +321,18 @@ describe("TimeField typing", () => {
     expect(screen.queryByRole("listbox")).toBeNull();
   });
 
+  it("prevents the default of an Escape that reverts a typed draft", async () => {
+    renderTimeField();
+
+    const user = userEvent.setup();
+    await user.clear(input());
+    await user.type(input(), "9:37");
+    fireEvent.pointerDown(document.body);
+
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(fireEvent.keyDown(input(), { key: "Escape" })).toBe(false);
+  });
+
   it("inherits the afternoon from the current value in a 12-hour locale", async () => {
     const onValueChange = vi.fn<() => void>();
     renderTimeField({

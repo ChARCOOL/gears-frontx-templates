@@ -38,6 +38,12 @@
   border-color: var(--cal-color-grid-line-strong);
 }
 
+/* The shell carries the focus ring, inside its border. */
+.shell:focus-within {
+  outline: var(--cal-focus-ring-width) solid var(--cal-color-focus-ring);
+  outline-offset: calc(-1 * var(--cal-focus-ring-width));
+}
+
 .sizeXxl {
   block-size: var(--cal-space-8);
   padding-inline: var(--cal-space-3) var(--cal-space-1);
@@ -86,6 +92,15 @@
   background: var(--cal-color-input-disabled);
   border-color: var(--cal-color-grid-line);
   cursor: not-allowed;
+}
+
+.shell:has(:disabled) .control {
+  color: var(--cal-color-subtle);
+}
+
+.shell:has(:disabled) .icon,
+.shell:has(:disabled) .affix {
+  color: var(--cal-color-subtle);
 }
 
 .controlLabel {
