@@ -1029,6 +1029,36 @@ describe("WeekGrid drag feedback", () => {
   });
 });
 
+describe("WeekGrid paint colour family", () => {
+  it("paints the drag-create selection in the host colour family", () => {
+    renderWeek({
+      interactionMode: "paint-and-move",
+      paintColorFamily: "blue",
+    });
+
+    fireEvent.pointerDown(getTimedCell("09:00"));
+    fireEvent.pointerMove(getTimedCell("10:00"));
+
+    assert(
+      document.querySelectorAll('[data-paint][data-color-family="blue"]')
+    ).toHaveLength(2);
+
+    fireEvent.pointerUp(getTimedCell("10:00"));
+  });
+
+  it("leaves painted cells without a colour family when none is set", () => {
+    renderWeek({ interactionMode: "paint-and-move" });
+
+    fireEvent.pointerDown(getTimedCell("09:00"));
+    fireEvent.pointerMove(getTimedCell("10:00"));
+
+    assert(document.querySelectorAll("[data-paint]")).toHaveLength(2);
+    assert(document.querySelectorAll("[data-color-family]")).toHaveLength(0);
+
+    fireEvent.pointerUp(getTimedCell("10:00"));
+  });
+});
+
 describe("WeekGrid paint refusal", () => {
   const busyEvent = () => ({ ...timedEvent("busy"), available: false });
 
