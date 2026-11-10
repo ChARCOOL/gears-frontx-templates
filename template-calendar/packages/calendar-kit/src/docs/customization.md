@@ -154,6 +154,10 @@ The larger components are assembled from the smaller ones, and you can reassembl
 
 Every component's state and behaviour is a hook exported from `@gears-frontx/calendar-kit/react`: `useWeekGridController`, `useMonthGridController`, `useCreateEventController` and so on. Use one to render your own markup with the kit's layout, keyboard model and state handling. See [Headless controllers](headless.md).
 
+## 9. Printing
+
+The views carry their own print rules, so printing the page prints the whole view, not the part that fits its scroll area: the week and day grids print all 24 hours, the month grid and the agenda print in full, an event card stays on one page, and background colours and hatching are kept. The current-time line, the side panel and the toolbar controls are left off the page; the range title stays. A host that wraps a view in a fixed-height or scrolling container needs its own `@media print` rule to release that container.
+
 ## What you cannot customize, and why
 
 - **Internal class names.** CSS Module names are private so the kit can restructure markup without breaking hosts. Style through tokens, part classes and the attributes above.
