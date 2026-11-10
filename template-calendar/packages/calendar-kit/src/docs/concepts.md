@@ -66,13 +66,18 @@ The exclusive end is the most common source of off-by-one bugs; see [Troubleshoo
 | `available` | `boolean` |  | `false` renders the event as unavailable and ignores activation. Default `true`. |
 | `calendarId` | `string` |  | The calendar this event belongs to; matches `CalendarRef.id`. |
 | `calendarName` | `string` |  | Display name of the calendar, for hosts that render it in a slot. |
+| `classroom` | `string` |  | Detail rows after Participants; each shows only when its value is set. |
 | `conferencingProviderId` | `string` |  | Id of the conferencing provider the host offers in the create form. |
 | `conflicts` | `readonly CalendarConflict[]` |  | Shown on the card and in the detail; the card's `conflicts` prop overrides them. |
+| `course` | `string` |  | Detail row after Instructor; shown only when set. |
 | `description` | `string` |  | Plain text shown in the detail panel. |
 | `eventType` | `string` |  | Short type label ("Lecture", "Exam") shown in the card's default metadata row. |
+| `instructor` | `string` |  | Detail row after Classroom; shown only when set. |
 | `joinUrl` | `string` |  | Meeting link. Join and Copy appear only for `http(s)` URLs; anything else is plain text. |
 | `location` | `string` |  | Shown in the card metadata and the detail panel. |
 | `metadata` | `NonNullable<Payload>` |  | Host data carried through to every render slot untouched. |
+| `movable` | `boolean` |  | `false` keeps the card in place: it still opens, but cannot be dragged. Default `true`. |
+| `notify` | `{ readonly leadMinutes: number; }` |  | Reminder notification: the detail shows an early reminder notice when it is set. |
 | `occurrenceId` | `string` |  | Id of this occurrence within its series, carried through for the host. |
 | `organizer` | `string` |  | Organizer name, shown in the card metadata and the detail panel. |
 | `organizerEmail` | `string` |  | Shown under the organizer in the detail panel. |
@@ -80,6 +85,7 @@ The exclusive end is the most common source of off-by-one bugs; see [Troubleshoo
 | `roomId` | `string` |  | Host room id, carried through for host slots. |
 | `rsvp` | `CalendarRsvp` |  | Aggregate RSVP counts for the detail panel. |
 | `seriesId` | `string` |  | Id shared by all occurrences of a recurring series, carried through for the host. |
+| `url` | `string` |  | Reminder link. The detail offers Go to page and Copy link for `http(s)` URLs only. |
 
 <!-- /generated -->
 
@@ -146,7 +152,9 @@ In every mode an available event still opens through `onEventSelect`. `DayGrid` 
 | `description` | `string` |  | Free text. |
 | `eventTypeId` | `string` |  | Host event-type id. |
 | `location` | `string` |  | Selected or typed location. |
+| `notify` | `{ readonly leadMinutes: number; }` |  | Browser notification for a reminder: minutes before it starts, or `null` when off. |
 | `recurrenceRule` | `string` |  | RRULE body built by the Repeat field, or `null` for a one-off event. |
+| `url` | `string` |  | Link a reminder points to. Free text; the host decides what to do with it. |
 
 <!-- /generated -->
 
