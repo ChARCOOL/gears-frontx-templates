@@ -355,10 +355,30 @@ export const sampleEvents: readonly CalendarEvent<DemoEventMetadata>[] = [
 ];
 
 export const sampleCalendars: readonly CalendarRef[] = [
-  { colorFamily: "turquoise", id: "cal-work", name: "Work" },
-  { colorFamily: "purple", id: "cal-personal", name: "Personal" },
-  { colorFamily: "orange", id: "cal-company", name: "Company" },
-  { colorFamily: "turquoise", id: "cal-client", name: "Clients" },
+  {
+    colorFamily: "turquoise",
+    group: "My calendars",
+    id: "cal-work",
+    name: "Work",
+  },
+  {
+    colorFamily: "purple",
+    group: "My calendars",
+    id: "cal-personal",
+    name: "Personal",
+  },
+  {
+    colorFamily: "orange",
+    group: "Shared",
+    id: "cal-company",
+    name: "Company",
+  },
+  {
+    colorFamily: "turquoise",
+    id: "cal-client",
+    name: "Clients",
+    parentId: "cal-company",
+  },
 ];
 
 export const sampleTimeZoneOptions: readonly CalendarTimeZoneOption[] = [
