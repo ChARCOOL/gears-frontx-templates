@@ -291,6 +291,140 @@ describe("CreateEventPopover date and time row fidelity", () => {
     pickDate(/end date/iu, /august 26, 2026/iu);
     assert(screen.getByText("2 days")).toBeInTheDocument();
   });
+
+  it("shows the end date placeholder until the field is focused", () => {
+    renderPopover({ defaultDraft: { ...BASE_DRAFT, endDate: null } });
+
+    assert(screen.getByLabelText(/end date/iu)).toHaveAttribute(
+      "placeholder",
+      "End date"
+    );
+  });
+
+  it("moves a timed end date that a later start date would pass", () => {
+    const onSubmit = submitSpy();
+    renderPopover({ onSubmit });
+
+    pickDate(/start date/iu, /august 26, 2026/iu);
+
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("");
+    act(() => {
+      fireEvent.click(getSubmitButton());
+    });
+
+    assert(onSubmit).toHaveBeenCalledWith({
+      ...BASE_DRAFT,
+      endDate: calendarDate("2026-08-26"),
+      startDate: calendarDate("2026-08-26"),
+    });
+  });
+
+  it("does not keep a timed end date picked before the start date", () => {
+    const onSubmit = submitSpy();
+    renderPopover({ onSubmit });
+
+    pickDate(/end date/iu, /august 20, 2026/iu);
+
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("");
+    act(() => {
+      fireEvent.click(getSubmitButton());
+    });
+
+    assert(onSubmit).toHaveBeenCalledWith(BASE_DRAFT);
+  });
+
+  it("keeps the exclusive all-day end after the start date when the start moves", () => {
+    const onSubmit = submitSpy();
+    renderPopover({
+      defaultDraft: {
+        ...BASE_DRAFT,
+        allDay: true,
+        endDate: NEXT_DATE,
+        endTime: null,
+        startTime: null,
+      },
+      onSubmit,
+    });
+
+    pickDate(/start date/iu, /august 26, 2026/iu);
+
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("Thu, 27 Aug");
+    act(() => {
+      fireEvent.click(getSubmitButton());
+    });
+
+    assert(onSubmit).toHaveBeenCalledWith({
+      ...BASE_DRAFT,
+      allDay: true,
+      endDate: calendarDate("2026-08-27"),
+      endTime: null,
+      startDate: calendarDate("2026-08-26"),
+      startTime: null,
+    });
+  });
+
+  it("keeps the end date while a typed start date is still being entered", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSubmit = submitSpy();
+    renderPopover({
+      defaultDraft: { ...BASE_DRAFT, endDate: calendarDate("2026-08-30") },
+      onSubmit,
+    });
+
+    act(() => {
+      screen.getByLabelText(/start date/iu).focus();
+    });
+    await user.keyboard("0901");
+
+    assert(screen.getByLabelText(/start date/iu)).toHaveValue("09/01/2026");
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("Sun, 30 Aug");
+
+    await user.tab();
+
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("");
+    act(() => {
+      fireEvent.click(getSubmitButton());
+    });
+
+    assert(onSubmit).toHaveBeenCalledWith({
+      ...BASE_DRAFT,
+      endDate: calendarDate("2026-09-01"),
+      startDate: calendarDate("2026-09-01"),
+    });
+  });
+
+  it("moves a typed end date that lands before the start once the entry is left", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSubmit = submitSpy();
+    renderPopover({
+      defaultDraft: {
+        ...BASE_DRAFT,
+        endDate: calendarDate("2026-10-10"),
+        startDate: calendarDate("2026-10-06"),
+      },
+      onSubmit,
+    });
+
+    act(() => {
+      screen.getByLabelText(/end date/iu).focus();
+    });
+    await user.keyboard("0901");
+
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("09/01/2026");
+
+    await user.tab();
+
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("");
+    act(() => {
+      fireEvent.click(getSubmitButton());
+    });
+
+    assert(onSubmit).toHaveBeenCalledWith({
+      ...BASE_DRAFT,
+      endDate: calendarDate("2026-10-06"),
+      startDate: calendarDate("2026-10-06"),
+    });
+  });
 });
 
 describe("CreateEventPopover draft and validation behaviour", () => {
@@ -1005,7 +1139,7 @@ describe("CreateEventPopover discard and submit behaviour", () => {
       within(calendar).getByRole("button", { name: /august 12, 2026/iu })
     );
 
-    assert(screen.getByLabelText(/start date/iu)).toHaveValue("08/12/2026");
+    assert(screen.getByLabelText(/start date/iu)).toHaveValue("Wed, 12 Aug");
 
     await user.click(getSubmitButton());
 
@@ -1020,10 +1154,10 @@ describe("CreateEventPopover discard and submit behaviour", () => {
     renderPopover({ onSubmit });
 
     const endDate = screen.getByLabelText(/end date/iu);
-    assert(endDate).toHaveValue("mm/dd/yyyy");
+    assert(endDate).toHaveValue("");
 
     pickDate(/end date/iu, /august 25, 2026/iu);
-    assert(screen.getByLabelText(/end date/iu)).toHaveValue("08/25/2026");
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("Tue, 25 Aug");
 
     act(() => {
       fireEvent.click(getSubmitButton());

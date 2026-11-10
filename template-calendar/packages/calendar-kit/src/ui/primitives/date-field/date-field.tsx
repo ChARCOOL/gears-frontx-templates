@@ -102,7 +102,8 @@ const useCalendarLabels = (locale: string, t: FieldTranslate) => {
 
 export interface DateFieldProps {
   readonly value: CalendarDate | "";
-  readonly onValueChange: (value: CalendarDate | "") => void;
+  /** `fromCalendar` is true when the calendar picked the value; typed entry commits without it. */
+  readonly onValueChange: (value: CalendarDate | "", fromCalendar?: boolean) => void;
   readonly locale: string;
   readonly id?: string;
   /** Month the calendar opens on while the field is empty; defaults to today. */
@@ -222,7 +223,7 @@ const DateField = ({
     }
 
     entry.reset();
-    onValueChange(toCalendarDate(date));
+    onValueChange(toCalendarDate(date), true);
     closeCalendar();
   };
 

@@ -87,6 +87,7 @@ import { Textarea } from "../primitives/textarea/textarea";
 import { Toggle } from "../primitives/toggle/toggle";
 import {
   dateRangeDayCount,
+  formatDateInputText,
   weekdayLabel,
   REPEAT_UNIT,
 } from "./create-event-format";
@@ -199,7 +200,9 @@ interface DateFieldProps {
   readonly defaultMonthDate?: CalendarDate;
   readonly clearable?: boolean;
   readonly compact?: boolean;
-  readonly onChange: (value: CalendarDate | "") => void;
+  /** Shown in the empty field until it is focused. */
+  readonly placeholder?: string;
+  readonly onChange: (value: CalendarDate | "", fromCalendar?: boolean) => void;
 }
 
 interface TimeFieldProps {
@@ -273,10 +276,24 @@ const repeatUnitOptions = (
   },
 ];
 
+// Typed dates keep the end as typed until their entry is left: each keystroke commits a
+// half-typed date, and flooring it then would overwrite the end with a date nobody entered.
+const floorEndDate = (draft: CreateEventDraft): CreateEventDraft => {
+  // All-day end dates are exclusive, so they must come after the start day.
+  const earliestEnd = draft.allDay
+    ? addCalendarDays(draft.startDate, 1)
+    : draft.startDate;
+
+  return draft.endDate !== null && draft.endDate < earliestEnd
+    ? { ...draft, endDate: earliestEnd }
+    : draft;
+};
+
 const updateDateField = (
   field: "startDate" | "endDate",
   value: CalendarDate | "",
-  { draft, setDraft }: DraftChangeProps
+  { draft, setDraft }: DraftChangeProps,
+  fromCalendar: boolean
 ): void => {
   if (value === "") {
     if (field === "endDate") {
@@ -286,11 +303,12 @@ const updateDateField = (
     return;
   }
 
-  setDraft(
+  const next: CreateEventDraft =
     field === "startDate"
       ? { ...draft, startDate: value }
-      : { ...draft, endDate: value }
-  );
+      : { ...draft, endDate: value };
+
+  setDraft(fromCalendar ? floorEndDate(next) : next);
 };
 
 const updateTimeField = (
@@ -460,6 +478,7 @@ const DateField = ({
   defaultMonthDate,
   clearable = false,
   compact = false,
+  placeholder,
   onChange,
 }: DateFieldProps) => {
   const { locale } = useCalendarLocalization();
@@ -475,9 +494,11 @@ const DateField = ({
         value={value}
         disabled={disabled}
         invalid={invalid}
-        size={compact ? "m" : "xl"}
+        displayFormat={(date) => formatDateInputText(date, locale, compact)}
+        size={compact ? "m" : "l"}
         defaultMonthDate={defaultMonthDate}
         clearable={clearable}
+        placeholder={placeholder}
         aria-describedby={errorId}
         className={styles.control}
         onValueChange={onChange}
@@ -1287,12 +1308,17 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
     updateTimeField("endTime", value, fieldUpdateContext);
   };
 
-  const changeStartDate = (value: CalendarDate | ""): void => {
-    updateDateField("startDate", value, fieldUpdateContext);
+  const changeStartDate = (value: CalendarDate | "", fromCalendar = false): void => {
+    updateDateField("startDate", value, fieldUpdateContext, fromCalendar);
   };
 
-  const changeEndDate = (value: CalendarDate | ""): void => {
-    updateDateField("endDate", value, fieldUpdateContext);
+  const changeEndDate = (value: CalendarDate | "", fromCalendar = false): void => {
+    updateDateField("endDate", value, fieldUpdateContext, fromCalendar);
+  };
+
+  // Leaving the date row settles a typed end date that now lands before the start.
+  const finishDateEntry = (): void => {
+    setDraft(floorEndDate(controller.draft));
   };
 
   const changeConferencingProvider = (value: string): void => {
@@ -1398,7 +1424,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
         />
       </div>
 
-      <div className={styles.dateRow}>
+      <div className={styles.dateRow} onBlur={finishDateEntry}>
         <DateField
           id={fieldId("start-date")}
           label={t("calendar.create_event.field.start_date")}
@@ -1411,6 +1437,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
         <DateField
           id={fieldId("end-date")}
           label={t("calendar.create_event.field.end_date")}
+          placeholder={t("calendar.create_event.field.end_date")}
           value={displayedEndDate}
           invalid={fieldMessages.endDate !== null}
           errorId={fieldErrorId(
