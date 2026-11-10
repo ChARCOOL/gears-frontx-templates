@@ -12,7 +12,6 @@ import { englishTranslate as t } from "../../../i18n/english";
 import { CreateEventPopover } from "../create-event-popover";
 import type { CreateEventPopoverProps } from "../create-event-popover";
 
-import dialogStyles from "../../primitives/dialog/dialog.module.css";
 
 const DATE = calendarDate("2026-08-24");
 const NEXT_DATE = calendarDate("2026-08-25");
@@ -50,7 +49,7 @@ const renderPopover = (overrides: Partial<CreateEventPopoverProps> = {}) =>
   render(<CreateEventPopover {...popoverProps(overrides)} />);
 
 const getCreateDialog = (): HTMLElement =>
-  screen.getByRole("dialog", { name: /create/iu });
+  screen.getByRole("region", { name: /create/iu });
 
 const changeTitle = async (
   user: ReturnType<typeof userEvent.setup>,
@@ -62,7 +61,7 @@ const changeTitle = async (
 };
 
 describe("CreateEventPopover discard layout", () => {
-  it("closes a pristine draft immediately on outside interaction without mounting confirmation", () => {
+  it("leaves the form open on an outside press while it is pristine", () => {
     const onCancel = vi.fn<() => void>();
     renderPopover({
       onCancel: () => {
@@ -74,40 +73,9 @@ describe("CreateEventPopover discard layout", () => {
 
     fireEvent.pointerDown(document.body);
 
-    assert(screen.queryByRole("dialog", { name: /create/iu })).toBeNull();
-    assert(screen.queryByRole("alertdialog")).toBeNull();
-    assert(onCancel).toHaveBeenCalledOnce();
-  });
-
-  it("closes the expanded dialog from its backdrop without pressing the control behind it", async () => {
-    const onCancel = vi.fn<() => void>();
-    const onOutsidePress = vi.fn<() => void>();
-    render(
-      <>
-        <button onClick={onOutsidePress} type="button">
-          Outside control
-        </button>
-        <CreateEventPopover
-          {...popoverProps({ defaultExpanded: true, onCancel })}
-        />
-      </>
-    );
-
     assert(getCreateDialog()).toBeInTheDocument();
-
-    const backdrop = document.querySelector<HTMLElement>(
-      `.${dialogStyles.backdrop}`
-    );
-
-    if (backdrop === null) {
-      throw new Error("Expected the dialog backdrop");
-    }
-
-    await userEvent.setup({ delay: null }).click(backdrop);
-
-    assert(onOutsidePress).not.toHaveBeenCalled();
-    assert(onCancel).toHaveBeenCalledOnce();
-    assert(screen.queryByRole("dialog", { name: /create/iu })).toBeNull();
+    assert(screen.queryByRole("alertdialog")).toBeNull();
+    assert(onCancel).not.toHaveBeenCalled();
   });
 
   it("closes a pristine draft immediately on Escape without mounting confirmation", async () => {
@@ -121,7 +89,7 @@ describe("CreateEventPopover discard layout", () => {
 
     await user.keyboard("{Escape}");
 
-    assert(screen.queryByRole("dialog", { name: /create/iu })).toBeNull();
+    assert(screen.queryByRole("region", { name: /create/iu })).toBeNull();
     assert(screen.queryByRole("alertdialog")).toBeNull();
     assert(onCancel).toHaveBeenCalledOnce();
   });
@@ -179,27 +147,6 @@ describe("CreateEventPopover discard layout", () => {
     assert(onCancel).not.toHaveBeenCalled();
   });
 
-  it("keeps the discard confirmation for a dirty draft on outside interaction", async () => {
-    const user = userEvent.setup({ delay: null });
-    const onCancel = vi.fn<() => void>();
-    renderPopover({
-      onCancel: () => {
-        onCancel();
-      },
-    });
-    await changeTitle(user, "Changed before closing");
-
-    fireEvent.pointerDown(document.body);
-
-    const discardDialog = screen.getByRole("alertdialog");
-
-    assert(discardDialog).toBeInTheDocument();
-    assert(
-      within(discardDialog).getByRole("button", { name: /keep/iu })
-    ).toBeInTheDocument();
-    assert(onCancel).not.toHaveBeenCalled();
-  });
-
   it("keeps the discard confirmation for a dirty draft on Escape", async () => {
     const user = userEvent.setup({ delay: null });
     const onCancel = vi.fn<() => void>();
@@ -238,7 +185,7 @@ describe("CreateEventPopover discard layout", () => {
       open: true,
     });
 
-    fireEvent.pointerDown(document.body);
+    fireEvent.keyDown(document.body, { key: "Escape" });
 
     assert(screen.queryByRole("alertdialog")).toBeNull();
     assert(onCancel).toHaveBeenCalledOnce();

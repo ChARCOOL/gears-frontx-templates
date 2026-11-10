@@ -142,7 +142,6 @@ interface OpenDetail {
 
 interface OpenCreate {
   readonly draft: CreateEventDraft;
-  readonly anchorRect?: DOMRect;
 }
 
 export const CalendarScreen = ({
@@ -164,13 +163,8 @@ export const CalendarScreen = ({
     setDetail({ event });
   };
 
-  const openCreate = ({
-    range,
-    anchorRect,
-  }: CalendarQuickCreatePayload): void => {
+  const openCreate = ({ range }: CalendarQuickCreatePayload): void => {
     setCreate({
-      anchorRect:
-        anchorRect === undefined ? undefined : DOMRect.fromRect(anchorRect),
       draft: {
         allDay: false,
         calendarId: calendars[0]?.id ?? null,
@@ -223,7 +217,6 @@ export const CalendarScreen = ({
         <CreateEventPopover
           open
           defaultDraft={create.draft}
-          anchorRect={create.anchorRect}
           timeZone={timeZone}
           calendars={calendars}
           people={[]}

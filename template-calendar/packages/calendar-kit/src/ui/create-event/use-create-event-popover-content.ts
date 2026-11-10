@@ -254,15 +254,11 @@ export const useCreateEventPopoverContent = (
     people,
     locations,
     conferencingProviders,
-    anchorRect,
-    anchorRef,
     className,
     renderHeader,
     renderFields,
     renderFooter,
     renderError,
-    renderCompactShell,
-    renderExpandedShell,
   } = props;
 
   const idPrefix = useId();
@@ -470,8 +466,6 @@ export const useCreateEventPopoverContent = (
   };
 
   return {
-    anchorRect,
-    anchorRef,
     calendars,
     canSubmit,
     changeCustomRepeat,
@@ -483,7 +477,6 @@ export const useCreateEventPopoverContent = (
     customRepeatOpen,
     direction,
     displayedEndDate,
-    expandedContentShell: renderExpandedShell,
     fieldId,
     fieldMessages,
     firstError,
@@ -503,7 +496,6 @@ export const useCreateEventPopoverContent = (
     onSubmit,
     overlayKind,
     peopleQuery,
-    renderCompactShell,
     renderError,
     renderFields,
     renderFooter,

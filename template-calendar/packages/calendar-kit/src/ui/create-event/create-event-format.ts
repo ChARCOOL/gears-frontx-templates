@@ -317,8 +317,6 @@ export const initials = (displayName: string): string => {
 export const firstLetter = (name: string): string =>
   name.trim().charAt(0).toUpperCase();
 
-export const createDefaultAnchorRect = (): DOMRect => new DOMRect(24, 24, 0, 0);
-
 const HINT_KEY_BY_UNIT: Readonly<Record<RepeatUnit, string>> = {
   day: "calendar.create_event.repeat.hint.daily",
   month: "calendar.create_event.repeat.hint.monthly",

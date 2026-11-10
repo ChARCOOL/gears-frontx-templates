@@ -2,7 +2,7 @@
 
 `CreateEventPopover` is a host-neutral create-event form. It accepts a neutral `CreateEventDraft`, injected calendar/resource options, a translation callback, an optional `now?: UtcInstant` reference instant, and an `onSubmit` callback; it does not call application APIs or create adapters.
 
-The compact shell is an inline, shadow-root-safe dialog. `expanded` renders the same form as a centered window over a dimmed backdrop, with the title across the top and people in a side column, without replacing the controller or draft. Use `defaultDraft`/`defaultOpen`/`defaultExpanded` for uncontrolled usage, or pair the controlled props with their change callbacks.
+The form renders inline in the host container and is shadow-root safe; the host places it. Use `defaultDraft`/`defaultOpen` for uncontrolled usage, or pair the controlled props with their change callbacks.
 
 ## Props
 
@@ -16,22 +16,15 @@ The compact shell is an inline, shadow-root-safe dialog. `expanded` renders the 
 | `onCancel` | `() => void` | yes | Called when the form closes without saving: a clean cancel, or a confirmed discard. |
 | `onSubmit` | `(draft: CreateEventDraft) => Promise<CreateEventResult> \| undefined` | yes | Called with a valid draft; a returned `error` keeps the form open. |
 | `people` | `readonly CalendarResourceOption[]` | yes | People offered in the people combobox. |
-| `anchorRect` | `DOMRect` |  | Screen rectangle to place the compact popover beside, for example the quick-create cell. |
-| `anchorRef` | `RefObject<HTMLElement \| null>` |  | Element to place the compact popover beside. Wins over `anchorRect`. |
 | `className` | `string` |  | Class added to the component root. |
 | `defaultDraft` | `CreateEventDraft` |  | Initial draft when uncontrolled. Also the baseline for the unsaved-changes check. |
-| `defaultExpanded` | `boolean` |  | Initial expanded state when uncontrolled. |
 | `defaultOpen` | `boolean` |  | Initial open state when uncontrolled. |
 | `draft` | `CreateEventDraft` |  | Controlled draft. |
-| `expanded` | `boolean` |  | Controlled expanded state: the same form as a larger centered window. |
 | `now` | `UtcInstant` |  | Reference instant for the time-zone offset label. |
 | `onDraftChange` | `(draft: CreateEventDraft) => void` |  | Called on every field edit. |
-| `onExpandedChange` | `(expanded: boolean) => void` |  | Called when the expand or collapse control is used. |
 | `onOpenChange` | `(open: boolean) => void` |  | Called on open and close, including after submit and a confirmed discard. |
 | `open` | `boolean` |  | Controlled open state. |
-| `renderCompactShell` | `(content: ReactNode) => ReactNode` |  | Wraps the compact form content in a host-owned shell instead of the kit popover. |
 | `renderError` | `(error: CreateEventSubmitError) => ReactNode` |  | Replaces how a submit error is shown. |
-| `renderExpandedShell` | `(content: ReactNode) => ReactNode` |  | Wraps the expanded form content in a host-owned shell instead of the kit dialog. |
 | `renderFields` | `() => ReactNode` |  | Extra host fields rendered after the kit's fields. |
 | `renderFooter` | `() => ReactNode` |  | Content added above the Cancel/Save row. |
 | `renderHeader` | `() => ReactNode` |  | Content added below the header row. |
@@ -41,7 +34,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 ## Behaviour
 
-- The header shows an event-type title (`Event` by default), a slot for host header content, expand/collapse and close icon actions with their accessible labels, and a divider.
+- The header shows an event-type title (`Event` by default), a slot for host header content, a close icon action with its accessible label, and a divider. The body scrolls inside its region above the Cancel/Save footer.
 - Title, schedule, time range, all-day switch, dates with a day count once they span a day, recurrence, timezone, people, conferencing, location, and description fields update one draft.
 - Dates and times use the large icon-left field treatment; the schedule shows its calendar colour as a dot in the selected value and each option, and people tags use stroke tags with dismiss and clear-all actions.
 - Timed events leave the end date empty when it is the same as the start date; the day-span indicator is shown only for a positive span.
@@ -71,7 +64,6 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.calendarSchedule` | Schedule: |  |
 | `calendar.create_event.cancel` | Cancel |  |
 | `calendar.create_event.close` | Close |  |
-| `calendar.create_event.collapse` | Collapse |  |
 | `calendar.create_event.create_dialog` | Create event |  |
 | `calendar.create_event.dayCount_one` | {{count}} day | `count` |
 | `calendar.create_event.dayCount_other` | {{count}} days | `count` |
@@ -82,7 +74,6 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.error.endBeforeStart` | End must be after start |  |
 | `calendar.create_event.error.invalid` | Enter a valid value |  |
 | `calendar.create_event.error.required` | Title is required |  |
-| `calendar.create_event.expand` | Expand |  |
 | `calendar.create_event.field.calendar` | Calendar |  |
 | `calendar.create_event.field.conferencing` | Conferencing |  |
 | `calendar.create_event.field.description` | Description |  |

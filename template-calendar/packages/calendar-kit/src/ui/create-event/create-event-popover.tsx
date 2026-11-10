@@ -8,16 +8,12 @@ import {
   Globe2Icon,
   Link2Icon,
   MapPinIcon,
-  Maximize2Icon,
-  Minimize2Icon,
   RefreshCwIcon,
   UsersIcon,
   XIcon,
 } from "lucide-react";
 import {
-  useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -74,16 +70,18 @@ import {
   FieldLegend,
   FieldSet,
 } from "../primitives/field/field";
-import { noopCleanup } from "../primitives/global-event-listener";
+import {
+  noopCleanup,
+  subscribeGlobalEvent,
+} from "../primitives/global-event-listener";
 import { Input } from "../primitives/input/input";
-import { Popover } from "../primitives/popover/popover";
 import { Radio, RadioGroup } from "../primitives/radio/radio";
+import { ScrollRegion } from "../primitives/scroll-region/scroll-region";
 import { Select } from "../primitives/select/select";
 import { Separator } from "../primitives/separator/separator";
 import { Textarea } from "../primitives/textarea/textarea";
 import { Toggle } from "../primitives/toggle/toggle";
 import {
-  createDefaultAnchorRect,
   dateRangeDayCount,
   weekdayLabel,
   REPEAT_UNIT,
@@ -102,7 +100,6 @@ import {
 
 import styles from "./create-event.module.css";
 
-const WHITESPACE_PATTERN = /\s+/u;
 const SUBMIT_ERROR_ID = "calendar.create_event.submitError";
 
 export type { CalendarResourceOption } from "../../react/controllers/use-create-event-controller";
@@ -129,16 +126,8 @@ export interface CreateEventPopoverProps
   readonly renderFields?: () => ReactNode;
   /** Content added above the Cancel/Save row. */
   readonly renderFooter?: () => ReactNode;
-  /** Screen rectangle to place the compact popover beside, for example the quick-create cell. */
-  readonly anchorRect?: DOMRect;
-  /** Element to place the compact popover beside. Wins over `anchorRect`. */
-  readonly anchorRef?: RefObject<HTMLElement | null>;
   /** Replaces how a submit error is shown. */
   readonly renderError?: (error: CreateEventSubmitError) => ReactNode;
-  /** Wraps the compact form content in a host-owned shell instead of the kit popover. */
-  readonly renderCompactShell?: (content: ReactNode) => ReactNode;
-  /** Wraps the expanded form content in a host-owned shell instead of the kit dialog. */
-  readonly renderExpandedShell?: (content: ReactNode) => ReactNode;
 }
 
 export interface ResourceItem {
@@ -155,8 +144,6 @@ interface CustomRepeatViewProps {
   readonly onChangeEndKind: (kind: RepeatEndKind) => void;
   readonly onChangeEndDate: (value: CalendarDate | "") => void;
   readonly onToggleWeekday: (weekday: Weekday) => void;
-  readonly expanded: boolean;
-  readonly onToggleExpanded: () => void;
   readonly onClose: () => void;
   readonly onApply: () => void;
 }
@@ -167,8 +154,6 @@ interface DraftChangeProps {
 }
 
 interface FormHeaderProps {
-  readonly expanded: boolean;
-  readonly onToggle: () => void;
   readonly onClose: () => void;
   readonly renderHeader?: () => ReactNode;
   readonly titleId: string;
@@ -226,18 +211,6 @@ const REPEAT_DISPLAY_WEEKDAYS: readonly Weekday[] = [
   "sunday",
 ];
 
-const resolvePortalContainer = (
-  element: HTMLSpanElement
-): Element | DocumentFragment | null => {
-  const root = element.getRootNode();
-  // The shadow root is the stacking context; the anchor's parent would clip the panel.
-  if (root instanceof ShadowRoot) {
-    return root;
-  }
-
-  return element.parentElement;
-};
-
 const CALENDAR_COLOR_CLASSES: ReadonlyMap<string, string> = new Map([
   ["turquoise", styles.calendarColorTurquoise],
   ["purple", styles.calendarColorPurple],
@@ -251,14 +224,6 @@ const CALENDAR_COLOR_CLASSES: ReadonlyMap<string, string> = new Map([
 const calendarColorClass = (
   colorFamily: CalendarColorFamily
 ): string | undefined => CALENDAR_COLOR_CLASSES.get(colorFamily);
-
-const resolveAnchorRect = (
-  anchorRef: CreateEventPopoverProps["anchorRef"],
-  anchorRect: DOMRect | undefined
-): DOMRect =>
-  anchorRef?.current?.getBoundingClientRect() ??
-  anchorRect ??
-  createDefaultAnchorRect();
 
 // The interval field takes 1 to 30, the range the custom repeat has always offered.
 const MAX_REPEAT_INTERVAL = 30;
@@ -335,22 +300,7 @@ const updateTimeField = (
   }
 };
 
-const getActiveElement = (element: Element | null): HTMLElement | null => {
-  if (element === null) {
-    return null;
-  }
-
-  const root = element.getRootNode();
-
-  const active =
-    root instanceof ShadowRoot ? root.activeElement : document.activeElement;
-
-  return active instanceof HTMLElement ? active : null;
-};
-
 const FormHeader = ({
-  expanded,
-  onToggle,
   onClose,
   renderHeader,
   titleId,
@@ -361,25 +311,6 @@ const FormHeader = ({
 
   const actions = (
     <div className={styles.headerActions}>
-      <Button
-        aria-label={
-          expanded
-            ? t("calendar.create_event.collapse")
-            : t("calendar.create_event.expand")
-        }
-        leftIcon={
-          expanded ? (
-            <Minimize2Icon aria-hidden="true" />
-          ) : (
-            <Maximize2Icon aria-hidden="true" />
-          )
-        }
-        onlyIcon
-        size="m"
-        type="button"
-        variant="ghost"
-        onClick={onToggle}
-      />
       <Button
         aria-label={t("calendar.create_event.close")}
         leftIcon={<XIcon aria-hidden="true" />}
@@ -532,8 +463,6 @@ const CustomRepeatView = ({
   onChangeEndKind,
   onChangeEndDate,
   onToggleWeekday,
-  expanded,
-  onToggleExpanded,
   onClose,
   onApply,
 }: CustomRepeatViewProps) => {
@@ -575,25 +504,6 @@ const CustomRepeatView = ({
           {t("calendar.create_event.field.repeat")}
         </h2>
         <div className={styles.headerActions}>
-          <Button
-            aria-label={t(
-              expanded
-                ? "calendar.create_event.collapse"
-                : "calendar.create_event.expand"
-            )}
-            leftIcon={
-              expanded ? (
-                <Minimize2Icon aria-hidden="true" />
-              ) : (
-                <Maximize2Icon aria-hidden="true" />
-              )
-            }
-            onlyIcon
-            size="m"
-            type="button"
-            variant="ghost"
-            onClick={onToggleExpanded}
-          />
           <Button
             aria-label={t("calendar.create_event.close")}
             leftIcon={<XIcon aria-hidden="true" />}
@@ -814,254 +724,63 @@ const fieldErrorId = (
   id: string
 ): string | undefined => ((message ?? null) === null ? undefined : id);
 
-const belongsToCreatePopover = (
-  target: EventTarget,
-  panel: HTMLElement
-): boolean => {
-  if (!(target instanceof Element)) {
-    return false;
-  }
+// Escape closes the form wherever focus sits; a listbox owns its own Escape.
+const useEscapeClose = (
+  root: HTMLElement | null,
+  onShellOpenChange: (nextOpen: boolean) => void
+): void => {
+  const onShellOpenChangeRef = useRef(onShellOpenChange);
 
-  const popup = target.closest<HTMLElement>('[role="listbox"]');
-  if (popup === null || popup.id === "") {
-    return false;
-  }
+  useEffect(() => {
+    onShellOpenChangeRef.current = onShellOpenChange;
+  }, [onShellOpenChange]);
 
-  return [...panel.querySelectorAll<HTMLElement>("[aria-controls]")].some(
-    (control) =>
-      control
-        .getAttribute("aria-controls")
-        ?.split(WHITESPACE_PATTERN)
-        .includes(popup.id) === true
-  );
-};
-
-interface PopoverFocusRefs {
-  readonly lastFocusedRef: RefObject<HTMLElement | null>;
-  readonly returnFocusRef: RefObject<HTMLElement | null>;
-}
-
-const usePopoverFocus = (
-  isOpen: boolean,
-  portalAnchorRef: RefObject<HTMLSpanElement | null>
-): PopoverFocusRefs => {
-  const previousOpenRef = useRef(false);
-  const returnFocusRef = useRef<HTMLElement | null>(null);
-  const lastFocusedRef = useRef<HTMLElement | null>(null);
-
-  useLayoutEffect(() => {
-    const anchor = portalAnchorRef.current;
-    if (anchor === null) {
+  useEffect(() => {
+    if (root === null) {
       return noopCleanup;
     }
 
-    const root = anchor.getRootNode();
-
-    const handleFocusIn = (event: Event): void => {
-      const target = event
-        .composedPath()
-        .find((node): node is HTMLElement => node instanceof HTMLElement);
-
-      if (target !== undefined) {
-        lastFocusedRef.current = target;
+    return subscribeGlobalEvent(document, "keydown", (event) => {
+      if (!(event instanceof KeyboardEvent)) {
+        return;
       }
-    };
 
-    root.addEventListener("focusin", handleFocusIn, true);
+      const inListbox =
+        event.target instanceof Element &&
+        event.target.closest('[role="listbox"]') !== null;
 
-    return () => {
-      root.removeEventListener("focusin", handleFocusIn, true);
-    };
-  }, [portalAnchorRef]);
-
-  useLayoutEffect(() => {
-    if (isOpen && !previousOpenRef.current) {
-      returnFocusRef.current =
-        getActiveElement(portalAnchorRef.current) ?? lastFocusedRef.current;
-    }
-
-    if (!isOpen && previousOpenRef.current) {
-      returnFocusRef.current?.focus();
-      returnFocusRef.current = null;
-    }
-
-    previousOpenRef.current = isOpen;
-  }, [isOpen, portalAnchorRef]);
-
-  return { lastFocusedRef, returnFocusRef };
+      // A field that closes its own popup on Escape prevents the default, so the form stays open.
+      if (event.key === "Escape" && !inListbox && !event.defaultPrevented) {
+        onShellOpenChangeRef.current(false);
+      }
+    });
+  }, [root]);
 };
 
-interface CreateEventPopoverOverlayProps {
-  readonly anchorRect?: DOMRect;
-  readonly anchorRef?: CreateEventPopoverProps["anchorRef"];
-  readonly className?: string;
-  readonly compactContent: ReactNode;
-  readonly controller: ReturnType<typeof useCreateEventController>;
-  readonly customRepeatOpen: boolean;
-  readonly expandedContent: ReactNode;
-  readonly handleNativeSelectChange: (event: Event) => void;
-  readonly handleShellOpenChange: (nextOpen: boolean) => void;
-  readonly onCloseCustomRepeat: () => void;
-  readonly repeatContent: ReactNode;
-}
-
-const CreateEventPopoverOverlay = ({
-  anchorRect,
-  anchorRef,
-  className,
-  compactContent,
-  controller,
-  customRepeatOpen,
-  expandedContent,
-  handleNativeSelectChange,
-  handleShellOpenChange,
-  onCloseCustomRepeat,
-  repeatContent,
-}: CreateEventPopoverOverlayProps) => {
-  const { direction, t } = useCalendarLocalization();
-
-  const portalAnchorRef = useRef<HTMLSpanElement | null>(null);
-  const overlayRef = useRef<HTMLElement | null>(null);
-
-  const [portalContainer, setPortalContainer] = useState<
-    Element | DocumentFragment | null
-  >(null);
-
-  const [layerContainer, setLayerContainer] = useState<HTMLElement | null>(
-    null
-  );
-
-  const nativeSelectChangeRef = useRef(handleNativeSelectChange);
-
-  usePopoverFocus(controller.isOpen, portalAnchorRef);
+const useNativeSelectChange = (
+  root: HTMLElement | null,
+  onChange: (event: Event) => void
+): void => {
+  const onChangeRef = useRef(onChange);
 
   useEffect(() => {
-    nativeSelectChangeRef.current = handleNativeSelectChange;
-  }, [handleNativeSelectChange]);
-
-  const stableNativeSelectChange = useCallback((event: Event): void => {
-    nativeSelectChangeRef.current(event);
-  }, []);
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
-    if (!controller.isOpen || portalContainer === null) {
+    if (root === null) {
       return noopCleanup;
     }
 
-    portalContainer.addEventListener("change", stableNativeSelectChange, true);
-
-    return () => {
-      portalContainer.removeEventListener(
-        "change",
-        stableNativeSelectChange,
-        true
-      );
-    };
-  }, [controller.isOpen, portalContainer, stableNativeSelectChange]);
-
-  const getAnchorRect = useCallback(
-    (): DOMRect => resolveAnchorRect(anchorRef, anchorRect),
-    [anchorRect, anchorRef]
-  );
-
-  // Stable callback ref: runs on attach, not every commit.
-  const setPortalAnchor = useCallback((element: HTMLSpanElement | null) => {
-    portalAnchorRef.current = element;
-
-    const container = element === null ? null : resolvePortalContainer(element);
-
-    setPortalContainer((current) =>
-      current === container ? current : container
+    return subscribeGlobalEvent(
+      root,
+      "change",
+      (event) => {
+        onChangeRef.current(event);
+      },
+      true
     );
-  }, []);
-
-  const setOverlayRef = useCallback((element: HTMLElement | null): void => {
-    if (element === null || overlayRef.current === element) {
-      return;
-    }
-
-    overlayRef.current = element;
-    setLayerContainer((current) => (current === element ? current : element));
-  }, []);
-
-  const nestedLayerContainer = layerContainer ?? portalContainer;
-
-  return (
-    <span ref={setPortalAnchor} dir={direction} className={styles.portalAnchor}>
-      {portalContainer !== null &&
-        controller.isOpen &&
-        !controller.isExpanded && (
-          <Popover
-            open
-            onOpenChange={handleShellOpenChange}
-            anchorRect={anchorRect ?? createDefaultAnchorRect()}
-            anchorRectProvider={getAnchorRect}
-            container={portalContainer}
-            belongsTo={belongsToCreatePopover}
-            label={t("calendar.create_event.create_dialog")}
-            ref={setOverlayRef}
-            className={clsx(styles.dialog, styles.compact, className)}
-          >
-            {compactContent}
-          </Popover>
-        )}
-      {portalContainer !== null &&
-        controller.isOpen &&
-        controller.isExpanded && (
-          <Dialog open onOpenChange={handleShellOpenChange}>
-            <DialogContent
-              container={portalContainer}
-              label={t("calendar.create_event.create_dialog")}
-              ref={setOverlayRef}
-              showCloseButton={false}
-              className={clsx(styles.dialog, styles.expanded, className)}
-            >
-              {expandedContent}
-            </DialogContent>
-          </Dialog>
-        )}
-      {nestedLayerContainer !== null &&
-      controller.isOpen &&
-      customRepeatOpen ? (
-        <>
-          {createPortal(
-            <div aria-hidden="true" className={styles.repeatBackdrop} />,
-            nestedLayerContainer
-          )}
-          <Dialog
-            open
-            onOpenChange={(nextOpen) => {
-              if (!nextOpen) {
-                onCloseCustomRepeat();
-              }
-            }}
-          >
-            <DialogContent
-              container={nestedLayerContainer}
-              showBackdrop={false}
-              showCloseButton={false}
-              label={t("calendar.create_event.field.repeat")}
-              className={styles.repeatPopover}
-            >
-              {repeatContent}
-            </DialogContent>
-          </Dialog>
-        </>
-      ) : null}
-      {nestedLayerContainer !== null && (
-        <DiscardDialog
-          container={nestedLayerContainer}
-          open={controller.isDiscardDialogOpen}
-          onClose={() => {
-            controller.dismissDiscard();
-          }}
-          onConfirm={() => {
-            controller.confirmDiscard();
-          }}
-        />
-      )}
-    </span>
-  );
+  }, [root]);
 };
 
 interface CreateEventFormProps {
@@ -1308,7 +1027,6 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
   } = props;
 
   const { t } = useCalendarLocalization();
-  const expanded = controller.isExpanded;
 
   const dayCount = dateRangeDayCount(
     controller.draft.startDate,
@@ -1483,7 +1201,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
           iconLeft={<Globe2Icon aria-hidden="true" />}
         />
       </Field>
-      {expanded ? null : peopleField}
+      {peopleField}
 
       <Field className={styles.field}>
         <Select
@@ -1524,7 +1242,8 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
   );
 
   return (
-    <FieldGroup className={styles.body}>
+    <ScrollRegion className={styles.body}>
+      <FieldGroup className={styles.fields}>
       <Field className={styles.field}>
         <Input
           id={fieldId("title")}
@@ -1548,15 +1267,9 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
           </FieldError>
         )}
       </Field>
-      {expanded ? (
-        <div className={styles.columns}>
-          <div className={styles.mainColumn}>{fields}</div>
-          <div className={styles.sideColumn}>{peopleField}</div>
-        </div>
-      ) : (
-        fields
-      )}
-    </FieldGroup>
+      {fields}
+      </FieldGroup>
+    </ScrollRegion>
   );
 };
 
@@ -1574,10 +1287,6 @@ const CreateEventForm = ({
   return (
     <>
       <FormHeader
-        expanded={controller.isExpanded}
-        onToggle={() => {
-          controller.setExpanded(!controller.isExpanded);
-        }}
         onClose={() => {
           controller.requestCancel();
         }}
@@ -1605,12 +1314,93 @@ const CreateEventForm = ({
   );
 };
 
+interface CreateEventPopoverOverlayProps {
+  readonly className?: string;
+  readonly content: ReactNode;
+  readonly controller: ReturnType<typeof useCreateEventController>;
+  readonly customRepeatOpen: boolean;
+  readonly handleNativeSelectChange: (event: Event) => void;
+  readonly handleShellOpenChange: (nextOpen: boolean) => void;
+  readonly onCloseCustomRepeat: () => void;
+  readonly repeatContent: ReactNode;
+}
+
+const CreateEventPopoverOverlay = ({
+  className,
+  content,
+  controller,
+  customRepeatOpen,
+  handleNativeSelectChange,
+  handleShellOpenChange,
+  onCloseCustomRepeat,
+  repeatContent,
+}: CreateEventPopoverOverlayProps) => {
+  const { direction, t } = useCalendarLocalization();
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+
+  useNativeSelectChange(root, handleNativeSelectChange);
+  useEscapeClose(root, handleShellOpenChange);
+
+  if (!controller.isOpen) {
+    return null;
+  }
+
+  return (
+    <section
+      ref={setRoot}
+      aria-label={t("calendar.create_event.create_dialog")}
+      dir={direction}
+      className={clsx(styles.panel, className)}
+    >
+      {content}
+      {root === null ? null : (
+        <>
+          {customRepeatOpen ? (
+            <>
+              {createPortal(
+                <div aria-hidden="true" className={styles.repeatBackdrop} />,
+                root
+              )}
+              <Dialog
+                open
+                onOpenChange={(nextOpen) => {
+                  if (!nextOpen) {
+                    onCloseCustomRepeat();
+                  }
+                }}
+              >
+                <DialogContent
+                  container={root}
+                  showBackdrop={false}
+                  showCloseButton={false}
+                  label={t("calendar.create_event.field.repeat")}
+                  className={styles.repeatPopover}
+                >
+                  {repeatContent}
+                </DialogContent>
+              </Dialog>
+            </>
+          ) : null}
+          <DiscardDialog
+            container={root}
+            open={controller.isDiscardDialogOpen}
+            onClose={() => {
+              controller.dismissDiscard();
+            }}
+            onConfirm={() => {
+              controller.confirmDiscard();
+            }}
+          />
+        </>
+      )}
+    </section>
+  );
+};
+
 const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
   const view = useCreateEventPopoverContent(props);
 
   const {
-    anchorRect,
-    anchorRef,
     changeCustomRepeat,
     closeCustomRepeat,
     calendars,
@@ -1621,7 +1411,6 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
     customRepeat,
     customRepeatOpen,
     displayedEndDate,
-    expandedContentShell,
     fieldId,
     fieldMessages,
     firstError,
@@ -1644,7 +1433,6 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
     repeatHint,
     repeatItems,
     repeatPreset,
-    renderCompactShell,
     renderError,
     renderFields,
     renderFooter,
@@ -1760,12 +1548,10 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
   };
 
   const changeRepeatEndDate = (value: CalendarDate | ""): void => {
-    if (value === "") {
-      changeCustomRepeat((current) => ({ ...current, endDate: null }));
-      return;
-    }
-
-    changeCustomRepeat((current) => ({ ...current, endDate: value }));
+    changeCustomRepeat((current) => ({
+      ...current,
+      endDate: value === "" ? null : value,
+    }));
   };
 
   const toggleRepeatWeekday = (weekday: Weekday): void => {
@@ -1786,27 +1572,17 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
       onChangeEndKind={changeRepeatEndKind}
       onChangeEndDate={changeRepeatEndDate}
       onToggleWeekday={toggleRepeatWeekday}
-      expanded={controller.isExpanded}
-      onToggleExpanded={() => {
-        controller.setExpanded(!controller.isExpanded);
-      }}
       onClose={closeCustomRepeat}
       onApply={closeCustomRepeat}
     />
   );
 
-  const compactContent = renderCompactShell?.(formContent) ?? formContent;
-  const expandedContent = expandedContentShell?.(formContent) ?? formContent;
-
   return (
     <CreateEventPopoverOverlay
-      anchorRect={anchorRect}
-      anchorRef={anchorRef}
       className={className}
-      compactContent={compactContent}
+      content={formContent}
       controller={controller}
       customRepeatOpen={customRepeatOpen}
-      expandedContent={expandedContent}
       handleNativeSelectChange={handleNativeSelectChange}
       handleShellOpenChange={handleShellOpenChange}
       onCloseCustomRepeat={closeCustomRepeat}

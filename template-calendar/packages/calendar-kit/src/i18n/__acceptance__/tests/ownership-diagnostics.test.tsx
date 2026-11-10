@@ -333,7 +333,6 @@ describe("i18n acceptance: ownership and diagnostics", () => {
         {...createEventProps({
           defaultDraft: { ...timedDraft(), attendeeIds: ["person-1"] },
         })}
-        defaultExpanded
         t={t}
       />
     );

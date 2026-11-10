@@ -72,7 +72,7 @@ const queryShadowDialog = (
   root: ShadowRoot,
   name: RegExp
 ): HTMLElement | null =>
-  [...root.querySelectorAll<HTMLElement>('[role="dialog"]')].find((dialog) =>
+  [...root.querySelectorAll<HTMLElement>('[role="dialog"], section[aria-label]')].find((dialog) =>
     name.test(dialog.getAttribute("aria-label") ?? "")
   ) ?? null;
 
@@ -86,7 +86,7 @@ const getShadowDialog = (root: ShadowRoot, name: RegExp): HTMLElement => {
 };
 
 describe("CreateEventPopover attached shadow-root contract", () => {
-  it("keeps the compact dialog in the attached shadow root and traps/restores focus there", () => {
+  it("keeps the inline form in the attached shadow root and returns focus to the opener", () => {
     const { host, root } = createShadowHost();
     const container = document.createElement("div");
     root.append(container);
@@ -103,30 +103,6 @@ describe("CreateEventPopover attached shadow-root contract", () => {
 
     assert(dialog.getRootNode()).toBe(root);
 
-    const focusable = [
-      ...dialog.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      ),
-    ].filter((element) => element.tabIndex >= 0);
-
-    const [firstFocusable] = focusable;
-    const lastFocusable = focusable.at(-1);
-    if (firstFocusable === undefined || lastFocusable === undefined) {
-      throw new Error("Expected a focusable dialog control");
-    }
-
-    assert(root.activeElement).not.toBe(trigger);
-
-    lastFocusable.focus();
-    fireEvent.keyDown(lastFocusable, { key: "Tab" });
-
-    assert(root.activeElement).toBe(firstFocusable);
-
-    firstFocusable.focus();
-    fireEvent.keyDown(firstFocusable, { key: "Tab", shiftKey: true });
-
-    assert(root.activeElement).toBe(lastFocusable);
-
     fireEvent.keyDown(dialog, { key: "Escape" });
 
     assert(queryShadowDialog(root, /create/iu)).toBeNull();
@@ -135,29 +111,7 @@ describe("CreateEventPopover attached shadow-root contract", () => {
     host.remove();
   });
 
-  it("mounts the overlay at the shadow-root layer instead of inside a raised grid container", () => {
-    const { host, root } = createShadowHost();
-    const gridContainer = document.createElement("div");
-    const container = document.createElement("div");
-    gridContainer.style.position = "relative";
-    gridContainer.style.zIndex = "3";
-    gridContainer.append(container);
-    root.append(gridContainer);
-
-    render(
-      <CreateEventPopover {...props({ defaultOpen: undefined, open: true })} />,
-      { container }
-    );
-
-    const dialog = getShadowDialog(root, /create/iu);
-
-    assert(gridContainer).not.toContainElement(dialog);
-    assert(dialog.parentNode).toBe(root);
-
-    host.remove();
-  });
-
-  it("keeps nested repeat Escape scoped to the child and keeps expansion in the same shadow root", () => {
+  it("keeps nested repeat Escape scoped to the child", () => {
     const { host, root } = createShadowHost();
     const container = document.createElement("div");
     root.append(container);
@@ -181,36 +135,6 @@ describe("CreateEventPopover attached shadow-root contract", () => {
     assert(queryShadowDialog(root, /custom|repeat/iu)).toBeNull();
     assert(getShadowDialog(root, /create/iu)).toBeInTheDocument();
 
-    fireEvent.click(
-      within(compactDialog).getByRole("button", { name: /expand/iu })
-    );
-
-    const expandedDialog = getShadowDialog(root, /create/iu);
-
-    assert(expandedDialog.getRootNode()).toBe(root);
-    assert(expandedDialog).toHaveAttribute("aria-modal", "true");
-    assert(within(expandedDialog).getByLabelText(/title/iu)).toHaveValue(
-      "Planning session"
-    );
-
-    host.remove();
-  });
-
-  it("keeps Tab on the shadow dialog when focus starts outside its focusable controls", () => {
-    const { host, root } = createShadowHost();
-    const container = document.createElement("div");
-    root.append(container);
-
-    render(<ShadowPopoverHarness />, { container });
-    fireEvent.click(
-      within(container).getByRole("button", { name: "Open create event" })
-    );
-
-    const dialog = getShadowDialog(root, /create/iu);
-    dialog.focus();
-    fireEvent.keyDown(dialog, { key: "Tab" });
-
-    assert(root.activeElement).toBe(dialog);
     host.remove();
   });
 
@@ -227,7 +151,7 @@ describe("CreateEventPopover attached shadow-root contract", () => {
     const dialog = getShadowDialog(root, /create/iu);
 
     assert(dialog.getRootNode()).toBe(root);
-    assert(screen.queryByRole("dialog", { name: /create/iu })).toBeNull();
+    assert(screen.queryByRole("region", { name: /create/iu })).toBeNull();
 
     host.remove();
   });

@@ -675,22 +675,11 @@ describe("integrated WCAG 2.1 AA gate: panels & navigation surfaces", () => {
     await expectNoAxeViolations(rendered.container);
   });
 
-  it("checks CreateEventPopover compact and expanded sheet overlays", async () => {
+  it("checks CreateEventPopover inline form states", async () => {
     const rendered = render(<CreateEventPopover {...createEventProps()} />);
 
     assert(
-      within(rendered.container).getByRole("dialog", {
-        name: t("calendar.create_event.create_dialog"),
-      })
-    ).toBeInTheDocument();
-    await expectNoAxeViolations(rendered.container);
-
-    rendered.rerender(
-      <CreateEventPopover {...createEventProps({ expanded: true })} />
-    );
-
-    assert(
-      within(rendered.container).getByRole("dialog", {
+      within(rendered.container).getByRole("region", {
         name: t("calendar.create_event.create_dialog"),
       })
     ).toBeInTheDocument();
@@ -746,7 +735,7 @@ describe("integrated WCAG 2.1 AA gate: panels & navigation surfaces", () => {
     );
 
     assert(
-      within(empty.container).getByRole("dialog", {
+      within(empty.container).getByRole("region", {
         name: t("calendar.create_event.create_dialog"),
       })
     ).toBeInTheDocument();

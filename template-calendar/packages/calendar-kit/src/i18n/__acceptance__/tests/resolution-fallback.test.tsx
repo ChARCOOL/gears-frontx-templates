@@ -152,7 +152,7 @@ describe("i18n acceptance: resolution and fallback", () => {
     render(
       <>
         <CalendarToolbar {...toolbarProps} />
-        <CreateEventPopover {...createEventProps} defaultExpanded />
+        <CreateEventPopover {...createEventProps} />
         <TranslationProbe
           ids={[
             "calendar.toolbar.label",

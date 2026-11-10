@@ -42,12 +42,6 @@ export interface UseCreateEventControllerOptions {
   readonly defaultDraft?: CreateEventDraft;
   /** Called on every field edit. */
   readonly onDraftChange?: (draft: CreateEventDraft) => void;
-  /** Controlled expanded state: the same form as a larger centered window. */
-  readonly expanded?: boolean;
-  /** Initial expanded state when uncontrolled. */
-  readonly defaultExpanded?: boolean;
-  /** Called when the expand or collapse control is used. */
-  readonly onExpandedChange?: (expanded: boolean) => void;
   /** Calendars offered in the schedule field. */
   readonly calendars?: readonly CalendarRef[];
   /** People offered in the people combobox. */
@@ -72,14 +66,12 @@ export interface UseCreateEventControllerResult {
   readonly draft: CreateEventDraft;
   readonly isDirty: boolean;
   readonly isOpen: boolean;
-  readonly isExpanded: boolean;
   readonly isSubmitting: boolean;
   readonly errors: CreateEventValidationErrors;
   readonly submitError: CreateEventSubmitError | null;
   readonly isDiscardDialogOpen: boolean;
   readonly setDraft: (draft: CreateEventDraft) => void;
   readonly setOpen: (open: boolean) => void;
-  readonly setExpanded: (expanded: boolean) => void;
   readonly submit: () => Promise<CreateEventResult | undefined>;
   /** Closes the form, asking first when it has unsaved edits. Resolves `true` once it closed. */
   readonly requestCancel: () => Promise<boolean>;
@@ -105,6 +97,19 @@ const createDefaultDraft = (
     timeZone,
     title: "",
   };
+};
+
+// A control focused inside an open shadow root is reported on the document as its host.
+const focusedElement = (): HTMLElement | null => {
+  const active = document.activeElement;
+
+  if (!(active instanceof HTMLElement)) {
+    return null;
+  }
+
+  return active.shadowRoot?.activeElement instanceof HTMLElement
+    ? active.shadowRoot.activeElement
+    : active;
 };
 
 const COMPARED_DRAFT_FIELDS = [
@@ -172,10 +177,6 @@ export const useCreateEventController = (
     options.defaultOpen ?? options.open ?? true
   );
 
-  const [internalExpanded, setInternalExpanded] = useState(
-    options.defaultExpanded ?? false
-  );
-
   const [errors, setErrors] = useState<CreateEventValidationErrors>({});
 
   const [submitError, setSubmitError] = useState<CreateEventSubmitError | null>(
@@ -195,10 +196,8 @@ export const useCreateEventController = (
 
   const isDraftControlled = options.draft !== undefined;
   const isOpenControlled = options.open !== undefined;
-  const isExpandedControlled = options.expanded !== undefined;
   const draft = isDraftControlled ? options.draft : internalDraft;
   const isOpen = isOpenControlled ? options.open : internalOpen;
-  const isExpanded = isExpandedControlled ? options.expanded : internalExpanded;
 
   // Every close returns focus to the opener, including a host-controlled `open` and an unmount.
   // An opener that left the document gets nothing.
@@ -207,10 +206,7 @@ export const useCreateEventController = (
       return;
     }
 
-    originFocusRef.current =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
+    originFocusRef.current = focusedElement();
 
     return () => {
       if (originFocusRef.current?.isConnected) {
@@ -256,14 +252,6 @@ export const useCreateEventController = (
     }
 
     options.onOpenChange?.(nextOpen);
-  };
-
-  const setExpanded = (nextExpanded: boolean): void => {
-    if (!isExpandedControlled) {
-      setInternalExpanded(nextExpanded);
-    }
-
-    options.onExpandedChange?.(nextExpanded);
   };
 
   const submit = async (): Promise<CreateEventResult | undefined> => {
@@ -362,12 +350,10 @@ export const useCreateEventController = (
     errors,
     isDirty,
     isDiscardDialogOpen,
-    isExpanded,
     isOpen,
     isSubmitting,
     requestCancel,
     setDraft,
-    setExpanded,
     setOpen,
     submit,
     submitError,

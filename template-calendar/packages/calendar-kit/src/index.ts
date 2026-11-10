@@ -59,7 +59,6 @@ export {
   REPEAT_PRESET,
   REPEAT_UNIT,
   WEEKDAY_ORDER,
-  createDefaultAnchorRect,
   firstLetter,
   formatDateRowLabel,
   formatRepeatSummary,

@@ -1,8 +1,4 @@
-.portalAnchor {
-  display: contents;
-}
-
-.dialog {
+.panel {
   box-sizing: border-box;
   display: flex;
   min-block-size: 0;
@@ -14,57 +10,6 @@
   background: var(--cal-color-overlay-surface);
   color: var(--cal-color-text);
   font-family: var(--cal-font-family);
-}
-
-.compact {
-  position: fixed;
-  inset-block-start: var(--cal-space-4);
-  inset-inline-end: var(--cal-space-4);
-  inline-size: min(100%, 28rem);
-  max-block-size: calc(100dvh - var(--cal-space-8));
-}
-
-.expanded {
-  composes: expandedDialog from "../../styles/modules/overlay.module.css";
-}
-
-.columns {
-  display: grid;
-  flex: 1;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
-  min-block-size: 0;
-}
-
-.mainColumn,
-.sideColumn {
-  display: flex;
-  min-block-size: 0;
-  flex-direction: column;
-  gap: var(--cal-space-3);
-}
-
-.mainColumn {
-  padding-inline-end: var(--cal-space-4);
-  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
-}
-
-.sideColumn {
-  padding-inline-start: var(--cal-space-4);
-}
-
-@media (max-width: 720px) {
-  .columns {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .mainColumn {
-    padding-inline-end: 0;
-    border-inline-end: 0;
-  }
-
-  .sideColumn {
-    padding-inline-start: 0;
-  }
 }
 
 .form {
@@ -141,8 +86,12 @@
   flex: 1;
   min-block-size: 0;
   flex-direction: column;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
   gap: var(--cal-space-3);
-  overflow-y: auto;
 }
 
 .field {
@@ -564,13 +513,6 @@
   position: absolute;
   transform: translate(-50%, -50%);
   z-index: 21;
-}
-
-@media (max-width: 480px) {
-  .compact {
-    inset-inline: var(--cal-space-2);
-    inline-size: auto;
-  }
 }
 
 .discardHeader {

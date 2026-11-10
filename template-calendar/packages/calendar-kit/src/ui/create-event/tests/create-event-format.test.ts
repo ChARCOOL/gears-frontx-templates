@@ -11,7 +11,6 @@ import {
   REPEAT_PRESET,
   REPEAT_UNIT,
   WEEKDAY_ORDER,
-  createDefaultAnchorRect,
   firstLetter,
   formatDateInputText,
   formatDateRowLabel,
@@ -158,7 +157,6 @@ describe("create-event-format", () => {
     assert(firstLetter(" constructor ")).toBe("C");
     assert(firstLetter(" ")).toBe("");
     assert(weekdayLabel("monday", t)).toBe("Monday");
-    assert(createDefaultAnchorRect().width).toBe(0);
   });
 
   it("resolves nested overlay precedence", () => {

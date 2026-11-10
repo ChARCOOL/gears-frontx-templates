@@ -176,25 +176,6 @@ describe(useCreateEventController, () => {
     expect(result.current.isOpen).toBeFalsy();
   });
 
-  it("supports uncontrolled expansion and reports the host callback", () => {
-    const onExpandedChange = vi.fn<() => void>();
-
-    const { result } = renderHook(() =>
-      useCreateEventController(
-        options({ defaultExpanded: false, onExpandedChange })
-      )
-    );
-
-    expect(result.current.isExpanded).toBeFalsy();
-
-    act(() => {
-      result.current.setExpanded(true);
-    });
-
-    expect(result.current.isExpanded).toBeTruthy();
-    expect(onExpandedChange).toHaveBeenCalledWith(true);
-  });
-
   it("rejects invalid draft data before invoking the host submit callback", async () => {
     const onSubmit =
       vi.fn<

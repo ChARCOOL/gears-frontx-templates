@@ -33,12 +33,6 @@ const DATE = calendarDate("2026-08-24");
 const NEXT_DATE = calendarDate("2026-08-25");
 
 const headerT: CalendarTranslate = (key) => {
-  if (key.endsWith(".expand")) {
-    return "Expand create event";
-  }
-  if (key.endsWith(".collapse")) {
-    return "Collapse create event";
-  }
   if (key.endsWith(".close")) {
     return "Close create event";
   }
@@ -116,7 +110,7 @@ const renderPopover = (overrides: Partial<CreateEventPopoverProps> = {}) =>
   render(<CreateEventPopover {...popoverProps(overrides)} />);
 
 const getCreateDialog = (): HTMLElement =>
-  screen.getByRole("dialog", { name: /create/iu });
+  screen.getByRole("region", { name: /create/iu });
 
 const fieldRow = (field: RegExp, scope?: HTMLElement): HTMLElement => {
   let row = (scope === undefined ? screen : within(scope)).getByLabelText(
@@ -202,15 +196,12 @@ const chooseSelectOption = (
 };
 
 describe("CreateEventPopover public shell", () => {
-  it("keeps translated header actions icon-only while preserving accessible names", () => {
+  it("keeps the translated close action icon-only while preserving its accessible name", () => {
     renderPopover({ t: headerT });
 
-    const expand = screen.getByRole("button", { name: "Expand create event" });
     const close = screen.getByRole("button", { name: "Close create event" });
 
-    assert(expand).toHaveAttribute("aria-label", "Expand create event");
     assert(close).toHaveAttribute("aria-label", "Close create event");
-    assert(expand.textContent).toBe("");
     assert(close.textContent).toBe("");
   });
 
@@ -239,7 +230,7 @@ describe("CreateEventPopover public shell", () => {
       />
     );
 
-    assert(screen.queryByRole("dialog", { name: /create/iu })).toBeNull();
+    assert(screen.queryByRole("region", { name: /create/iu })).toBeNull();
   });
 
   it("renders injected directory resources and a consumer field slot without app adapters", () => {
@@ -272,46 +263,17 @@ describe("CreateEventPopover public shell", () => {
     assert(screen.queryByRole("option", { name: "Ada Lovelace" })).toBeNull();
   });
 
-  it("uses the compact shell slot and the expanded shell slot for their respective modes", () => {
-    const { rerender } = renderPopover({
-      renderCompactShell: (content) => (
-        <div>
-          <span>Compact host shell</span>
-          {content}
-        </div>
-      ),
-      renderExpandedShell: (content) => (
-        <div>
-          <span>Expanded host shell</span>
-          {content}
-        </div>
-      ),
-    });
-
-    assert(screen.getByText("Compact host shell")).toBeInTheDocument();
-    assert(screen.queryByText("Expanded host shell")).toBeNull();
-
-    rerender(
-      <CreateEventPopover
-        {...popoverProps({
-          expanded: true,
-          renderCompactShell: (content) => (
-            <div>
-              <span>Compact host shell</span>
-              {content}
-            </div>
-          ),
-          renderExpandedShell: (content) => (
-            <div>
-              <span>Expanded host shell</span>
-              {content}
-            </div>
-          ),
-        })}
-      />
+  it("renders the form inline in its host without a portal", () => {
+    render(
+      <div role="group" aria-label="portal host">
+        <CreateEventPopover {...popoverProps()} />
+      </div>
     );
 
-    assert(screen.getByText("Expanded host shell")).toBeInTheDocument();
+    assert(screen.getByRole("group", { name: "portal host" })).toContainElement(
+      getCreateDialog()
+    );
+    assert(screen.queryByRole("dialog", { name: /create/iu })).toBeNull();
   });
 });
 
@@ -407,8 +369,7 @@ describe("CreateEventPopover draft and validation behaviour", () => {
 
     chooseSelectOption(/repeat/iu, /^custom/iu);
 
-    const repeatDialogs = screen.getAllByRole("dialog");
-    assert(repeatDialogs).toHaveLength(2);
+    assert(screen.getAllByRole("dialog")).toHaveLength(1);
     const repeatView = screen.getByRole("dialog", { name: /repeat/iu });
 
     assert(
@@ -440,7 +401,7 @@ describe("CreateEventPopover draft and validation behaviour", () => {
     });
 
     assert(screen.queryByRole("alertdialog")).toBeNull();
-    const mainDialog = screen.getByRole("dialog");
+    const mainDialog = getCreateDialog();
     assert(
       within(mainDialog).getByRole("combobox", { name: /repeat/iu })
     ).toHaveTextContent("Custom");
@@ -460,8 +421,7 @@ describe("CreateEventPopover draft and validation behaviour", () => {
 
     chooseSelectOption(/repeat/iu, /^custom/iu);
 
-    const repeatDialogs = screen.getAllByRole("dialog");
-    assert(repeatDialogs).toHaveLength(2);
+    assert(screen.getAllByRole("dialog")).toHaveLength(1);
     const repeatView = screen.getByRole("dialog", { name: /repeat/iu });
     assert(
       within(repeatView).getByRole("button", { name: /back/iu })
@@ -472,7 +432,7 @@ describe("CreateEventPopover draft and validation behaviour", () => {
     });
 
     assert(screen.queryByRole("alertdialog")).toBeNull();
-    const mainDialog = screen.getByRole("dialog");
+    const mainDialog = getCreateDialog();
     assert(mainDialog).toBeInTheDocument();
     assert(
       within(mainDialog).getByRole("combobox", { name: /repeat/iu })
@@ -482,15 +442,14 @@ describe("CreateEventPopover draft and validation behaviour", () => {
     ).toBeNull();
   });
 
-  it("keeps the repeat card above the expanded create sheet", () => {
-    renderPopover({ defaultExpanded: true });
+  it("keeps the repeat card inside the create form", () => {
+    renderPopover();
 
     chooseSelectOption(/repeat/iu, /^custom/iu);
-    const expandedCreateDialog = getCreateDialog();
+    const createDialog = getCreateDialog();
     const repeatDialog = screen.getByRole("dialog", { name: /repeat/iu });
 
-    assert(expandedCreateDialog).toHaveAttribute("aria-modal", "true");
-    assert(expandedCreateDialog).toContainElement(repeatDialog);
+    assert(createDialog).toContainElement(repeatDialog);
 
     act(() => {
       fireEvent.click(
@@ -499,7 +458,7 @@ describe("CreateEventPopover draft and validation behaviour", () => {
     });
 
     assert(screen.queryByRole("dialog", { name: /repeat/iu })).toBeNull();
-    assert(getCreateDialog()).toBe(expandedCreateDialog);
+    assert(getCreateDialog()).toBe(createDialog);
   });
 
   it("opens a draft with a non-preset rule on Custom", () => {
@@ -750,8 +709,7 @@ describe("CreateEventPopover coverage paths", () => {
     renderPopover({ onSubmit, t: repeatPresetT });
     chooseSelectOption(/repeat/iu, /^custom/iu);
 
-    const repeatDialogs = screen.getAllByRole("dialog");
-    assert(repeatDialogs).toHaveLength(2);
+    assert(screen.getAllByRole("dialog")).toHaveLength(1);
     const repeatView = screen.getByRole("dialog", { name: /repeat/iu });
     const interval = within(repeatView).getByRole("spinbutton", {
       name: /^(?:every|interval)$/iu,
@@ -940,7 +898,7 @@ describe("CreateEventPopover discard and submit behaviour", () => {
     fireEvent.click(discardButton);
 
     assert(screen.queryByRole("alertdialog")).toBeNull();
-    assert(screen.queryByRole("dialog", { name: /create/iu })).toBeNull();
+    assert(screen.queryByRole("region", { name: /create/iu })).toBeNull();
     assert(onCancel).toHaveBeenCalledOnce();
   });
 
@@ -1155,78 +1113,6 @@ describe("CreateEventPopover discard and submit behaviour", () => {
       location: "Science Hall 204",
       title: "Exam review",
     });
-  });
-});
-
-describe("CreateEventPopover compact and expanded draft continuity", () => {
-  it("preserves the edited draft when switching from Popover to the docked Sheet", async () => {
-    const user = userEvent.setup({ delay: null });
-    const onExpandedChange = vi.fn<() => void>();
-    renderPopover({ defaultExpanded: false, onExpandedChange });
-
-    await setInputValue(
-      user,
-      screen.getByLabelText(/title/iu),
-      "Draft survives expansion"
-    );
-    await user.click(screen.getByRole("button", { name: /expand/iu }));
-
-    const expandedDialog = getCreateDialog();
-    assert(expandedDialog).toHaveAttribute("aria-modal", "true");
-    assert(screen.getByLabelText(/title/iu)).toHaveValue(
-      "Draft survives expansion"
-    );
-    assert(
-      screen.getByRole("button", { name: /collapse/iu })
-    ).toBeInTheDocument();
-    assert(onExpandedChange).toHaveBeenCalledWith(true);
-  });
-});
-
-describe("CreateEventPopover compact positioning", () => {
-  it("positions the dialog from the anchorRect prop", () => {
-    renderPopover({ anchorRect: new DOMRect(200, 300, 120, 40) });
-
-    const dialog = getCreateDialog();
-    assert(dialog.style.top).toBe("344px");
-    assert(dialog.style.left).toBe("200px");
-  });
-
-  it("positions the dialog from the live anchorRef when attached", () => {
-    const anchorElement = document.createElement("div");
-    vi.spyOn(anchorElement, "getBoundingClientRect").mockReturnValue(
-      new DOMRect(50, 60, 80, 24)
-    );
-
-    renderPopover({ anchorRef: { current: anchorElement } });
-
-    const dialog = getCreateDialog();
-    assert(dialog.style.top).toBe("88px");
-    assert(dialog.style.left).toBe("50px");
-  });
-
-  it("keeps the legacy default position without an anchor", () => {
-    renderPopover();
-
-    const dialog = getCreateDialog();
-    assert(dialog.style.top).toBe("28px");
-    assert(dialog.style.left).toBe("24px");
-  });
-
-  it("prefers the live anchorRef position over the static anchorRect", () => {
-    const anchorElement = document.createElement("div");
-    vi.spyOn(anchorElement, "getBoundingClientRect").mockReturnValue(
-      new DOMRect(50, 60, 80, 24)
-    );
-
-    renderPopover({
-      anchorRect: new DOMRect(200, 300, 120, 40),
-      anchorRef: { current: anchorElement },
-    });
-
-    const dialog = getCreateDialog();
-    assert(dialog.style.top).toBe("88px");
-    assert(dialog.style.left).toBe("50px");
   });
 });
 
