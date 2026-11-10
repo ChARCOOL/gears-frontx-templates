@@ -395,13 +395,11 @@ const sidePanelProps = (
   onHiddenCalendarIdsChange: () => {},
   onRevealEvent: () => {},
   onSelectedTimeZoneIdChange: () => {},
-  onWorldClockTimeZoneIdsChange: () => {},
   open: true,
   selectedDate: DATE,
   selectedTimeZoneId: null,
   t,
   timeZone: UTC,
-  worldClockTimeZoneIds: [],
   ...overrides,
 });
 

@@ -10,10 +10,9 @@
   selectedDate={selectedDate}
   selectedTimeZoneId={selectedTimeZoneId}
   onSelectedTimeZoneIdChange={setSelectedTimeZoneId}
-  worldClockTimeZoneIds={worldClockTimeZoneIds}
-  onWorldClockTimeZoneIdsChange={setWorldClockTimeZoneIds}
   hiddenCalendarIds={hiddenCalendarIds}
   onHiddenCalendarIdsChange={setHiddenCalendarIds}
+  calendarOptions={calendarOptions}
   onRevealEvent={onRevealEvent}
   onClose={onClose}
   t={t}
@@ -24,6 +23,8 @@
 ```
 
 Use `slots` to supply or rearrange the header, search field, body, month navigator, time-zone list, world clocks, calendar list, and search results. The shell does not load directories, persist preferences, or create calendars; consumers own those boundaries.
+
+`calendarOptions` forwards the row menu callbacks and `soloCalendarId` to the default `CalendarList`; see [CalendarList](../calendar-list/calendar-list.md). World clocks come only from `slots.worldClocks`.
 
 The panel composes its own search field, scroll container and decorative dividers. Its 329px width and below-48rem overlay treatment are CSS-module implementation details, not public theme tokens; no static inline style is required.
 
@@ -41,10 +42,9 @@ The panel composes its own search field, scroll container and decorative divider
 | `onHiddenCalendarIdsChange` | `(hiddenCalendarIds: readonly string[]) => void` | yes | Called after a calendar is toggled. |
 | `onRevealEvent` | `(eventId: string, date: CalendarDate) => void` | yes | A search result was activated. |
 | `onSelectedTimeZoneIdChange` | `(timeZoneId: IanaTimeZone \| null) => void` | yes | Called when the comparison zone changes. |
-| `onWorldClockTimeZoneIdsChange` | `(timeZoneIds: readonly IanaTimeZone[]) => void` | yes | Called after a world clock is added, removed or moved. |
 | `selectedDate` | `CalendarDate` | yes | Day the navigator selects. |
 | `selectedTimeZoneId` | `IanaTimeZone \| null` | yes | Comparison zone selected in the time-zone list. |
-| `worldClockTimeZoneIds` | `readonly IanaTimeZone[]` | yes | Ordered world-clock zones. |
+| `calendarOptions` | `CalendarListOptionsProps` |  | Row menu callbacks and the calendar shown alone, forwarded to the calendar list. |
 | `className` | `string` |  | Class added to the component root. |
 | `defaultOpen` | `boolean` |  | Initial open state when uncontrolled. Default closed. |
 | `defaultQuery` | `string` |  | Initial search query when uncontrolled. |

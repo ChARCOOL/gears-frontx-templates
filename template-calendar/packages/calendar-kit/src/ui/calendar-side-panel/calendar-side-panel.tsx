@@ -19,6 +19,7 @@ import type { CalendarContextProps } from "../../i18n/calendar-localization";
 import { CalendarScope } from "../../i18n/calendar-localization-provider";
 import { useCalendarSidePanelController } from "../../react/controllers/use-calendar-side-panel-controller";
 import { CalendarList } from "../calendar-list/calendar-list";
+import type { CalendarListOptionsProps } from "../calendar-list/calendar-list";
 import { Button } from "../primitives/button/button";
 import { Input } from "../primitives/input/input";
 import { ScrollRegion } from "../primitives/scroll-region/scroll-region";
@@ -71,18 +72,14 @@ export interface CalendarSidePanelProps extends CalendarContextProps {
   readonly onSelectedTimeZoneIdChange: (
     timeZoneId: IanaTimeZone | null
   ) => void;
-  /** Ordered world-clock zones. */
-  readonly worldClockTimeZoneIds: readonly IanaTimeZone[];
-  /** Called after a world clock is added, removed or moved. */
-  readonly onWorldClockTimeZoneIdsChange: (
-    timeZoneIds: readonly IanaTimeZone[]
-  ) => void;
   /** Ids of hidden calendars. */
   readonly hiddenCalendarIds: readonly string[];
   /** Called after a calendar is toggled. */
   readonly onHiddenCalendarIdsChange: (
     hiddenCalendarIds: readonly string[]
   ) => void;
+  /** Row menu callbacks and the calendar shown alone, forwarded to the calendar list. */
+  readonly calendarOptions?: CalendarListOptionsProps;
   /** Controlled search query. */
   readonly query?: string;
   /** Initial search query when uncontrolled. */
@@ -164,6 +161,7 @@ const PanelSearch = ({ clearQuery, query, setQuery }: PanelSearchProps) => {
 };
 
 const PanelDefaultBody = ({
+  calendarOptions,
   calendars,
   hiddenCalendarIds,
   slots,
@@ -187,6 +185,7 @@ const PanelDefaultBody = ({
         slots.calendarList()
       ) : (
         <CalendarList
+          {...calendarOptions}
           calendars={calendars}
           hiddenCalendarIds={hiddenCalendarIds}
           onHiddenCalendarIdsChange={onHiddenCalendarIdsChange}
@@ -212,6 +211,7 @@ const PanelBody = ({ query, slots, ...props }: PanelBodyProps) => {
 };
 
 const CalendarSidePanelContent = ({
+  calendarOptions,
   calendars,
   className,
   defaultOpen,
@@ -302,6 +302,7 @@ const CalendarSidePanelContent = ({
               slots.body()
             ) : (
               <PanelBody
+                calendarOptions={calendarOptions}
                 calendars={calendars}
                 hiddenCalendarIds={hiddenCalendarIds}
                 query={panelQuery}
@@ -336,6 +337,7 @@ interface PanelSearchProps {
 }
 
 interface PanelBodyProps {
+  readonly calendarOptions?: CalendarListOptionsProps;
   readonly calendars: readonly CalendarRef[];
   readonly hiddenCalendarIds: readonly string[];
   readonly query: string;

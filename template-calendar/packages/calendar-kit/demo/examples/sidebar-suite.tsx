@@ -52,8 +52,6 @@ const SidebarSuiteDemo = ({ direction }: { direction: CalendarDirection }) => {
           selectedDate={selectedDate}
           selectedTimeZoneId={selectedTimeZoneId}
           onSelectedTimeZoneIdChange={setSelectedTimeZoneId}
-          worldClockTimeZoneIds={sampleWorldClockIds}
-          onWorldClockTimeZoneIdsChange={logDemo("world clocks change")}
           hiddenCalendarIds={hiddenCalendarIds}
           onHiddenCalendarIdsChange={setHiddenCalendarIds}
           query={query}

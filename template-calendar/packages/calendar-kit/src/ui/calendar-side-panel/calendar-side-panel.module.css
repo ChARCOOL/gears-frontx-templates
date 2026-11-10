@@ -68,6 +68,25 @@
   scrollbar-width: thin;
 }
 
+/* ScrollRegion sets data-scrolled once the body moves; the fade shows only then. */
+.body::before {
+  position: sticky;
+  z-index: 1;
+  display: block;
+  flex: none;
+  background: linear-gradient(var(--cal-color-surface), transparent);
+  block-size: var(--cal-space-4);
+  content: "";
+  inset-block-start: 0;
+  margin-block-end: calc(-1 * var(--cal-space-4));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.body[data-scrolled]::before {
+  opacity: 1;
+}
+
 .body::-webkit-scrollbar {
   inline-size: var(--cal-space-1);
 }

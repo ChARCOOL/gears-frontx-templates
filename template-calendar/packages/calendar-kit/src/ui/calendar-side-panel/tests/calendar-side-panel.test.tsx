@@ -35,13 +35,11 @@ const baseProps = (
   onHiddenCalendarIdsChange: vi.fn<() => void>(),
   onRevealEvent: vi.fn<() => void>(),
   onSelectedTimeZoneIdChange: vi.fn<() => void>(),
-  onWorldClockTimeZoneIdsChange: vi.fn<() => void>(),
   open: true,
   selectedDate: calendarDate("2026-08-24"),
   selectedTimeZoneId: null,
   t,
   timeZone: UTC,
-  worldClockTimeZoneIds: [],
   ...overrides,
 });
 
@@ -298,4 +296,32 @@ it("keeps focus rings of full-width body controls inside the scroll body", () =>
 
   expect(body.get("margin-inline")).toBe("calc(-1 * var(--cal-focus-ring-width))");
   expect(body.get("padding-inline")).toBe("var(--cal-focus-ring-width)");
+});
+
+it("shows the top fade only once the body has scrolled", () => {
+  expect(
+    declarations(sidePanelCss, ".body::before").get("opacity")
+  ).toBe("0");
+  expect(
+    declarations(sidePanelCss, ".body[data-scrolled]::before").get("opacity")
+  ).toBe("1");
+});
+
+it("forwards calendarOptions to the calendar list rows", async () => {
+  const onDeleteCalendar = vi.fn<(calendarId: string) => void>();
+
+  render(
+    <CalendarSidePanel
+      {...baseProps({
+        calendarOptions: { onDeleteCalendar },
+        calendars: [{ canDelete: true, colorFamily: "blue", id: "cal-a", name: "Alpha" }],
+      })}
+    />
+  );
+
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Options for Alpha" }));
+  await user.click(screen.getByRole("button", { name: "Delete" }));
+
+  expect(onDeleteCalendar).toHaveBeenCalledWith("cal-a");
 });

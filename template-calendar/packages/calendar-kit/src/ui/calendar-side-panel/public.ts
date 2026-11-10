@@ -5,3 +5,4 @@ export {
   type CalendarSidePanelSlots,
   type CalendarSidePanelToggleProps,
 } from "./calendar-side-panel";
+export type { CalendarListOptionsProps } from "../calendar-list/public";

@@ -27,13 +27,11 @@ const panelProps = (overrides: Partial<PanelProps> = {}): PanelProps => ({
   onHiddenCalendarIdsChange: vi.fn<() => void>(),
   onRevealEvent: vi.fn<() => void>(),
   onSelectedTimeZoneIdChange: vi.fn<() => void>(),
-  onWorldClockTimeZoneIdsChange: vi.fn<() => void>(),
   open: true,
   selectedDate: calendarDate("2026-08-24"),
   selectedTimeZoneId: null,
   t,
   timeZone: UTC,
-  worldClockTimeZoneIds: [],
   ...overrides,
 });
 
