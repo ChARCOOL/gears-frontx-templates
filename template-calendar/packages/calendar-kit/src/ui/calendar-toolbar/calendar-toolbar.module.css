@@ -94,6 +94,11 @@
     flex-direction: column;
   }
 
+  /* Stacked, the divider has no neighbour to separate. */
+  .divider {
+    display: none;
+  }
+
   .actions {
     justify-content: space-between;
   }
