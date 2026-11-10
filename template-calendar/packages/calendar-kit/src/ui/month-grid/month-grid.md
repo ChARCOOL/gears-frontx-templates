@@ -17,7 +17,7 @@ By default the week column labels each row `W1`…`Wn`, the week's index inside 
   now={now}
   monthData={{ densityCap: 3, overflowByDate: {} }}
   onEventSelect={handleEventSelect}
-  onOverflowSelect={({ date, anchorRect }) => openOverflow(date, anchorRect)}
+  onOverflowSelect={({ date, anchorRect }) => openOverflow(date, anchorRect)} // omit to use the kit list
 />
 ```
 
@@ -43,7 +43,7 @@ By default the week column labels each row `W1`…`Wn`, the week's index inside 
 | `onEmptyCellSelect` | `(cell: CalendarCell, anchorRect: DOMRectReadOnly) => void` |  | An empty part of a day was activated (in `selectionMode="none"`). `anchorRect` is the day cell's rectangle, for a popover. |
 | `onEventSelect` | `(event: CalendarEvent, context: CalendarEventRenderContext<unknown>, anchor?: HTMLElement…` |  | An available event was activated. `anchor` is the strip element. |
 | `onMoveRequest` | `(request: CalendarMoveRequest) => void` |  | Enables dragging a timed event to another day, keeping its time of day and length. The host confirms or cancels, as with WeekGrid. Omit to disable dragging. |
-| `onOverflowSelect` | `(payload: { readonly date: CalendarDate; readonly anchorRect?: DOMRectReadOnly \| undefine…` |  | The overflow chip was activated. `anchorRect` is the chip's rectangle, for a popover. |
+| `onOverflowSelect` | `(payload: { readonly date: CalendarDate; readonly anchorRect?: DOMRectReadOnly \| undefine…` |  | The overflow chip was activated. `anchorRect` is the chip's rectangle. Omit to let the chip open the kit's list of hidden events. |
 | `onSelectedDateRangeChange` | `(range: CalendarDateRange \| null) => void` |  | Called when a range is committed or cleared. |
 | `onSelectedEventIdChange` | `(eventId: string \| null) => void` |  | Called when an event is selected or deselected. |
 | `renderCell` | `(context: CalendarCellContext) => ReactNode` |  | Replaces the content of each day cell. |
@@ -82,7 +82,7 @@ Pass `onMoveRequest` to move timed events by whole days. Dragging a timed event 
 
 The root is an ARIA grid with week row headers and localized column labels. Day cells use roving `tabIndex`; Arrow keys move between rows and columns, Home/End move to row boundaries, and RTL mirrors horizontal movement. Enter/Space on an empty cell calls `onEmptyCellSelect` with its `CalendarCell` and the cell's rectangle, for anchoring a popover.
 
-Event cards reuse `EventCard` and expose `data-event-id`, accessible names, selected/unavailable state, Enter/Space activation, and conflict content through `ConflictIndicator`. The overflow chip is a button that announces the hidden count and calls `onOverflowSelect` with the date and the chip's rectangle.
+Event cards reuse `EventCard` and expose `data-event-id`, accessible names, selected/unavailable state, Enter/Space activation, and conflict content through `ConflictIndicator`. The overflow chip is a button that announces the hidden count. With `onOverflowSelect`, it calls that handler with the date and the chip's rectangle, and the host opens its own list. Without it, the chip opens a kit popover listing the day's hidden events as event cards, anchored to the chip. Activating a card selects the event (`onEventSelect`) and closes the list; Escape closes it and returns focus to the chip. The list shows only events the grid has, so an `overflowByDate` count the host sent without events has no row.
 
 An empty event collection still renders the month cells, headers, overflow lanes, and independent focus/range announcements. The kit does not add loading, error, or empty-state shells, alerts, or status regions. Fetching and failure presentation remain host concerns.
 

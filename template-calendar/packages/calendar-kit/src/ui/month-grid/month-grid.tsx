@@ -57,6 +57,7 @@ import { ConflictIndicator } from "../conflict-indicator/conflict-indicator";
 import { EventCard } from "../event-card/event-card";
 import { Button } from "../primitives/button/button";
 import { noopCleanup } from "../primitives/global-event-listener";
+import { Popover } from "../primitives/popover/popover";
 import { Tag } from "../primitives/tag/tag";
 import {
   buildLiveAnnouncement,
@@ -136,7 +137,7 @@ export interface MonthGridProps extends CalendarContextProps {
     cell: CalendarCell,
     anchorRect: DOMRectReadOnly
   ) => void;
-  /** The overflow chip was activated. `anchorRect` is the chip's rectangle, for a popover. */
+  /** The overflow chip was activated. `anchorRect` is the chip's rectangle. Omit to let the chip open the kit's list of hidden events. */
   readonly onOverflowSelect?: (payload: {
     readonly date: CalendarDate;
     readonly anchorRect?: DOMRectReadOnly;
@@ -313,9 +314,15 @@ const MonthEventSlot = ({
 type MonthTimedSegment =
   MonthGridRow["cells"][number]["visibleTimedEvents"][number];
 
+type MonthOverflowListOpen = (
+  cell: MonthGridCell,
+  anchorElement: HTMLElement
+) => void;
+
 interface MonthOverflowButtonProps {
   readonly cell: MonthGridCell;
   readonly hiddenLabel: string;
+  readonly onOpenList: MonthOverflowListOpen;
   readonly onOverflowSelect?: MonthGridProps["onOverflowSelect"];
   readonly renderOverflow?: MonthGridProps["renderOverflow"];
 }
@@ -323,6 +330,7 @@ interface MonthOverflowButtonProps {
 const MonthOverflowButton = ({
   cell,
   hiddenLabel,
+  onOpenList,
   onOverflowSelect,
   renderOverflow,
 }: MonthOverflowButtonProps): ReactElement | null => {
@@ -335,7 +343,13 @@ const MonthOverflowButton = ({
   ): void => {
     clickEvent.stopPropagation();
 
-    onOverflowSelect?.({
+    if (onOverflowSelect === undefined) {
+      onOpenList(cell, clickEvent.currentTarget);
+
+      return;
+    }
+
+    onOverflowSelect({
       anchorRect: clickEvent.currentTarget.getBoundingClientRect(),
       date: cell.date,
     });
@@ -897,6 +911,7 @@ interface MonthDayCellProps {
   readonly handleCellFocus: MonthGridView["handleCellFocus"];
   readonly handleCellKeyDown: MonthGridView["handleCellKeyDown"];
   readonly locale: string;
+  readonly onOpenOverflowList: MonthOverflowListOpen;
   readonly onOverflowSelect: MonthGridProps["onOverflowSelect"];
   readonly rangeMode: boolean;
   readonly renderCell: MonthGridProps["renderCell"];
@@ -958,6 +973,7 @@ const MonthDayCell = ({
   handleCellFocus,
   handleCellKeyDown,
   locale,
+  onOpenOverflowList,
   onOverflowSelect,
   rangeMode,
   renderCell,
@@ -1088,6 +1104,7 @@ const MonthDayCell = ({
             timeZone,
             t
           )}
+          onOpenList={onOpenOverflowList}
           onOverflowSelect={onOverflowSelect}
           renderOverflow={renderOverflow}
         />
@@ -1096,8 +1113,16 @@ const MonthDayCell = ({
   );
 };
 
+interface MonthOverflowListState {
+  readonly anchorElement: HTMLElement;
+  readonly anchorRect: DOMRect;
+  readonly cell: MonthGridCell;
+}
+
 const MonthGridContent = (props: MonthGridContentProps) => {
   const view = useMonthGridContent(props);
+  const [overflowList, setOverflowList] =
+    useState<MonthOverflowListState | null>(null);
 
   const {
     allDayRowCountsByRow,
@@ -1140,6 +1165,21 @@ const MonthGridContent = (props: MonthGridContentProps) => {
     weekNumberClassName,
     weekNumbering = "month",
   } = props;
+
+  const openOverflowList: MonthOverflowListOpen = (cell, anchorElement) => {
+    setOverflowList({
+      anchorElement,
+      anchorRect: anchorElement.getBoundingClientRect(),
+      cell,
+    });
+  };
+
+  // The list sits beside the grid, not in a day cell, so its clicks and keys skip the cell handlers.
+  // Closing focuses the chip again; a press outside then moves focus to the pressed target.
+  const closeOverflowList = (): void => {
+    overflowList?.anchorElement.focus();
+    setOverflowList(null);
+  };
 
   const weekdayDates = controller.rows[0]?.row.dates ?? [];
   const rootClassName = clsx(
@@ -1272,6 +1312,7 @@ const MonthGridContent = (props: MonthGridContentProps) => {
                   handleCellKeyDown={handleCellKeyDown}
                   key={controller.getCellKey(cell.cell)}
                   locale={locale}
+                  onOpenOverflowList={openOverflowList}
                   onOverflowSelect={onOverflowSelect}
                   rangeMode={rangeMode}
                   renderCell={renderCell}
@@ -1321,6 +1362,47 @@ const MonthGridContent = (props: MonthGridContentProps) => {
           );
         })}
       </div>
+      {overflowList === null ? null : (
+        <Popover
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              closeOverflowList();
+            }
+          }}
+          anchorElement={overflowList.anchorElement}
+          anchorRect={overflowList.anchorRect}
+          label={dayLabelFormatter.format(
+            new Date(overflowList.cell.cell.start)
+          )}
+        >
+          <div className={styles.overflowList}>
+            {overflowList.cell.hiddenEvents.map((segment) => (
+              <EventCard
+                key={`${segment.event.id}:${segment.date}`}
+                event={segment.event}
+                segment={segment}
+                geometry={MONTH_STRIP_GEOMETRY}
+                positioned={false}
+                data-color-family={segment.event.colorFamily}
+                renderConflict={buildEventConflict}
+                renderTime={
+                  segment.event.allDay ? undefined : renderDefaultSlotTime
+                }
+                renderTitle={renderEvent}
+                onSelect={(event, context) => {
+                  controller.selectEvent(
+                    event.id,
+                    context,
+                    overflowList.anchorElement
+                  );
+                  closeOverflowList();
+                }}
+              />
+            ))}
+          </div>
+        </Popover>
+      )}
       <div
         className={styles.liveRegion}
         role="status"

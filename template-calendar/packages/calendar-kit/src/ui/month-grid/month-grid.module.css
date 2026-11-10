@@ -230,6 +230,12 @@
   white-space: nowrap;
 }
 
+.overflowList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cal-space-1);
+}
+
 .liveRegion {
   composes: srOnly from "../../styles/modules/sr-only.module.css";
 }

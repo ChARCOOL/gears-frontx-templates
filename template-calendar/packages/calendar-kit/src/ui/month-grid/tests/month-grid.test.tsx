@@ -803,7 +803,59 @@ describe(MonthGrid, () => {
     assert(onEmptyCellSelect).not.toHaveBeenCalled();
   });
 
-  it("opens an empty month cell from the existing keyboard interaction", () => {
+  it("lists hidden events in a popover when the host has no overflow handler", () => {
+  const date = calendarDate("2025-09-04");
+
+  const events = Array.from({ length: 4 }, (_, index) =>
+    eventFixture({
+      end: instant(date, `${String(10 + index).padStart(2, "0")}:00`),
+      id: `hidden-list-${index}`,
+      start: instant(date, `${String(9 + index).padStart(2, "0")}:00`),
+      title: `Hidden list ${index}`,
+    })
+  );
+
+  renderMonth({ events, monthData: { densityCap: 2, overflowByDate: {} } });
+
+  const overflow = monthOverflow("2");
+  overflow.focus();
+  fireEvent.click(overflow);
+
+  const panel = screen.getByRole("dialog");
+  within(panel).getByText("Hidden list 2");
+  within(panel).getByText("Hidden list 3");
+  assert(within(panel).queryByText("Hidden list 0")).toBeNull();
+
+  fireEvent.keyDown(panel, { key: "Escape" });
+
+  assert(screen.queryByRole("dialog")).toBeNull();
+  assert(document.activeElement).toBe(overflow);
+});
+
+it("closes the hidden-events popover on an outside press", () => {
+  const date = calendarDate("2025-09-04");
+
+  const events = Array.from({ length: 3 }, (_, index) =>
+    eventFixture({
+      end: instant(date, `${String(10 + index).padStart(2, "0")}:00`),
+      id: `outside-list-${index}`,
+      start: instant(date, `${String(9 + index).padStart(2, "0")}:00`),
+      title: `Outside list ${index}`,
+    })
+  );
+
+  renderMonth({ events, monthData: { densityCap: 1, overflowByDate: {} } });
+
+  fireEvent.click(monthOverflow("2"));
+  assert(screen.queryByRole("dialog")).not.toBeNull();
+
+  fireEvent.pointerDown(document.body);
+  fireEvent.mouseDown(document.body);
+
+  assert(screen.queryByRole("dialog")).toBeNull();
+});
+
+it("opens an empty month cell from the existing keyboard interaction", () => {
     const onEmptyCellSelect =
       vi.fn<(cell: CalendarCell, anchorRect: DOMRectReadOnly) => void>();
     renderMonth({
