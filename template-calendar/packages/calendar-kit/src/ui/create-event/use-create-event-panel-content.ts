@@ -275,7 +275,6 @@ export const useCreateEventPanelContent = (
 ) => {
   const { direction, locale, t } = useCalendarLocalization();
   const { timeZone } = useCalendarContext();
-  const controller = useCreateEventController({ ...props, timeZone });
 
   const {
     calendars,
@@ -290,6 +289,17 @@ export const useCreateEventPanelContent = (
     kind = "event",
     onKindChange,
   } = props;
+
+  // Reminders have no event-type field, so the host's types do not apply to them.
+  const eventTypeIds =
+    kind === "event"
+      ? props.eventTypes?.map((eventType) => eventType.id)
+      : undefined;
+  const controller = useCreateEventController({
+    ...props,
+    eventTypeIds,
+    timeZone,
+  });
 
   const idPrefix = useId();
 
@@ -340,7 +350,10 @@ export const useCreateEventPanelContent = (
 
   const fieldMessages = createEventErrorMessages(controller.errors, t);
   const firstError = firstCreateEventError(controller.errors, t);
-  const canSubmit = validateCreateEventDraft(controller.draft).valid;
+  const canSubmit = validateCreateEventDraft(controller.draft, {
+    eventTypeIds,
+    eventTypeRequired: props.eventTypeRequired,
+  }).valid;
   const timeZoneLabel = formatTimeZone(
     controller.draft.timeZone,
     locale,
@@ -532,6 +545,7 @@ export const useCreateEventPanelContent = (
         calendarId: null,
         conferencingProviderId: null,
         description: null,
+        eventTypeId: null,
         location: null,
       });
     }

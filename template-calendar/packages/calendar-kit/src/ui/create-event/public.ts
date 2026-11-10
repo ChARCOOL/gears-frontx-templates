@@ -3,6 +3,7 @@ export {
   type CreateEventKind,
   type CreateEventPanelHandle,
   type CreateEventPanelProps,
+  type CreateEventTypeOption,
 } from "./create-event-panel";
 
 export {

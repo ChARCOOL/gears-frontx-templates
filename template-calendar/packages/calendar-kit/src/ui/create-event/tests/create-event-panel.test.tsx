@@ -443,6 +443,82 @@ describe("CreateEventPanel draft and validation behaviour", () => {
     assert(screen.queryAllByRole("status")).toHaveLength(0);
   });
 
+  it("renders no event-type field when the host passes no event types", () => {
+    renderPopover();
+
+    assert(screen.queryByRole("combobox", { name: /event type/iu })).toBeNull();
+  });
+
+  it("writes the picked host event type to the draft on submit", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSubmit = submitSpy();
+    renderPopover({
+      eventTypes: [
+        { colorFamily: "green", id: "lecture", label: "Lecture" },
+        { id: "exam", label: "Exam" },
+      ],
+      onSubmit,
+    });
+
+    chooseSelectOption(/event type/iu, "Lecture");
+    await user.click(getSubmitButton());
+
+    assert(onSubmit).toHaveBeenCalledWith(
+      assert.objectContaining({ eventTypeId: "lecture" })
+    );
+  });
+
+  it("keeps Save disabled until a required event type is picked", () => {
+    renderPopover({
+      eventTypeRequired: true,
+      eventTypes: [{ id: "lecture", label: "Lecture" }],
+    });
+
+    assert(getSubmitButton()).toBeDisabled();
+
+    chooseSelectOption(/event type/iu, "Lecture");
+
+    assert(getSubmitButton()).toBeEnabled();
+  });
+
+  it("shows the event-type reason when a required event type is missing on submit", () => {
+    const onSubmit = submitSpy();
+    renderPopover({
+      eventTypeRequired: true,
+      eventTypes: [{ id: "lecture", label: "Lecture" }],
+      onSubmit,
+    });
+
+    const form = getCreateDialog().querySelector<HTMLFormElement>("form");
+    if (form === null) {
+      throw new Error("Missing create event form");
+    }
+
+    fireEvent.submit(form);
+
+    assert(onSubmit).not.toHaveBeenCalled();
+    assert(screen.getByRole("status")).toHaveTextContent(
+      "Event type is required"
+    );
+  });
+
+  it("keeps Save enabled when the host requires an event type but offers none", () => {
+    renderPopover({ eventTypeRequired: true });
+
+    assert(getSubmitButton()).toBeEnabled();
+  });
+
+  it("does not apply the host event types to a reminder", () => {
+    renderPopover({
+      eventTypeRequired: true,
+      eventTypes: [{ id: "lecture", label: "Lecture" }],
+      kind: "reminder",
+    });
+
+    assert(screen.queryByRole("combobox", { name: /event type/iu })).toBeNull();
+    assert(getSubmitButton()).toBeEnabled();
+  });
+
   it("disables Save for an invalid draft and exposes field-level reasons without submitting", async () => {
     const user = userEvent.setup({ delay: null });
     const onSubmit = submitSpy();
@@ -1685,6 +1761,7 @@ describe("CreateEventPanel Event and Reminder kinds", () => {
       calendarId: null,
       conferencingProviderId: null,
       description: null,
+      eventTypeId: null,
       location: null,
     });
   });

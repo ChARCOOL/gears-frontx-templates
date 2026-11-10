@@ -114,6 +114,16 @@ export type CreateEventPanelHandle = Pick<
   "requestCancel"
 >;
 
+/** Event type the host permits. The picked `id` is stored on `draft.eventTypeId`. */
+export interface CreateEventTypeOption {
+  /** Stable id stored on the draft. */
+  readonly id: string;
+  /** Display text in the picker. */
+  readonly label: string;
+  /** Colour family shown as a dot, as calendars show theirs. */
+  readonly colorFamily?: CalendarColorFamily;
+}
+
 export interface CreateEventPanelProps
   extends
     CalendarContextProps,
@@ -122,6 +132,8 @@ export interface CreateEventPanelProps
   readonly className?: string;
   /** Calendars offered in the schedule field. */
   readonly calendars: readonly CalendarRef[];
+  /** Event types offered in the event-type field. The field is not rendered when empty or omitted. */
+  readonly eventTypes?: readonly CreateEventTypeOption[];
   /** Reference instant for the time-zone offset label. */
   readonly now?: UtcInstant;
   /** People offered in the people combobox. */
@@ -938,6 +950,11 @@ interface CreateEventFormProps {
   readonly conferencingItems: readonly ResourceItem[];
   readonly controller: ReturnType<typeof useCreateEventController>;
   readonly displayedEndDate: CalendarDate | "";
+  readonly eventTypeItems: readonly {
+    readonly icon: ReactNode | undefined;
+    readonly label: string;
+    readonly value: string;
+  }[];
   readonly fieldId: (name: string) => string;
   readonly fieldMessages: ReturnType<typeof createEventErrorMessages>;
   readonly firstError: string | null;
@@ -1258,6 +1275,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
     conferencingItems,
     controller,
     displayedEndDate,
+    eventTypeItems,
     fieldId,
     fieldMessages,
     firstError,
@@ -1394,6 +1412,41 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
     </Field>
   );
 
+  const selectedEventType = eventTypeItems.find(
+    (item) => item.value === controller.draft.eventTypeId
+  );
+
+  const eventTypeErrorId = fieldId("event-type-error");
+
+  const eventTypeField =
+    eventTypeItems.length === 0 ? null : (
+      <Field className={styles.field}>
+        <Select
+          id={fieldId("event-type")}
+          aria-label={t("calendar.create_event.field.event_type")}
+          aria-describedby={fieldErrorId(
+            fieldMessages.eventTypeId,
+            eventTypeErrorId
+          )}
+          options={eventTypeItems}
+          value={controller.draft.eventTypeId ?? ""}
+          size="l"
+          showSelectedCheck
+          iconLeft={selectedEventType?.icon}
+          disabled={controller.isSubmitting}
+          placeholder={t("calendar.create_event.placeholder.event_type")}
+          onValueChange={(value) => {
+            setDraft({ ...controller.draft, eventTypeId: value });
+          }}
+        />
+        {fieldMessages.eventTypeId === null ? null : (
+          <FieldError id={eventTypeErrorId} role="status">
+            {fieldMessages.eventTypeId}
+          </FieldError>
+        )}
+      </Field>
+    );
+
   const scheduleRows = (
     <>
       <div className={styles.timeRow}>
@@ -1528,6 +1581,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
             />
           ) : null}
           {isReminder ? null : calendarField}
+          {isReminder ? null : eventTypeField}
           {scheduleRows}
         </div>
 
@@ -1774,6 +1828,19 @@ const CreateEventPanelContent = (props: CreateEventPanelProps) => {
     [calendars, t]
   );
 
+  const eventTypeItems = useMemo(
+    () =>
+      (props.eventTypes ?? []).map((eventType) => ({
+        icon:
+          eventType.colorFamily === undefined ? undefined : (
+            <CalendarColorDot colorFamily={eventType.colorFamily} />
+          ),
+        label: eventType.label,
+        value: eventType.id,
+      })),
+    [props.eventTypes]
+  );
+
   const submitErrorContent = (
     <SubmitError
       error={submitError}
@@ -1847,6 +1914,7 @@ const CreateEventPanelContent = (props: CreateEventPanelProps) => {
       controller={controller}
       discardOpen={controller.isDiscardDialogOpen}
       displayedEndDate={displayedEndDate}
+      eventTypeItems={eventTypeItems}
       fieldId={fieldId}
       fieldMessages={fieldMessages}
       firstError={firstError ?? null}
