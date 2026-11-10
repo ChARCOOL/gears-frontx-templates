@@ -190,12 +190,15 @@
   box-shadow: none;
 }
 
-.chipsInput {
+/* ui-kit sets its own chips-input size (label text, 12px); the repeated class outranks it. */
+.chipsInput.chipsInput {
   block-size: var(--cal-space-6);
   padding: 0;
   color: var(--cal-color-text);
   font-size: var(--cal-text-grid-size);
+  font-weight: var(--cal-text-grid-weight);
   line-height: var(--cal-text-grid-line-height);
+  letter-spacing: var(--cal-text-grid-tracking);
 }
 
 .chipsInput::placeholder {

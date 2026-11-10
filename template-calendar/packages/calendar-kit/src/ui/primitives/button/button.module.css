@@ -1,4 +1,7 @@
-.button {
+/* ui-kit sizes button text with its label token (12px); the calendar text scale is the body size. */
+.button.button {
+  font-size: var(--cal-text-grid-size);
+  line-height: var(--cal-text-grid-line-height);
 }
 
 .round {
