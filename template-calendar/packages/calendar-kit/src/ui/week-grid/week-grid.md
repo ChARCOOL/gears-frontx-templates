@@ -54,7 +54,7 @@ import { WeekGrid } from "@gears-frontx/calendar-kit/week-grid";
 | `trailingGutter` | `boolean` |  | Repeat the hour labels on the trailing edge. The copy is hidden from assistive technology. |
 | `visibleDays` | `5 \| 7` |  | `5` shows Monday–Friday, `7` the whole week. Default `5`. |
 | `visibleHours` | `CalendarTimeWindow` |  | Visible hours, e.g. `{ start: "06:00", end: "23:00" }`, on slot boundaries. Default: all. |
-| `workingHours` | `CalendarTimeWindow` |  | Shaded business hours; also where the grid first scrolls to. Default 08:00–18:00. |
+| `workingHours` | `CalendarTimeWindow` |  | Working hours; cells outside them are hatched. Also where the grid first scrolls to. Default 08:00–18:00. |
 
 Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`, `translations`; see [Internationalization](../../docs/i18n.md#per-component-overrides).
 <!-- /generated -->
@@ -65,7 +65,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 `slotMinutes?: 15 | 20 | 30 | 60` sets the length of one row; the default is `60`. The gutter labels only rows that start on the hour. `visibleHours` must start and end on a slot boundary; otherwise the component throws a `RangeError`.
 
-`workingHours?: CalendarTimeWindow` sets the shaded business part of the day; the default is 08:00–18:00. It is independent of `visibleHours` and also sets where the grid first scrolls to.
+`workingHours?: CalendarTimeWindow` sets the working part of the day; the default is 08:00–18:00. Cells outside it are hatched with diagonal stripes, and their accessible name says "non-working hour". It is independent of `visibleHours` and also sets where the grid first scrolls to.
 
 Events are clipped to the visible hours, and events wholly outside them are not rendered. The now line is hidden while the current time is outside them. Slots follow elapsed time, so a daylight-saving day has one slot fewer or more.
 

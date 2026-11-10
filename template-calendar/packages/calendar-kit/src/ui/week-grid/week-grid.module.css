@@ -156,6 +156,14 @@
   cursor: not-allowed;
 }
 
+.nonWorkingHour {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--cal-slot-non-working-stripe) 0 2px,
+    transparent 2px 7px
+  );
+}
+
 .cellContent[data-drop-target] {
   background: var(--cal-slot-selected);
   outline: var(--cal-border-width-1) dashed var(--cal-slot-selected-ring);

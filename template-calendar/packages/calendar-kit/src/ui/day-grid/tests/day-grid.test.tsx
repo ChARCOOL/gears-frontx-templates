@@ -307,7 +307,7 @@ describe(DayGrid, () => {
     assert(screen.queryByRole("status", { name: /Current time/iu })).toBeNull();
   });
 
-  it("marks non-working days and hours in text without shading the cells", () => {
+  it("marks non-working days and hours in text and class names", () => {
     const { container } = render(
       <DayGrid {...BASE_PROPS} date={calendarDate("2026-08-23")} events={[]} />
     );

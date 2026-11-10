@@ -239,6 +239,7 @@ const OWNED = {
   "--cal-radius-pill": "9999px",
   "--cal-slot-busy-stripe":
     "color-mix(in srgb, var(--cal-color-text) 4%, transparent)",
+  "--cal-slot-non-working-stripe": "var(--cal-color-grid-line-strong)",
   "--cal-state-hover-opacity": "0.9",
 } as const;
 

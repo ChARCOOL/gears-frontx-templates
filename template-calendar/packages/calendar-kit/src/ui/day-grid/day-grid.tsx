@@ -70,7 +70,7 @@ export interface DayGridProps extends CalendarContextProps {
   readonly visibleHours?: CalendarTimeWindow;
   /** Length of one row. Default `60`. */
   readonly slotMinutes?: CalendarSlotMinutes;
-  /** Shaded business hours; also where the grid first scrolls to. Default 08:00–18:00. */
+  /** Working hours; cells outside them are hatched. Also where the grid first scrolls to. Default 08:00–18:00. */
   readonly workingHours?: CalendarTimeWindow;
   /** Repeat the hour labels on the trailing edge, hidden from assistive technology. */
   readonly trailingGutter?: boolean;

@@ -150,6 +150,7 @@
     var(--cal-color-text) 4%,
     transparent
   );
+  --cal-slot-non-working-stripe: var(--cal-color-grid-line-strong);
   --cal-motion-duration-short: 120ms;
   --cal-motion-duration-medium: 200ms;
   --cal-motion-duration-long: 320ms;

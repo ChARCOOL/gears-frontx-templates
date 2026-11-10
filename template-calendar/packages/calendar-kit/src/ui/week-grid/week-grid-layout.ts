@@ -50,6 +50,7 @@ export interface CellMeta {
   readonly columnIndex: number;
   readonly slotIndex: number | null;
   readonly label: string;
+  readonly nonWorkingHour: boolean;
 }
 
 export interface GridData {
@@ -244,6 +245,9 @@ const registerCell = (
       workingHours,
       labelParts
     ),
+    nonWorkingHour:
+      metaBase.kind === "timed" &&
+      !isWithinTimeWindow(cell.startTime, workingHours),
   };
 
   metaByCell.set(cell, meta);
