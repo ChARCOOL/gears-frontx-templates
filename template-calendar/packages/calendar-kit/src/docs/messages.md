@@ -66,16 +66,19 @@ Labels several components reuse.
 
 <!-- generated:messages calendar.week -->
 
-| Translation ID                 | English           | Values  |
-| ------------------------------ | ----------------- | ------- |
-| `calendar.week.allDay`         | All-day events    |         |
-| `calendar.week.currentTime`    | Current time      |         |
-| `calendar.week.focus`          | Week view         |         |
-| `calendar.week.hidden`         | +{{count}} hidden | `count` |
-| `calendar.week.nonWorkingHour` | non-working hour  |         |
-| `calendar.week.range`          | Week of           |         |
-| `calendar.week.timeZone`       | Time zone         |         |
-| `calendar.week.workingHour`    | working hour      |         |
+| Translation ID | English | Values |
+| --- | --- | --- |
+| `calendar.week.allDay` | All-day events |  |
+| `calendar.week.currentTime` | Current time |  |
+| `calendar.week.focus` | Week view |  |
+| `calendar.week.hidden` | +{{count}} hidden | `count` |
+| `calendar.week.nonWorkingHour` | non-working hour |  |
+| `calendar.week.range` | Week of |  |
+| `calendar.week.timeZone` | Time zone |  |
+| `calendar.week.unavailableContinue` | Continue |  |
+| `calendar.week.unavailableMessage` | The time you painted overlaps an unavailable period. Choose a time that is free. |  |
+| `calendar.week.unavailableTitle` | Overlaps an unavailable period |  |
+| `calendar.week.workingHour` | working hour |  |
 
 <!-- /generated -->
 
