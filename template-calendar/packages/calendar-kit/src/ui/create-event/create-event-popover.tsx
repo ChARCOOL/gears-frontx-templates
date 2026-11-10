@@ -1456,6 +1456,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
           disabled={controller.isSubmitting}
           placeholder={t("calendar.create_event.repeat.none")}
           onValueChange={onRepeatPresetChange}
+          onReselect={onRepeatPresetChange}
           aria-describedby={
             repeatHint === undefined ? undefined : fieldId("repeat-hint")
           }

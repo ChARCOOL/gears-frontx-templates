@@ -19,7 +19,7 @@ Rules every primitive follows:
 | `Field` family | `Field`, `FieldLabel`, `FieldGroup`, `FieldSet`, `FieldLegend`, `FieldDescription` | `FieldLabel` `required` and `FieldError`, which renders nothing when empty. The caller wires `htmlFor` and `aria-describedby` |
 | `Input` | `Input` | The shell owns ids, label, required marker, affixes, message and `aria-describedby`. `iconLeft` is ui-kit's leading icon; `leadingAction` and `action` sit outside the label, so pressing one never activates it, and adding or removing one never remounts the control. `className` goes on both the shell and the native input. Native `onChange` passes through unchanged and `onValueChange(value)` fires after it for the same change |
 | `RadioGroup`, `Radio` | `RadioGroup`, `RadioGroupItem` | Three label layouts, required marker and message. `onValueChange` receives only the value. The ref reaches the hidden input through `inputRef`. An unknown controlled value falls back to the first enabled radio, and a direction bridge restores RTL arrows inside a shadow root. A standalone `Radio` stays native because ui-kit items need a group |
-| `Select` | `Select*` | The app's flat API: `options` with `icon` and `dividerAfter`, `iconLeft`, `showSelectedCheck` |
+| `Select` | `Select*` | The app's flat API: `options` with `icon` and `dividerAfter`, `iconLeft`, `showSelectedCheck`. Picking the selected option calls `onReselect` and not `onValueChange` |
 | `Textarea` | `Textarea` | The same shell as `Input`. `rows` defaults to 3 and is always passed, so ui-kit's `--rows` minimum height survives a caller `style` |
 | `Toggle` | `Switch` | Controlled `checked`, three label layouts, sizes `m` and `s`. Space toggles, Enter does not. The hidden input stays part of the form |
 

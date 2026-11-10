@@ -77,6 +77,17 @@
   cursor: not-allowed;
 }
 
+/* Greys the box and text like a disabled input. */
+.trigger:disabled {
+  border-color: var(--cal-color-grid-line);
+  background: var(--cal-color-input-disabled);
+  color: var(--cal-color-subtle);
+}
+
+.trigger:disabled .triggerIcon {
+  color: var(--cal-color-subtle);
+}
+
 .value {
   flex: 1;
   min-inline-size: 0;

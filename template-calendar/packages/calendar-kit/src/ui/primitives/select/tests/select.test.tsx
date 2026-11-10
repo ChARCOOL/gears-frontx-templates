@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { createRef, useRef, useState } from "react";
 import type { Ref } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -30,6 +31,20 @@ const getShadowListbox = (root: ShadowRoot): HTMLElement => {
   }
   return listbox;
 };
+
+// jsdom lays nothing out, so a scroll that moves the select is one after its box changed.
+const scrollMovingSelect = (target: Element) => {
+  vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue(
+    new DOMRect(0, -40, 10, 10)
+  );
+  fireEvent.scroll(target);
+  vi.restoreAllMocks();
+};
+
+const nextFrame = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
 
 const options: readonly SelectOption[] = [
   { label: "Alpha", value: "a" },
@@ -269,7 +284,27 @@ describe(Select, () => {
     expect(screen.queryByRole("listbox")).toBeNull();
   });
 
-  it("closes from outside pointer-down and ancestor scroll without selecting", () => {
+  it("keeps Escape inside an open select from reaching its ancestors", () => {
+    const onAncestorKeyDown = vi.fn<() => void>();
+    render(
+      <div onKeyDown={onAncestorKeyDown}>
+        <Select
+          aria-label="Calendar"
+          options={options}
+          value="a"
+          onValueChange={() => {}}
+        />
+      </div>
+    );
+
+    const trigger = screen.getByRole("combobox");
+    fireEvent.click(trigger);
+    fireEvent.keyDown(trigger, { key: "Escape" });
+
+    expect(onAncestorKeyDown).not.toHaveBeenCalled();
+  });
+
+  it("closes from outside pointer-down and ancestor scroll without selecting", async () => {
     const onValueChange = vi.fn<() => void>();
     renderSelect({ onValueChange });
     const trigger = screen.getByRole("combobox");
@@ -279,9 +314,30 @@ describe(Select, () => {
     expect(screen.queryByRole("listbox")).toBeNull();
 
     fireEvent.click(trigger);
-    fireEvent.scroll(document.body);
+    await nextFrame();
+    scrollMovingSelect(document.body);
     expect(screen.queryByRole("listbox")).toBeNull();
     expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it("stays open when an ancestor scroll leaves the select where it was", () => {
+    renderSelect();
+
+    fireEvent.click(screen.getByRole("combobox"));
+    fireEvent.scroll(document.body);
+
+    expect(screen.queryByRole("listbox")).not.toBeNull();
+  });
+
+  it("stays open when focusing an option scrolls the select into view", () => {
+    renderSelect();
+    fireEvent.click(screen.getByRole("combobox"));
+
+    // The browser scrolls to reveal the focused option; that scroll belongs to the list.
+    fireEvent.focusIn(screen.getByRole("option", { name: "Alpha" }));
+    scrollMovingSelect(document.body);
+
+    expect(screen.queryByRole("listbox")).not.toBeNull();
   });
 
   it("stays open while its own list scrolls", () => {
@@ -291,6 +347,32 @@ describe(Select, () => {
     fireEvent.click(trigger);
     fireEvent.scroll(screen.getByRole("listbox"));
     expect(screen.queryByRole("listbox")).not.toBeNull();
+  });
+
+  it("reports a press on the already selected option through onReselect", async () => {
+    const user = userEvent.setup();
+    const onReselect = vi.fn<(value: string) => void>();
+    const onValueChange = vi.fn<(value: string) => void>();
+    renderSelect({ onReselect, onValueChange });
+
+    await user.click(screen.getByRole("combobox", { name: "Calendar" }));
+    await user.click(await screen.findByRole("option", { name: "Alpha" }));
+
+    expect(onReselect).toHaveBeenCalledWith("a");
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it("does not report a reselect when another option is picked", async () => {
+    const user = userEvent.setup();
+    const onReselect = vi.fn<(value: string) => void>();
+    const onValueChange = vi.fn<(value: string) => void>();
+    renderSelect({ onReselect, onValueChange });
+
+    await user.click(screen.getByRole("combobox", { name: "Calendar" }));
+    await user.click(await screen.findByRole("option", { name: "Charlie" }));
+
+    expect(onReselect).not.toHaveBeenCalled();
+    expect(onValueChange).toHaveBeenCalledWith("c");
   });
 
   it("wires labels, messages, invalid state, placeholder, and left icon", () => {

@@ -106,6 +106,8 @@ interface SelectProps extends Omit<
   readonly options: readonly SelectOption[];
   readonly value?: string;
   readonly onValueChange: (value: string) => void;
+  /** Called when the user picks the option that is already selected; `onValueChange` is not. */
+  readonly onReselect?: (value: string) => void;
   readonly size?: SelectSize;
   readonly invalid?: boolean;
   readonly placeholder?: string;
@@ -357,6 +359,7 @@ export const Select = ({
   options,
   value,
   onValueChange,
+  onReselect,
   size = "l",
   invalid = false,
   placeholder = "",
@@ -473,13 +476,38 @@ export const Select = ({
       return noopCleanup;
     }
 
+    // Opening can fire a scroll on an ancestor without moving anything; only a real move closes.
+    let openedAt = triggerRef.current?.getBoundingClientRect();
+
+    // Focusing an option scrolls the form to show it, and those scroll events arrive in the next
+    // frame. They belong to the list, so skip them and measure again once they are done.
+    let settling = false;
+    let settleFrame = 0;
+
+    const settleAfterFocus = () => {
+      settling = true;
+      cancelAnimationFrame(settleFrame);
+      settleFrame = requestAnimationFrame(() => {
+        openedAt = triggerRef.current?.getBoundingClientRect();
+        settling = false;
+      });
+    };
+
     const closeOnScroll = (event: Event) => {
-      if (scrollMovesAnchor(event, triggerRef.current)) {
+      if (settling) {
+        return;
+      }
+
+      const now = triggerRef.current?.getBoundingClientRect();
+      const stayed = now?.top === openedAt?.top && now?.left === openedAt?.left;
+
+      if (!stayed && scrollMovesAnchor(event, triggerRef.current)) {
         updateOpen(false);
       }
     };
 
     const unsubscribe = [
+      subscribeGlobalEvent(document, "focusin", settleAfterFocus),
       subscribeGlobalEvent(document, "scroll", closeOnScroll, {
         capture: true,
         passive: true,
@@ -499,6 +527,8 @@ export const Select = ({
     ];
 
     return () => {
+      cancelAnimationFrame(settleFrame);
+
       for (const unsubscribeListener of unsubscribe) {
         unsubscribeListener();
       }
@@ -556,14 +586,29 @@ export const Select = ({
 
   const handleValueChange = useCallback(
     (nextValue: string | null) => {
-      if (nextValue !== null) {
+      if (nextValue !== null && nextValue !== value) {
         onValueChange(nextValue);
       }
     },
-    [onValueChange]
+    [onValueChange, value]
   );
 
-  const handleOpenChange = (nextOpen: boolean): void => {
+  const handleOpenChange = (
+    nextOpen: boolean,
+    details: { readonly event: Event; readonly reason: string }
+  ): void => {
+    // A press on the selected option closes the list without a value change.
+    if (
+      !nextOpen &&
+      details.reason === "item-press" &&
+      value !== undefined &&
+      details.event.target instanceof Element &&
+      details.event.target.closest('[role="option"]')?.getAttribute("aria-selected") ===
+        "true"
+    ) {
+      onReselect?.(value);
+    }
+
     updateOpen(nextOpen);
 
     if (!nextOpen) {
