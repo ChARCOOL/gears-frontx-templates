@@ -165,17 +165,17 @@ const GuestSummary = ({ event }: { readonly event: CalendarEvent }) => {
 interface ParticipantsSectionProps {
   readonly event: CalendarEvent;
   /** Lists every guest by response in place of the avatar stack. */
-  readonly expanded: boolean;
+  readonly showAllGuests: boolean;
   readonly onShowAllGuests: () => void;
   readonly participantOverflowCount: number;
   readonly visibleParticipants: readonly CalendarAttendee[];
 }
 
-// The stack shows a few faces; +N opens the expanded view, whose guest list has names and
-// scrolls on its own, so a lecture-sized invite never fills the popover with avatars.
+// The stack shows a few faces; +N swaps it for the guest list, which has names and scrolls on
+// its own, so a lecture-sized invite never fills the panel with avatars.
 const ParticipantsSection = ({
   event,
-  expanded,
+  showAllGuests,
   onShowAllGuests,
   participantOverflowCount,
   visibleParticipants,
@@ -189,7 +189,7 @@ const ParticipantsSection = ({
   return (
     <DetailRow icon={<UsersIcon />} label={t("calendar.detail.participants")}>
       <GuestSummary event={event} />
-      {expanded ? (
+      {showAllGuests ? (
         <GuestGroups attendees={event.attendees ?? []} />
       ) : (
         visibleParticipants.length > 0 && (
@@ -319,23 +319,6 @@ const GuestGroups = ({
   });
 };
 
-// Expanded with many guests: a column of its own, with no icon so the list keeps one edge.
-const InviteeColumn = ({ event }: { readonly event: CalendarEvent }) => {
-  const { t } = useCalendarLocalization();
-
-  return (
-    <aside
-      aria-label={t("calendar.detail.participants")}
-      className={styles.sideColumn}
-    >
-      <div className={styles.rowContent}>
-        <GuestSummary event={event} />
-        <GuestGroups attendees={event.attendees ?? []} />
-      </div>
-    </aside>
-  );
-};
-
 const renderConflictDetail = (conflict: CalendarConflict) => (
   <>
     <span className={styles.conflictDimension}>{conflict.dimension}</span>
@@ -346,37 +329,31 @@ const renderConflictDetail = (conflict: CalendarConflict) => (
   </>
 );
 
-// A few guests fit in the people group; a column of their own would leave most of it empty.
-const GUEST_COLUMN_THRESHOLD = 3;
-
-const hasGuestColumn = (event: CalendarEvent): boolean =>
-  (event.attendees ?? []).length > GUEST_COLUMN_THRESHOLD;
-
 export interface DefaultDetailProps {
   readonly canCopyJoinLink: boolean;
-  /** Lists every guest; with more than three, in a column on the end side. */
-  readonly expanded: boolean;
   readonly comparisonTimeZone: IanaTimeZone | null;
   readonly copyLink: () => void;
   readonly copyStatus: EventDetailPanelCopyStatus;
   readonly event: CalendarEvent;
   readonly joinUrl: string | undefined;
-  /** Opens the expanded view from the avatar stack's +N. */
+  /** Opens the full guest list from the avatar stack's +N. */
   readonly onShowAllGuests: () => void;
   readonly participantOverflowCount: number;
+  /** Lists every guest in place of the avatar stack. */
+  readonly showAllGuests: boolean;
   readonly visibleParticipants: readonly CalendarAttendee[];
 }
 
-const DetailSections = ({
+export const DefaultDetail = ({
   canCopyJoinLink,
   comparisonTimeZone,
   copyLink,
   copyStatus,
   event,
-  expanded,
   joinUrl,
   onShowAllGuests,
   participantOverflowCount,
+  showAllGuests,
   visibleParticipants,
 }: DefaultDetailProps) => {
   const { locale, t } = useCalendarLocalization();
@@ -436,15 +413,13 @@ const DetailSections = ({
       </div>
       <div className={styles.group}>
         <OrganizerSection event={event} />
-        {(!expanded || !hasGuestColumn(event)) && (
-          <ParticipantsSection
-            event={event}
-            expanded={expanded}
-            onShowAllGuests={onShowAllGuests}
-            participantOverflowCount={participantOverflowCount}
-            visibleParticipants={visibleParticipants}
-          />
-        )}
+        <ParticipantsSection
+          event={event}
+          onShowAllGuests={onShowAllGuests}
+          participantOverflowCount={participantOverflowCount}
+          showAllGuests={showAllGuests}
+          visibleParticipants={visibleParticipants}
+        />
       </div>
       {description !== "" && (
         <div className={styles.group}>
@@ -460,17 +435,3 @@ const DetailSections = ({
   );
 };
 
-export const DefaultDetail = (props: DefaultDetailProps) => {
-  if (!props.expanded || !hasGuestColumn(props.event)) {
-    return <DetailSections {...props} />;
-  }
-
-  return (
-    <div className={styles.columns}>
-      <div className={styles.mainColumn}>
-        <DetailSections {...props} />
-      </div>
-      <InviteeColumn event={props.event} />
-    </div>
-  );
-};

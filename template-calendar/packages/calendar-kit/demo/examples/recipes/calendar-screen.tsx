@@ -46,7 +46,6 @@ const stepDate = (
 
 interface OpenDetail {
   readonly event: CalendarEvent;
-  readonly anchor: HTMLElement | null;
 }
 
 interface OpenCreate {
@@ -69,12 +68,8 @@ export const CalendarScreen = ({
 
   const [create, setCreate] = useState<OpenCreate | null>(null);
 
-  const openDetail = (
-    event: CalendarEvent,
-    _context: unknown,
-    anchor?: HTMLElement
-  ): void => {
-    setDetail({ anchor: anchor ?? null, event });
+  const openDetail = (event: CalendarEvent): void => {
+    setDetail({ event });
   };
 
   const openCreate = ({
@@ -126,7 +121,6 @@ export const CalendarScreen = ({
       <EventDetailPanel
         open={detail !== null}
         event={detail?.event ?? null}
-        anchorElement={detail?.anchor ?? null}
         timeZone={timeZone}
         onClose={() => {
           setDetail(null);

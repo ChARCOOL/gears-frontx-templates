@@ -196,7 +196,6 @@ Event state words shared by the views.
 | Translation ID                      | English               | Values  |
 | ----------------------------------- | --------------------- | ------- |
 | `calendar.detail.close`             | Close                 |         |
-| `calendar.detail.collapse`          | Collapse              |         |
 | `calendar.detail.conferencing`      | Conferencing          |         |
 | `calendar.detail.conflicts`         | Conflicts             |         |
 | `calendar.detail.copy.copied`       | Copied                |         |
@@ -206,7 +205,6 @@ Event state words shared by the views.
 | `calendar.detail.delete`            | Delete                |         |
 | `calendar.detail.description`       | Description           |         |
 | `calendar.detail.edit`              | Edit                  |         |
-| `calendar.detail.expand`            | Expand                |         |
 | `calendar.detail.group.awaiting`    | Awaiting · {{count}}  | `count` |
 | `calendar.detail.group.maybe`       | Maybe · {{count}}     | `count` |
 | `calendar.detail.group.no`          | Not going · {{count}} | `count` |

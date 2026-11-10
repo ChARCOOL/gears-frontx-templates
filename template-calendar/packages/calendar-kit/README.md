@@ -60,7 +60,7 @@ export const Week = ({ date, events }: WeekProps) => (
       <WeekGrid
         date={date}
         events={events}
-        onEventSelect={(event, _context, anchor) => openDetail(event, anchor)}
+        onEventSelect={openDetail}
         onQuickCreate={({ range, anchorRect }) => openCreate(range, anchorRect)}
       />
     </CalendarLocalizationProvider>
@@ -70,7 +70,7 @@ export const Week = ({ date, events }: WeekProps) => (
 
 `CalendarProvider` sets the viewer time zone; `CalendarLocalizationProvider` sets `locale`, `direction`, `t`, `messages` and `onMissingTranslation`. Everything below inherits both, and a prop on a component wins for that component alone. Without them the defaults are `UTC`, `en-US`, the direction of the locale and the built-in English text; see [Internationalization](dist/docs/i18n.md).
 
-The callbacks report intent and change nothing: `onEventSelect`'s third argument is the activated card, which an `EventDetailPanel` takes as `anchorElement`, and `onQuickCreate` hands you the range to create in. Wire them to a panel and a create popover and you have a calendar screen — the [complete calendar screen recipe](dist/docs/recipes.md#a-complete-calendar-screen) is the full version.
+The callbacks report intent and change nothing: `onEventSelect` hands you the activated event, and `onQuickCreate` hands you the range to create in. Wire them to a panel and a create popover and you have a calendar screen — the [complete calendar screen recipe](dist/docs/recipes.md#a-complete-calendar-screen) is the full version.
 
 ## Import paths
 

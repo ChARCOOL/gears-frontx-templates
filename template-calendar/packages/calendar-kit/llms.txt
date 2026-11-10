@@ -13,7 +13,6 @@ Rules an assistant should follow when writing code against this package:
 - `CalendarProvider` takes `timeZone`; `CalendarLocalizationProvider` takes `locale`, `direction`, `t`, `messages` and `onMissingTranslation`. A component also takes `locale`, `direction`, `t`, `translations` and `timeZone`, and those override the providers for that component. `t(id, values)` receives canonical `calendar.*` ids, a numeric `count` for plurals and raw values; returning the id falls back to English.
 - Pass `now` to freeze today and the now line in tests and screenshots.
 - Style through `--cal-*` seams, `className`, the grids' `cellClassName`/`columnHeaderClassName`/`gutterClassName`/`weekNumberClassName`, and `data-event-id`. Never target kit CSS Module class names.
-- Pass the third `onEventSelect` argument as `EventDetailPanel`'s `anchorElement` to open a popover beside the card.
 
 ## Guides
 
@@ -38,7 +37,7 @@ Rules an assistant should follow when writing code against this package:
 - [AgendaView](dist/docs/agenda-view.md): thirty days as a grouped list
 - [CalendarToolbar](dist/docs/calendar-toolbar.md): title, Today, previous/next, view switcher
 - [EventCard](dist/docs/event-card.md): the default event surface
-- [EventDetailPanel](dist/docs/event-detail-panel.md): event preview popover and dialog
+- [EventDetailPanel](dist/docs/event-detail-panel.md): inline event detail region
 - [CreateEventPopover](dist/docs/create-event.md): create-event form with recurrence and discard guard
 - [ConflictIndicator](dist/docs/conflict-indicator.md): named scheduling conflicts
 - [AvailabilityGrid](dist/docs/availability-grid.md): paint free time

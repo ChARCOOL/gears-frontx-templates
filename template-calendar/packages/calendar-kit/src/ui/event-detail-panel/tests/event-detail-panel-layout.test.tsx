@@ -16,13 +16,10 @@ const attendee = (
 ): CalendarAttendee => ({ displayName: `Person ${id}`, id, response });
 
 const renderPreview = (overrides: Partial<EventDetailPanelProps> = {}) => {
-  const anchor = document.createElement("button");
-  document.body.append(anchor);
   const onClose = vi.fn<() => void>();
 
   render(
     <EventDetailPanel
-      anchorElement={anchor}
       direction="ltr"
       event={timedEvent({
         attendees: [attendee("a", "accepted"), attendee("b", "declined")],
@@ -47,19 +44,17 @@ const renderPreview = (overrides: Partial<EventDetailPanelProps> = {}) => {
     />
   );
 
-  return { anchor, onClose };
+  return { onClose };
 };
 
 const detail = (): HTMLElement =>
-  screen.getByRole("dialog", { name: "1:1 sync" });
+  screen.getByRole("region", { name: "1:1 sync" });
 
-describe("EventDetailPanel anchored preview", () => {
-  it("opens beside the anchor as a non-modal popover with every detail section", () => {
+describe("EventDetailPanel inline layout", () => {
+  it("renders every detail section inline in the region named by its title", () => {
     renderPreview();
 
     const preview = detail();
-
-    assert(preview).not.toHaveAttribute("aria-modal");
 
     for (const label of [
       "Date & time",
@@ -93,42 +88,28 @@ describe("EventDetailPanel anchored preview", () => {
     ).toBeInTheDocument();
   });
 
-  it("expands into a larger dialog and collapses back to the preview", async () => {
-    const user = userEvent.setup();
+  it("focuses the title when the panel opens", () => {
     renderPreview();
 
-    await user.click(screen.getByRole("button", { name: "Expand" }));
-    assert(detail()).toHaveAttribute("aria-modal", "true");
-    assert(detail()).toHaveTextContent("Not going · 1");
-    assert(detail()).toHaveTextContent("Person b");
-    // Up to three guests stay in the one column.
-    assert(within(detail()).queryByRole("complementary")).toBeNull();
-
-    await user.click(screen.getByRole("button", { name: "Collapse" }));
-    assert(detail()).not.toHaveAttribute("aria-modal");
+    assert(
+      screen.getByRole("heading", { level: 2, name: "1:1 sync" })
+    ).toHaveFocus();
   });
 
-  it("stays open when another event card is pressed, so that card can take over", () => {
-    const { onClose } = renderPreview();
-    const otherCard = document.createElement("button");
-    otherCard.dataset.eventId = "other";
-    document.body.append(otherCard);
-
-    fireEvent.pointerDown(otherCard);
-
-    assert(onClose).not.toHaveBeenCalled();
-    assert(detail()).toBeInTheDocument();
-  });
-
-  it("closes on an outside press elsewhere", () => {
+  it("closes on Escape from a header button but not on an outside press", async () => {
+    const user = userEvent.setup();
     const { onClose } = renderPreview();
 
     fireEvent.pointerDown(document.body);
+    assert(onClose).not.toHaveBeenCalled();
+
+    screen.getByRole("button", { name: "Close" }).focus();
+    await user.keyboard("{Escape}");
 
     assert(onClose).toHaveBeenCalledOnce();
   });
 
-  it("puts the title first and the actions after it: edit, delete, expand, close", () => {
+  it("puts the title first and the actions after it: edit, delete, close", () => {
     renderPreview();
 
     const names = within(detail())
@@ -140,12 +121,7 @@ describe("EventDetailPanel anchored preview", () => {
       name: "1:1 sync",
     });
 
-    assert(names.slice(0, 4)).toStrictEqual([
-      "Edit",
-      "Delete",
-      "Expand",
-      "Close",
-    ]);
+    assert(names.slice(0, 3)).toStrictEqual(["Edit", "Delete", "Close"]);
     assert(
       within(detail())
         .getByRole("button", { name: "Edit" })
@@ -153,7 +129,7 @@ describe("EventDetailPanel anchored preview", () => {
     ).toBeTruthy();
   });
 
-  it("shows a restricted event as a compact card with no expand control", () => {
+  it("shows a restricted event as a compact card", () => {
     renderPreview({
       event: timedEvent({
         access: "busy",
@@ -163,44 +139,15 @@ describe("EventDetailPanel anchored preview", () => {
       }),
     });
 
-    const card = screen.getByRole("dialog", { name: "Busy" });
+    const card = screen.getByRole("region", { name: "Busy" });
 
-    assert(within(card).queryByRole("button", { name: "Expand" })).toBeNull();
     assert(within(card).getByRole("note")).toHaveTextContent("Restricted");
     assert(
       within(card).getByRole("button", { name: "Close" })
     ).toBeInTheDocument();
   });
 
-  it("gives four or more guests their own column, grouped by response", async () => {
-    const user = userEvent.setup();
-    renderPreview({
-      event: timedEvent({
-        attendees: [
-          attendee("a", "accepted"),
-          attendee("b", "accepted"),
-          attendee("c", "declined"),
-          attendee("d", null),
-        ],
-        id: "big",
-        startDate: "2026-09-23",
-        title: "1:1 sync",
-      }),
-    });
-
-    await user.click(screen.getByRole("button", { name: "Expand" }));
-
-    const column = within(detail()).getByRole("complementary", {
-      name: "Participants",
-    });
-
-    assert(column).toHaveTextContent("4 guests");
-    assert(column).toHaveTextContent("Going · 2");
-    assert(column).toHaveTextContent("Not going · 1");
-    assert(column).toHaveTextContent("Invited · 1");
-  });
-
-  it("opens the expanded detail from +N instead of more avatars", async () => {
+  it("opens the full guest list from +N instead of more avatars", async () => {
     const user = userEvent.setup();
     renderPreview({
       event: timedEvent({
@@ -215,17 +162,7 @@ describe("EventDetailPanel anchored preview", () => {
 
     await user.click(screen.getByRole("button", { name: /\+3/u }));
 
-    assert(detail()).toHaveAttribute("aria-modal", "true");
-    assert(within(detail()).getByRole("complementary")).toHaveTextContent(
-      "Person 7"
-    );
-  });
-
-  it("opens as the larger dialog without an anchor", () => {
-    renderPreview({ anchorElement: null });
-
-    assert(detail()).toHaveAttribute("aria-modal", "true");
-    assert(screen.queryByRole("button", { name: "Expand" })).toBeNull();
+    assert(within(detail()).getByText("Person 7")).toBeInTheDocument();
   });
 
   it("scrolls the body under a fixed header instead of growing the page", () => {
@@ -256,8 +193,8 @@ describe("EventDetailPanel anchored preview", () => {
       "--button-fg",
       "--button-fg-hover",
     ]);
-    assert(
-      declarations(panelCss, ".headerAction").get("--button-fg")
-    ).toBe("var(--cal-color-muted)");
+    assert(declarations(panelCss, ".headerAction").get("--button-fg")).toBe(
+      "var(--cal-color-muted)"
+    );
   });
 });

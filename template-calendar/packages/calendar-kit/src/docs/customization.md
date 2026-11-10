@@ -49,7 +49,7 @@ Overlays (popovers, dialogs, the create form) portal out of the component that o
 | `MonthGrid` | `selectionMode` (`date-range`), `weekNumbering` (`iso`), `monthData.densityCap`, `trailingGutter`, `now` |
 | `CalendarToolbar` | `availableViews` (which views, in which order) |
 | `EventCard` | `positioned`, `selected`, `past`, `available`, `readOnly` |
-| `EventDetailPanel` | `anchorElement` (popover or dialog), `comparisonTimeZone`, `maxVisibleParticipants`, `readOnly` |
+| `EventDetailPanel` | `comparisonTimeZone`, `maxVisibleParticipants`, `readOnly` |
 | `CreateEventPopover` | `expanded`, `anchorRect` / `anchorRef` |
 | `ConflictIndicator` | `compact` |
 | `AvailabilityGrid` | `interactionMode` (`read-only`), `paintMode` (`cells`), `headerFormat` (`weekday`), `showHourLabels`, `onHourClick`, `onDayClick` |
@@ -147,7 +147,7 @@ The larger components are assembled from the smaller ones, and you can reassembl
 
 - `CalendarSidePanel` is a shell around `MonthNavigator`, `SearchResults`, `TimeZoneList`, `WorldClocks` and `CalendarList`. Replace any section through `slots`, or skip the shell and place the pieces in your own layout.
 - `CreateEventPopover` renders in the kit's popover and dialog by default. `renderCompactShell` and `renderExpandedShell` hand you the form content to put in your own container.
-- `EventDetailPanel` opens as a popover when you pass `anchorElement` (the third argument of `onEventSelect`) and as a dialog without one.
+- `EventDetailPanel` renders inline as a labelled `<section>`. Place it in your own side sheet or layout; it does not open a popover or dialog.
 - `EventCard` and `ConflictIndicator` work outside the grids, for example in a list or a notification.
 
 ## 8. Headless

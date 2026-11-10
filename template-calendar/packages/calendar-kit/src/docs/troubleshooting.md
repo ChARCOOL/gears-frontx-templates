@@ -58,10 +58,6 @@ Moves only happen in `interactionMode="paint-and-move"`, and they wait for the h
 
 You passed a controlled value (`selectedEventId`, `activeView`, `selectedDate`…) without updating it in the change callback. A controlled component shows exactly what you pass.
 
-### The detail opens as a big dialog instead of a popover next to the card
-
-Pass `anchorElement`: the third argument of `onEventSelect`.
-
 ### The create form closes when I return an error
 
 It stays open for any returned `{ error }`. If it closes, `onSubmit` resolved to `undefined` or `{ eventId }`.

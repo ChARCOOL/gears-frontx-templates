@@ -4,13 +4,11 @@
 
 import { clsx } from "clsx";
 import {
-  Maximize2Icon,
-  Minimize2Icon,
   PencilLineIcon,
   Trash2Icon,
   XIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import type { CalendarEvent, IanaTimeZone } from "../../core/model";
@@ -22,15 +20,13 @@ import type { CalendarContextProps } from "../../i18n/calendar-localization";
 import { CalendarScope } from "../../i18n/calendar-localization-provider";
 import { useEventDetailPanelController } from "../../react/controllers/use-event-detail-panel-controller";
 import { Button } from "../primitives/button/button";
-import { Dialog, DialogContent } from "../primitives/dialog/dialog";
-import { Popover } from "../primitives/popover/popover";
+import { ScrollRegion } from "../primitives/scroll-region/scroll-region";
 import { Separator } from "../primitives/separator/separator";
 import { Tooltip } from "../primitives/tooltip/tooltip";
 import { activationKeyDown } from "./event-detail-activation";
 import { resolveCopyAnnouncement } from "./event-detail-panel-format";
-import { DefaultDetail, RestrictedSection } from "./event-detail-sections";
-
 import styles from "./event-detail-panel.module.css";
+import { DefaultDetail, RestrictedSection } from "./event-detail-sections";
 
 export interface EventDetailPanelProps extends CalendarContextProps {
   /** Class added to the component root. */
@@ -45,7 +41,7 @@ export interface EventDetailPanelProps extends CalendarContextProps {
   readonly event?: CalendarEvent | null;
   /** Id of the selected event, for host bookkeeping. */
   readonly selectedEventId?: string | null;
-  /** Called by the close button, Escape and an outside press. */
+  /** Called by the close button and Escape. */
   readonly onClose: () => void;
   /** Shows the edit button. Hidden when `readOnly` or the event is busy. */
   readonly onEdit?: (event: CalendarEvent) => void;
@@ -55,10 +51,8 @@ export interface EventDetailPanelProps extends CalendarContextProps {
   readonly comparisonTimeZone?: IanaTimeZone | null;
   /** Hides edit and delete. */
   readonly readOnly?: boolean;
-  /** Portal target for the popover or dialog, for example a node inside a shadow root. */
+  /** Element that holds the focused opener, for example a node inside a shadow root. */
   readonly container?: Element | DocumentFragment;
-  /** Opens the detail as a popover beside this element, usually the card from `onEventSelect`. */
-  readonly anchorElement?: HTMLElement | null;
   /** Avatars shown before the `+N` control. Default `5`. */
   readonly maxVisibleParticipants?: number;
   /** Content below the header row. */
@@ -76,21 +70,15 @@ export interface EventDetailPanelProps extends CalendarContextProps {
 const isSet = <T,>(value: T | null | undefined): value is NonNullable<T> =>
   (value ?? null) !== null;
 
-// Another card switches the preview instead of dismissing it.
-const isEventCard = (target: EventTarget): boolean =>
-  target instanceof HTMLElement && target.dataset.eventId !== undefined;
-
 interface EventDetailPanelHeaderProps {
   readonly canDelete: boolean;
   readonly canEdit: boolean;
   readonly event: CalendarEvent | null;
-  readonly expanded: boolean;
   readonly onClose: () => void;
   readonly onDelete: () => void;
   readonly onEdit: () => void;
-  readonly onToggleExpanded: (() => void) | null;
   readonly renderActions?: (event: CalendarEvent) => ReactNode;
-  readonly title: string;
+  readonly children: ReactNode;
 }
 
 interface HeaderActionProps {
@@ -125,13 +113,11 @@ const EventDetailPanelHeader = ({
   canDelete,
   canEdit,
   event,
-  expanded,
   onClose,
   onDelete,
   onEdit,
-  onToggleExpanded,
   renderActions,
-  title,
+  children,
 }: EventDetailPanelHeaderProps) => {
   const { t } = useCalendarLocalization();
 
@@ -142,7 +128,7 @@ const EventDetailPanelHeader = ({
 
   return (
     <div className={styles.header}>
-      <h2 className={styles.title}>{title}</h2>
+      {children}
       <div className={styles.headerActions}>
         {hostActions}
         {showEdit && (
@@ -167,15 +153,6 @@ const EventDetailPanelHeader = ({
             className={styles.headerDivider}
           />
         )}
-        {onToggleExpanded !== null && (
-          <HeaderAction
-            icon={expanded ? <Minimize2Icon /> : <Maximize2Icon />}
-            label={t(
-              expanded ? "calendar.detail.collapse" : "calendar.detail.expand"
-            )}
-            onActivate={onToggleExpanded}
-          />
-        )}
         <HeaderAction
           icon={<XIcon />}
           label={t("calendar.detail.close")}
@@ -194,31 +171,31 @@ interface EventDetailPanelBodyProps {
   readonly comparisonTimeZone: IanaTimeZone | null;
   readonly controller: EventDetailPanelController;
   readonly event: CalendarEvent;
-  readonly expanded: boolean;
   readonly onShowAllGuests: () => void;
   readonly renderBody?: (event: CalendarEvent) => ReactNode;
   readonly renderMetadata?: (event: CalendarEvent) => ReactNode;
+  readonly showAllGuests: boolean;
 }
 
 const EventDetailPanelBody = ({
   comparisonTimeZone,
   controller,
   event,
-  expanded,
   onShowAllGuests,
   renderBody,
   renderMetadata,
+  showAllGuests,
 }: EventDetailPanelBodyProps) => {
   if (controller.isRestricted) {
     return (
-      <div className={styles.body}>
+      <ScrollRegion className={styles.body}>
         <RestrictedSection event={event} />
-      </div>
+      </ScrollRegion>
     );
   }
 
   return (
-    <div className={styles.body}>
+    <ScrollRegion className={styles.body}>
       {isSet(renderBody) ? (
         <div className={styles.slot}>{renderBody(event)}</div>
       ) : (
@@ -228,17 +205,17 @@ const EventDetailPanelBody = ({
           copyLink={controller.copyLink}
           copyStatus={controller.copyStatus}
           event={event}
-          expanded={expanded}
           joinUrl={event.joinUrl ?? undefined}
           onShowAllGuests={onShowAllGuests}
           participantOverflowCount={controller.participantOverflowCount}
+          showAllGuests={showAllGuests}
           visibleParticipants={controller.visibleParticipants}
         />
       )}
       {isSet(renderMetadata) && (
         <div className={styles.slot}>{renderMetadata(event)}</div>
       )}
-    </div>
+    </ScrollRegion>
   );
 };
 
@@ -250,16 +227,8 @@ const CopyStatus = ({ announcement }: { readonly announcement: string }) =>
     </p>
   );
 
-// Without an anchor there is only the dialog. A restricted event has nothing more to show, so it
-// never expands.
-const expansion = (
-  anchored: boolean,
-  restricted: boolean,
-  expandedHere: boolean
-) => {
-  const canExpand = anchored && !restricted;
-  return { canExpand, expanded: !anchored || (canExpand && expandedHere) };
-};
+const eventTitle = (event: CalendarEvent | null): string | null =>
+  event === null || event.title.trim() === "" ? null : event.title;
 
 // Five avatars and the +N chip fit the compact panel's row.
 const DEFAULT_VISIBLE_PARTICIPANTS = 5;
@@ -279,14 +248,14 @@ const EventDetailPanelContent = (props: EventDetailPanelContentProps) => {
       props.maxVisibleParticipants ?? DEFAULT_VISIBLE_PARTICIPANTS,
   });
 
-  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+  const [guestListEventId, setGuestListEventId] = useState<string | null>(null);
+  const titleId = useId();
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
   const {
     event,
     comparisonTimeZone = null,
-    anchorElement = null,
     className,
-    container,
     renderHeader,
     renderBody,
     renderMetadata,
@@ -297,52 +266,53 @@ const EventDetailPanelContent = (props: EventDetailPanelContentProps) => {
   const eventValue = event ?? null;
   const eventId = eventValue?.id ?? null;
 
+  useEffect(() => {
+    if (controller.isOpen) {
+      titleRef.current?.focus();
+    }
+  }, [controller.isOpen, eventId]);
+
   if (!controller.isOpen) {
     return null;
   }
 
-  const title =
-    eventValue !== null && eventValue.title.trim() !== ""
-      ? eventValue.title
-      : t("calendar.detail.title");
-
+  const title = eventTitle(eventValue) ?? t("calendar.detail.title");
   const copyAnnouncement = resolveCopyAnnouncement(controller.copyStatus, t);
-  const { canExpand, expanded } = expansion(
-    anchorElement !== null,
-    controller.isRestricted,
-    expandedEventId === eventId
-  );
 
-  const close = (): void => {
-    controller.close();
-  };
+  return (
+    <section
+      aria-labelledby={titleId}
+      dir={direction}
+      className={clsx(styles.content, className)}
+      // Capture, so Escape closes the panel even while a header tooltip is open.
+      onKeyDownCapture={(keyboardEvent) => {
+        const inListbox =
+          keyboardEvent.target instanceof Element &&
+          keyboardEvent.target.closest('[role="listbox"]') !== null;
 
-  const handleOpenChange = (nextOpen: boolean): void => {
-    if (!nextOpen) {
-      controller.close();
-    }
-  };
-
-  const content = (
-    <div dir={direction} className={styles.content}>
+        if (keyboardEvent.key === "Escape" && !inListbox) {
+          controller.close();
+        }
+      }}
+    >
       <EventDetailPanelHeader
         canDelete={controller.canDelete}
         canEdit={controller.canEdit}
         event={eventValue}
-        expanded={expanded}
-        onClose={close}
+        onClose={controller.close}
         onDelete={controller.handleDelete}
         onEdit={controller.handleEdit}
-        onToggleExpanded={
-          canExpand
-            ? () => {
-                setExpandedEventId(expanded ? null : eventId);
-              }
-            : null
-        }
         renderActions={controller.isRestricted ? undefined : renderActions}
-        title={title}
-      />
+      >
+        <h2
+          id={titleId}
+          ref={titleRef}
+          tabIndex={-1}
+          className={styles.title}
+        >
+          {title}
+        </h2>
+      </EventDetailPanelHeader>
       {isSet(renderHeader) && (
         <div className={styles.headerSlot}>{renderHeader(eventValue)}</div>
       )}
@@ -351,52 +321,19 @@ const EventDetailPanelContent = (props: EventDetailPanelContentProps) => {
           comparisonTimeZone={comparisonTimeZone}
           controller={controller}
           event={eventValue}
-          expanded={expanded}
           onShowAllGuests={() => {
-            setExpandedEventId(eventId);
+            setGuestListEventId(eventId);
           }}
           renderBody={renderBody}
           renderMetadata={renderMetadata}
+          showAllGuests={guestListEventId === eventId}
         />
       )}
       {eventValue !== null && isSet(renderFooter) && (
         <div className={styles.footerSlot}>{renderFooter(eventValue)}</div>
       )}
       <CopyStatus announcement={copyAnnouncement} />
-    </div>
-  );
-
-  if (!expanded && anchorElement !== null) {
-    return (
-      <Popover
-        open
-        onOpenChange={handleOpenChange}
-        anchorRect={anchorElement.getBoundingClientRect()}
-        anchorRectProvider={() => anchorElement.getBoundingClientRect()}
-        anchorElement={anchorElement}
-        belongsTo={isEventCard}
-        placement="inline"
-        label={title}
-        container={container}
-        className={clsx(styles.popover, className)}
-      >
-        {content}
-      </Popover>
-    );
-  }
-
-  return (
-    <Dialog open onOpenChange={handleOpenChange}>
-      <DialogContent
-        container={container}
-        dir={direction}
-        label={title}
-        showCloseButton={false}
-        className={clsx(styles.expanded, className)}
-      >
-        {content}
-      </DialogContent>
-    </Dialog>
+    </section>
   );
   // @cpt-end:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-slots
 };

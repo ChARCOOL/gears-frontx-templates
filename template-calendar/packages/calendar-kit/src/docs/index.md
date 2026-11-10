@@ -29,7 +29,7 @@
 | [`AgendaView`](../ui/agenda-view/agenda-view.md) | `agenda-view` | Thirty days as a grouped list |
 | [`CalendarToolbar`](../ui/calendar-toolbar/calendar-toolbar.md) | `calendar-toolbar` | Title, Today, previous/next and the view switcher |
 | [`EventCard`](../ui/event-card/event-card.md) | `event-card` | The event surface every view uses by default |
-| [`EventDetailPanel`](../ui/event-detail-panel/event-detail-panel.md) | `event-detail-panel` | Event preview popover that expands into a dialog |
+| [`EventDetailPanel`](../ui/event-detail-panel/event-detail-panel.md) | `event-detail-panel` | Inline event detail region for a side sheet |
 | [`CreateEventPopover`](../ui/create-event/create-event.md) | `create-event` | Create-event form with recurrence, people and discard guard |
 | [`ConflictIndicator`](../ui/conflict-indicator/conflict-indicator.md) | `conflict-indicator` | Named scheduling conflicts |
 | [`AvailabilityGrid`](../ui/availability-grid/availability-grid.md) | `availability-grid` | Paint free time over host availability |

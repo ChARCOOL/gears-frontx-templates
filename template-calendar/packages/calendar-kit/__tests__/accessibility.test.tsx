@@ -576,7 +576,7 @@ describe("integrated WCAG 2.1 AA gate: week-grid & event surfaces", () => {
       render(<EventDetailPanel {...panelProps({ container })} />, {
         container,
       });
-      const dialog = within(container).getByRole("dialog", {
+      const dialog = within(container).getByRole("region", {
         name: "Chemistry",
       });
 

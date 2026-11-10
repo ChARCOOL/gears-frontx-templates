@@ -73,7 +73,7 @@ Components report intent through callbacks and change nothing on their own:
   date={date}
   events={events}
   timeZone={timeZone}
-  onEventSelect={(event, _context, anchor) => openDetail(event, anchor)}
+  onEventSelect={openDetail}
   onQuickCreate={({ range, anchorRect }) => openCreate(range, anchorRect)}
 />
 ```

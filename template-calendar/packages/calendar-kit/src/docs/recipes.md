@@ -84,7 +84,7 @@ export const toCalendarEvent = (
 
 ## A complete calendar screen
 
-Toolbar, the four views, an anchored detail preview and quick-create. The host owns the date, the view, which event is open and the draft.
+Toolbar, the four views, an inline detail panel and quick-create. The host owns the date, the view, which event is open and the draft.
 
 <!-- generated:example demo/examples/recipes/calendar-screen.tsx -->
 
@@ -138,7 +138,6 @@ const stepDate = (
 
 interface OpenDetail {
   readonly event: CalendarEvent;
-  readonly anchor: HTMLElement | null;
 }
 
 interface OpenCreate {
@@ -161,12 +160,8 @@ export const CalendarScreen = ({
 
   const [create, setCreate] = useState<OpenCreate | null>(null);
 
-  const openDetail = (
-    event: CalendarEvent,
-    _context: unknown,
-    anchor?: HTMLElement
-  ): void => {
-    setDetail({ anchor: anchor ?? null, event });
+  const openDetail = (event: CalendarEvent): void => {
+    setDetail({ event });
   };
 
   const openCreate = ({
@@ -218,7 +213,6 @@ export const CalendarScreen = ({
       <EventDetailPanel
         open={detail !== null}
         event={detail?.event ?? null}
-        anchorElement={detail?.anchor ?? null}
         timeZone={timeZone}
         onClose={() => {
           setDetail(null);
@@ -255,7 +249,7 @@ export const CalendarScreen = ({
 
 Things worth copying:
 
-- `onEventSelect`'s third argument is the card element. Passing it as `anchorElement` opens the detail as a popover beside the card; without it the detail opens as a dialog.
+- `EventDetailPanel` renders inline. Put it in a side sheet or a fixed column of your layout; the kit does not position it beside the card.
 - `onQuickCreate` gives a `DOMRectReadOnly`; `CreateEventPopover` wants a `DOMRect`, hence `DOMRect.fromRect`.
 - Stepping by view (`addCalendarDays` for day, week and agenda, `addCalendarMonths` for month) stays in viewer days, so it is daylight-saving safe.
 

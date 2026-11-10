@@ -20,8 +20,6 @@ import { englishTranslate as t } from "../../../i18n/english";
 import { EventDetailPanel } from "../event-detail-panel";
 import type { EventDetailPanelProps } from "../event-detail-panel";
 
-import dialogStyles from "../../primitives/dialog/dialog.module.css";
-
 const BERLIN = parseIanaTimeZone("Europe/Berlin");
 const DATE = calendarDate("2026-08-24");
 const EVENT_TITLE = "Chemistry";
@@ -137,46 +135,14 @@ describe(EventDetailPanel, () => {
     originalClipboard = undefined;
   });
 
-  it("renders the controlled open state and reports the event title as the dialog name", () => {
+  it("renders the controlled open state and names the region by the event title", () => {
     const { rerender } = renderPanel({ open: true });
 
-    screen.getByRole("dialog", { name: EVENT_TITLE });
+    screen.getByRole("region", { name: EVENT_TITLE });
 
     rerender(<EventDetailPanel {...panelProps({ open: false })} />);
 
-    expect(screen.queryByRole("dialog")).toBeNull();
-  });
-
-  it("closes the expanded panel from its backdrop without pressing the control behind it", async () => {
-    const onClose = vi.fn<() => void>();
-    const onOutsidePress = vi.fn<() => void>();
-    render(
-      <>
-        <button onClick={onOutsidePress} type="button">
-          Outside control
-        </button>
-        <EventDetailPanel
-          {...panelProps({ defaultOpen: true, onClose, open: undefined })}
-        />
-      </>
-    );
-
-    expect(screen.getByRole("dialog", { name: EVENT_TITLE })).toBeVisible();
-
-    // The modal hides the page from assistive tech; the press lands on the backdrop above it.
-    const backdrop = document.querySelector<HTMLElement>(
-      `.${dialogStyles.backdrop}`
-    );
-
-    if (backdrop === null) {
-      throw new Error("Expected the dialog backdrop");
-    }
-
-    await userEvent.setup().click(backdrop);
-
-    expect(onOutsidePress).not.toHaveBeenCalled();
-    expect(onClose).toHaveBeenCalled();
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("region")).toBeNull();
   });
 
   it("stays closed by default and ignores a changed defaultOpen after mount", () => {
@@ -185,7 +151,7 @@ describe(EventDetailPanel, () => {
       open: undefined,
     });
 
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("region")).toBeNull();
 
     rerender(
       <EventDetailPanel
@@ -193,14 +159,14 @@ describe(EventDetailPanel, () => {
       />
     );
 
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("region")).toBeNull();
   });
 
   it("opens content from the initial uncontrolled defaultOpen value", () => {
     renderPanel({ defaultOpen: true, open: undefined });
 
     expect(
-      screen.getByRole("dialog", { name: EVENT_TITLE })
+      screen.getByRole("region", { name: EVENT_TITLE })
     ).toBeInTheDocument();
   });
 
@@ -208,14 +174,14 @@ describe(EventDetailPanel, () => {
     const { rerender } = renderPanel({});
 
     expect(
-      screen.getByRole("dialog", { name: EVENT_TITLE })
+      screen.getByRole("region", { name: EVENT_TITLE })
     ).toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
     rerender(<EventDetailPanel {...panelProps({})} />);
 
     expect(
-      screen.getByRole("dialog", { name: EVENT_TITLE })
+      screen.getByRole("region", { name: EVENT_TITLE })
     ).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -223,7 +189,7 @@ describe(EventDetailPanel, () => {
   it("renders a named open shell when no event is supplied", () => {
     renderPanel({ event: null });
 
-    screen.getByRole("dialog", { name: /event details|detail/iu });
+    screen.getByRole("region", { name: /event details|detail/iu });
     expect(screen.queryByRole("link")).toBeNull();
   });
 
@@ -287,7 +253,6 @@ describe(EventDetailPanel, () => {
 
   it("summarises the supplied CalendarRsvp as guests and the responses given", () => {
     renderPanel({
-      anchorElement: document.body,
       event: timedEvent({ ...BASE_EVENT, rsvp: RSVP }),
     });
 
@@ -301,7 +266,6 @@ describe(EventDetailPanel, () => {
 
   it("leaves zero counts out of the response line", () => {
     renderPanel({
-      anchorElement: document.body,
       event: timedEvent({
         ...BASE_EVENT,
         rsvp: { awaiting: 0, invited: 1, maybe: 0, no: 0, yes: 1 },
@@ -365,7 +329,6 @@ describe(EventDetailPanel, () => {
 
   it("shows only the capped participants before show-all", () => {
     renderPanel({
-      anchorElement: document.body,
       event: timedEvent({ ...BASE_EVENT, attendees: makeAttendees(4) }),
       maxVisibleParticipants: 2,
     });
@@ -380,7 +343,6 @@ describe(EventDetailPanel, () => {
   it("reveals the remaining participants when show-all is clicked", async () => {
     const user = userEvent.setup();
     renderPanel({
-      anchorElement: document.body,
       event: timedEvent({ ...BASE_EVENT, attendees: makeAttendees(4) }),
       maxVisibleParticipants: 2,
     });
@@ -405,7 +367,7 @@ describe(EventDetailPanel, () => {
           : t(key, values),
     });
 
-    const dialog = screen.getByRole("dialog", { name: EVENT_TITLE });
+    const dialog = screen.getByRole("region", { name: EVENT_TITLE });
 
     expect(dialog).toHaveTextContent(localizedRecurrence);
     expect(dialog).not.toHaveTextContent(RAW_RECURRENCE_RULE);
@@ -417,7 +379,7 @@ describe(EventDetailPanel, () => {
       event: timedEvent({ ...BASE_EVENT }),
     });
 
-    const dialog = screen.getByRole("dialog", { name: EVENT_TITLE });
+    const dialog = screen.getByRole("region", { name: EVENT_TITLE });
 
     expect(dialog).toHaveTextContent("GMT+0 UTC, 09:00 - 10:00");
     expect(dialog).toHaveTextContent("GMT+2 Berlin, 11:00 - 12:00");
@@ -560,8 +522,8 @@ describe(EventDetailPanel, () => {
 
     renderPanel({ onClose, onOpenChange });
 
-    const dialog = screen.getByRole("dialog", { name: EVENT_TITLE });
-    dialog.focus();
+    const dialog = screen.getByRole("region", { name: EVENT_TITLE });
+    within(dialog).getByRole("heading", { level: 2 }).focus();
     await user.keyboard("{Escape}");
 
     expect(onClose).toHaveBeenCalledOnce();
@@ -588,8 +550,8 @@ describe(EventDetailPanel, () => {
       container,
     });
 
-    const dialog = within(container).getByRole("dialog", { name: EVENT_TITLE });
-    dialog.focus();
+    const dialog = within(container).getByRole("region", { name: EVENT_TITLE });
+    within(dialog).getByRole("heading", { level: 2 }).focus();
     await user.keyboard("{Escape}");
 
     expect(onClose).toHaveBeenCalledOnce();
@@ -599,11 +561,11 @@ describe(EventDetailPanel, () => {
 });
 
 describe("EventDetailPanel shell", () => {
-  it("applies the host className and direction to the dialog root", () => {
+  it("applies the host className and direction to the panel root", () => {
     const instanceT = vi.fn<(key: string) => string>((key) => key);
     renderPanel({ className: "host-panel", direction: "rtl", t: instanceT });
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("region");
 
     expect(dialog).toHaveClass("host-panel");
     expect(dialog).toHaveAttribute("dir", "rtl");
@@ -612,10 +574,10 @@ describe("EventDetailPanel shell", () => {
     ).toBeTruthy();
   });
 
-  it("names the dialog with the translated fallback for an unnamed event", () => {
+  it("names the region with the translated fallback for an unnamed event", () => {
     renderPanel({ event: timedEvent({ ...BASE_EVENT, title: "   " }) });
 
-    expect(screen.getByRole("dialog", { name: "Event details" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Event details" })).toBeTruthy();
   });
 });
 
@@ -638,12 +600,11 @@ const richEvent = (): CalendarEvent =>
   });
 
 describe("EventDetailPanel default presentation", () => {
-  it("caps participants at maxVisibleParticipants and lists every guest in the expanded view", async () => {
+  it("caps participants at maxVisibleParticipants and lists every guest after show-all", async () => {
     const user = userEvent.setup();
     const attendees = makeAttendees(8);
 
     renderPanel({
-      anchorElement: document.body,
       event: timedEvent({ ...BASE_EVENT, attendees }),
     });
 
@@ -652,7 +613,7 @@ describe("EventDetailPanel default presentation", () => {
 
     await user.click(screen.getByRole("button", { name: /\+2/u }));
 
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("region");
     expect(within(dialog).getAllByText(/^Person \d+$/u)).toHaveLength(8);
     expect(within(dialog).getByText("Person 7")).toBeTruthy();
   });
@@ -702,7 +663,7 @@ describe("EventDetailPanel default presentation", () => {
       }),
     });
 
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("region");
 
     expect(dialog).toHaveTextContent("Aug 24, 2026 – Aug 25, 2026");
     expect(dialog).not.toHaveTextContent(/AM|PM/u);
@@ -745,7 +706,7 @@ describe("EventDetailPanel keyboard and event absence", () => {
 
     render(<EventDetailPanel {...rest} />);
 
-    expect(screen.getByRole("dialog", { name: "Event details" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Event details" })).toBeTruthy();
     expect(screen.queryByRole("link")).toBeNull();
   });
 });
@@ -805,20 +766,21 @@ describe("EventDetailPanel slots", () => {
 });
 
 describe("EventDetailPanel shadow-root mounting", () => {
-  it("keeps the dialog and backdrop inside the supplied shadow-root container", () => {
+  it("keeps the panel inside the supplied shadow-root container", () => {
     const { host, root } = createShadowHost();
     const container = document.createElement("div");
 
     root.append(container);
 
     try {
-      renderPanel({ container });
+      render(<EventDetailPanel {...panelProps({ container })} />, {
+        container,
+      });
 
       expect(
-        within(container).getByRole("dialog", { name: EVENT_TITLE })
+        within(container).getByRole("region", { name: EVENT_TITLE })
       ).toBeTruthy();
-      expect(container.querySelector('div[aria-hidden="true"]')).toBeTruthy();
-    } finally {
+      } finally {
       host.remove();
     }
   });
@@ -861,10 +823,10 @@ describe("EventDetailPanel shadow-root mounting", () => {
         );
       });
 
-      const dialog = within(renderContainer).getByRole("dialog", {
+      const dialog = within(renderContainer).getByRole("region", {
         name: EVENT_TITLE,
       });
-      dialog.focus();
+      within(dialog).getByRole("heading", { level: 2 }).focus();
       await user.keyboard("{Escape}");
 
       expect(root.activeElement).toBe(opener);
