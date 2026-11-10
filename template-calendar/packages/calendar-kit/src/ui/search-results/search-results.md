@@ -42,7 +42,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 ## Query and announcements
 
-Queries are trimmed, lowercased, and diacritic-folded before matching the event title, organizer, location, description, event type, and attendee names and emails. Pass `calendarIds` to search only events on those calendars, and `range` (inclusive days) to keep only matches inside it; the host owns the controls that set them. Results require two characters and settle after 200 ms; the previous result set remains visible while a new query is pending. The result list is always rendered, and contains no rows for a too-short query or when no event matches. The result count remains a separate polite, atomic status announcement. Fetching and failure presentation remain host concerns.
+Queries are trimmed, lowercased, and diacritic-folded before matching the event title, organizer, location, description, event type, and attendee names and emails. Pass `calendarIds` to search only events on those calendars, and `range` (inclusive days) to keep only matches inside it; the host owns the controls that set them. Results require two characters and settle after 200 ms; the previous result set remains visible while a new query is pending. The result list is always rendered, and contains no rows for a too-short query or when no event matches. A query that matches nothing shows "No events match your search" under the field, as a plain paragraph. The result count remains a separate polite, atomic status announcement. Fetching and failure presentation remain host concerns.
 
 Timed events are grouped by viewer day, including midnight-spanning segments; all-day events appear on each date in their exclusive-end range.
 

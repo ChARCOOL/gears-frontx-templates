@@ -87,6 +87,9 @@ const COLOR_CLASSES: ReadonlyMap<string, string> = new Map([
   ["purple", styles.colorPurple],
   ["orange", styles.colorOrange],
   ["blue", styles.colorBlue],
+  ["lavender", styles.colorLavender],
+  ["violet", styles.colorViolet],
+  ["brown", styles.colorBrown],
 ]);
 
 const isUnnamed = (row: SearchResultRow): boolean =>
@@ -259,9 +262,6 @@ const SearchResultsContent = ({
 
       <SearchResultsControllerContext.Provider value={controller}>
         <List className={styles.groups}>
-          {controller.state === SEARCH_STATE.tooShort ? (
-            <p>{t("calendar.panel.searchTooShort")}</p>
-          ) : null}
           {controller.groups.map((group) => (
             <SearchResultGroup
               group={group}
@@ -271,6 +271,12 @@ const SearchResultsContent = ({
             />
           ))}
         </List>
+        {controller.state === SEARCH_STATE.tooShort ? (
+          <p>{t("calendar.panel.searchTooShort")}</p>
+        ) : null}
+        {controller.state === SEARCH_STATE.empty ? (
+          <p>{t("calendar.panel.searchEmpty")}</p>
+        ) : null}
       </SearchResultsControllerContext.Provider>
     </section>
   );

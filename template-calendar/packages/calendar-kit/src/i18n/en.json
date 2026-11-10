@@ -188,6 +188,7 @@
   "calendar.panel.monthNavigator": "Month navigator",
   "calendar.panel.search": "Search",
   "calendar.panel.searchCount_one": "{{count}} result",
+  "calendar.panel.searchEmpty": "No events match your search",
   "calendar.panel.searchCount_other": "{{count}} results",
   "calendar.panel.searchLabel": "Search events",
   "calendar.panel.searchResults": "Search results",

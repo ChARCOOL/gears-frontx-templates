@@ -76,7 +76,9 @@ describe(SearchResults, () => {
     renderResults("c");
     settle();
 
-    expect(screen.getByText("Type at least 2 characters")).toBeVisible();
+    const message = screen.getByText("Type at least 2 characters");
+    expect(message).toBeVisible();
+    expect(message.closest('[role="list"]')).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
   });
 
@@ -122,6 +124,30 @@ describe(SearchResults, () => {
     expect(
       screen.getByRole("button", { name: /Introduction to Chemistry/iu })
     ).toHaveClass(styles.result, styles.colorPurple);
+  });
+
+  it("draws lavender, violet and brown bars from their accents", () => {
+    vi.useFakeTimers();
+    const families = [
+      { className: styles.colorLavender, family: "lavender", selector: ".colorLavender" },
+      { className: styles.colorViolet, family: "violet", selector: ".colorViolet" },
+      { className: styles.colorBrown, family: "brown", selector: ".colorBrown" },
+    ] as const;
+
+    for (const { className, family, selector } of families) {
+      const { unmount } = renderResults("chemistry", {
+        events: EVENTS.map((event) => ({ ...event, colorFamily: family })),
+      });
+      settle();
+
+      expect(
+        screen.getByRole("button", { name: /Introduction to Chemistry/iu })
+      ).toHaveClass(className);
+      expect(
+        declarations(searchResultsCss, selector).get("--search-result-bar")
+      ).toBe(`var(--cal-color-${family}-accent)`);
+      unmount();
+    }
   });
 
   it("draws a blue event's colour bar from the blue accent", () => {
@@ -172,6 +198,9 @@ describe(SearchResults, () => {
       screen.queryByRole("button", { name: /Introduction to Chemistry/iu })
     ).toBeNull();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    const message = screen.getByText("No events match your search");
+    expect(message).toBeVisible();
+    expect(message.closest('[role="list"]')).toBeNull();
 
     unmount();
     renderResults("chem");

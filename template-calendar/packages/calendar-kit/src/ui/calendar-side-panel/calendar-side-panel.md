@@ -64,31 +64,32 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 
 <!-- generated:messages calendar.panel -->
 
-| Translation ID                       | English                    | Values  |
-| ------------------------------------ | -------------------------- | ------- |
-| `calendar.panel.calendars`           | Calendars                  |         |
-| `calendar.panel.clearSearch`         | Clear search               |         |
-| `calendar.panel.collapse`            | Collapse panel             |         |
-| `calendar.panel.createCalendar`      | Create calendar            |         |
-| `calendar.panel.dayHasEvents`        | has events                 |         |
-| `calendar.panel.expand`              | Expand panel               |         |
-| `calendar.panel.label`               | Calendar side panel        |         |
-| `calendar.panel.monthGrid`           | Month                      |         |
-| `calendar.panel.monthNavigator`      | Month navigator            |         |
-| `calendar.panel.search`              | Search                     |         |
-| `calendar.panel.searchCount_one`     | {{count}} result           | `count` |
-| `calendar.panel.searchCount_other`   | {{count}} results          | `count` |
-| `calendar.panel.searchLabel`         | Search events              |         |
-| `calendar.panel.searchResults`       | Search results             |         |
-| `calendar.panel.searchTooShort`      | Type at least 2 characters |         |
-| `calendar.panel.timeZones`           | Time zones                 |         |
-| `calendar.panel.worldClocks`         | World clocks               |         |
-| `calendar.panel.worldClocksAdd`      | Add clock                  |         |
-| `calendar.panel.worldClocksDone`     | Done                       |         |
-| `calendar.panel.worldClocksEdit`     | Edit                       |         |
-| `calendar.panel.worldClocksMoveDown` | Move down                  |         |
-| `calendar.panel.worldClocksMoveUp`   | Move up                    |         |
-| `calendar.panel.worldClocksRemove`   | Remove clock               |         |
+| Translation ID                       | English                     | Values  |
+| ------------------------------------ | --------------------------- | ------- |
+| `calendar.panel.calendars`           | Calendars                   |         |
+| `calendar.panel.clearSearch`         | Clear search                |         |
+| `calendar.panel.collapse`            | Collapse panel              |         |
+| `calendar.panel.createCalendar`      | Create calendar             |         |
+| `calendar.panel.dayHasEvents`        | has events                  |         |
+| `calendar.panel.expand`              | Expand panel                |         |
+| `calendar.panel.label`               | Calendar side panel         |         |
+| `calendar.panel.monthGrid`           | Month                       |         |
+| `calendar.panel.monthNavigator`      | Month navigator             |         |
+| `calendar.panel.search`              | Search                      |         |
+| `calendar.panel.searchCount_one`     | {{count}} result            | `count` |
+| `calendar.panel.searchCount_other`   | {{count}} results           | `count` |
+| `calendar.panel.searchEmpty`         | No events match your search |         |
+| `calendar.panel.searchLabel`         | Search events               |         |
+| `calendar.panel.searchResults`       | Search results              |         |
+| `calendar.panel.searchTooShort`      | Type at least 2 characters  |         |
+| `calendar.panel.timeZones`           | Time zones                  |         |
+| `calendar.panel.worldClocks`         | World clocks                |         |
+| `calendar.panel.worldClocksAdd`      | Add clock                   |         |
+| `calendar.panel.worldClocksDone`     | Done                        |         |
+| `calendar.panel.worldClocksEdit`     | Edit                        |         |
+| `calendar.panel.worldClocksMoveDown` | Move down                   |         |
+| `calendar.panel.worldClocksMoveUp`   | Move up                     |         |
+| `calendar.panel.worldClocksRemove`   | Remove clock                |         |
 
 <!-- /generated -->
 

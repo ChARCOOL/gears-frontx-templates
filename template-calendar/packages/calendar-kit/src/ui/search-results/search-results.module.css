@@ -103,6 +103,18 @@
   --search-result-bar: var(--cal-color-blue-accent);
 }
 
+.colorLavender {
+  --search-result-bar: var(--cal-color-lavender-accent);
+}
+
+.colorViolet {
+  --search-result-bar: var(--cal-color-violet-accent);
+}
+
+.colorBrown {
+  --search-result-bar: var(--cal-color-brown-accent);
+}
+
 .content {
   display: flex;
   min-inline-size: 0;
