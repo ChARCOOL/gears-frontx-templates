@@ -1,13 +1,15 @@
 .panel {
+  position: relative;
   box-sizing: border-box;
   display: flex;
+  flex: 1 1 auto;
   min-block-size: 0;
   flex-direction: column;
   gap: 0;
   overflow: hidden;
   font-size: var(--cal-text-label-size);
   line-height: var(--cal-text-label-line-height);
-  background: var(--cal-color-overlay-surface);
+  background: var(--cal-color-surface);
   color: var(--cal-color-text);
   font-family: var(--cal-font-family);
 }
@@ -44,17 +46,23 @@
   padding: var(--cal-space-2);
 }
 
-.headerDivider,
+.headerDivider {
+  flex: none;
+}
+
 .footerDivider {
   flex: none;
+  margin-block: 0;
 }
 
 .footerActions {
   align-items: center;
+  box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
   gap: var(--cal-space-2);
   justify-content: flex-end;
+  min-block-size: calc(64px - var(--cal-border-width-1));
   padding: var(--cal-space-2) var(--cal-space-5);
 }
 
@@ -79,13 +87,27 @@
 
 .kindSwitch {
   display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--cal-space-1);
   min-inline-size: 0;
+  padding-inline-start: var(--cal-space-1);
 }
 
 .kindSwitch :global(button[aria-pressed="true"]) {
   background: var(--cal-color-surface);
   border-color: var(--cal-color-text);
+}
+
+/* Tabs are plain text on the grey selected fill, as in the design. */
+.kindSwitch > button {
+  border-width: 0;
+}
+
+.kindSwitch > button:not([aria-pressed="true"]) {
+  background: none;
+  color: var(--cal-color-muted);
 }
 
 .description {
@@ -97,12 +119,32 @@
   flex: 1;
   min-block-size: 0;
   flex-direction: column;
+  padding-inline: var(--cal-space-5);
+}
+
+/* ScrollRegion sets data-scrolled once the body moves; the fade shows only then. */
+.body::before {
+  position: sticky;
+  z-index: 1;
+  display: block;
+  flex: none;
+  background: linear-gradient(var(--cal-color-surface), transparent);
+  block-size: var(--cal-space-4);
+  content: "";
+  inset-block-start: 0;
+  margin-block-end: calc(-1 * var(--cal-space-4));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.body[data-scrolled]::before {
+  opacity: 1;
 }
 
 .fields {
   display: flex;
   flex-direction: column;
-  gap: var(--cal-space-3);
+  gap: var(--cal-space-5);
 }
 
 .field {
@@ -172,17 +214,14 @@
   min-inline-size: 0;
 }
 
-/* Shared tracks keep both rows' columns aligned. */
+/* Shared tracks keep both rows' columns aligned; the all-day switch sits at the row's end. */
 .timeRow {
-  grid-template-columns:
-    minmax(0, 1fr) calc(var(--cal-icon-size-sm) - var(--cal-space-2))
-    minmax(0, 1fr) 85px;
+  grid-template-columns: minmax(0, 1fr) var(--cal-icon-size-sm) minmax(0, 1fr) auto;
 }
 
+/* The day count keeps its column while empty, so the end date does not change width. */
 .dateRow {
-  grid-template-columns:
-    minmax(0, 1fr) calc(var(--cal-icon-size-sm) - var(--cal-space-2))
-    minmax(0, 1fr) 85px;
+  grid-template-columns: minmax(0, 1fr) var(--cal-icon-size-sm) minmax(0, 1fr) 85px;
 }
 
 .rowField {
@@ -205,9 +244,10 @@
 }
 
 .dayCount {
-  color: var(--cal-color-muted);
+  color: var(--cal-color-text);
   font-size: var(--cal-text-label-size);
   line-height: var(--cal-text-label-line-height);
+  text-align: end;
   white-space: nowrap;
 }
 
@@ -275,7 +315,7 @@
 
 .separator {
   flex: none;
-  margin-block: var(--cal-space-1);
+  margin-block: 0;
 }
 
 .repeatView {
