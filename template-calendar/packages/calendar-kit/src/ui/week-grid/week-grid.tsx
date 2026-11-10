@@ -50,6 +50,15 @@ import type {
   CalendarQuickCreatePayload,
 } from "../../react/slots";
 import { ConflictIndicator } from "../conflict-indicator/conflict-indicator";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../primitives/alert-dialog/alert-dialog";
 import { EventCard } from "../event-card/event-card";
 import { buildEventPresentation } from "../event-card/event-presentation";
 import type { CalendarGridProps } from "../grid/calendar-grid";
@@ -772,6 +781,7 @@ interface WeekGridCellContentProps<Payload> {
   readonly dropTargetKeys: ReadonlySet<string>;
   readonly onOverflowSelect?: WeekGridProps["onOverflowSelect"];
   readonly overflow?: SlotOverflow;
+  readonly paintInvalid: boolean;
   readonly selectedEventId: string | null;
   readonly selectedPaintKeys: ReadonlySet<string>;
   readonly timedPositions: readonly PositionedEvent<Payload>[];
@@ -816,6 +826,7 @@ const WeekGridCellContent = <Payload,>(
     renderUnavailable,
     onOverflowSelect,
     overflow,
+    paintInvalid,
     selectedEventId,
     selectedPaintKeys,
     timedPositions,
@@ -841,13 +852,14 @@ const WeekGridCellContent = <Payload,>(
   }
 
   const unavailable = unavailableCellKeys.has(gridCellKey);
+  const painted = selectedPaintKeys.has(gridCellKey);
   const dropTarget =
     dragPreview?.targetKey === gridCellKey ? dragPreview : null;
 
   const cellContext: CalendarCellContext = {
     ...context,
     isReadOnly: readOnly,
-    isSelected: selectedPaintKeys.has(gridCellKey),
+    isSelected: painted,
     isUnavailable: unavailable,
   };
 
@@ -860,6 +872,8 @@ const WeekGridCellContent = <Payload,>(
           unavailable && styles.unavailableSlot,
           cellClassName
         )}
+        data-paint={painted ? "" : undefined}
+        data-invalid={painted && paintInvalid ? "" : undefined}
         data-drop-target={dropTargetKeys.has(gridCellKey) ? "" : undefined}
       >
         {renderCell?.(cellContext)}
@@ -983,7 +997,11 @@ const WeekGridContent = <Payload = unknown,>(
     rootClassName,
     scrollRef,
     selectedEvent,
+    paintRefused,
+    paintTouchesUnavailable,
     selectedPaintKeys,
+    setPaintRefused,
+    t,
     timedPositionsByCell,
     trailingGutter,
     unavailableCellKeys,
@@ -1047,6 +1065,7 @@ const WeekGridContent = <Payload = unknown,>(
       renderEventMetadata={renderEventMetadata}
       overflow={overflowByCell.get(gridCellKey(context.cell))}
       onOverflowSelect={onOverflowSelect}
+      paintInvalid={paintTouchesUnavailable}
       renderOverflow={renderOverflow}
       renderUnavailable={renderUnavailable}
       dropTargetKeys={dropTargetKeys}
@@ -1110,6 +1129,23 @@ const WeekGridContent = <Payload = unknown,>(
         onClose={closeDetail}
         renderDetail={renderDetail}
       />
+      <AlertDialog open={paintRefused} onOpenChange={setPaintRefused}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("calendar.week.unavailableTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("calendar.week.unavailableMessage")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {t("calendar.week.unavailableContinue")}
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
   // @cpt-end:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-render

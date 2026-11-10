@@ -167,6 +167,8 @@ export const useWeekGridContent = <Payload = unknown>(
 
   const [liveText, setLiveText] = useState("");
 
+  const [paintRefused, setPaintRefused] = useState(false);
+
   const positionedDateRef = useRef<CalendarDate | null>(null);
   const framePositionedDateRef = useRef<CalendarDate | null>(null);
 
@@ -394,6 +396,10 @@ export const useWeekGridContent = <Payload = unknown>(
     return keys;
   }, [gridCellKey, paintCells]);
 
+  const paintTouchesUnavailable = paintCells.some((cell) =>
+    unavailableCellKeys.has(gridCellKey(cell))
+  );
+
   // A drag that has not left its origin drops nowhere, so it marks no span.
   const { dayColumns, drag } = controller;
   const dragPreview = useMemo<WeekGridDragPreview | null>(
@@ -511,7 +517,7 @@ export const useWeekGridContent = <Payload = unknown>(
 
     event.preventDefault();
 
-    if (controller.interactionMode === "quick-create") {
+    if (controller.interactionMode !== "read-only") {
       controller.activateCell(
         meta.columnIndex,
         meta.slotIndex,
@@ -589,6 +595,13 @@ export const useWeekGridContent = <Payload = unknown>(
   };
 
   const handlePointerUp = (): void => {
+    // A paint released over unavailable time creates nothing, so it is dropped rather than emitted.
+    if (controller.painting && paintTouchesUnavailable) {
+      controller.cancelPaint();
+      setPaintRefused(true);
+      return;
+    }
+
     controller.endPaint();
   };
 
@@ -782,9 +795,12 @@ export const useWeekGridContent = <Payload = unknown>(
     scrollRef,
     selectedEvent,
     selectedPaintKeys,
+    setPaintRefused,
     t,
     timeZone,
     overflowByCell: timedLayout.overflowByCell,
+    paintRefused,
+    paintTouchesUnavailable,
     timedPositionsByCell: timedLayout.byCell,
     trailingGutter,
     unavailableCellKeys,

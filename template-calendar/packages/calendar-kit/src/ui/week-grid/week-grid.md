@@ -83,7 +83,7 @@ Events are clipped to the visible hours, and events wholly outside them are not 
 ## Interaction modes
 
 - `quick-create` activates an empty timed cell by click or Enter/Space and emits `onQuickCreate`. Available events emit `onEventSelect(event, context, anchor)`, where `anchor` is the activated card element.
-- `paint-and-move` paints an ordered range through pointer gestures and emits `onPaintSelect`. Dragging an available event emits `onMoveRequest`; the host must call `confirm` or `cancel` on the request. No move is committed by the component before confirmation. While the drag is over another slot, every slot the event spans from that slot, clipped to its day column, carries `data-drop-target` and a dashed outline. The highlight clears on drop or cancel, and when the pointer leaves the grid. Over the origin slot nothing is marked, and the highlight does not show conflicts. The target slot also shows a ghost card at the event's height and title, the source card dims, and the browser's drag image is blank. Events with a `recurrenceRule`, and events with `movable: false`, cannot be dragged; the latter still open.
+- `paint-and-move` paints an ordered range through pointer gestures and emits `onPaintSelect`. Enter or Space on an empty timed cell paints that one cell. A paint that covers unavailable time is marked invalid; releasing it opens an info dialog and emits nothing. Dragging an available event emits `onMoveRequest`; the host must call `confirm` or `cancel` on the request. No move is committed by the component before confirmation. While the drag is over another slot, every slot the event spans from that slot, clipped to its day column, carries `data-drop-target` and a dashed outline. The highlight clears on drop or cancel, and when the pointer leaves the grid. Over the origin slot nothing is marked, and the highlight does not show conflicts. The target slot also shows a ghost card at the event's height and title, the source card dims, and the browser's drag image is blank. Events with a `recurrenceRule`, and events with `movable: false`, cannot be dragged; the latter still open.
 - `read-only` preserves the rendered surface and event viewing, but emits none of the create, paint or move callbacks. Unavailable and `access="busy"` events are never activated.
 
 `now?: UtcInstant` optionally controls the reference instant for the current-time marker and past-event state; when omitted, the component follows the host wall clock.
@@ -108,16 +108,19 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 
 <!-- generated:messages calendar.week -->
 
-| Translation ID                 | English           | Values  |
-| ------------------------------ | ----------------- | ------- |
-| `calendar.week.allDay`         | All-day events    |         |
-| `calendar.week.currentTime`    | Current time      |         |
-| `calendar.week.focus`          | Week view         |         |
-| `calendar.week.hidden`         | +{{count}} hidden | `count` |
-| `calendar.week.nonWorkingHour` | non-working hour  |         |
-| `calendar.week.range`          | Week of           |         |
-| `calendar.week.timeZone`       | Time zone         |         |
-| `calendar.week.workingHour`    | working hour      |         |
+| Translation ID | English | Values |
+| --- | --- | --- |
+| `calendar.week.allDay` | All-day events |  |
+| `calendar.week.currentTime` | Current time |  |
+| `calendar.week.focus` | Week view |  |
+| `calendar.week.hidden` | +{{count}} hidden | `count` |
+| `calendar.week.nonWorkingHour` | non-working hour |  |
+| `calendar.week.range` | Week of |  |
+| `calendar.week.timeZone` | Time zone |  |
+| `calendar.week.unavailableContinue` | Continue |  |
+| `calendar.week.unavailableMessage` | The time you painted overlaps an unavailable period. Choose a time that is free. |  |
+| `calendar.week.unavailableTitle` | Overlaps an unavailable period |  |
+| `calendar.week.workingHour` | working hour |  |
 
 <!-- /generated -->
 
