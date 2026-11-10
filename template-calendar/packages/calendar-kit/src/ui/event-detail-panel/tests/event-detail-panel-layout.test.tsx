@@ -166,6 +166,11 @@ describe("EventDetailPanel inline layout", () => {
     assert(within(detail()).getByText("Person 7")).toBeInTheDocument();
   });
 
+  it("stacks each row's label above its content", () => {
+    assert(declarations(panelCss, ".row").get("display")).toBe("flex");
+    assert(declarations(panelCss, ".row").get("flex-direction")).toBe("column");
+  });
+
   it("scrolls the body under a fixed header instead of growing the page", () => {
     const body = declarations(panelCss, ".body");
     const header = declarations(panelCss, ".header");

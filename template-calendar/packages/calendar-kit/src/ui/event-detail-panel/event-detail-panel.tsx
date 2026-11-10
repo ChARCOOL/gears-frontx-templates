@@ -99,7 +99,7 @@ const HeaderAction = ({
     <Button
       onlyIcon
       variant="ghost"
-      size="m"
+      size="l"
       className={clsx(styles.headerAction, className)}
       leftIcon={icon}
       aria-label={label}

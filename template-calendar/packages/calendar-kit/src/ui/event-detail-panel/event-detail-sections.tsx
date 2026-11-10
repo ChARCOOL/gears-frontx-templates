@@ -1,18 +1,7 @@
 "use client";
 
-import {
-  CheckIcon,
-  ClockIcon,
-  CopyIcon,
-  GlobeIcon,
-  LockIcon,
-  MapPinIcon,
-  TextAlignStartIcon,
-  TriangleAlertIcon,
-  UserIcon,
-  UsersIcon,
-  VideoIcon,
-} from "lucide-react";
+import { clsx } from "clsx";
+import { CheckIcon, CopyIcon } from "lucide-react";
 import { Fragment } from "react";
 import type { ReactNode } from "react";
 
@@ -43,21 +32,18 @@ import styles from "./event-detail-panel.module.css";
 
 interface DetailRowProps {
   readonly children: ReactNode;
-  readonly icon: ReactNode;
-  /** Names the row for screen readers; the icon stands in for it on screen. Omit when the row's
-   * text already says what it is. */
+  /** Class added to the row's content. */
+  readonly className?: string;
+  /** The visible field label, above the row's content. Omit it when the text says what it is. */
   readonly label?: string;
 }
 
-const DetailRow = ({ children, icon, label }: DetailRowProps) => (
+const DetailRow = ({ children, className, label }: DetailRowProps) => (
   <section className={styles.row}>
     {label === undefined ? null : (
       <h3 className={styles.sectionLabel}>{label}</h3>
     )}
-    <span aria-hidden="true" className={styles.rowIcon}>
-      {icon}
-    </span>
-    <div className={styles.rowContent}>{children}</div>
+    <div className={clsx(styles.rowContent, className)}>{children}</div>
   </section>
 );
 
@@ -71,12 +57,12 @@ export const RestrictedSection = ({
 
   return (
     <div className={styles.group} role="note">
-      <DetailRow icon={<ClockIcon />} label={t("calendar.detail.dateTime")}>
-        <p className={styles.text}>
+      <DetailRow label={t("calendar.detail.dateTime")}>
+        <p className={styles.mutedText}>
           {formatEventRange(event, timeZone, locale)}
         </p>
       </DetailRow>
-      <DetailRow icon={<LockIcon />}>
+      <DetailRow>
         <p className={styles.mutedText}>{t("calendar.detail.restricted")}</p>
       </DetailRow>
     </div>
@@ -93,13 +79,36 @@ const OrganizerSection = ({ event }: { readonly event: CalendarEvent }) => {
   }
 
   return (
-    // Avatars belong to the guest list; here the row keeps the grey icon every other row has.
-    <DetailRow icon={<UserIcon />} label={t("calendar.detail.organizer")}>
-      <p className={styles.text}>{organizer}</p>
-      <p className={styles.personMeta}>
-        {email === "" ? t("calendar.detail.organizer") : email}
-      </p>
+    <DetailRow label={t("calendar.detail.organizer")}>
+      <div className={styles.person}>
+        <Avatar className={styles.stackAvatar} decorative name={organizer} />
+        <div className={styles.personText}>
+          <p className={styles.text}>{organizer}</p>
+          {email === "" ? null : <p className={styles.personMeta}>{email}</p>}
+        </div>
+      </div>
     </DetailRow>
+  );
+};
+
+interface CopyLinkButtonProps {
+  readonly copyStatus: EventDetailPanelCopyStatus;
+  readonly onCopy: () => void;
+}
+
+const CopyLinkButton = ({ copyStatus, onCopy }: CopyLinkButtonProps) => {
+  const { t } = useCalendarLocalization();
+
+  return (
+    <Button
+      variant="tertiary"
+      size="m"
+      leftIcon={copyStatus === "copied" ? <CheckIcon /> : <CopyIcon />}
+      onClick={onCopy}
+      onKeyDown={activationKeyDown(onCopy)}
+    >
+      {t(COPY_STATUS_KEYS[copyStatus])}
+    </Button>
   );
 };
 
@@ -119,7 +128,7 @@ const ConferencingSection = ({
   const { t } = useCalendarLocalization();
 
   return (
-    <DetailRow icon={<VideoIcon />} label={t("calendar.detail.conferencing")}>
+    <DetailRow label={t("calendar.detail.conferencing")}>
       {canCopyJoinLink ? (
         <div className={styles.conferencingRow}>
           <a
@@ -130,15 +139,7 @@ const ConferencingSection = ({
           >
             {t("calendar.detail.join")}
           </a>
-          <Button
-            variant="tertiary"
-            size="m"
-            leftIcon={copyStatus === "copied" ? <CheckIcon /> : <CopyIcon />}
-            onClick={copyLink}
-            onKeyDown={activationKeyDown(copyLink)}
-          >
-            {t(COPY_STATUS_KEYS[copyStatus])}
-          </Button>
+          <CopyLinkButton copyStatus={copyStatus} onCopy={copyLink} />
         </div>
       ) : (
         <p className={styles.mutedText}>{joinUrl}</p>
@@ -156,8 +157,7 @@ interface ParticipantsSectionProps {
   readonly visibleParticipants: readonly CalendarAttendee[];
 }
 
-// The stack shows a few faces; +N swaps it for the guest list, which has names and scrolls on
-// its own, so a lecture-sized invite never fills the panel with avatars.
+// +N swaps the stack for a scrolling guest list, so a large invite never fills the panel with avatars.
 const ParticipantsSection = ({
   event,
   showAllGuests,
@@ -172,7 +172,10 @@ const ParticipantsSection = ({
   }
 
   return (
-    <DetailRow icon={<UsersIcon />} label={t("calendar.detail.participants")}>
+    <DetailRow
+      label={t("calendar.detail.participants")}
+      className={styles.participantsRow}
+    >
       {showAllGuests ? (
         <GuestGroups attendees={event.attendees ?? []} />
       ) : (
@@ -241,7 +244,7 @@ const TimeZoneSection = ({
       : [timeZone, comparisonTimeZone];
 
   return (
-    <DetailRow icon={<GlobeIcon />} label={t("calendar.detail.timeZone")}>
+    <DetailRow label={t("calendar.detail.timeZone")}>
       {zones.map((zone) => (
         <p key={zone} className={styles.mutedText}>
           {formatZoneLine(event, zone, locale)}
@@ -368,18 +371,15 @@ export const DefaultDetail = ({
   return (
     <>
       <div className={styles.group}>
-        <DetailRow icon={<ClockIcon />} label={t("calendar.detail.dateTime")}>
-          <p className={styles.text}>
+        <DetailRow label={t("calendar.detail.dateTime")}>
+          <p className={styles.mutedText}>
             {formatEventRange(event, timeZone, locale)}
           </p>
           {recurrenceSummary !== undefined && (
             <p className={styles.mutedText}>{recurrenceSummary}</p>
           )}
         </DetailRow>
-        <TimeZoneSection
-          comparisonTimeZone={comparisonTimeZone}
-          event={event}
-        />
+        <OrganizerSection event={event} />
         {joinUrl !== undefined && (
           <ConferencingSection
             canCopyJoinLink={canCopyJoinLink}
@@ -388,21 +388,22 @@ export const DefaultDetail = ({
             joinUrl={joinUrl}
           />
         )}
+        <ParticipantsSection
+          event={event}
+          showAllGuests={showAllGuests}
+          onShowAllGuests={onShowAllGuests}
+          participantOverflowCount={participantOverflowCount}
+          visibleParticipants={visibleParticipants}
+        />
       </div>
       <div className={styles.group}>
         {location !== "" && (
-          <DetailRow
-            icon={<MapPinIcon />}
-            label={t("calendar.detail.location")}
-          >
-            <p className={styles.text}>{location}</p>
+          <DetailRow label={t("calendar.detail.location")}>
+            <p className={styles.mutedText}>{location}</p>
           </DetailRow>
         )}
         {conflicts.length > 0 && (
-          <DetailRow
-            icon={<TriangleAlertIcon />}
-            label={t("calendar.detail.conflicts")}
-          >
+          <DetailRow label={t("calendar.detail.conflicts")}>
             <ConflictIndicator
               className={styles.conflicts}
               conflicts={conflicts}
@@ -410,28 +411,16 @@ export const DefaultDetail = ({
             />
           </DetailRow>
         )}
-      </div>
-      <div className={styles.group}>
-        <OrganizerSection event={event} />
-        <ParticipantsSection
+        <TimeZoneSection
+          comparisonTimeZone={comparisonTimeZone}
           event={event}
-          onShowAllGuests={onShowAllGuests}
-          participantOverflowCount={participantOverflowCount}
-          showAllGuests={showAllGuests}
-          visibleParticipants={visibleParticipants}
         />
-      </div>
-      {description !== "" && (
-        <div className={styles.group}>
-          <DetailRow
-            icon={<TextAlignStartIcon />}
-            label={t("calendar.detail.description")}
-          >
+        {description !== "" && (
+          <DetailRow label={t("calendar.detail.description")}>
             <p className={styles.description}>{description}</p>
           </DetailRow>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 };
-
