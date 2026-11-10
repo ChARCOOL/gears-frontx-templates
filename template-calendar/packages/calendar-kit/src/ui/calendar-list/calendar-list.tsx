@@ -16,13 +16,14 @@ import { Button } from "../primitives/button/button";
 import { Checkbox } from "../primitives/checkbox/checkbox";
 import { ListItem } from "../primitives/list/list";
 
+import { findCalendarColorOption } from "./calendar-color-options";
 import type { CalendarOptionsActions } from "./calendar-options-menu";
 import { CalendarOptionsMenu } from "./calendar-options-menu";
 import styles from "./calendar-list.module.css";
 
-/** Row menu callbacks and the calendar shown alone; the host owns their state. */
+/** Row menu callbacks and the calendar shown alone. The host owns their state. */
 export interface CalendarListOptionsProps extends CalendarOptionsActions {
-  /** Id of the calendar shown alone; its menu offers Show previously visible. */
+  /** Id of the calendar shown alone. Its menu offers Show previously visible. */
   readonly soloCalendarId?: string | null;
 }
 
@@ -69,16 +70,6 @@ interface CalendarListRowProps {
   readonly solo: boolean;
 }
 
-const COLOR_CLASSES = new Map<string, string>([
-  ["blue", styles.colorBlue],
-  ["lavender", styles.colorLavender],
-  ["violet", styles.colorViolet],
-  ["purple", styles.colorPurple],
-  ["orange", styles.colorOrange],
-  ["brown", styles.colorBrown],
-  ["turquoise", styles.colorTurquoise],
-]);
-
 const CalendarListRowImpl = ({
   actions,
   calendar,
@@ -91,7 +82,9 @@ const CalendarListRowImpl = ({
   const { t } = useCalendarLocalization();
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const inputId = `calendar-list-${calendar.id}`;
-  const colorClassName = COLOR_CLASSES.get(calendar.colorFamily);
+  const colorClassName = findCalendarColorOption(
+    calendar.colorFamily
+  )?.className;
   const hasOptions = Object.values(actions).some(
     (action) => action !== undefined
   );
@@ -168,6 +161,7 @@ const CalendarListContent = ({
   calendars,
   className,
   hiddenCalendarIds,
+  onCalendarColorChange,
   onCreateCalendar,
   onDeleteCalendar,
   onHiddenCalendarIdsChange,
@@ -181,12 +175,14 @@ const CalendarListContent = ({
   const { direction, t } = useCalendarLocalization();
   const actions = useMemo<CalendarOptionsActions>(
     () => ({
+      onCalendarColorChange,
       onDeleteCalendar,
       onMakeDefaultCalendar,
       onShowOnlyCalendar,
       onShowPreviouslyVisible,
     }),
     [
+      onCalendarColorChange,
       onDeleteCalendar,
       onMakeDefaultCalendar,
       onShowOnlyCalendar,

@@ -190,6 +190,67 @@
   inline-size: var(--cal-icon-size-sm);
 }
 
+.menuPicker {
+  inline-size: 278px;
+}
+
+.colorTag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--cal-radius-md);
+  background-color: var(--calendar-color);
+  block-size: 24px;
+  color: var(--cal-color-action-foreground);
+  font-size: var(--cal-text-meta-size);
+  font-weight: var(--cal-text-label-weight);
+  padding-block: 0;
+  padding-inline: var(--cal-space-2);
+  white-space: nowrap;
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cal-space-2);
+  padding: var(--cal-space-4);
+}
+
+.swatch {
+  border: 0;
+  border-radius: var(--cal-radius-pill);
+  background-color: var(--calendar-color);
+  block-size: 28px;
+  cursor: pointer;
+  inline-size: 28px;
+  padding: 0;
+}
+
+.swatch:focus-visible {
+  outline: var(--cal-focus-ring-width) solid var(--cal-color-focus-ring);
+  outline-offset: 2px;
+}
+
+.swatch[aria-checked="true"] {
+  box-shadow:
+    0 0 0 2px var(--cal-color-surface),
+    0 0 0 4px var(--cal-color-muted);
+}
+
+.pickerFooter {
+  display: flex;
+  justify-content: flex-end;
+  border-block-start: var(--cal-border-width-1) solid var(--cal-color-divider);
+  gap: var(--cal-space-2);
+  min-block-size: 52px;
+  padding-block: var(--cal-space-2);
+  padding-inline: var(--cal-space-3);
+}
+
 @media (forced-colors: active) {
   .checkbox:focus-visible {
     outline-color: Highlight;

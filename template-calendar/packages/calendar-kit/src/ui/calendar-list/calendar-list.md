@@ -16,6 +16,7 @@ Use `renderCalendar` to replace a row's visible content, `renderCreateCalendar` 
 
 Passing any option callback adds a three-dot button to each row, shown on hover and focus. Its menu offers:
 
+- Color: opens a picker with seven swatches and Cancel/Apply. Arrow keys move the selected swatch. Apply calls `onCalendarColorChange(id, colorFamily)` only when the color changed; Cancel returns to the menu without a call.
 - Show only this calendar: calls `onShowOnlyCalendar(id)`. While the calendar is `soloCalendarId`, the menu offers Show previously visible instead, which calls `onShowPreviouslyVisible()`.
 - Make default: calls `onMakeDefaultCalendar(id)`. Disabled when `isDefault` is true or `canWrite` is not true.
 - Delete: calls `onDeleteCalendar(id)`. Disabled unless `canDelete` is true. The host confirms before it deletes.
@@ -34,6 +35,7 @@ Rows pair a label with a checkbox. The seven colour families (blue, lavender, vi
 | `hiddenCalendarIds` | `readonly string[]` | yes | Ids of calendars whose checkbox is off. |
 | `onHiddenCalendarIdsChange` | `(hiddenCalendarIds: readonly string[]) => void` | yes | Called with the new hidden ids after a toggle. |
 | `className` | `string` |  | Class added to the component root. |
+| `onCalendarColorChange` | `(calendarId: string, colorFamily: CalendarColorFamily) => void` |  | Saves a new colour for the calendar. |
 | `onCreateCalendar` | `() => void` |  | Shows a default create button that calls this. |
 | `onDeleteCalendar` | `(calendarId: string) => void` |  | Deletes the calendar. The host confirms before it deletes. |
 | `onMakeDefaultCalendar` | `(calendarId: string) => void` |  | Marks the calendar as the default for new events. |
@@ -41,7 +43,7 @@ Rows pair a label with a checkbox. The seven colour families (blue, lavender, vi
 | `onShowPreviouslyVisible` | `() => void` |  | Restores the visibility from before the calendar was shown alone. |
 | `renderCalendar` | `(calendar: CalendarRef, hidden: boolean) => ReactNode` |  | Replaces a row's content. |
 | `renderCreateCalendar` | `() => ReactNode` |  | Replaces the create button. |
-| `soloCalendarId` | `string` |  | Id of the calendar shown alone; its menu offers Show previously visible. |
+| `soloCalendarId` | `string` |  | Id of the calendar shown alone. Its menu offers Show previously visible. |
 
 Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`, `translations`; see [Internationalization](../../docs/i18n.md#per-component-overrides).
 <!-- /generated -->
@@ -55,6 +57,17 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | Translation ID                        | English                 | Values |
 | ------------------------------------- | ----------------------- | ------ |
 | `calendar.list.add`                   | Add                     |        |
+| `calendar.list.apply`                 | Apply                   |        |
+| `calendar.list.cancel`                | Cancel                  |        |
+| `calendar.list.color`                 | Color                   |        |
+| `calendar.list.colorBlue`             | Blue                    |        |
+| `calendar.list.colorBrown`            | Brown                   |        |
+| `calendar.list.colorLavender`         | Lavender                |        |
+| `calendar.list.colorOrange`           | Orange                  |        |
+| `calendar.list.colorPicker`           | Calendar color          |        |
+| `calendar.list.colorPurple`           | Purple                  |        |
+| `calendar.list.colorTurquoise`        | Turquoise               |        |
+| `calendar.list.colorViolet`           | Violet                  |        |
 | `calendar.list.delete`                | Delete                  |        |
 | `calendar.list.makeDefault`           | Make default            |        |
 | `calendar.list.moreOptions`           | More options            |        |

@@ -228,6 +228,7 @@ describe(CalendarList, () => {
     ];
 
     const optionActions = () => ({
+      onCalendarColorChange: vi.fn<(calendarId: string, colorFamily: string) => void>(),
       onDeleteCalendar: vi.fn<(calendarId: string) => void>(),
       onMakeDefaultCalendar: vi.fn<(calendarId: string) => void>(),
       onShowOnlyCalendar: vi.fn<(calendarId: string) => void>(),
@@ -353,6 +354,75 @@ describe(CalendarList, () => {
       await user.click(screen.getByRole("button", { name: "Delete" }));
 
       expect(actions.onDeleteCalendar).toHaveBeenCalledWith("cal-personal");
+    });
+
+    it("saves the picked color on Apply and drops it on Cancel", async () => {
+      const user = userEvent.setup();
+      const actions = optionActions();
+
+      render(
+        <CalendarList
+          {...baseProps({ calendars: OPTION_CALENDARS, ...actions })}
+        />
+      );
+
+      await user.click(
+        screen.getByRole("button", { name: "Options for Personal" })
+      );
+      await user.click(screen.getByRole("button", { name: /Color/ }));
+      await user.click(screen.getByRole("radio", { name: "Violet" }));
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+      expect(actions.onCalendarColorChange).not.toHaveBeenCalled();
+
+      await user.click(screen.getByRole("button", { name: /Color/ }));
+
+      expect(screen.getByRole("radio", { name: "Blue" })).toBeChecked();
+
+      await user.click(screen.getByRole("radio", { name: "Violet" }));
+      await user.click(screen.getByRole("button", { name: "Apply" }));
+
+      expect(actions.onCalendarColorChange).toHaveBeenCalledWith(
+        "cal-personal",
+        "violet"
+      );
+    });
+
+    it("moves the picked color with the arrow keys, keeping one tab stop", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <CalendarList
+          {...baseProps({
+            calendars: OPTION_CALENDARS,
+            ...optionActions(),
+          })}
+        />
+      );
+
+      await user.click(
+        screen.getByRole("button", { name: "Options for Personal" })
+      );
+      await user.click(screen.getByRole("button", { name: /Color/ }));
+
+      const blue = screen.getByRole("radio", { name: "Blue" });
+      const lavender = screen.getByRole("radio", { name: "Lavender" });
+
+      expect(blue).toHaveAttribute("tabindex", "0");
+      expect(lavender).toHaveAttribute("tabindex", "-1");
+
+      blue.focus();
+      await user.keyboard("{ArrowRight}");
+
+      expect(lavender).toHaveFocus();
+      expect(lavender).toBeChecked();
+      expect(lavender).toHaveAttribute("tabindex", "0");
+      expect(blue).toHaveAttribute("tabindex", "-1");
+
+      await user.keyboard("{ArrowLeft}");
+
+      expect(blue).toHaveFocus();
+      expect(blue).toBeChecked();
     });
   });
 });

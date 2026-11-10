@@ -473,6 +473,17 @@ Back and close in nested panels.
 | Translation ID                        | English                 | Values |
 | ------------------------------------- | ----------------------- | ------ |
 | `calendar.list.add`                   | Add                     |        |
+| `calendar.list.apply`                 | Apply                   |        |
+| `calendar.list.cancel`                | Cancel                  |        |
+| `calendar.list.color`                 | Color                   |        |
+| `calendar.list.colorBlue`             | Blue                    |        |
+| `calendar.list.colorBrown`            | Brown                   |        |
+| `calendar.list.colorLavender`         | Lavender                |        |
+| `calendar.list.colorOrange`           | Orange                  |        |
+| `calendar.list.colorPicker`           | Calendar color          |        |
+| `calendar.list.colorPurple`           | Purple                  |        |
+| `calendar.list.colorTurquoise`        | Turquoise               |        |
+| `calendar.list.colorViolet`           | Violet                  |        |
 | `calendar.list.delete`                | Delete                  |        |
 | `calendar.list.makeDefault`           | Make default            |        |
 | `calendar.list.moreOptions`           | More options            |        |
