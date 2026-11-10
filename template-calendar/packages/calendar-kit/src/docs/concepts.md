@@ -129,7 +129,7 @@ Time grids take an `interactionMode`:
 | Mode | Empty slot | Drag over empty slots | Drag an event |
 | --- | --- | --- | --- |
 | `quick-create` (default) | `onQuickCreate` | nothing | nothing |
-| `paint-and-move` | nothing | `onPaintSelect` with the range | `onMoveRequest`; host must `confirm` or `cancel` |
+| `paint-and-move` | `onPaintSelect` with the one-cell range on Enter or Space | `onPaintSelect` with the range | `onMoveRequest`; host must `confirm` or `cancel` |
 | `read-only` | nothing | nothing | nothing |
 
 In every mode an available event still opens through `onEventSelect`. `DayGrid` supports `quick-create` and `read-only`.
