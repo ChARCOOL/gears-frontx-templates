@@ -40,7 +40,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 `visibleHours?: CalendarTimeWindow` limits the timed grid to part of the day, for example `{ start: "06:00", end: "23:00" }`. The end is exclusive, and `"00:00"` as the end means the end of the day. The default is the whole day.
 
-`slotMinutes?: 15 | 20 | 30 | 60` sets the length of one row; the default is `60`. The gutter labels only rows that start on the hour. `visibleHours` must start and end on a slot boundary; otherwise the component throws a `RangeError`.
+`slotMinutes?: 15 | 20 | 30 | 60` sets the length of one row; the default is `60`. The gutter labels only rows that start on the hour. `visibleHours` snaps outward to whole slots: the start rounds down and the end rounds up. An empty or reversed window throws a `RangeError`.
 
 `workingHours?: CalendarTimeWindow` sets the working part of the day; the default is 08:00–18:00. Cells outside it are hatched with diagonal stripes, and their accessible name says "non-working hour". It is independent of `visibleHours` and also sets where the grid first scrolls to. The grid fills the height its container gives it, like the week grid.
 

@@ -230,6 +230,7 @@
   "calendar.week.allDay": "All-day events",
   "calendar.week.currentTime": "Current time",
   "calendar.week.focus": "Week view",
+  "calendar.week.hidden": "+{{count}} hidden",
   "calendar.week.nonWorkingHour": "non-working hour",
   "calendar.week.range": "Week of",
   "calendar.week.timeZone": "Time zone",

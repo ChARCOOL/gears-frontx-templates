@@ -72,6 +72,10 @@ const renderWeek = (overrides: Partial<WeekGridProps<Payload>> = {}) =>
     />
   );
 
+const crowdedNineAm = [1, 2, 3, 4].map((number) =>
+  timedEvent(`event-${number}`)
+);
+
 const getTimedCell = (time: string): HTMLElement =>
   screen.getByRole("gridcell", {
     name: new RegExp(`Monday, August 24, 2026 ${time}`, "u"),
@@ -484,6 +488,45 @@ describe(WeekGrid, () => {
       cells: [cellAt("09:00"), cellAt("10:00"), cellAt("11:00")],
       end: cellAt("11:00"),
       start: cellAt("09:00"),
+    });
+  });
+
+  it("does not start a paint from the +N chip", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    renderWeek({
+      events: crowdedNineAm,
+      interactionMode: "paint-and-move",
+      maxEventsPerSlot: 1,
+      onOverflowSelect: vi.fn<(cell: CalendarCell, anchor: HTMLElement) => void>(),
+      onPaintSelect,
+    });
+    const chip = screen.getByRole("button", { name: "+3 hidden" });
+
+    fireEvent.pointerDown(chip);
+    fireEvent.pointerUp(chip);
+
+    assert(onPaintSelect).not.toHaveBeenCalled();
+  });
+
+  it("does not extend a paint over the +N chip", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    renderWeek({
+      events: crowdedNineAm,
+      interactionMode: "paint-and-move",
+      maxEventsPerSlot: 1,
+      onOverflowSelect: vi.fn<(cell: CalendarCell, anchor: HTMLElement) => void>(),
+      onPaintSelect,
+    });
+    const chip = screen.getByRole("button", { name: "+3 hidden" });
+
+    fireEvent.pointerDown(getTimedCell("11:00"));
+    fireEvent.pointerMove(chip);
+    fireEvent.pointerUp(chip);
+
+    assert(onPaintSelect).toHaveBeenCalledExactlyOnceWith({
+      cells: [cellAt("11:00")],
+      end: cellAt("11:00"),
+      start: cellAt("11:00"),
     });
   });
 });
