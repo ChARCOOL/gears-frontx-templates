@@ -112,6 +112,15 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 | `--blue` | Blue category foreground, border | `#37569c` | `#37569c` |
 | `--blue-soft` | Blue category background · **dark** | `#e8eefe` | `#e8eefe` |
 | `--blue-accent` | Blue category accent | `#7498f8` | `#7498f8` |
+| `--lavender` | Lavender category foreground, border | `#6b4fbb` | `#6b4fbb` |
+| `--lavender-soft` | Lavender category background · **dark** | `#f3efff` | `#f3efff` |
+| `--lavender-accent` | Lavender category accent | `#9d85e0` | `#9d85e0` |
+| `--violet` | Violet category foreground, border | `#7e2fa8` | `#7e2fa8` |
+| `--violet-soft` | Violet category background · **dark** | `#f6eafc` | `#f6eafc` |
+| `--violet-accent` | Violet category accent | `#a64fd0` | `#a64fd0` |
+| `--brown` | Brown category foreground, border | `#6b4a2e` | `#6b4a2e` |
+| `--brown-soft` | Brown category background · **dark** | `#f5ece4` | `#f5ece4` |
+| `--brown-accent` | Brown category accent | `#a0744a` | `#a0744a` |
 
 ### Typography
 
