@@ -14,7 +14,7 @@
   --cal-color-focus-ring: var(--ring, #8b5cf6);
   --cal-color-focus-ring-strong: var(--primary-ring, #6d28d9);
   --cal-color-now: var(--now, var(--primary, #8257e6));
-  --cal-color-now-label: var(--now-label, var(--primary-foreground, #ffffff));
+  --cal-color-now-label: var(--now-label, var(--primary, #8257e6));
   --cal-color-conflict: var(--danger, #e11d48);
   --cal-color-overlay-surface: var(--popover, #ffffff);
   --cal-color-overlay-border: var(
@@ -43,7 +43,7 @@
   --cal-color-purple-accent: var(--accent-foreground, #6d28d9);
   --cal-color-purple-pattern: var(--accent, #f3e8ff);
   --cal-color-orange-background: var(--warning-soft, #fdf3e2);
-  --cal-color-orange-foreground: var(--warning, #d97706);
+  --cal-color-orange-foreground: var(--warning-foreground, var(--warning, #d97706));
   --cal-color-orange-border: var(--warning, #d97706);
   --cal-color-orange-accent: var(--warning, #d97706);
   --cal-color-orange-pattern: var(--warning, #d97706);
