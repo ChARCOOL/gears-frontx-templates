@@ -25,6 +25,7 @@ The component is controlled by neutral calendar-kit data. Provide `t`, `locale`,
 | `onMoveRequest` | `(request: CalendarMoveRequest) => void` |  | An event was dropped on a new slot in `paint-and-move` mode. Call `confirm` or `cancel`. |
 | `onPaintSelect` | `(range: CalendarSelectionRange) => void` |  | A range was painted in `paint-and-move` mode. |
 | `onQuickCreate` | `(payload: CalendarQuickCreatePayload) => void` |  | An empty slot was activated in `quick-create` mode. |
+| `onResizeRequest` | `(request: CalendarResizeRequest) => void` |  | A resize handle on timed, single-day, movable events asks the host to move the event's end. |
 | `onSelectedEventIdChange` | `(eventId: string \| null) => void` |  | Called when an event is selected or deselected. |
 | `paintColorFamily` | `CalendarColorFamily` |  | Colour family of a painted range. Unset, the range uses the plain selection style. |
 | `renderCell` | `(context: CalendarCellContext) => ReactNode` |  | Replaces the content of each empty time cell. |
@@ -60,7 +61,7 @@ Events are clipped to the visible hours, and events wholly outside them are not 
 - `onEventSelect` receives an event, its render context, and the activated card element when an available event is clicked or activated with Enter/Space. Pass that element to `EventDetailPanel` as `anchorElement` to open the detail beside the card.
 - `onQuickCreate` receives a serializable one-slot selection and the cell's `DOMRectReadOnly` anchor in quick-create mode.
 - `paint-and-move` mode paints a range with a pointer drag and emits `onPaintSelect`, the same as the week grid. Enter or Space on an empty cell paints that one cell.
-- Dropping an event on a new slot in `paint-and-move` mode emits `onMoveRequest`; the host calls `confirm` or `cancel`. Recurring events and events with `movable: false` do not move.
+- Dropping an event on a new slot in `paint-and-move` mode emits `onMoveRequest`; the host calls `confirm` or `cancel`. Recurring events and events with `movable: false` do not move. A timed, single-day event that can move also has a handle on its bottom edge, or Alt+ArrowDown and Alt+ArrowUp on the card, that emits `onResizeRequest({ event, to, confirm, cancel })`, as in the week grid.
 - `read-only` mode keeps event selection available while disabling empty-cell creation, painting, and moves.
 - `paintColorFamily` colours a painted range; without it the range uses the plain selection style.
 - The timed grid exposes one roving tab stop and supports ArrowUp, ArrowDown, Home, and End. The grid boundary clamps focus rather than wrapping.

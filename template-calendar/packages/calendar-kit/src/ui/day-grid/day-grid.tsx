@@ -34,6 +34,7 @@ import type {
   CalendarDate,
   CalendarEventSegment,
   CalendarMoveRequest,
+  CalendarResizeRequest,
   IanaTimeZone,
   UtcInstant,
   WeekGridInteractionMode,
@@ -50,6 +51,7 @@ import type {
 } from "../../i18n/calendar-localization";
 import { CalendarScope } from "../../i18n/calendar-localization-provider";
 import { useDayGridController } from "../../react/controllers/use-day-grid-controller";
+import { useEventResize } from "../../react/hooks/use-event-resize";
 import type {
   CalendarConflictRenderer,
   CalendarEventRenderer,
@@ -119,6 +121,8 @@ export interface DayGridProps extends CalendarContextProps {
   readonly onPaintSelect?: (range: CalendarSelectionRange) => void;
   /** An event was dropped on a new slot in `paint-and-move` mode. Call `confirm` or `cancel`. */
   readonly onMoveRequest?: (request: CalendarMoveRequest) => void;
+  /** A resize handle on timed, single-day, movable events asks the host to move the event's end. */
+  readonly onResizeRequest?: (request: CalendarResizeRequest) => void;
 }
 
 interface DayGridStyles extends CSSProperties {
@@ -335,6 +339,7 @@ const DayGridEventLayerImpl = ({
   slotCount,
   nowPercent,
   onEventFocus,
+  resize,
   selectedEventId,
   timedEvents,
 }: {
@@ -347,47 +352,72 @@ const DayGridEventLayerImpl = ({
   readonly slotCount: number;
   readonly nowPercent: number | null;
   readonly onEventFocus: (segment: CalendarEventSegment) => void;
+  readonly resize: ReturnType<typeof useEventResize>;
   readonly selectedEventId: string | null;
   readonly timedEvents: readonly DayGridTimedEvent[];
 }) => (
   <div className={clsx(styles.eventLayer, "eventLayer")}>
-    {timedEvents.map((placement) => (
-      <div
-        className={clsx(styles.event, styles.timedEvent, "timedEvent")}
-        data-dragging={
-          draggingEventId === placement.segment.event.id ? "" : undefined
-        }
-        draggable={
-          movable &&
-          isEventActionable(placement.segment.event) &&
-          isEventMovable(placement.segment.event)
-        }
-        key={`${placement.segment.event.id}-${placement.segment.start}`}
-        onFocusCapture={() => {
-          onEventFocus(placement.segment);
-        }}
-        style={timedEventStyle(
-          placement.geometry,
-          placement.topPercent,
-          placement.heightPercent
-        )}
-      >
-        {renderDayGridEventCard({
-          config,
-          event: placement.segment.event,
-          geometry: dayEventGeometry(
-            placement.geometry,
-            placement.topPercent,
-            placement.heightPercent,
-            slotCount
-          ),
-          past: compareUtcInstants(placement.segment.end, currentInstant) <= 0,
-          positioned: false,
-          segment: placement.segment,
-          selected: selectedEventId === placement.segment.event.id,
-        })}
-      </div>
-    ))}
+    {timedEvents.map((placement) => {
+      const { event } = placement.segment;
+      const resizeProps =
+        movable &&
+        placement.segment.segment === null &&
+        isEventActionable(event) &&
+        isEventMovable(event)
+          ? resize.handleProps(event)
+          : null;
+      const style = timedEventStyle(
+        placement.geometry,
+        placement.topPercent,
+        placement.heightPercent
+      );
+
+      return (
+        <div
+          className={clsx(styles.event, styles.timedEvent, "timedEvent")}
+          data-dragging={draggingEventId === event.id ? "" : undefined}
+          draggable={
+            movable && isEventActionable(event) && isEventMovable(event)
+          }
+          key={`${event.id}-${placement.segment.start}`}
+          onFocusCapture={() => {
+            onEventFocus(placement.segment);
+          }}
+          onKeyDown={resizeProps?.onKeyDown}
+          style={
+            resize.preview?.eventId === event.id
+              ? { ...style, blockSize: `${resize.preview.blockSize}px` }
+              : style
+          }
+        >
+          {renderDayGridEventCard({
+            config,
+            event,
+            geometry: dayEventGeometry(
+              placement.geometry,
+              placement.topPercent,
+              placement.heightPercent,
+              slotCount
+            ),
+            past: compareUtcInstants(placement.segment.end, currentInstant) <= 0,
+            positioned: false,
+            segment: placement.segment,
+            selected: selectedEventId === event.id,
+          })}
+          {resizeProps !== null && (
+            <div
+              className={styles.resizeHandle}
+              data-resize-handle=""
+              onMouseDown={resizeProps.onMouseDown}
+              onPointerCancel={resizeProps.onPointerCancel}
+              onPointerDown={resizeProps.onPointerDown}
+              onPointerMove={resizeProps.onPointerMove}
+              onPointerUp={resizeProps.onPointerUp}
+            />
+          )}
+        </div>
+      );
+    })}
     {dropGhost !== null && (
       <div
         className={styles.dragGhost}
@@ -456,6 +486,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     onMoveRequest,
     onPaintSelect,
     onQuickCreate,
+    onResizeRequest,
     now,
     slotMinutes,
     visibleHours,
@@ -545,10 +576,10 @@ const useDayGridContent = (props: DayGridContentProps) => {
   );
 
   // Event cards cover the cells, so the slot comes from the pointer's Y, not the event target.
-  const cellAtClientY = (
+  const slotAtClientY = (
     layout: HTMLElement,
     clientY: number
-  ): CalendarCell | undefined => {
+  ): { readonly cell: CalendarCell; readonly element: HTMLElement } | undefined => {
     const element = Array.from(
       layout.querySelectorAll<HTMLElement>('[role="gridcell"]')
     ).find((candidate) => {
@@ -558,9 +589,33 @@ const useDayGridContent = (props: DayGridContentProps) => {
     });
     const key = element?.dataset.cellKey;
     const index = key === undefined ? undefined : cellIndexByKey.get(key);
+    const cell = index === undefined ? undefined : arrayAt(gridCells, index);
 
-    return index === undefined ? undefined : arrayAt(gridCells, index);
+    return element === undefined || cell === undefined
+      ? undefined
+      : { cell, element };
   };
+
+  const cellAtClientY = (
+    layout: HTMLElement,
+    clientY: number
+  ): CalendarCell | undefined => slotAtClientY(layout, clientY)?.cell;
+
+  const resize = useEventResize({
+    cells: gridCells,
+    onResizeRequest,
+    targetAt: (_clientX, clientY, handle) => {
+      const layout = handle.closest<HTMLElement>(".timedLayout");
+      const slot = layout === null ? undefined : slotAtClientY(layout, clientY);
+
+      return slot === undefined
+        ? null
+        : {
+            bottom: slot.element.getBoundingClientRect().bottom,
+            cell: slot.cell,
+          };
+    },
+  });
 
   const draggedEventIdRef = useRef<string | null>(null);
 
@@ -903,6 +958,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     renderCell,
     resolvedDirection,
     resolvedSelectedEventId,
+    resize,
     setBodyRef,
     slotStarts,
     t,
@@ -959,6 +1015,7 @@ const DayGridContent = (props: DayGridContentProps) => {
     renderCell,
     resolvedDirection,
     resolvedSelectedEventId,
+    resize,
     setBodyRef,
     t,
     timedEvents,
@@ -1173,6 +1230,7 @@ const DayGridContent = (props: DayGridContentProps) => {
             slotCount={slotStarts.length}
             nowPercent={nowPercent}
             onEventFocus={handleEventFocus}
+            resize={resize}
             selectedEventId={resolvedSelectedEventId}
             timedEvents={timedEvents}
           />
