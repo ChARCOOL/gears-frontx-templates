@@ -1,4 +1,4 @@
-import { fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -28,6 +28,19 @@ const stubRowRects = (): void => {
         : new DOMRect(0, index * rowHeight, 100, rowHeight);
     }
   );
+};
+
+// jsdom has no DragEvent, so testing-library would drop `clientY`; a MouseEvent keeps it.
+const dragAt = (
+  target: HTMLElement,
+  type: "dragover" | "drop",
+  clientY: number
+): void => {
+  act(() => {
+    target.dispatchEvent(
+      new MouseEvent(type, { bubbles: true, cancelable: true, clientY })
+    );
+  });
 };
 
 const gridCells = (container: HTMLElement): HTMLElement[] =>
@@ -128,5 +141,89 @@ describe("DayGrid paint-and-move", () => {
     fireEvent.click(gridCells(container)[13], { clientY: rowCenter(13) });
 
     expect(onQuickCreate).not.toHaveBeenCalled();
+  });
+
+  it("reports a dropped event as a move to the drop slot until the host confirms it", () => {
+    stubRowRects();
+    const onMoveRequest = vi.fn();
+    const { container } = render(
+      <DayGrid
+        {...baseProps}
+        interactionMode="paint-and-move"
+        onMoveRequest={onMoveRequest}
+      />
+    );
+    const cells = gridCells(container);
+    // A browser starts the drag on the draggable frame around the card.
+    const frame = container
+      .querySelector('[data-event-id="architecture"]')
+      ?.closest('[draggable="true"]');
+
+    fireEvent.dragStart(frame!, { dataTransfer: { setDragImage: vi.fn() } });
+    dragAt(cells[12], "dragover", rowCenter(12));
+
+    expect(container.querySelector("[data-drag-ghost]")).not.toBeNull();
+    expect(container.querySelector("[data-drop-target]")).not.toBeNull();
+
+    dragAt(cells[12], "drop", rowCenter(12));
+
+    expect(onMoveRequest).toHaveBeenCalledTimes(1);
+    const request = onMoveRequest.mock.calls[0]?.[0];
+    expect(request.event.id).toBe("architecture");
+    expect(request.to.start).toBe(utcInstant("2026-08-24T12:00:00.000Z"));
+    expect(container.querySelector("[data-drag-ghost]")).toBeNull();
+  });
+
+  it("does not make a recurring event draggable", () => {
+    const recurring = { ...architecture, recurrenceRule: "FREQ=WEEKLY" };
+    const { container } = render(
+      <DayGrid
+        {...baseProps}
+        events={[recurring]}
+        interactionMode="paint-and-move"
+        onMoveRequest={vi.fn()}
+      />
+    );
+
+    const card = container.querySelector<HTMLElement>(
+      '[data-event-id="architecture"]'
+    );
+
+    expect(card?.closest("[draggable]")?.getAttribute("draggable")).toBe(
+      "false"
+    );
+  });
+
+  it("keeps an event the host marks movable: false in place", () => {
+    const { container } = render(
+      <DayGrid
+        {...baseProps}
+        events={[{ ...architecture, movable: false }]}
+        interactionMode="paint-and-move"
+        onMoveRequest={vi.fn()}
+      />
+    );
+
+    const card = container.querySelector<HTMLElement>(
+      '[data-event-id="architecture"]'
+    );
+
+    expect(card?.closest("[draggable]")?.getAttribute("draggable")).toBe(
+      "false"
+    );
+  });
+
+  it("keeps events fixed in quick-create mode", () => {
+    const { container } = render(
+      <DayGrid {...baseProps} onMoveRequest={vi.fn()} />
+    );
+
+    const card = container.querySelector<HTMLElement>(
+      '[data-event-id="architecture"]'
+    );
+
+    expect(card?.closest("[draggable]")?.getAttribute("draggable")).toBe(
+      "false"
+    );
   });
 });
