@@ -68,6 +68,43 @@ describe("create-event-validation", () => {
     ).toBeUndefined();
   });
 
+  it("requires an event type only when the host offers types and asks for one", () => {
+    assert(validateCreateEventDraft(draft()).valid).toBe(true);
+    assert(
+      validateCreateEventDraft(draft(), { eventTypeRequired: true }).valid
+    ).toBe(true);
+
+    const missing = validateCreateEventDraft(draft(), {
+      eventTypeIds: ["lecture"],
+      eventTypeRequired: true,
+    });
+
+    assert(missing.valid).toBe(false);
+    assert(missing.errors.eventTypeId).toBe("required");
+    assert(
+      createEventErrorMessages(missing.errors, (key) => key).eventTypeId
+    ).toBe("calendar.create_event.error.event_type_required");
+    assert(
+      validateCreateEventDraft(
+        { ...draft(), eventTypeId: "lecture" },
+        { eventTypeIds: ["lecture"], eventTypeRequired: true }
+      ).valid
+    ).toBe(true);
+  });
+
+  it("rejects an event type id the host does not offer", () => {
+    const stale = validateCreateEventDraft(
+      { ...draft(), eventTypeId: "retired" },
+      { eventTypeIds: ["lecture"] }
+    );
+
+    assert(stale.valid).toBe(false);
+    assert(stale.errors.eventTypeId).toBe("required");
+    assert(
+      validateCreateEventDraft({ ...draft(), eventTypeId: "retired" }).valid
+    ).toBe(true);
+  });
+
   it("covers recurrence grammar and timed range branches", () => {
     assert(isValidRecurrenceRule("")).toBeFalsy();
     assert(isValidRecurrenceRule("FREQ")).toBeFalsy();

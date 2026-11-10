@@ -28,6 +28,7 @@ const SUPPORTED_RECURRENCE_KEYS: ReadonlySet<string> = new Set([
 
 export type CreateEventField =
   | "title"
+  | "eventTypeId"
   | "startDate"
   | "endDate"
   | "startTime"
@@ -43,6 +44,13 @@ export type CreateEventValidationError =
 export type CreateEventValidationErrors = Partial<
   Record<CreateEventField, CreateEventValidationError>
 >;
+
+export interface CreateEventValidationOptions {
+  /** Event type ids the host offers. Empty or omitted means the form has no event-type field. */
+  readonly eventTypeIds?: readonly string[];
+  /** Requires a pick. Has no effect unless `eventTypeIds` is non-empty. */
+  readonly eventTypeRequired?: boolean;
+}
 
 interface CreateEventValidation {
   readonly valid: boolean;
@@ -210,12 +218,24 @@ export const isValidReminderUrl = (url: string): boolean =>
   url.length <= MAX_REMINDER_URL_LENGTH && REMINDER_URL_PATTERN.test(url);
 
 export const validateCreateEventDraft = (
-  draft: CreateEventDraft
+  draft: CreateEventDraft,
+  options: CreateEventValidationOptions = {}
 ): CreateEventValidation => {
   const errors: CreateEventValidationErrors = {};
 
   if (draft.title.trim() === "") {
     errors.title = "required";
+  }
+
+  const eventTypeIds = options.eventTypeIds ?? [];
+
+  if (
+    eventTypeIds.length > 0 &&
+    (draft.eventTypeId
+      ? !eventTypeIds.includes(draft.eventTypeId)
+      : options.eventTypeRequired === true)
+  ) {
+    errors.eventTypeId = "required";
   }
 
   const recurrenceRule = draft.recurrenceRule ?? undefined;

@@ -20,6 +20,8 @@ The form renders inline in the host container and is shadow-root safe; the host 
 | `defaultDraft` | `CreateEventDraft` |  | Initial draft when uncontrolled. Also the baseline for the unsaved-changes check. |
 | `defaultOpen` | `boolean` |  | Initial open state when uncontrolled. |
 | `draft` | `CreateEventDraft` |  | Controlled draft. |
+| `eventTypeIds` | `readonly string[]` |  | Ids of the event types the form offers. A picked id outside this list fails validation. |
+| `eventTypeRequired` | `boolean` |  | Blocks submit until an event type is picked. Ignored when `eventTypeIds` is empty. |
 | `kind` | `CreateEventKind` |  | Kind the form edits. `reminder` shows the reminder fields and hides the event-only ones. |
 | `now` | `UtcInstant` |  | Reference instant for the time-zone offset label. |
 | `onDraftChange` | `(draft: CreateEventDraft) => void` |  | Called on every field edit. |
@@ -77,6 +79,7 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.discard.message` | Discard unsaved changes? |  |
 | `calendar.create_event.discard.title` | Changed |  |
 | `calendar.create_event.error.endBeforeStart` | End must be after start |  |
+| `calendar.create_event.error.event_type_required` | Event type is required |  |
 | `calendar.create_event.error.invalid` | Enter a valid value |  |
 | `calendar.create_event.error.required` | Title is required |  |
 | `calendar.create_event.field.calendar` | Calendar |  |
@@ -84,6 +87,7 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.field.description` | Description |  |
 | `calendar.create_event.field.end_date` | End date |  |
 | `calendar.create_event.field.end_time` | End time |  |
+| `calendar.create_event.field.event_type` | Event type |  |
 | `calendar.create_event.field.location` | Location |  |
 | `calendar.create_event.field.notify` | Notify |  |
 | `calendar.create_event.field.notify_lead` | Notify before |  |
@@ -106,6 +110,7 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.people.no_results` | No people |  |
 | `calendar.create_event.placeholder.calendar` | Choose a calendar |  |
 | `calendar.create_event.placeholder.conferencing` | Add conferencing |  |
+| `calendar.create_event.placeholder.event_type` | Choose an event type |  |
 | `calendar.create_event.placeholder.location` | Add a location |  |
 | `calendar.create_event.placeholder.people` | Add people |  |
 | `calendar.create_event.placeholder.url` | Add a URL |  |

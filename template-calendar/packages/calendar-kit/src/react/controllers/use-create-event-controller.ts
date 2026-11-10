@@ -50,6 +50,10 @@ export interface UseCreateEventControllerOptions {
   readonly locations?: readonly CalendarResourceOption[];
   /** Conferencing providers offered in the conferencing select. */
   readonly conferencingProviders?: readonly CalendarResourceOption[];
+  /** Ids of the event types the form offers. A picked id outside this list fails validation. */
+  readonly eventTypeIds?: readonly string[];
+  /** Blocks submit until an event type is picked. Ignored when `eventTypeIds` is empty. */
+  readonly eventTypeRequired?: boolean;
   /** Zone the draft is edited in. */
   readonly timeZone?: IanaTimeZone;
   /** Reference instant for the time-zone offset label. Omit to follow the wall clock. */
@@ -259,7 +263,10 @@ export const useCreateEventController = (
       return undefined;
     }
 
-    const validation = validateCreateEventDraft(draft);
+    const validation = validateCreateEventDraft(draft, {
+      eventTypeIds: options.eventTypeIds,
+      eventTypeRequired: options.eventTypeRequired,
+    });
     if (!validation.valid) {
       setErrors(validation.errors);
       setSubmitError(null);

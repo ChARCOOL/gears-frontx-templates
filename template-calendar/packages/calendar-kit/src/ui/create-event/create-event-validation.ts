@@ -9,6 +9,7 @@ export type CreateEventErrorTranslate = CalendarTemporalProps["t"];
 
 const VALIDATION_FIELDS: readonly CreateEventField[] = [
   "title",
+  "eventTypeId",
   "startDate",
   "endDate",
   "startTime",
@@ -26,9 +27,14 @@ const ERROR_MESSAGE_IDS: Readonly<Record<CreateEventValidationError, string>> =
 
 export const resolveCreateEventError = (
   error: CreateEventValidationError,
-  _field: CreateEventField,
+  field: CreateEventField,
   t: CreateEventErrorTranslate
-): string => t(ERROR_MESSAGE_IDS[error]);
+): string =>
+  t(
+    field === "eventTypeId" && error === "required"
+      ? "calendar.create_event.error.event_type_required"
+      : ERROR_MESSAGE_IDS[error]
+  );
 
 const messageFor = (
   errors: CreateEventValidationErrors,
@@ -59,6 +65,7 @@ export const createEventErrorMessages = (
 ): Readonly<Record<CreateEventField, string | null>> => ({
   endDate: messageFor(errors, "endDate", t),
   endTime: messageFor(errors, "endTime", t),
+  eventTypeId: messageFor(errors, "eventTypeId", t),
   recurrenceRule: messageFor(errors, "recurrenceRule", t),
   startDate: messageFor(errors, "startDate", t),
   startTime: messageFor(errors, "startTime", t),
