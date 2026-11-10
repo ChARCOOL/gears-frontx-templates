@@ -363,7 +363,7 @@ describe("CreateEventPanel date and time row fidelity", () => {
     });
   });
 
-  it("keeps the end date while a typed start date is still being entered", async () => {
+  it("keeps the end date until focus leaves the date row", async () => {
     const user = userEvent.setup({ delay: null });
     const onSubmit = submitSpy();
     renderPopover({
@@ -371,15 +371,17 @@ describe("CreateEventPanel date and time row fidelity", () => {
       onSubmit,
     });
 
-    act(() => {
-      screen.getByLabelText(/start date/iu).focus();
-    });
+    await user.click(screen.getByLabelText(/start date/iu));
     await user.keyboard("0901");
 
     assert(screen.getByLabelText(/start date/iu)).toHaveValue("09/01/2026");
     assert(screen.getByLabelText(/end date/iu)).toHaveValue("Sun, 30 Aug");
 
-    await user.tab();
+    await user.click(screen.getByLabelText(/end date/iu));
+
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("08/30/2026");
+
+    await user.click(screen.getByLabelText(/title/iu));
 
     assert(screen.getByLabelText(/end date/iu)).toHaveValue("");
     act(() => {
@@ -412,7 +414,7 @@ describe("CreateEventPanel date and time row fidelity", () => {
 
     assert(screen.getByLabelText(/end date/iu)).toHaveValue("09/01/2026");
 
-    await user.tab();
+    await user.click(screen.getByLabelText(/title/iu));
 
     assert(screen.getByLabelText(/end date/iu)).toHaveValue("");
     act(() => {

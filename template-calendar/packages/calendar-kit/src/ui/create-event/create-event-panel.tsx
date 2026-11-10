@@ -19,7 +19,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { ReactNode, Ref, RefObject } from "react";
+import type { FocusEvent, ReactNode, Ref, RefObject } from "react";
 import type * as React from "react";
 import { createPortal } from "react-dom";
 
@@ -1316,8 +1316,14 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
     updateDateField("endDate", value, fieldUpdateContext, fromCalendar);
   };
 
-  // Leaving the date row settles a typed end date that now lands before the start.
-  const finishDateEntry = (): void => {
+  // Blur bubbles from both date fields, so only a focus move out of the row finishes the entry.
+  const finishDateEntry = (event: FocusEvent<HTMLDivElement>): void => {
+    const next = event.relatedTarget;
+
+    if (next instanceof Node && event.currentTarget.contains(next)) {
+      return;
+    }
+
     setDraft(floorEndDate(controller.draft));
   };
 
