@@ -215,7 +215,7 @@ const toggleAttendee = (
 interface ShellCloseActions {
   readonly dismissDiscard: () => void;
   readonly closeCustomRepeat: () => void;
-  readonly requestCancel: () => void;
+  readonly requestCancel: () => Promise<boolean>;
 }
 
 const closeShell = (
@@ -238,7 +238,7 @@ const closeShell = (
     return;
   }
 
-  actions.requestCancel();
+  void actions.requestCancel();
 };
 
 export const useCreateEventPopoverContent = (

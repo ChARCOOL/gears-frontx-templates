@@ -24,6 +24,7 @@ The form renders inline in the host container and is shadow-root safe; the host 
 | `onDraftChange` | `(draft: CreateEventDraft) => void` |  | Called on every field edit. |
 | `onOpenChange` | `(open: boolean) => void` |  | Called on open and close, including after submit and a confirmed discard. |
 | `open` | `boolean` |  | Controlled open state. |
+| `ref` | `((instance: CreateEventPopoverHandle \| null) => void \| (() => VoidOrUndefinedOnly)) \| Ref…` |  | Lets the host close the form through its own unsaved-changes prompt. |
 | `renderError` | `(error: CreateEventSubmitError) => ReactNode` |  | Replaces how a submit error is shown. |
 | `renderFields` | `() => ReactNode` |  | Extra host fields rendered after the kit's fields. |
 | `renderFooter` | `() => ReactNode` |  | Content added above the Cancel/Save row. |
@@ -46,7 +47,8 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 - Custom expands an editor inline under the Repeat field; the interval is a number field from 1 to 30. Every change is written to the draft immediately as an RFC 5545 rule body such as `FREQ=WEEKLY;BYDAY=MO,WE`. While it is open, the other fields and Save are disabled and Repeat stays live. Save keeps the rule, Cancel restores the preset and rule from when it opened, and Escape collapses it like Save. Choosing another preset closes it; choosing Custom again reopens the saved rule. Weekday choices are toggle buttons in display order; `Ends: Never` omits an end and `Ends: On` appends `UNTIL=YYYYMMDD`.
 - A one-line summary under the Repeat field describes the current rule for every choice, for example "Repeats every 2 weeks on Tuesday and Thursday until Wed, Sep 30, 2026". "Does not repeat" shows no summary.
 - A pending submit disables duplicate attempts. A host error is rendered without closing the form.
-- A clean cancel closes immediately. A dirty cancel opens an alert dialog with keep-editing and discard actions; the confirmation and custom-repeat layer are mounted in the active create shell so they overlay that popover, and confirmed discard closes the parent form.
+- A clean cancel closes immediately. A dirty cancel, or an outside press in a dirty form, opens an alert dialog with keep-editing and discard actions; that press does not reach its target. An outside press in a clean form does nothing. Confirmed discard closes the form.
+- `ref` takes a `CreateEventPopoverHandle`; its `requestCancel()` runs the same cancel path as the close control and resolves `true` once the form closed, or `false` when the user kept editing or a save is running.
 - `renderHeader`, `renderFields`, `renderFooter`, `renderError`, and shell render props provide host composition without app imports.
 
 All labels come from `t`; `locale`, `timeZone`, `direction`, and `now` are presentation inputs. When `now` is omitted, the time-zone label follows the wall clock. The title is plain text, and the kit does not invent an event-type data contract.

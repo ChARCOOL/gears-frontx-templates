@@ -73,6 +73,7 @@ export {
 } from "./ui/create-event/public";
 
 export type {
+  CreateEventPopoverHandle,
   CreateEventPopoverProps,
   CalendarResourceOption,
   CreateEventSubmitError,

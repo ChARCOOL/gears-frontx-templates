@@ -280,6 +280,36 @@ describe(useCreateEventController, () => {
     expect(onSubmit).toHaveBeenCalledOnce();
   });
 
+  it("resolves requestCancel with the discard outcome", async () => {
+    const onCancel = vi.fn<() => void>();
+    const { result } = renderHook(() =>
+      useCreateEventController(options({ onCancel }))
+    );
+
+    act(() => {
+      result.current.setDraft({ ...draft(), title: "Changed" });
+    });
+
+    let kept: Promise<boolean> | undefined;
+    act(() => {
+      kept = result.current.requestCancel();
+    });
+    act(() => {
+      result.current.dismissDiscard();
+    });
+    await expect(kept).resolves.toBe(false);
+
+    let discarded: Promise<boolean> | undefined;
+    act(() => {
+      discarded = result.current.requestCancel();
+    });
+    act(() => {
+      result.current.confirmDiscard();
+    });
+    await expect(discarded).resolves.toBe(true);
+    expect(onCancel).toHaveBeenCalledOnce();
+  });
+
   it("cancels a clean draft immediately", () => {
     const onCancel = vi.fn<() => void>();
     const { result } = renderHook(() =>

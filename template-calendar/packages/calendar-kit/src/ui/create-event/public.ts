@@ -1,5 +1,6 @@
 export {
   CreateEventPopover,
+  type CreateEventPopoverHandle,
   type CreateEventPopoverProps,
 } from "./create-event-popover";
 

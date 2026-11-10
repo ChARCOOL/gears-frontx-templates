@@ -7,6 +7,7 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createRef } from "react";
 import { describe, expect as assert, it, vi } from "vitest";
 
 import { declarations } from "../../../__test-utils__/css-declarations";
@@ -24,7 +25,10 @@ import type {
 import type { CalendarTranslate } from "../../../i18n/calendar-localization";
 import { englishTranslate as t } from "../../../i18n/english";
 import { CreateEventPopover } from "../create-event-popover";
-import type { CreateEventPopoverProps } from "../create-event-popover";
+import type {
+  CreateEventPopoverHandle,
+  CreateEventPopoverProps,
+} from "../create-event-popover";
 
 import styles from "../create-event.module.css";
 import createEventCss from "../create-event.module.css?raw";
@@ -813,6 +817,42 @@ describe("CreateEventPopover coverage paths", () => {
         screen.getByText("Calendar service unavailable")
       ).toBeInTheDocument();
     });
+    assert(getCreateDialog()).toBeInTheDocument();
+  });
+});
+
+describe("CreateEventPopover host cancel handle", () => {
+  it("resolves requestCancel with true once a clean form has closed", async () => {
+    const ref = createRef<CreateEventPopoverHandle>();
+    const onCancel = vi.fn<() => void>();
+    render(<CreateEventPopover ref={ref} {...popoverProps({ onCancel })} />);
+
+    let closed: Promise<boolean> | undefined;
+    act(() => {
+      closed = ref.current?.requestCancel();
+    });
+
+    await expect(closed).resolves.toBe(true);
+    assert(onCancel).toHaveBeenCalledOnce();
+    assert(screen.queryByRole("region", { name: /create/iu })).toBeNull();
+  });
+
+  it("resolves requestCancel with false when the user keeps editing", async () => {
+    const user = userEvent.setup({ delay: null });
+    const ref = createRef<CreateEventPopoverHandle>();
+    render(<CreateEventPopover ref={ref} {...popoverProps()} />);
+
+    await setInputValue(user, screen.getByLabelText(/title/iu), "Changed");
+
+    let kept: Promise<boolean> | undefined;
+    act(() => {
+      kept = ref.current?.requestCancel();
+    });
+    await act(async () => {
+      await user.click(screen.getByRole("button", { name: /keep/iu }));
+    });
+
+    await expect(kept).resolves.toBe(false);
     assert(getCreateDialog()).toBeInTheDocument();
   });
 });

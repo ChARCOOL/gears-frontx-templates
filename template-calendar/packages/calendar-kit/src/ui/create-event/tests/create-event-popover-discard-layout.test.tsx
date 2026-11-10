@@ -78,6 +78,32 @@ describe("CreateEventPopover discard layout", () => {
     assert(onCancel).not.toHaveBeenCalled();
   });
 
+  it("opens the discard confirmation on a dirty outside press without reaching its target", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onCancel = vi.fn<() => void>();
+    const onOutsidePress = vi.fn<() => void>();
+    render(
+      <>
+        <button onClick={onOutsidePress} type="button">
+          Outside control
+        </button>
+        <CreateEventPopover {...popoverProps({ onCancel })} />
+      </>
+    );
+    await changeTitle(user, "Changed before closing");
+
+    await user.click(screen.getByRole("button", { name: "Outside control" }));
+
+    const discardDialog = screen.getByRole("alertdialog");
+
+    assert(discardDialog).toBeInTheDocument();
+    assert(
+      within(discardDialog).getByRole("button", { name: /keep/iu })
+    ).toBeInTheDocument();
+    assert(onOutsidePress).not.toHaveBeenCalled();
+    assert(onCancel).not.toHaveBeenCalled();
+  });
+
   it("closes a pristine draft immediately on Escape without mounting confirmation", async () => {
     const user = userEvent.setup({ delay: null });
     const onCancel = vi.fn<() => void>();

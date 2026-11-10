@@ -13,11 +13,12 @@ import {
 } from "lucide-react";
 import {
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
 } from "react";
-import type { ReactNode, RefObject } from "react";
+import type { ReactNode, Ref, RefObject } from "react";
 import type * as React from "react";
 import { createPortal } from "react-dom";
 
@@ -44,6 +45,7 @@ import type {
   CalendarResourceOption,
   CreateEventSubmitError,
   UseCreateEventControllerOptions,
+  UseCreateEventControllerResult,
   useCreateEventController,
 } from "../../react/controllers/use-create-event-controller";
 import {
@@ -72,6 +74,8 @@ import {
   noopCleanup,
   subscribeGlobalEvent,
 } from "../primitives/global-event-listener";
+import { isNestedLayerEvent } from "../primitives/portal-layer";
+import { swallowNextClick } from "../primitives/popover/popover-internals";
 import { Input } from "../primitives/input/input";
 import { Radio, RadioGroup } from "../primitives/radio/radio";
 import { ScrollRegion } from "../primitives/scroll-region/scroll-region";
@@ -102,6 +106,11 @@ const SUBMIT_ERROR_ID = "calendar.create_event.submitError";
 
 export type { CalendarResourceOption } from "../../react/controllers/use-create-event-controller";
 
+export type CreateEventPopoverHandle = Pick<
+  UseCreateEventControllerResult,
+  "requestCancel"
+>;
+
 export interface CreateEventPopoverProps
   extends
     CalendarContextProps,
@@ -126,6 +135,8 @@ export interface CreateEventPopoverProps
   readonly renderFooter?: () => ReactNode;
   /** Replaces how a submit error is shown. */
   readonly renderError?: (error: CreateEventSubmitError) => ReactNode;
+  /** Lets the host close the form through its own unsaved-changes prompt. */
+  readonly ref?: Ref<CreateEventPopoverHandle>;
 }
 
 export interface ResourceItem {
@@ -724,6 +735,57 @@ const fieldErrorId = (
   id: string
 ): string | undefined => ((message ?? null) === null ? undefined : id);
 
+// Exposes requestCancel through the host's ref. The props are spread so the ref is read here, not in the parent's render.
+const CancelHandle = ({
+  requestCancel,
+  ...props
+}: {
+  readonly ref?: Ref<CreateEventPopoverHandle>;
+  readonly requestCancel: () => Promise<boolean>;
+}) => {
+  useImperativeHandle(props.ref, () => ({ requestCancel }));
+
+  return null;
+};
+
+// A dirty form asks before closing on an outside press; the press and its click stop here.
+const useOutsidePressGuard = (
+  root: HTMLElement | null,
+  guarded: boolean,
+  onOutsidePress: () => void
+): void => {
+  const onOutsidePressRef = useRef(onOutsidePress);
+
+  useEffect(() => {
+    onOutsidePressRef.current = onOutsidePress;
+  }, [onOutsidePress]);
+
+  useEffect(() => {
+    if (root === null || !guarded) {
+      return noopCleanup;
+    }
+
+    // Use the composed path: in a shadow root, event.target is the host here.
+    return subscribeGlobalEvent(
+      document,
+      "pointerdown",
+      (event) => {
+        const path = event.composedPath();
+
+        if (path.includes(root) || isNestedLayerEvent(root, path)) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        swallowNextClick();
+        onOutsidePressRef.current();
+      },
+      true
+    );
+  }, [guarded, root]);
+};
+
 // Escape closes the form wherever focus sits; a listbox owns its own Escape.
 const useEscapeClose = (
   root: HTMLElement | null,
@@ -1313,7 +1375,7 @@ const CreateEventForm = ({
     <>
       <FormHeader
         onClose={() => {
-          controller.requestCancel();
+          void controller.requestCancel();
         }}
         renderHeader={renderHeader}
         titleId={fieldId("title-heading")}
@@ -1331,7 +1393,7 @@ const CreateEventForm = ({
         isSubmitting={controller.isSubmitting}
         canSubmit={canSubmit}
         onCancel={() => {
-          controller.requestCancel();
+          void controller.requestCancel();
         }}
         renderFooter={renderFooter}
       />
@@ -1359,6 +1421,9 @@ const CreateEventPopoverOverlay = ({
 
   useNativeSelectChange(root, handleNativeSelectChange);
   useEscapeClose(root, handleShellOpenChange);
+  useOutsidePressGuard(root, controller.isDirty, () => {
+    void controller.requestCancel();
+  });
 
   if (!controller.isOpen) {
     return null;
@@ -1441,6 +1506,7 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
   } = view;
 
   const { t } = useCalendarLocalization();
+
 
   const calendarItems = useMemo(
     () =>
@@ -1572,13 +1638,16 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
   );
 
   return (
-    <CreateEventPopoverOverlay
-      className={className}
-      content={formContent}
-      controller={controller}
-      handleNativeSelectChange={handleNativeSelectChange}
-      handleShellOpenChange={handleShellOpenChange}
-    />
+    <>
+      <CancelHandle {...props} requestCancel={controller.requestCancel} />
+      <CreateEventPopoverOverlay
+        className={className}
+        content={formContent}
+        controller={controller}
+        handleNativeSelectChange={handleNativeSelectChange}
+        handleShellOpenChange={handleShellOpenChange}
+      />
+    </>
   );
 };
 
