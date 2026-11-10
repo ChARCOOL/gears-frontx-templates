@@ -1028,3 +1028,86 @@ describe("WeekGrid drag feedback", () => {
     assert(onEventSelect).toHaveBeenCalledOnce();
   });
 });
+
+describe("WeekGrid paint refusal", () => {
+  const busyEvent = () => ({ ...timedEvent("busy"), available: false });
+
+  it("paints the focused cell on Enter in paint-and-move mode", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    renderWeek({ interactionMode: "paint-and-move", onPaintSelect });
+    const cell = getTimedCell("09:00");
+
+    act(() => {
+      cell.focus();
+    });
+    fireEvent.keyDown(cell, { key: "Enter" });
+
+    assert(onPaintSelect).toHaveBeenCalledExactlyOnceWith({
+      cells: [cellAt("09:00")],
+      end: cellAt("09:00"),
+      start: cellAt("09:00"),
+    });
+  });
+
+  it("marks a paint over unavailable time invalid, and a release opens the dialog without painting", async () => {
+    const user = userEvent.setup();
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    renderWeek({
+      events: [busyEvent()],
+      interactionMode: "paint-and-move",
+      onPaintSelect,
+    });
+
+    fireEvent.pointerDown(getTimedCell("11:00"));
+    fireEvent.pointerMove(getTimedCell("09:00"));
+
+    assert(document.querySelectorAll("[data-invalid]").length).toBeGreaterThan(
+      0
+    );
+
+    fireEvent.pointerUp(getTimedCell("09:00"));
+
+    assert(onPaintSelect).not.toHaveBeenCalled();
+
+    const dialog = screen.getByRole("alertdialog");
+
+    assert(
+      within(dialog).getByText("Overlaps an unavailable period")
+    ).toBeVisible();
+
+    await user.click(within(dialog).getByRole("button", { name: "Continue" }));
+
+    assert(screen.queryByRole("alertdialog")).toBeNull();
+    assert(document.querySelector("[data-paint]")).toBeNull();
+  });
+
+  it("keeps a finished paint when unavailable time arrives under it", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    const { rerender } = renderWeek({
+      interactionMode: "paint-and-move",
+      onPaintSelect,
+    });
+
+    fireEvent.pointerDown(getTimedCell("09:00"));
+    fireEvent.pointerMove(getTimedCell("10:00"));
+    fireEvent.pointerUp(getTimedCell("10:00"));
+
+    rerender(
+      <WeekGrid
+        date={DATE}
+        events={[busyEvent()]}
+        timeZone={UTC}
+        locale="en-US"
+        t={t}
+        direction="ltr"
+        interactionMode="paint-and-move"
+        onPaintSelect={onPaintSelect}
+      />
+    );
+    fireEvent.pointerUp(getTimedCell("14:00"));
+
+    assert(screen.queryByRole("alertdialog")).toBeNull();
+    assert(document.querySelector("[data-paint]")).not.toBeNull();
+    assert(onPaintSelect).toHaveBeenCalledOnce();
+  });
+});
