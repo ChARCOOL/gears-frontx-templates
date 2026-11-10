@@ -5,6 +5,7 @@
 
 import { clsx } from "clsx";
 import {
+  BellIcon,
   ClockIcon,
   MapPinIcon,
   RefreshCwIcon,
@@ -159,6 +160,9 @@ const COLOR_FAMILY_CLASSES: ReadonlyMap<string, string> = new Map([
   ["purple", styles.colorPurple],
   ["orange", styles.colorOrange],
   ["blue", styles.colorBlue],
+  ["lavender", styles.colorLavender],
+  ["violet", styles.colorViolet],
+  ["brown", styles.colorBrown],
 ]);
 
 const resolveColorFamilyClassName = (
@@ -416,16 +420,21 @@ const EventCardTimeRow = <Payload,>({
 
 interface EventCardTitleProps<Payload> {
   readonly context: CalendarEventRenderContext<Payload>;
+  readonly event: CalendarEvent<Payload>;
   readonly renderTitle?: SlotRenderer<Payload>;
   readonly titleText: string;
 }
 
 const EventCardTitle = <Payload,>({
   context,
+  event,
   renderTitle,
   titleText,
 }: EventCardTitleProps<Payload>) => (
   <span className={styles.title} data-event-card-title="true">
+    {event.eventType === "reminder" && (
+      <BellIcon className={styles.reminderIcon} aria-hidden="true" />
+    )}
     {isSet(renderTitle) ? renderTitle(context) : titleText}
   </span>
 );
@@ -459,6 +468,7 @@ const EventCardSingleBody = <Payload,>({
     <span className={styles.singleLine} data-event-card-single-line="true">
       <EventCardTitle
         context={context}
+        event={event}
         renderTitle={renderTitle}
         titleText={titleText}
       />
@@ -501,6 +511,7 @@ const EventCardStackedBody = <Payload,>({
   <>
     <EventCardTitle
       context={context}
+      event={event}
       renderTitle={renderTitle}
       titleText={titleText}
     />
