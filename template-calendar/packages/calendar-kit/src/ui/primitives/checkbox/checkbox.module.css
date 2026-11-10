@@ -26,3 +26,9 @@
   cursor: not-allowed;
   opacity: 0.5;
 }
+
+/* Grid centring shrinks the indicator to its content, and the dash is sized as a share of it. */
+.checkbox > [data-indeterminate] {
+  inline-size: 100%;
+  min-inline-size: calc(var(--cal-icon-size-sm) - 2 * var(--cal-border-width-1));
+}

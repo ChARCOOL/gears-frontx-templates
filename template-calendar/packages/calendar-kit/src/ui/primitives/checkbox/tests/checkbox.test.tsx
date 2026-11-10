@@ -82,4 +82,12 @@ describe(Checkbox, () => {
 
     expect(checkbox).toHaveAttribute("data-checked");
   });
+
+  it("shows a dash and mixed state when indeterminate", () => {
+    render(<Checkbox aria-label="Show all" indeterminate />);
+
+    const checkbox = screen.getByRole("checkbox", { name: "Show all" });
+    expect(checkbox).toHaveAttribute("data-indeterminate");
+    expect(checkbox).toHaveAttribute("aria-checked", "mixed");
+  });
 });

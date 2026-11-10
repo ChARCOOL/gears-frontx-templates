@@ -13,6 +13,8 @@ interface CheckboxProps extends Omit<
 > {
   readonly ref?: Ref<HTMLInputElement>;
   readonly onChange?: ChangeEventHandler<HTMLInputElement>;
+  /** Some, not all, of what the checkbox stands for is on. */
+  readonly indeterminate?: boolean;
 }
 
 // ui-kit types its handler props against the root element, so rest props pass through a guard.
@@ -21,6 +23,7 @@ const isUiCheckboxProps = (value: unknown): value is UiCheckboxProps =>
 
 export const Checkbox = ({
   className,
+  indeterminate,
   ref,
   onChange,
   value,
@@ -32,6 +35,7 @@ export const Checkbox = ({
   return (
     <UiCheckbox
       {...forwardedProps}
+      indeterminate={indeterminate}
       value={resolvedValue === undefined ? undefined : String(resolvedValue)}
       className={clsx(styles.checkbox, className)}
       inputRef={ref}
