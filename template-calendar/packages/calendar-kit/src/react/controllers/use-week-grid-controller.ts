@@ -32,7 +32,7 @@ import {
   DEFAULT_WORKING_HOURS,
   FULL_DAY_TIME_WINDOW,
   addCalendarDays,
-  assertTimeWindow,
+  alignTimeWindow,
   buildSlotStarts,
   buildTimeWindowRange,
   buildWeekRange,
@@ -311,12 +311,11 @@ export const useWeekGridController = <Payload = unknown>(
     [allViewerDates, visibleDayCount]
   );
 
-  const visibleHours = useMemo<CalendarTimeWindow>(() => {
-    const window = { end: visibleEnd, start: visibleStart };
-    assertTimeWindow(window, slotMinutes);
-
-    return window;
-  }, [slotMinutes, visibleEnd, visibleStart]);
+  const visibleHours = useMemo<CalendarTimeWindow>(
+    () =>
+      alignTimeWindow({ end: visibleEnd, start: visibleStart }, slotMinutes),
+    [slotMinutes, visibleEnd, visibleStart]
+  );
 
   const workingHours = useMemo<CalendarTimeWindow>(
     () => ({ end: workingEnd, start: workingStart }),

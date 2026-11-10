@@ -74,7 +74,7 @@ Pass `onMoveRequest` to move timed events by whole days. Dragging a timed event 
 
 ## Week numbers, trailing column, and part classes
 
-`weekNumbering="iso"` shows the ISO 8601 week of the year in the week column instead of the in-month `W1`…`Wn`. `trailingGutter` repeats that column on the trailing edge, hidden from assistive technology.
+`weekNumbering="iso"` shows the ISO 8601 week of the year in the week column instead of the in-month `W1`…`Wn`. `weekNumbering={{ termStart }}` counts weeks from the week that holds `termStart`, which is week 1; the weeks before it have no label. `trailingGutter` repeats that column on the trailing edge, hidden from assistive technology.
 
 `cellClassName`, `columnHeaderClassName`, and `weekNumberClassName` add host classes to the day cells, the weekday headers, and the week column (including its heading and the trailing copy). They are the stable styling hooks for these parts; the kit's own CSS Module class names are internal.
 

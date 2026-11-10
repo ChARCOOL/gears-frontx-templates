@@ -42,6 +42,7 @@ import {
   formatDayNumber,
   formatFullDateForDate,
   formatWeekday,
+  HOUR_ROW_HEIGHT,
 } from "./week-grid-layout";
 import type { CellMeta } from "./week-grid-layout";
 
@@ -81,6 +82,9 @@ const eventIdAtTarget = (target: EventTarget | null): string | null => {
   );
 };
 
+const overflowAtTarget = (target: EventTarget | null): boolean =>
+  target instanceof Element && target.closest("[data-week-overflow]") !== null;
+
 export const useWeekGridContent = <Payload = unknown>(
   props: WeekGridContentProps<Payload>
 ) => {
@@ -95,6 +99,8 @@ export const useWeekGridContent = <Payload = unknown>(
     visibleDays = DEFAULT_VISIBLE_DAYS,
     visibleHours,
     slotMinutes,
+    rowHeight = HOUR_ROW_HEIGHT,
+    maxEventsPerSlot,
     workingHours,
     trailingGutter = false,
     interactionMode,
@@ -302,10 +308,22 @@ export const useWeekGridContent = <Payload = unknown>(
     [controllerCellKey, gridData.cellKeyByCell]
   );
 
-  const timedPositionsByCell = useMemo(
+  const timedLayout = useMemo(
     () =>
-      buildTimedPositions(timedSegments, controller.dayColumns, gridCellKey),
-    [controller.dayColumns, gridCellKey, timedSegments]
+      buildTimedPositions(
+        timedSegments,
+        controller.dayColumns,
+        gridCellKey,
+        rowHeight,
+        maxEventsPerSlot
+      ),
+    [
+      controller.dayColumns,
+      gridCellKey,
+      maxEventsPerSlot,
+      rowHeight,
+      timedSegments,
+    ]
   );
 
   const allDayPositionsByCell = useMemo(
@@ -340,13 +358,15 @@ export const useWeekGridContent = <Payload = unknown>(
         controller.viewerDates,
         controller.dayColumns,
         timeZone,
-        gridCellKey
+        gridCellKey,
+        rowHeight
       ),
     [
       controller.dayColumns,
       controller.viewerDates,
       currentInstant,
       gridCellKey,
+      rowHeight,
       timeZone,
     ]
   );
@@ -479,7 +499,10 @@ export const useWeekGridContent = <Payload = unknown>(
 
   const handleClick = (event: ReactMouseEvent<HTMLDivElement>): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-quick-create
-    if (eventIdAtTarget(event.target) !== null) {
+    if (
+      eventIdAtTarget(event.target) !== null ||
+      overflowAtTarget(event.target)
+    ) {
       return;
     }
 
@@ -504,7 +527,10 @@ export const useWeekGridContent = <Payload = unknown>(
     event: ReactPointerEvent<HTMLDivElement>
   ): void => {
     // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-paint
-    if (eventIdAtTarget(event.target) !== null) {
+    if (
+      eventIdAtTarget(event.target) !== null ||
+      overflowAtTarget(event.target)
+    ) {
       return;
     }
 
@@ -523,7 +549,7 @@ export const useWeekGridContent = <Payload = unknown>(
   };
 
   const updatePaintFromTarget = (target: EventTarget | null): void => {
-    if (eventIdAtTarget(target) !== null) {
+    if (eventIdAtTarget(target) !== null || overflowAtTarget(target)) {
       return;
     }
 
@@ -728,7 +754,8 @@ export const useWeekGridContent = <Payload = unknown>(
     selectedPaintKeys,
     t,
     timeZone,
-    timedPositionsByCell,
+    overflowByCell: timedLayout.overflowByCell,
+    timedPositionsByCell: timedLayout.byCell,
     trailingGutter,
     unavailableCellKeys,
     updatePaintFromTarget,

@@ -297,3 +297,23 @@
     transition-duration: 0s;
   }
 }
+
+.overflow.overflow {
+  position: absolute;
+
+  /* Timed event layers stop below now line. */
+  z-index: var(--cal-layer-now-line);
+  box-sizing: border-box;
+  border: var(--cal-border-width-1) solid var(--cal-color-divider);
+  border-radius: var(--cal-radius-slot);
+  background: var(--cal-color-raised);
+  block-size: var(--grid-chip-height);
+  color: var(--cal-color-text);
+  font-family: var(--cal-font-family);
+  font-size: var(--cal-text-meta-size);
+  font-weight: var(--cal-text-label-weight);
+  inset-block-start: var(--cal-space-1);
+  inset-inline-end: var(--cal-space-1);
+  padding-inline: 6px;
+  white-space: nowrap;
+}

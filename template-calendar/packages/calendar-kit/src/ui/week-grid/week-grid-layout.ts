@@ -528,13 +528,75 @@ const clipSegmentsToRange = <
       : [];
   });
 
+export interface SlotOverflow {
+  readonly cell: CalendarCell;
+  readonly hiddenCount: number;
+}
+
+/** Keeps the earliest segments per slot up to the cap; the rest feed the `+N` chip. */
+const splitSlotOverflow = <
+  T extends { readonly start: UtcInstant; readonly end: UtcInstant },
+>(
+  segments: readonly T[],
+  slots: readonly CalendarCell[],
+  maxEventsPerSlot: number | undefined
+): {
+  readonly visible: readonly T[];
+  readonly overflow: readonly SlotOverflow[];
+} => {
+  if (maxEventsPerSlot === undefined) {
+    return { overflow: [], visible: segments };
+  }
+
+  if (!Number.isInteger(maxEventsPerSlot) || maxEventsPerSlot < 1) {
+    throw new RangeError(
+      `maxEventsPerSlot must be a positive integer: ${maxEventsPerSlot}`
+    );
+  }
+
+  const kept = new Set<T>();
+  const countBySlot = new Map<number, number>();
+  const hiddenBySlot = new Map<number, SlotOverflow>();
+
+  for (const segment of [...segments].sort(
+    (a, b) => Date.parse(a.start) - Date.parse(b.start)
+  )) {
+    const index = findCellIndex(slots, segment.start, segment.end);
+    const cell = arrayAt(slots, index);
+    const count = (countBySlot.get(index) ?? 0) + 1;
+
+    countBySlot.set(index, count);
+
+    if (cell === undefined || count <= maxEventsPerSlot) {
+      kept.add(segment);
+    } else {
+      hiddenBySlot.set(index, { cell, hiddenCount: count - maxEventsPerSlot });
+    }
+  }
+
+  return {
+    overflow: [...hiddenBySlot.values()],
+    visible: segments.filter((segment) => kept.has(segment)),
+  };
+};
+
 export const buildTimedPositions = <Payload>(
   segments: readonly ViewerDateEventSegment<TimedCalendarEvent<Payload>>[],
   dayColumns: readonly WeekGridDayColumn[],
-  getCellKey: (cell: CalendarCell) => string
-): ReadonlyMap<string, readonly PositionedEvent<Payload>[]> => {
+  getCellKey: (cell: CalendarCell) => string,
+  rowHeight: number,
+  maxEventsPerSlot: number | undefined
+): {
+  readonly byCell: ReadonlyMap<string, readonly PositionedEvent<Payload>[]>;
+  readonly overflowByCell: ReadonlyMap<string, SlotOverflow>;
+} => {
+  if (!Number.isFinite(rowHeight) || rowHeight <= 0) {
+    throw new RangeError(`rowHeight must be a positive number: ${rowHeight}`);
+  }
+
   // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-derive
   const byCell = new Map<string, PositionedEvent<Payload>[]>();
+  const overflowByCell = new Map<string, SlotOverflow>();
   const segmentsByDate = new Map<
     CalendarDate,
     ViewerDateEventSegment<TimedCalendarEvent<Payload>>[]
@@ -551,10 +613,17 @@ export const buildTimedPositions = <Payload>(
   }
 
   for (const column of dayColumns) {
-    const columnSegments = clipSegmentsToRange(
-      segmentsByDate.get(column.date) ?? [],
-      column.range
+    const split = splitSlotOverflow(
+      clipSegmentsToRange(segmentsByDate.get(column.date) ?? [], column.range),
+      column.slots,
+      maxEventsPerSlot
     );
+    const columnSegments = split.visible;
+
+    for (const hidden of split.overflow) {
+      overflowByCell.set(getCellKey(hidden.cell), hidden);
+    }
+
     const layoutInput = columnSegments.map((segment) => ({
       end: segment.end,
       id: segment.key,
@@ -571,7 +640,7 @@ export const buildTimedPositions = <Payload>(
     const { range, slots } = column;
     const rangeStartEpoch = Date.parse(range.start);
     const rangeDuration = Date.parse(range.end) - rangeStartEpoch;
-    const columnHeight = Math.max(slots.length, 1) * HOUR_ROW_HEIGHT;
+    const columnHeight = Math.max(slots.length, 1) * rowHeight;
 
     for (const segment of columnSegments) {
       const layout = layoutById.get(segment.key);
@@ -588,7 +657,7 @@ export const buildTimedPositions = <Payload>(
       const top =
         ((Date.parse(segment.start) - rangeStartEpoch) / rangeDuration) *
           columnHeight -
-        startIndex * HOUR_ROW_HEIGHT;
+        startIndex * rowHeight;
 
       const height = Math.max(
         4,
@@ -630,7 +699,7 @@ export const buildTimedPositions = <Payload>(
     }
   }
 
-  return byCell;
+  return { byCell, overflowByCell };
   // @cpt-end:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-derive
 };
 
@@ -746,7 +815,8 @@ export const buildNowPosition = (
   viewerDates: readonly CalendarDate[],
   dayColumns: readonly WeekGridDayColumn[],
   timeZone: IanaTimeZone,
-  getCellKey: (cell: CalendarCell) => string
+  getCellKey: (cell: CalendarCell) => string,
+  rowHeight: number
 ): NowPosition | null => {
   const currentDate = toViewerDateTime(currentInstant, timeZone).date;
   const columnIndex = viewerDates.indexOf(currentDate);
@@ -767,7 +837,7 @@ export const buildNowPosition = (
     return null;
   }
 
-  const offset = (elapsed / duration) * column.slots.length * HOUR_ROW_HEIGHT;
+  const offset = (elapsed / duration) * column.slots.length * rowHeight;
   return { cellKey: getCellKey(firstCell), offset };
 };
 

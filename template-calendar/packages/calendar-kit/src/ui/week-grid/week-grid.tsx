@@ -64,11 +64,13 @@ import type {
   WeekGridHeaderColumn,
   WeekGridNowLineStyle,
 } from "./use-week-grid-content";
+import { HOUR_ROW_HEIGHT } from "./week-grid-layout";
 import type {
   AllDayPosition,
   CellMeta,
   NowPosition,
   PositionedEvent,
+  SlotOverflow,
 } from "./week-grid-layout";
 
 import gridStyles from "../grid/calendar-grid.module.css";
@@ -89,6 +91,10 @@ export interface WeekGridProps<Payload = unknown> extends CalendarContextProps {
   readonly visibleHours?: CalendarTimeWindow;
   /** Length of one row. Default `60`. */
   readonly slotMinutes?: CalendarSlotMinutes;
+  /** Height of one row in pixels. Default `43`. */
+  readonly rowHeight?: number;
+  /** Most cards that start in one row of a day. Later ones hide behind a `+N` chip. Default: no cap. */
+  readonly maxEventsPerSlot?: number;
   /** Working hours; cells outside them are hatched. Also where the grid first scrolls to. Default 08:00–18:00. */
   readonly workingHours?: CalendarTimeWindow;
   /** Repeat the hour labels on the trailing edge. The copy is hidden from assistive technology. */
@@ -111,14 +117,23 @@ export interface WeekGridProps<Payload = unknown> extends CalendarContextProps {
   readonly defaultSelectedEventId?: string | null;
   /** Called when an event is selected or deselected. */
   readonly onSelectedEventIdChange?: (eventId: string | null) => void;
-  /** Replaces the default `EventCard` for timed and all-day events. */
+  /** Replaces the default `EventCard` for timed and all-day events. Renders inside a button, so the content must not be interactive. */
   readonly renderEvent?: CalendarEventRenderer<Payload>;
+  /** Replaces the metadata rows (location, organizer, type) of the default `EventCard`. */
+  readonly renderEventMetadata?: CalendarEventRenderer<Payload>;
   /** Replaces how each conflict renders inside the default card. */
   readonly renderConflict?: CalendarConflictRenderer;
   /** Renders an inline detail for the selected event. Receives `close`. */
   readonly renderDetail?: CalendarDetailRenderer<Payload>;
   /** Replaces the content of each empty time cell. */
   readonly renderCell?: CalendarGridProps["renderCell"];
+  /** Replaces the text of the `+N` chip. Receives the hidden count. */
+  readonly renderOverflow?: (
+    hiddenCount: number,
+    cell: CalendarCell
+  ) => ReactNode;
+  /** The `+N` chip was activated. `anchor` is the chip, for a popover. */
+  readonly onOverflowSelect?: (cell: CalendarCell, anchor: HTMLElement) => void;
   /** Drawn in cells covered by an unavailable or busy timed event. */
   readonly renderUnavailable?: (cell: CalendarCell) => ReactNode;
   /** An available event was activated; `anchor` is the card, for a detail popover. */
@@ -213,6 +228,10 @@ const WeekGridInteractionLayer = ({
     </ScrollRegion>
   );
 };
+
+interface WeekGridRootStyle extends CSSProperties {
+  readonly "--grid-hour-height"?: string;
+}
 
 interface WeekGridNowStatusProps {
   readonly currentInstant: UtcInstant;
@@ -554,6 +573,7 @@ interface WeekGridEventProps<Payload> {
   readonly readOnly: boolean;
   readonly renderConflict?: CalendarConflictRenderer;
   readonly renderEvent?: CalendarEventRenderer<Payload>;
+  readonly renderEventMetadata?: CalendarEventRenderer<Payload>;
   readonly selectedEventId: string | null;
   readonly segment: CalendarEventSegment;
 }
@@ -571,6 +591,7 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
     readOnly,
     renderConflict,
     renderEvent,
+    renderEventMetadata,
     selectedEventId,
     segment,
   } = props;
@@ -670,6 +691,7 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
       past={isPast}
       readOnly={readOnly}
       renderConflict={renderConflict}
+      renderMetadata={renderEventMetadata}
       renderTime={renderTime}
       onSelect={(_event, _context, anchor) => {
         handleSelect(anchor);
@@ -677,6 +699,48 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
     />
   );
   // @cpt-end:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-slots
+};
+
+interface WeekGridOverflowButtonProps {
+  readonly overflow: SlotOverflow;
+  readonly onOverflowSelect?: WeekGridProps["onOverflowSelect"];
+  readonly renderOverflow?: WeekGridProps["renderOverflow"];
+}
+
+const WeekGridOverflowButton = ({
+  overflow,
+  onOverflowSelect,
+  renderOverflow,
+}: WeekGridOverflowButtonProps) => {
+  const { t } = useCalendarLocalization();
+  const label = t("calendar.week.hidden", { count: overflow.hiddenCount });
+  const content =
+    renderOverflow?.(overflow.hiddenCount, overflow.cell) ?? label;
+
+  // Without a selection handler the chip is only informational, so it is not a button.
+  if (onOverflowSelect === undefined) {
+    return (
+      <span className={styles.overflow} data-week-overflow="">
+        {content}
+      </span>
+    );
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="tertiary"
+      size="sm"
+      className={styles.overflow}
+      aria-label={renderOverflow ? undefined : label}
+      data-week-overflow=""
+      onClick={(clickEvent) => {
+        onOverflowSelect(overflow.cell, clickEvent.currentTarget);
+      }}
+    >
+      {content}
+    </Button>
+  );
 };
 
 interface WeekGridCellContentProps<Payload> {
@@ -696,8 +760,12 @@ interface WeekGridCellContentProps<Payload> {
   readonly renderCell?: CalendarGridProps["renderCell"];
   readonly renderConflict?: CalendarConflictRenderer;
   readonly renderEvent?: CalendarEventRenderer<Payload>;
+  readonly renderEventMetadata?: CalendarEventRenderer<Payload>;
+  readonly renderOverflow?: WeekGridProps["renderOverflow"];
   readonly renderUnavailable?: (cell: CalendarCell) => ReactNode;
   readonly dropTargetKeys: ReadonlySet<string>;
+  readonly onOverflowSelect?: WeekGridProps["onOverflowSelect"];
+  readonly overflow?: SlotOverflow;
   readonly selectedEventId: string | null;
   readonly selectedPaintKeys: ReadonlySet<string>;
   readonly timedPositions: readonly PositionedEvent<Payload>[];
@@ -736,7 +804,11 @@ const WeekGridCellContent = <Payload,>(
     renderCell,
     renderConflict,
     renderEvent,
+    renderEventMetadata,
+    renderOverflow,
     renderUnavailable,
+    onOverflowSelect,
+    overflow,
     selectedEventId,
     selectedPaintKeys,
     timedPositions,
@@ -784,6 +856,13 @@ const WeekGridCellContent = <Payload,>(
         {renderCell?.(cellContext)}
         {unavailable && renderUnavailable?.(context.cell)}
       </div>
+      {overflow !== undefined && (
+        <WeekGridOverflowButton
+          overflow={overflow}
+          onOverflowSelect={onOverflowSelect}
+          renderOverflow={renderOverflow}
+        />
+      )}
       {allDayPositions.map((position) => (
         <EventFrame
           key={`${position.event.id}:${position.startColumn}:${position.endColumn}`}
@@ -801,6 +880,7 @@ const WeekGridCellContent = <Payload,>(
             readOnly={readOnly}
             renderConflict={renderConflict}
             renderEvent={renderEvent}
+            renderEventMetadata={renderEventMetadata}
             selectedEventId={selectedEventId}
             segment={position.segment}
           />
@@ -828,6 +908,7 @@ const WeekGridCellContent = <Payload,>(
             readOnly={readOnly}
             renderConflict={renderConflict}
             renderEvent={renderEvent}
+            renderEventMetadata={renderEventMetadata}
             selectedEventId={selectedEventId}
             segment={position.segment}
           />
@@ -872,6 +953,7 @@ const WeekGridContent = <Payload = unknown,>(
     liveRegionText,
     nowLineStyle,
     nowPosition,
+    overflowByCell,
     renderCell,
     renderConflict,
     renderEvent,
@@ -890,8 +972,16 @@ const WeekGridContent = <Payload = unknown,>(
     cellClassName,
     columnHeaderClassName,
     gutterClassName,
+    onOverflowSelect,
     renderDetail,
+    renderEventMetadata,
+    renderOverflow,
+    rowHeight,
   } = props;
+
+  const rootStyle: WeekGridRootStyle = {
+    "--grid-hour-height": `${rowHeight ?? HOUR_ROW_HEIGHT}px`,
+  };
 
   const renderTrailingCell = (row: CalendarGridRow): ReactNode => {
     const [gutterCell] = row.cells;
@@ -931,6 +1021,10 @@ const WeekGridContent = <Payload = unknown,>(
       renderCell={renderCell}
       renderConflict={renderConflict}
       renderEvent={renderEvent}
+      renderEventMetadata={renderEventMetadata}
+      overflow={overflowByCell.get(gridCellKey(context.cell))}
+      onOverflowSelect={onOverflowSelect}
+      renderOverflow={renderOverflow}
       renderUnavailable={renderUnavailable}
       dropTargetKeys={dropTargetKeys}
       selectedEventId={controller.selectedEventId}
@@ -965,7 +1059,7 @@ const WeekGridContent = <Payload = unknown,>(
   );
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} style={rootStyle}>
       <WeekCalendarGrid
         columns={gridData.columns}
         headerColumns={headerColumns}

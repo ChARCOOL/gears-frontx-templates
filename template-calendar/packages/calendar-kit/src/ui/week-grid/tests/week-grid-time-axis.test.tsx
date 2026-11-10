@@ -139,15 +139,13 @@ describe("WeekGrid time axis", () => {
     assert(within(nine).getAllByRole("gridcell")).toHaveLength(6);
   });
 
-  it("rejects a visible window that does not align to its slots", () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+  it("snaps a visible window that does not align to its slots outward", () => {
+    renderWeek({
+      slotMinutes: 60,
+      visibleHours: timeWindow("06:30", "23:00"),
+    });
 
-    assert(() => {
-      renderWeek({
-        slotMinutes: 60,
-        visibleHours: timeWindow("06:30", "23:00"),
-      });
-    }).toThrow(RangeError);
+    assert(screen.getAllByText("06:00").length).toBeGreaterThan(0);
   });
 
   it("hides the leading hour label that the now label covers", () => {

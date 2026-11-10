@@ -15,6 +15,8 @@ import type {
 
 import { isEventActionable } from "../../core/actionability";
 import { formatCalendarList, formatGridTime } from "../../core/format";
+import { termWeekNumber } from "../../core/grid";
+import type { MonthWeekRow } from "../../core/grid";
 import { dateTimeFormatter } from "../../core/intl-cache";
 import type {
   CalendarCell,
@@ -80,7 +82,13 @@ export interface MonthGridData {
 
 export type MonthGridSelectionMode = "none" | "date-range";
 
-export type MonthGridWeekNumbering = "month" | "iso";
+export interface MonthGridTermWeekNumbering {
+  /** The week holding this date is week 1; earlier weeks have no number. */
+  readonly termStart: CalendarDate;
+}
+
+export type MonthGridWeekNumbering =
+  "month" | "iso" | MonthGridTermWeekNumbering;
 
 export interface MonthGridProps extends CalendarContextProps {
   /** Class added to the component root. */
@@ -527,6 +535,21 @@ const cellAnnouncement = (
     ),
     t("calendar.month.eventCount", { count: cell.eventCount }),
   ]);
+
+const monthWeekNumber = (
+  row: Pick<MonthWeekRow, "rowIndex" | "weekNumber" | "weekStart">,
+  weekNumbering: MonthGridWeekNumbering
+): number | null => {
+  if (weekNumbering === "iso") {
+    return row.weekNumber;
+  }
+
+  if (weekNumbering === "month") {
+    return row.rowIndex + 1;
+  }
+
+  return termWeekNumber(row.weekStart, weekNumbering.termStart);
+};
 
 const dayStart = (date: CalendarDate, timeZone: IanaTimeZone): UtcInstant =>
   toUtcRange(buildDayRange(date, timeZone)).start;
@@ -1273,13 +1296,15 @@ const MonthGridContent = (props: MonthGridContentProps) => {
         </div>
 
         {controller.rows.map((row) => {
-          const weekNumber = formatMonthWeekNumber(
-            weekNumbering === "iso" ? row.row.weekNumber : row.row.rowIndex + 1,
-            locale
-          );
-          const weekLabel = t("calendar.month.weekPrefix", {
-            week: weekNumber,
-          });
+          const weekNumber = monthWeekNumber(row.row, weekNumbering);
+          const weekText =
+            weekNumber === null
+              ? ""
+              : formatMonthWeekNumber(weekNumber, locale);
+          const weekLabel =
+            weekNumber === null
+              ? ""
+              : t("calendar.month.weekPrefix", { week: weekText });
 
           return (
             <div
@@ -1292,7 +1317,11 @@ const MonthGridContent = (props: MonthGridContentProps) => {
                 className={clsx(styles.weekNumber, weekNumberClassName)}
                 role="rowheader"
                 aria-rowindex={row.row.rowIndex + 2}
-                aria-label={`${t("calendar.month.week")} ${weekNumber}`}
+                aria-label={
+                  weekNumber === null
+                    ? undefined
+                    : `${t("calendar.month.week")} ${weekText}`
+                }
               >
                 {weekLabel}
               </div>

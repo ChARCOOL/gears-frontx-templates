@@ -24,7 +24,7 @@ import {
   DEFAULT_WORKING_HOURS,
   FULL_DAY_TIME_WINDOW,
   addCalendarDays,
-  assertTimeWindow,
+  alignTimeWindow,
   buildDayRange,
   buildSlotStarts,
   buildTimeWindowRange,
@@ -305,12 +305,15 @@ export const useDayGridController = (
 
   const utcDayRange = useMemo(() => toUtcRange(dayRange), [dayRange]);
 
-  const axisRange = useMemo(() => {
-    const window = { end: visibleEnd, start: visibleStart };
-    assertTimeWindow(window, slotMinutes);
-
-    return buildTimeWindowRange(date, timeZone, window);
-  }, [date, slotMinutes, timeZone, visibleEnd, visibleStart]);
+  const axisRange = useMemo(
+    () =>
+      buildTimeWindowRange(
+        date,
+        timeZone,
+        alignTimeWindow({ end: visibleEnd, start: visibleStart }, slotMinutes)
+      ),
+    [date, slotMinutes, timeZone, visibleEnd, visibleStart]
+  );
 
   const slotStarts = useMemo(
     () => buildSlotStarts(axisRange, slotMinutes),

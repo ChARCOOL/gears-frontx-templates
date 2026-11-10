@@ -37,18 +37,23 @@ import { WeekGrid } from "@gears-frontx/calendar-kit/week-grid";
 | `defaultSelectedEventId` | `string` |  | Initial selected event when uncontrolled. |
 | `gutterClassName` | `string` |  | Class on every gutter label: hours, all-day, zone and the trailing copy. |
 | `interactionMode` | `WeekGridInteractionMode` |  | Controlled interaction mode. Default `quick-create`. |
+| `maxEventsPerSlot` | `number` |  | Most cards that start in one row of a day. Later ones hide behind a `+N` chip. Default: no cap. |
 | `now` | `UtcInstant` |  | Reference instant for the now line and past styling. Default: the wall clock, per minute. |
 | `onEventSelect` | `(event: CalendarEvent<Payload>, context: CalendarEventRenderContext<Payload>, anchor?: HT…` |  | An available event was activated; `anchor` is the card, for a detail popover. |
 | `onInteractionModeChange` | `(mode: WeekGridInteractionMode) => void` |  | Called when the grid asks to change mode. |
 | `onMoveRequest` | `(request: CalendarMoveRequest) => void` |  | An event was dropped on a new slot in `paint-and-move` mode. Call `confirm` or `cancel`. |
+| `onOverflowSelect` | `(cell: CalendarCell, anchor: HTMLElement) => void` |  | The `+N` chip was activated. `anchor` is the chip, for a popover. |
 | `onPaintSelect` | `(range: CalendarSelectionRange) => void` |  | A range was painted in `paint-and-move` mode. |
 | `onQuickCreate` | `(payload: CalendarQuickCreatePayload) => void` |  | An empty slot was activated in `quick-create` mode. |
 | `onSelectedEventIdChange` | `(eventId: string \| null) => void` |  | Called when an event is selected or deselected. |
 | `renderCell` | `(context: CalendarCellContext) => ReactNode` |  | Replaces the content of each empty time cell. |
 | `renderConflict` | `CalendarConflictRenderer` |  | Replaces how each conflict renders inside the default card. |
 | `renderDetail` | `CalendarDetailRenderer<Payload>` |  | Renders an inline detail for the selected event. Receives `close`. |
-| `renderEvent` | `CalendarEventRenderer<Payload>` |  | Replaces the default `EventCard` for timed and all-day events. |
+| `renderEvent` | `CalendarEventRenderer<Payload>` |  | Replaces the default `EventCard` for timed and all-day events. Renders inside a button, so the content must not be interactive. |
+| `renderEventMetadata` | `CalendarEventRenderer<Payload>` |  | Replaces the metadata rows (location, organizer, type) of the default `EventCard`. |
+| `renderOverflow` | `(hiddenCount: number, cell: CalendarCell) => ReactNode` |  | Replaces the text of the `+N` chip. Receives the hidden count. |
 | `renderUnavailable` | `(cell: CalendarCell) => ReactNode` |  | Drawn in cells covered by an unavailable or busy timed event. |
+| `rowHeight` | `number` |  | Height of one row in pixels. Default `43`. |
 | `selectedEventId` | `string` |  | Controlled selected event. |
 | `slotMinutes` | `CalendarSlotMinutes` |  | Length of one row. Default `60`. |
 | `trailingGutter` | `boolean` |  | Repeat the hour labels on the trailing edge. The copy is hidden from assistive technology. |
@@ -63,7 +68,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 `visibleHours?: CalendarTimeWindow` limits the timed grid to part of the day, for example `{ start: "06:00", end: "23:00" }`. The end is exclusive, and `"00:00"` as the end means the end of the day. The default is the whole day.
 
-`slotMinutes?: 15 | 20 | 30 | 60` sets the length of one row; the default is `60`. The gutter labels only rows that start on the hour. `visibleHours` must start and end on a slot boundary; otherwise the component throws a `RangeError`.
+`slotMinutes?: 15 | 20 | 30 | 60` sets the length of one row; the default is `60`. The gutter labels only rows that start on the hour. `visibleHours` snaps outward to whole slots: the start rounds down and the end rounds up. An empty or reversed window throws a `RangeError`.
 
 `workingHours?: CalendarTimeWindow` sets the working part of the day; the default is 08:00–18:00. Cells outside it are hatched with diagonal stripes, and their accessible name says "non-working hour". It is independent of `visibleHours` and also sets where the grid first scrolls to.
 
@@ -85,9 +90,13 @@ Events are clipped to the visible hours, and events wholly outside them are not 
 
 `interactionMode` and `selectedEventId` support controlled values with change callbacks. `defaultInteractionMode` and `defaultSelectedEventId` provide uncontrolled initial values.
 
+## Density
+
+`rowHeight?: number` sets the height of one row in pixels; the default is `43`. It must be a positive finite number, or render throws a `RangeError`. `maxEventsPerSlot?: number` caps the cards that start in one row of a day column. The earliest stay visible, and the rest hide behind a `+N` chip whose text comes from `renderOverflow(hiddenCount, cell)`. A click on the chip calls `onOverflowSelect(cell, anchor)`. Without `onOverflowSelect` the chip is plain text, not a button. Without a cap every card is drawn.
+
 ## Slots and states
 
-`renderEvent`, `renderConflict` and `renderDetail` replace host-specific event, conflict and detail content. Event contexts retain opaque `metadata`; conflict contexts retain the event and host-supplied dimension label. The default event uses `EventCard`; a custom event renders inside a button, and conflicts use `ConflictIndicator`. Loading, error, and empty-state presentation remains outside the kit: the supplied events render directly into the ordinary grid, including when the collection is empty. The custom detail slot receives `close`, which dismisses the composed detail surface without performing a backend operation.
+`renderEventMetadata` replaces the metadata rows of the default card and keeps its button and frame; use it for one row. `renderEvent`, `renderConflict` and `renderDetail` replace host-specific event, conflict and detail content. Event contexts retain opaque `metadata`; conflict contexts retain the event and host-supplied dimension label. The default event uses `EventCard`; a custom event renders inside a button, and conflicts use `ConflictIndicator`. Loading, error, and empty-state presentation remains outside the kit: the supplied events render directly into the ordinary grid, including when the collection is empty. The custom detail slot receives `close`, which dismisses the composed detail surface without performing a backend operation.
 
 ## Accessibility and styling
 
@@ -99,15 +108,16 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 
 <!-- generated:messages calendar.week -->
 
-| Translation ID                 | English          | Values |
-| ------------------------------ | ---------------- | ------ |
-| `calendar.week.allDay`         | All-day events   |        |
-| `calendar.week.currentTime`    | Current time     |        |
-| `calendar.week.focus`          | Week view        |        |
-| `calendar.week.nonWorkingHour` | non-working hour |        |
-| `calendar.week.range`          | Week of          |        |
-| `calendar.week.timeZone`       | Time zone        |        |
-| `calendar.week.workingHour`    | working hour     |        |
+| Translation ID                 | English           | Values  |
+| ------------------------------ | ----------------- | ------- |
+| `calendar.week.allDay`         | All-day events    |         |
+| `calendar.week.currentTime`    | Current time      |         |
+| `calendar.week.focus`          | Week view         |         |
+| `calendar.week.hidden`         | +{{count}} hidden | `count` |
+| `calendar.week.nonWorkingHour` | non-working hour  |         |
+| `calendar.week.range`          | Week of           |         |
+| `calendar.week.timeZone`       | Time zone         |         |
+| `calendar.week.workingHour`    | working hour      |         |
 
 <!-- /generated -->
 
