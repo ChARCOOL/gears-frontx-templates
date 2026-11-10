@@ -24,12 +24,12 @@ import type {
 } from "../../../core/model";
 import type { CalendarTranslate } from "../../../i18n/calendar-localization";
 import { englishTranslate as t } from "../../../i18n/english";
-import { CreateEventPopover } from "../create-event-popover";
+import { CreateEventPanel } from "../create-event-panel";
 import type {
   CreateEventKind,
-  CreateEventPopoverHandle,
-  CreateEventPopoverProps,
-} from "../create-event-popover";
+  CreateEventPanelHandle,
+  CreateEventPanelProps,
+} from "../create-event-panel";
 
 import styles from "../create-event.module.css";
 import createEventCss from "../create-event.module.css?raw";
@@ -88,8 +88,8 @@ const submitSpy = (result: CreateEventResult | null = null) =>
   );
 
 const popoverProps = (
-  overrides: Partial<CreateEventPopoverProps> = {}
-): CreateEventPopoverProps => ({
+  overrides: Partial<CreateEventPanelProps> = {}
+): CreateEventPanelProps => ({
   calendars: [{ colorFamily: "purple", id: "calendar-1", name: "Teaching" }],
   conferencingProviders: [{ id: "team-sync", label: "Team Sync" }],
   defaultDraft: BASE_DRAFT,
@@ -111,8 +111,8 @@ const popoverProps = (
   ...overrides,
 });
 
-const renderPopover = (overrides: Partial<CreateEventPopoverProps> = {}) =>
-  render(<CreateEventPopover {...popoverProps(overrides)} />);
+const renderPopover = (overrides: Partial<CreateEventPanelProps> = {}) =>
+  render(<CreateEventPanel {...popoverProps(overrides)} />);
 
 const getCreateDialog = (): HTMLElement =>
   screen.getByRole("region", { name: /create/iu });
@@ -200,7 +200,7 @@ const chooseSelectOption = (
   });
 };
 
-describe("CreateEventPopover public shell", () => {
+describe("CreateEventPanel public shell", () => {
   it("keeps the translated close action icon-only while preserving its accessible name", () => {
     renderPopover({ t: headerT });
 
@@ -230,7 +230,7 @@ describe("CreateEventPopover public shell", () => {
     assert(getCreateDialog()).toBeInTheDocument();
 
     rerender(
-      <CreateEventPopover
+      <CreateEventPanel
         {...popoverProps({ defaultOpen: undefined, open: false })}
       />
     );
@@ -271,7 +271,7 @@ describe("CreateEventPopover public shell", () => {
   it("renders the form inline in its host without a portal", () => {
     render(
       <div role="group" aria-label="portal host">
-        <CreateEventPopover {...popoverProps()} />
+        <CreateEventPanel {...popoverProps()} />
       </div>
     );
 
@@ -282,7 +282,7 @@ describe("CreateEventPopover public shell", () => {
   });
 });
 
-describe("CreateEventPopover date and time row fidelity", () => {
+describe("CreateEventPanel date and time row fidelity", () => {
   it("shows no day count until the dates span a day, as in the design", () => {
     renderPopover();
 
@@ -427,7 +427,7 @@ describe("CreateEventPopover date and time row fidelity", () => {
   });
 });
 
-describe("CreateEventPopover draft and validation behaviour", () => {
+describe("CreateEventPanel draft and validation behaviour", () => {
   it("leaves every field valid until the draft actually fails validation", () => {
     renderPopover();
 
@@ -663,7 +663,7 @@ describe("CreateEventPopover draft and validation behaviour", () => {
   });
 });
 
-describe("CreateEventPopover coverage paths", () => {
+describe("CreateEventPanel coverage paths", () => {
   it("commits selected directory resources and removes a cleared location", () => {
     const onSubmit = submitSpy();
 
@@ -956,11 +956,11 @@ describe("CreateEventPopover coverage paths", () => {
   });
 });
 
-describe("CreateEventPopover host cancel handle", () => {
+describe("CreateEventPanel host cancel handle", () => {
   it("resolves requestCancel with true once a clean form has closed", async () => {
-    const ref = createRef<CreateEventPopoverHandle>();
+    const ref = createRef<CreateEventPanelHandle>();
     const onCancel = vi.fn<() => void>();
-    render(<CreateEventPopover ref={ref} {...popoverProps({ onCancel })} />);
+    render(<CreateEventPanel ref={ref} {...popoverProps({ onCancel })} />);
 
     let closed: Promise<boolean> | undefined;
     act(() => {
@@ -974,8 +974,8 @@ describe("CreateEventPopover host cancel handle", () => {
 
   it("resolves requestCancel with false when the user keeps editing", async () => {
     const user = userEvent.setup({ delay: null });
-    const ref = createRef<CreateEventPopoverHandle>();
-    render(<CreateEventPopover ref={ref} {...popoverProps()} />);
+    const ref = createRef<CreateEventPanelHandle>();
+    render(<CreateEventPanel ref={ref} {...popoverProps()} />);
 
     await setInputValue(user, screen.getByLabelText(/title/iu), "Changed");
 
@@ -992,7 +992,7 @@ describe("CreateEventPopover host cancel handle", () => {
   });
 });
 
-describe("CreateEventPopover discard and submit behaviour", () => {
+describe("CreateEventPanel discard and submit behaviour", () => {
   it("cancels a clean draft immediately and asks before discarding a dirty draft", async () => {
     const user = userEvent.setup({ delay: null });
     const onCancel = vi.fn<() => void>();
@@ -1291,7 +1291,7 @@ describe("CreateEventPopover discard and submit behaviour", () => {
   });
 });
 
-describe("CreateEventPopover footer separator placement", () => {
+describe("CreateEventPanel footer separator placement", () => {
   it("renders the footer separator above the Cancel/Save actions row", () => {
     renderPopover();
 
@@ -1316,7 +1316,7 @@ describe("CreateEventPopover footer separator placement", () => {
   });
 });
 
-describe("CreateEventPopover combobox fidelity", () => {
+describe("CreateEventPanel combobox fidelity", () => {
   it("renders both pickers with the form-layer chrome contract", async () => {
     const user = userEvent.setup({ delay: null });
     renderPopover({
@@ -1476,7 +1476,7 @@ describe("CreateEventPopover combobox fidelity", () => {
   );
 });
 
-describe("CreateEventPopover inline custom repeat editor", () => {
+describe("CreateEventPanel inline custom repeat editor", () => {
   it("restores the preset and rule from when the editor opened on Cancel", () => {
     const onSubmit = submitSpy();
     renderPopover({
@@ -1586,7 +1586,7 @@ describe("CreateEventPopover inline custom repeat editor", () => {
   });
 });
 
-describe("CreateEventPopover Event and Reminder kinds", () => {
+describe("CreateEventPanel Event and Reminder kinds", () => {
   it("switches kind from the header and marks the current kind as pressed", async () => {
     const user = userEvent.setup({ delay: null });
     const onKindChange = vi.fn<(kind: CreateEventKind) => void>();
@@ -1666,7 +1666,7 @@ describe("CreateEventPopover Event and Reminder kinds", () => {
 
     await user.click(screen.getByRole("button", { name: "Reminder" }));
     rerender(
-      <CreateEventPopover
+      <CreateEventPanel
         {...popoverProps({
           defaultDraft,
           kind: "reminder",
@@ -1699,7 +1699,7 @@ describe("CreateEventPopover Event and Reminder kinds", () => {
     await setInputValue(user, screen.getByLabelText("URL"), "https://example.com/prep");
     await user.click(screen.getByRole("button", { name: "Event" }));
     rerender(
-      <CreateEventPopover
+      <CreateEventPanel
         {...popoverProps({ kind: "event", onKindChange: vi.fn(), onSubmit })}
       />
     );
@@ -1713,7 +1713,7 @@ describe("CreateEventPopover Event and Reminder kinds", () => {
   });
 });
 
-describe("CreateEventPopover reminder notify", () => {
+describe("CreateEventPanel reminder notify", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
@@ -1854,7 +1854,7 @@ describe("CreateEventPopover reminder notify", () => {
     await user.click(screen.getByRole("switch", { name: "Notify" }));
     await user.click(screen.getByRole("button", { name: "Event" }));
     rerender(
-      <CreateEventPopover
+      <CreateEventPanel
         {...popoverProps({ kind: "event", onKindChange: vi.fn(), onSubmit })}
       />
     );

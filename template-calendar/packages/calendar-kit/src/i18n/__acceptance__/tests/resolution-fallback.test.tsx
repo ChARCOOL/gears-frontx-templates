@@ -7,7 +7,7 @@ import {
   CalendarLocalizationProvider,
   CalendarProvider,
   CalendarToolbar,
-  CreateEventPopover,
+  CreateEventPanel,
   calendarDate,
   parseIanaTimeZone,
   useCalendarContext,
@@ -110,7 +110,7 @@ const toolbarProps = {
   onViewChange: () => {},
 };
 
-const createEventProps: ComponentProps<typeof CreateEventPopover> = {
+const createEventProps: ComponentProps<typeof CreateEventPanel> = {
   calendars: [{ colorFamily: "turquoise", id: "calendar-1", name: "Work" }],
   conferencingProviders: [],
   defaultDraft: timedDraft(),
@@ -152,7 +152,7 @@ describe("i18n acceptance: resolution and fallback", () => {
     render(
       <>
         <CalendarToolbar {...toolbarProps} />
-        <CreateEventPopover {...createEventProps} />
+        <CreateEventPanel {...createEventProps} />
         <TranslationProbe
           ids={[
             "calendar.toolbar.label",

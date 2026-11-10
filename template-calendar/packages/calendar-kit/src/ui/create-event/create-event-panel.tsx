@@ -100,8 +100,8 @@ import type {
 import type { createEventErrorMessages } from "./create-event-validation";
 import {
   resolveRepeatUnit,
-  useCreateEventPopoverContent,
-} from "./use-create-event-popover-content";
+  useCreateEventPanelContent,
+} from "./use-create-event-panel-content";
 
 import styles from "./create-event.module.css";
 
@@ -109,12 +109,12 @@ const SUBMIT_ERROR_ID = "calendar.create_event.submitError";
 
 export type { CalendarResourceOption } from "../../react/controllers/use-create-event-controller";
 
-export type CreateEventPopoverHandle = Pick<
+export type CreateEventPanelHandle = Pick<
   UseCreateEventControllerResult,
   "requestCancel"
 >;
 
-export interface CreateEventPopoverProps
+export interface CreateEventPanelProps
   extends
     CalendarContextProps,
     Omit<UseCreateEventControllerOptions, "timeZone"> {
@@ -143,7 +143,7 @@ export interface CreateEventPopoverProps
   /** Shows the Event/Reminder switch in the header and reports the kind the user picks. */
   readonly onKindChange?: (kind: CreateEventKind) => void;
   /** Lets the host close the form through its own unsaved-changes prompt. */
-  readonly ref?: Ref<CreateEventPopoverHandle>;
+  readonly ref?: Ref<CreateEventPanelHandle>;
 }
 
 export type CreateEventKind = "event" | "reminder";
@@ -790,7 +790,7 @@ const CalendarColorDot = ({ colorFamily, testId }: CalendarColorDotProps) => (
 interface SubmitErrorProps {
   readonly error: CreateEventSubmitError | null;
   readonly errorId: string;
-  readonly renderError: CreateEventPopoverProps["renderError"];
+  readonly renderError: CreateEventPanelProps["renderError"];
 }
 
 const SubmitError = ({
@@ -823,7 +823,7 @@ const CancelHandle = ({
   requestCancel,
   ...props
 }: {
-  readonly ref?: Ref<CreateEventPopoverHandle>;
+  readonly ref?: Ref<CreateEventPanelHandle>;
   readonly requestCancel: () => Promise<boolean>;
 }) => {
   useImperativeHandle(props.ref, () => ({ requestCancel }));
@@ -1635,7 +1635,7 @@ const CreateEventForm = ({
   );
 };
 
-interface CreateEventPopoverOverlayProps {
+interface CreateEventPanelOverlayProps {
   readonly className?: string;
   readonly content: ReactNode;
   readonly controller: ReturnType<typeof useCreateEventController>;
@@ -1643,13 +1643,13 @@ interface CreateEventPopoverOverlayProps {
   readonly handleShellOpenChange: (nextOpen: boolean) => void;
 }
 
-const CreateEventPopoverOverlay = ({
+const CreateEventPanelOverlay = ({
   className,
   content,
   controller,
   handleNativeSelectChange,
   handleShellOpenChange,
-}: CreateEventPopoverOverlayProps) => {
+}: CreateEventPanelOverlayProps) => {
   const { direction, t } = useCalendarLocalization();
   const [root, setRoot] = useState<HTMLElement | null>(null);
 
@@ -1687,8 +1687,8 @@ const CreateEventPopoverOverlay = ({
   );
 };
 
-const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
-  const view = useCreateEventPopoverContent(props);
+const CreateEventPanelContent = (props: CreateEventPanelProps) => {
+  const view = useCreateEventPanelContent(props);
 
   const {
     kind,
@@ -1886,7 +1886,7 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
   return (
     <>
       <CancelHandle {...props} requestCancel={controller.requestCancel} />
-      <CreateEventPopoverOverlay
+      <CreateEventPanelOverlay
         className={className}
         content={formContent}
         controller={controller}
@@ -1897,8 +1897,8 @@ const CreateEventPopoverContent = (props: CreateEventPopoverProps) => {
   );
 };
 
-export const CreateEventPopover = (props: CreateEventPopoverProps) => (
+export const CreateEventPanel = (props: CreateEventPanelProps) => (
   <CalendarScope {...props}>
-    <CreateEventPopoverContent {...omitCalendarContextProps(props)} />
+    <CreateEventPanelContent {...omitCalendarContextProps(props)} />
   </CalendarScope>
 );

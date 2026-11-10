@@ -1,7 +1,7 @@
 import {
   AgendaView,
   CalendarToolbar,
-  CreateEventPopover,
+  CreateEventPanel,
   DayGrid,
   EventDetailPanel,
   MonthGrid,
@@ -122,7 +122,7 @@ export const CalendarScreen = ({
       />
 
       {create !== null && (
-        <CreateEventPopover
+        <CreateEventPanel
           open
           defaultDraft={create.draft}
           timeZone={timeZone}

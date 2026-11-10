@@ -78,7 +78,7 @@ Components report intent through callbacks and change nothing on their own:
 />
 ```
 
-Wire those to an [`EventDetailPanel`](../ui/event-detail-panel/event-detail-panel.md) and a [`CreateEventPopover`](../ui/create-event/create-event.md) and you have a working calendar screen. The [calendar screen recipe](recipes.md#a-complete-calendar-screen) is the full version, toolbar included.
+Wire those to an [`EventDetailPanel`](../ui/event-detail-panel/event-detail-panel.md) and a [`CreateEventPanel`](../ui/create-event/create-event.md) and you have a working calendar screen. The [calendar screen recipe](recipes.md#a-complete-calendar-screen) is the full version, toolbar included.
 
 ## Localize once
 

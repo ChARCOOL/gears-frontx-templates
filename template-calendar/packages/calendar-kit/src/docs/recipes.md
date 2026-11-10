@@ -93,7 +93,7 @@ Toolbar, the four views, an inline detail panel and quick-create. The host owns 
 import {
   AgendaView,
   CalendarToolbar,
-  CreateEventPopover,
+  CreateEventPanel,
   DayGrid,
   EventDetailPanel,
   MonthGrid,
@@ -214,7 +214,7 @@ export const CalendarScreen = ({
       />
 
       {create !== null && (
-        <CreateEventPopover
+        <CreateEventPanel
           open
           defaultDraft={create.draft}
           timeZone={timeZone}
@@ -243,7 +243,7 @@ export const CalendarScreen = ({
 Things worth copying:
 
 - `EventDetailPanel` renders inline. Put it in a side sheet or a fixed column of your layout; the kit does not position it beside the card.
-- `onQuickCreate` gives a `DOMRectReadOnly`; `CreateEventPopover` wants a `DOMRect`, hence `DOMRect.fromRect`.
+- `onQuickCreate` gives a `DOMRectReadOnly`; `CreateEventPanel` wants a `DOMRect`, hence `DOMRect.fromRect`.
 - Stepping by view (`addCalendarDays` for day, week and agenda, `addCalendarMonths` for month) stays in viewer days, so it is daylight-saving safe.
 
 ## Translations from your i18n library

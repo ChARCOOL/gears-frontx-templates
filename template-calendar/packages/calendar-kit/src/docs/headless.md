@@ -18,7 +18,7 @@ Go headless when the **structure** has to change: a toolbar with a different con
 | `useAgendaViewController` | `AgendaView` | The 30-day window, day groups, flat event rows, roving focus and announcements |
 | `useAvailabilityGridController` | `AvailabilityGrid` | Columns of cells, the painted range, focus and paint handlers |
 | `useCalendarToolbarController` | `CalendarToolbar` | Active and available views, title parts, the radio-group key handler |
-| `useCreateEventController` | `CreateEventPopover` | The draft, validation errors, dirty state, submit and the discard guard |
+| `useCreateEventController` | `CreateEventPanel` | The draft, validation errors, dirty state, submit and the discard guard |
 | `useEventDetailPanelController` | `EventDetailPanel` | Open state, copy-link status, capped participants, restriction, edit/delete availability |
 | `useMonthNavigatorController` | `MonthNavigator` | The visible month, selected and focused day, event dots, keyboard handling |
 | `useSearchResultsController` | `SearchResults` | The debounced query, grouped results, roving focus |

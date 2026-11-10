@@ -8,8 +8,8 @@ import { createShadowHost } from "../../../__test-utils__/setup";
 import { calendarDate, parseLocalTime } from "../../../core/model";
 import type { TimedCreateEventDraft } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
-import { CreateEventPopover } from "../create-event-popover";
-import type { CreateEventPopoverProps } from "../create-event-popover";
+import { CreateEventPanel } from "../create-event-panel";
+import type { CreateEventPanelProps } from "../create-event-panel";
 
 const DATE = calendarDate("2026-08-24");
 
@@ -25,8 +25,8 @@ const DRAFT: TimedCreateEventDraft = {
 };
 
 const props = (
-  overrides: Partial<CreateEventPopoverProps> = {}
-): CreateEventPopoverProps => ({
+  overrides: Partial<CreateEventPanelProps> = {}
+): CreateEventPanelProps => ({
   calendars: [{ colorFamily: "purple", id: "calendar-1", name: "Teaching" }],
   conferencingProviders: [],
   defaultDraft: DRAFT,
@@ -54,7 +54,7 @@ const ShadowPopoverHarness = (): ReactElement => {
       >
         Open create event
       </button>
-      <CreateEventPopover
+      <CreateEventPanel
         {...props({
           defaultOpen: undefined,
           onCancel: () => {
@@ -85,7 +85,7 @@ const getShadowDialog = (root: ShadowRoot, name: RegExp): HTMLElement => {
   return dialog;
 };
 
-describe("CreateEventPopover attached shadow-root contract", () => {
+describe("CreateEventPanel attached shadow-root contract", () => {
   it("keeps the inline form in the attached shadow root and returns focus to the opener", () => {
     const { host, root } = createShadowHost();
     const container = document.createElement("div");
@@ -151,7 +151,7 @@ describe("CreateEventPopover attached shadow-root contract", () => {
     root.append(container);
 
     render(
-      <CreateEventPopover {...props({ defaultOpen: undefined, open: true })} />,
+      <CreateEventPanel {...props({ defaultOpen: undefined, open: true })} />,
       { container }
     );
 

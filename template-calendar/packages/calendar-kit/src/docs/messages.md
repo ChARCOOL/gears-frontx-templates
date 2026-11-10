@@ -240,7 +240,7 @@ Event state words shared by the views.
 
 ## Create event
 
-`CreateEventPopover`: fields, validation, repeat editor and repeat hints.
+`CreateEventPanel`: fields, validation, repeat editor and repeat hints.
 
 <!-- generated:messages calendar.create_event -->
 

@@ -16,7 +16,7 @@ import {
   CalendarList,
   CalendarLocalizationProvider,
   CalendarToolbar,
-  CreateEventPopover,
+  CreateEventPanel,
   EventDetailPanel,
   MonthGrid,
   WorldClocks,
@@ -39,8 +39,8 @@ const MissingProbe = ({ id }: { readonly id: string }) => {
 };
 
 const createEventProps = (
-  overrides: Partial<ComponentProps<typeof CreateEventPopover>> = {}
-): ComponentProps<typeof CreateEventPopover> => ({
+  overrides: Partial<ComponentProps<typeof CreateEventPanel>> = {}
+): ComponentProps<typeof CreateEventPanel> => ({
   calendars: [{ colorFamily: "turquoise", id: "calendar-1", name: "Work" }],
   conferencingProviders: [],
   defaultDraft: timedDraft(),
@@ -217,7 +217,7 @@ describe("i18n acceptance: ownership and diagnostics", () => {
           onChange={() => {}}
           t={t}
         />
-        <CreateEventPopover
+        <CreateEventPanel
           {...createEventProps({
             defaultDraft: {
               ...timedDraft(),
@@ -331,7 +331,7 @@ describe("i18n acceptance: ownership and diagnostics", () => {
     );
     assertA19WorldClockControls();
     const { unmount } = render(
-      <CreateEventPopover
+      <CreateEventPanel
         {...createEventProps({
           defaultDraft: { ...timedDraft(), attendeeIds: ["person-1"] },
         })}
@@ -359,7 +359,7 @@ describe("i18n acceptance: ownership and diagnostics", () => {
       async () => await Promise.reject.bind(Promise)("transport failure")
     );
     render(
-      <CreateEventPopover {...createEventProps({ onSubmit: submit })} t={t} />
+      <CreateEventPanel {...createEventProps({ onSubmit: submit })} t={t} />
     );
     await user.click(
       screen.getByRole("button", { name: "A19:calendar.create_event.save" })

@@ -136,7 +136,7 @@ In every mode an available event still opens through `onEventSelect`. `DayGrid` 
 
 ## Drafts
 
-`CreateEventPopover` edits a `CreateEventDraft`, which mirrors the event shape without instants: a timed draft has `startTime`/`endTime`, an all-day draft has neither. A timed draft's `endDate: null` means "same day as the start". `recurrenceRule` holds the RRULE body the Repeat field builds.
+`CreateEventPanel` edits a `CreateEventDraft`, which mirrors the event shape without instants: a timed draft has `startTime`/`endTime`, an all-day draft has neither. A timed draft's `endDate: null` means "same day as the start". `recurrenceRule` holds the RRULE body the Repeat field builds.
 
 <!-- generated:props CreateEventDraftBase -->
 

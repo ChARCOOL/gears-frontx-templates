@@ -31,7 +31,7 @@ Popovers, selects and the grids that measure themselves construct a `ResizeObser
 
 ## Freeze time
 
-Pass `now` to every component that shows today, the now line or past styling (`WeekGrid`, `MonthGrid`, `MonthNavigator`, `SearchResults`, `WorldClocks`, `CreateEventPopover`). Without it they follow the wall clock and your snapshots change every minute.
+Pass `now` to every component that shows today, the now line or past styling (`WeekGrid`, `MonthGrid`, `MonthNavigator`, `SearchResults`, `WorldClocks`, `CreateEventPanel`). Without it they follow the wall clock and your snapshots change every minute.
 
 `DayGrid` and `AgendaView` have no `now` prop; freeze the clock for them with `vi.useFakeTimers()` and `vi.setSystemTime(...)`.
 

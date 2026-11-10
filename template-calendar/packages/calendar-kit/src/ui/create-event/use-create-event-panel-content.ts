@@ -36,9 +36,9 @@ import type {
 } from "./create-event-format";
 import type {
   CreateEventKind,
-  CreateEventPopoverProps,
+  CreateEventPanelProps,
   ResourceItem,
-} from "./create-event-popover";
+} from "./create-event-panel";
 import {
   createEventErrorMessages,
   firstCreateEventError,
@@ -270,8 +270,8 @@ const closeShell = (
   void actions.requestCancel();
 };
 
-export const useCreateEventPopoverContent = (
-  props: CreateEventPopoverProps
+export const useCreateEventPanelContent = (
+  props: CreateEventPanelProps
 ) => {
   const { direction, locale, t } = useCalendarLocalization();
   const { timeZone } = useCalendarContext();

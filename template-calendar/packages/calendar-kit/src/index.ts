@@ -54,7 +54,7 @@ export { DayGrid } from "./ui/day-grid/public";
 export type { DayGridProps } from "./ui/day-grid/public";
 
 export {
-  CreateEventPopover,
+  CreateEventPanel,
   useCreateEventController,
   REPEAT_PRESET,
   REPEAT_UNIT,
@@ -73,8 +73,9 @@ export {
 } from "./ui/create-event/public";
 
 export type {
-  CreateEventPopoverHandle,
-  CreateEventPopoverProps,
+  CreateEventKind,
+  CreateEventPanelHandle,
+  CreateEventPanelProps,
   CalendarResourceOption,
   CreateEventSubmitError,
   UseCreateEventControllerOptions,

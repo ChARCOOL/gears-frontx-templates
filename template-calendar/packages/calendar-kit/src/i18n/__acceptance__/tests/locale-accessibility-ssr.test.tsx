@@ -10,7 +10,7 @@ import {
   CalendarGrid,
   CalendarLocalizationProvider,
   CalendarToolbar,
-  CreateEventPopover,
+  CreateEventPanel,
   EventDetailPanel,
   SearchResults,
   WorldClocks,
@@ -76,7 +76,7 @@ const gridProps: ComponentProps<typeof CalendarGrid> = {
   rows: [{ cells: [gridCell], key: "row" }],
 };
 
-const createEventProps: ComponentProps<typeof CreateEventPopover> = {
+const createEventProps: ComponentProps<typeof CreateEventPanel> = {
   calendars: [{ colorFamily: "turquoise", id: "calendar-1", name: "Work" }],
   conferencingProviders: [],
   defaultDraft: timedDraft(),
@@ -169,7 +169,7 @@ describe("i18n acceptance: locale, accessibility, and SSR", () => {
           onChange={() => {}}
           t={t}
         />
-        <CreateEventPopover {...createEventProps} t={t} />
+        <CreateEventPanel {...createEventProps} t={t} />
       </>
     );
 

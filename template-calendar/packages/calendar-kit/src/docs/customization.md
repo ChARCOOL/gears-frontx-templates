@@ -38,7 +38,7 @@ Tokens are the only supported way to recolour components. Kit class names are ge
 - **Forced colours** (Windows high contrast): the theme remaps surfaces, text, focus and selection to system colours automatically.
 - **Reduced motion:** every transition duration drops to zero when `prefers-reduced-motion: reduce` is set.
 
-Overlays (popovers, dialogs, the create form) portal out of the component that opened them: into the shadow root when there is one, otherwise next to their trigger. Put `data-theme` where overlays inherit it too: on `<html>`, or on the shadow host, which the theme matches through `:host([data-theme])`. `container` places an overlay inside a specific element instead; see the [shadow-root recipe](recipes.md#inside-a-shadow-root).
+Overlays (popovers, dialogs) portal out of the component that opened them: into the shadow root when there is one, otherwise next to their trigger. Put `data-theme` where overlays inherit it too: on `<html>`, or on the shadow host, which the theme matches through `:host([data-theme])`. `container` places an overlay inside a specific element instead; see the [shadow-root recipe](recipes.md#inside-a-shadow-root).
 
 ## 3. Behaviour props
 
@@ -50,7 +50,7 @@ Overlays (popovers, dialogs, the create form) portal out of the component that o
 | `CalendarToolbar` | `availableViews` (which views, in which order) |
 | `EventCard` | `positioned`, `selected`, `past`, `available`, `readOnly` |
 | `EventDetailPanel` | `comparisonTimeZone`, `maxVisibleParticipants`, `readOnly` |
-| `CreateEventPopover` | `expanded`, `anchorRect` / `anchorRef` |
+| `CreateEventPanel` | `expanded`, `anchorRect` / `anchorRef` |
 | `ConflictIndicator` | `compact` |
 | `AvailabilityGrid` | `interactionMode` (`read-only`), `paintMode` (`cells`), `headerFormat` (`weekday`), `showHourLabels`, `onHourClick`, `onDayClick` |
 | `WorldClocks`, `MonthNavigator`, `SearchResults` | `now` |
@@ -122,7 +122,7 @@ A render slot replaces the content of one part and keeps the kit's positioning, 
 | `AgendaView` | `renderEvent`, `renderDayHeader` |
 | `EventCard` | `renderTitle`, `renderTime`, `renderMetadata`, `renderConflict` |
 | `EventDetailPanel` | `renderHeader`, `renderBody`, `renderMetadata`, `renderActions`, `renderFooter` |
-| `CreateEventPopover` | `renderHeader`, `renderFields`, `renderFooter`, `renderError`, `renderCompactShell`, `renderExpandedShell` |
+| `CreateEventPanel` | `renderHeader`, `renderFields`, `renderFooter`, `renderError` |
 | `CalendarToolbar` | `renderTitle`, `renderViewOption`, `renderLeading`, `renderTrailing` |
 | `ConflictIndicator` | `renderConflict` |
 | `AvailabilityGrid` | `renderCell` |
@@ -146,7 +146,7 @@ Tips:
 The larger components are assembled from the smaller ones, and you can reassemble them:
 
 - `CalendarSidePanel` is a shell around `MonthNavigator`, `SearchResults`, `TimeZoneList`, `WorldClocks` and `CalendarList`. Replace any section through `slots`, or skip the shell and place the pieces in your own layout.
-- `CreateEventPopover` renders in the kit's popover and dialog by default. `renderCompactShell` and `renderExpandedShell` hand you the form content to put in your own container.
+- `CreateEventPanel` renders inline in its host and does not open a popover. Place it in your own side sheet or layout; only its discard confirmation is an overlay.
 - `EventDetailPanel` renders inline as a labelled `<section>`. Place it in your own side sheet or layout; it does not open a popover or dialog.
 - `EventCard` and `ConflictIndicator` work outside the grids, for example in a list or a notification.
 

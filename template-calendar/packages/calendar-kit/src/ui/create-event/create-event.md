@@ -1,12 +1,12 @@
-# CreateEventPopover
+# CreateEventPanel
 
-`CreateEventPopover` is a host-neutral create-event form. It accepts a neutral `CreateEventDraft`, injected calendar/resource options, a translation callback, an optional `now?: UtcInstant` reference instant, and an `onSubmit` callback; it does not call application APIs or create adapters.
+`CreateEventPanel` is a host-neutral create-event form. It accepts a neutral `CreateEventDraft`, injected calendar/resource options, a translation callback, an optional `now?: UtcInstant` reference instant, and an `onSubmit` callback; it does not call application APIs or create adapters.
 
 The form renders inline in the host container and is shadow-root safe; the host places it. Use `defaultDraft`/`defaultOpen` for uncontrolled usage, or pair the controlled props with their change callbacks.
 
 ## Props
 
-<!-- generated:props CreateEventPopoverProps -->
+<!-- generated:props CreateEventPanelProps -->
 
 | Prop | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -26,7 +26,7 @@ The form renders inline in the host container and is shadow-root safe; the host 
 | `onKindChange` | `(kind: CreateEventKind) => void` |  | Shows the Event/Reminder switch in the header and reports the kind the user picks. |
 | `onOpenChange` | `(open: boolean) => void` |  | Called on open and close, including after submit and a confirmed discard. |
 | `open` | `boolean` |  | Controlled open state. |
-| `ref` | `((instance: CreateEventPopoverHandle \| null) => void \| (() => VoidOrUndefinedOnly)) \| Ref…` |  | Lets the host close the form through its own unsaved-changes prompt. |
+| `ref` | `((instance: CreateEventPanelHandle \| null) => void \| (() => VoidOrUndefinedOnly)) \| RefOb…` |  | Lets the host close the form through its own unsaved-changes prompt. |
 | `renderError` | `(error: CreateEventSubmitError) => ReactNode` |  | Replaces how a submit error is shown. |
 | `renderFields` | `() => ReactNode` |  | Extra host fields rendered after the kit's fields. |
 | `renderFooter` | `() => ReactNode` |  | Content added above the Cancel/Save row. |
@@ -51,7 +51,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 - A one-line summary under the Repeat field describes the current rule for every choice, for example "Repeats every 2 weeks on Tuesday and Thursday until Wed, Sep 30, 2026". "Does not repeat" shows no summary.
 - A pending submit disables duplicate attempts. A host error is rendered without closing the form.
 - A clean cancel closes immediately. A dirty cancel, or an outside press in a dirty form, opens an alert dialog with keep-editing and discard actions; that press does not reach its target. An outside press in a clean form does nothing. Confirmed discard closes the form.
-- `ref` takes a `CreateEventPopoverHandle`; its `requestCancel()` runs the same cancel path as the close control and resolves `true` once the form closed, or `false` when the user kept editing or a save is running.
+- `ref` takes a `CreateEventPanelHandle`; its `requestCancel()` runs the same cancel path as the close control and resolves `true` once the form closed, or `false` when the user kept editing or a save is running.
 - `renderHeader`, `renderFields`, `renderFooter`, `renderError`, and shell render props provide host composition without app imports.
 
 All labels come from `t`; `locale`, `timeZone`, `direction`, and `now` are presentation inputs. When `now` is omitted, the time-zone label follows the wall clock. The title is plain text, and the kit does not invent an event-type data contract.

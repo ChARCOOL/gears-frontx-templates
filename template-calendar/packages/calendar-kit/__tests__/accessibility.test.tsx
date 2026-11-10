@@ -37,8 +37,8 @@ import { CalendarToolbar } from "../src/ui/calendar-toolbar/public";
 import type { CalendarToolbarProps } from "../src/ui/calendar-toolbar/public";
 import { ConflictIndicator } from "../src/ui/conflict-indicator/public";
 import type { ConflictIndicatorProps } from "../src/ui/conflict-indicator/public";
-import { CreateEventPopover } from "../src/ui/create-event/public";
-import type { CreateEventPopoverProps } from "../src/ui/create-event/public";
+import { CreateEventPanel } from "../src/ui/create-event/public";
+import type { CreateEventPanelProps } from "../src/ui/create-event/public";
 import { DayGrid } from "../src/ui/day-grid/public";
 import type { DayGridProps } from "../src/ui/day-grid/public";
 import { EventCard } from "../src/ui/event-card/public";
@@ -285,8 +285,8 @@ const toolbarProps = (
 });
 
 const createEventProps = (
-  overrides: Partial<CreateEventPopoverProps> = {}
-): CreateEventPopoverProps => ({
+  overrides: Partial<CreateEventPanelProps> = {}
+): CreateEventPanelProps => ({
   calendars: CALENDARS,
   conferencingProviders: [{ id: "team-sync", label: "Team Sync" }],
   defaultDraft: CREATE_DRAFT,
@@ -675,8 +675,8 @@ describe("integrated WCAG 2.1 AA gate: panels & navigation surfaces", () => {
     await expectNoAxeViolations(rendered.container);
   });
 
-  it("checks CreateEventPopover inline form states", async () => {
-    const rendered = render(<CreateEventPopover {...createEventProps()} />);
+  it("checks CreateEventPanel inline form states", async () => {
+    const rendered = render(<CreateEventPanel {...createEventProps()} />);
 
     assert(
       within(rendered.container).getByRole("region", {
@@ -687,7 +687,7 @@ describe("integrated WCAG 2.1 AA gate: panels & navigation surfaces", () => {
 
     rendered.unmount();
     const loading = render(
-      <CreateEventPopover {...createEventProps({ onSubmit: pendingSubmit })} />
+      <CreateEventPanel {...createEventProps({ onSubmit: pendingSubmit })} />
     );
 
     fireEvent.click(
@@ -706,7 +706,7 @@ describe("integrated WCAG 2.1 AA gate: panels & navigation surfaces", () => {
 
     loading.unmount();
     const error = render(
-      <CreateEventPopover {...createEventProps({ onSubmit: failingSubmit })} />
+      <CreateEventPanel {...createEventProps({ onSubmit: failingSubmit })} />
     );
 
     fireEvent.click(
@@ -724,7 +724,7 @@ describe("integrated WCAG 2.1 AA gate: panels & navigation surfaces", () => {
     error.unmount();
 
     const empty = render(
-      <CreateEventPopover
+      <CreateEventPanel
         {...createEventProps({
           calendars: [],
           conferencingProviders: [],

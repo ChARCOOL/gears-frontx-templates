@@ -20,7 +20,7 @@ import {
   serializeCustomRepeat,
   weekdayLabel,
 } from "../create-event-format";
-import { CreateEventPopover } from "../create-event-popover";
+import { CreateEventPanel } from "../create-event-panel";
 
 const DATE = calendarDate("2026-08-24");
 
@@ -158,7 +158,7 @@ describe("create-event-format", () => {
   });
 
   it("guards malformed browser field values and dispatches clicked repeat units", () => {
-    render(createElement(CreateEventPopover, popoverProps()));
+    render(createElement(CreateEventPanel, popoverProps()));
 
     const startDate = screen.getByLabelText("Start date");
     Object.defineProperty(startDate, "value", {
@@ -196,7 +196,7 @@ describe("create-event-format", () => {
 
   it("covers custom repeat unit branches and location input updates", async () => {
     const user = userEvent.setup();
-    render(createElement(CreateEventPopover, popoverProps()));
+    render(createElement(CreateEventPanel, popoverProps()));
 
     const repeat = screen.getByLabelText(/repeat/iu);
     act(() => {

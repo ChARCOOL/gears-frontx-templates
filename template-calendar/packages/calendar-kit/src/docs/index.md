@@ -30,7 +30,7 @@
 | [`CalendarToolbar`](../ui/calendar-toolbar/calendar-toolbar.md) | `calendar-toolbar` | Title, Today, previous/next and the view switcher |
 | [`EventCard`](../ui/event-card/event-card.md) | `event-card` | The event surface every view uses by default |
 | [`EventDetailPanel`](../ui/event-detail-panel/event-detail-panel.md) | `event-detail-panel` | Inline event detail region for a side sheet |
-| [`CreateEventPopover`](../ui/create-event/create-event.md) | `create-event` | Create-event form with recurrence, people and discard guard |
+| [`CreateEventPanel`](../ui/create-event/create-event.md) | `create-event` | Create-event form with recurrence, people and discard guard |
 | [`ConflictIndicator`](../ui/conflict-indicator/conflict-indicator.md) | `conflict-indicator` | Named scheduling conflicts |
 | [`AvailabilityGrid`](../ui/availability-grid/availability-grid.md) | `availability-grid` | Paint free time over host availability |
 | [`CalendarSidePanel`](../ui/calendar-side-panel/calendar-side-panel.md) | `calendar-side-panel` | Panel shell composing the tools below |

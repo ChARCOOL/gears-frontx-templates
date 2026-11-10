@@ -9,8 +9,8 @@ import type {
   TimedCreateEventDraft,
 } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
-import { CreateEventPopover } from "../create-event-popover";
-import type { CreateEventPopoverProps } from "../create-event-popover";
+import { CreateEventPanel } from "../create-event-panel";
+import type { CreateEventPanelProps } from "../create-event-panel";
 
 
 const DATE = calendarDate("2026-08-24");
@@ -28,8 +28,8 @@ const DRAFT: TimedCreateEventDraft = {
 };
 
 const popoverProps = (
-  overrides: Partial<CreateEventPopoverProps> = {}
-): CreateEventPopoverProps => ({
+  overrides: Partial<CreateEventPanelProps> = {}
+): CreateEventPanelProps => ({
   calendars: [{ colorFamily: "purple", id: "calendar-1", name: "Teaching" }],
   conferencingProviders: [],
   defaultDraft: DRAFT,
@@ -45,8 +45,8 @@ const popoverProps = (
   ...overrides,
 });
 
-const renderPopover = (overrides: Partial<CreateEventPopoverProps> = {}) =>
-  render(<CreateEventPopover {...popoverProps(overrides)} />);
+const renderPopover = (overrides: Partial<CreateEventPanelProps> = {}) =>
+  render(<CreateEventPanel {...popoverProps(overrides)} />);
 
 const getCreateDialog = (): HTMLElement =>
   screen.getByRole("region", { name: /create/iu });
@@ -60,7 +60,7 @@ const changeTitle = async (
   await user.type(title, value);
 };
 
-describe("CreateEventPopover discard layout", () => {
+describe("CreateEventPanel discard layout", () => {
   it("leaves the form open on an outside press while it is pristine", () => {
     const onCancel = vi.fn<() => void>();
     renderPopover({
@@ -87,7 +87,7 @@ describe("CreateEventPopover discard layout", () => {
         <button onClick={onOutsidePress} type="button">
           Outside control
         </button>
-        <CreateEventPopover {...popoverProps({ onCancel })} />
+        <CreateEventPanel {...popoverProps({ onCancel })} />
       </>
     );
     await changeTitle(user, "Changed before closing");
@@ -217,7 +217,7 @@ describe("CreateEventPopover discard layout", () => {
     assert(onCancel).toHaveBeenCalledOnce();
 
     view.rerender(
-      <CreateEventPopover
+      <CreateEventPanel
         {...popoverProps({
           defaultDraft: undefined,
           defaultOpen: undefined,
@@ -230,7 +230,7 @@ describe("CreateEventPopover discard layout", () => {
       />
     );
     view.rerender(
-      <CreateEventPopover
+      <CreateEventPanel
         {...popoverProps({
           defaultDraft: undefined,
           defaultOpen: undefined,
@@ -276,7 +276,7 @@ describe("CreateEventPopover discard layout", () => {
     });
 
     view.rerender(
-      <CreateEventPopover
+      <CreateEventPanel
         {...popoverProps({
           defaultDraft: undefined,
           defaultOpen: undefined,
@@ -292,7 +292,7 @@ describe("CreateEventPopover discard layout", () => {
       />
     );
     view.rerender(
-      <CreateEventPopover
+      <CreateEventPanel
         {...popoverProps({
           defaultDraft: undefined,
           defaultOpen: undefined,
@@ -315,7 +315,7 @@ describe("CreateEventPopover discard layout", () => {
       title: "Changed after reopen",
     };
     view.rerender(
-      <CreateEventPopover
+      <CreateEventPanel
         {...popoverProps({
           defaultDraft: undefined,
           defaultOpen: undefined,

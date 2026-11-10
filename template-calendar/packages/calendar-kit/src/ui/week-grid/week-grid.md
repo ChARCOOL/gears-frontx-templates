@@ -130,6 +130,6 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 - [DayGrid](../day-grid/day-grid.md)
 - [EventCard](../event-card/event-card.md)
 - [EventDetailPanel](../event-detail-panel/event-detail-panel.md)
-- [CreateEventPopover](../create-event/create-event.md)
+- [CreateEventPanel](../create-event/create-event.md)
 - [Customization](../../docs/customization.md)
 - [Recipes](../../docs/recipes.md)

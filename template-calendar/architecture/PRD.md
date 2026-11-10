@@ -102,7 +102,7 @@ The host application declares a dependency on `@gears-frontx/calendar-kit`, impo
 
 - Backend services, planning, solver, and data ownership — these stay in the host's backend; the library exposes a UI data model and callbacks only.
 - Version switching, hidden-calendar filtering policy, and permission decisions — host state that chooses the mode outside the kit.
-- The host creation workflow, persistence and scheduling rules — creation stays a host callback; the generic `CreateEventPopover` form UI remains in scope (member packaging ADR).
+- The host creation workflow, persistence and scheduling rules — creation stays a host callback; the generic `CreateEventPanel` form UI remains in scope (member packaging ADR).
 - State management, data fetching, and i18n registry integration — host concerns; the library receives data and a host-supplied `t` translation callback.
 - Any existing date/range picker entry outside this member — untouched by this package.
 
@@ -287,7 +287,7 @@ No external ecosystem edge is owned here. The package is distributed under the r
 - [ ] A clean consumer installs the published-shaped alpha, imports the week-grid entry, provides host-owned UI data and permission/mode state, and receives typed callbacks without importing any host scheduling backend, solver or planning code — verifiable via `cpt-template-calendar-calendar-kit-fr-installable-artifact` and the pack-plus-clean-consumer gate.
 - [ ] An applied template may leave a consumer-owned starting copy of the calendar implementation; package versions published from this template repo remain the shared source — verifiable via `cpt-template-calendar-calendar-kit-fr-installable-artifact`.
 - [ ] Any pre-existing date/range picker entry outside this package remains distinct from the calendar-kit public names — verifiable via the package export names.
-- [ ] Calendar creation ships as generic UI only (`CreateEventPopover` driven by host callbacks); persistence, backend and scheduling rules stay with the host — verifiable via the member packaging ADR and the package source scan.
+- [ ] Calendar creation ships as generic UI only (`CreateEventPanel` driven by host callbacks); persistence, backend and scheduling rules stay with the host — verifiable via the member packaging ADR and the package source scan.
 - [ ] Every file under `src/core` carries no React, ui-kit, or browser-global import — verifiable via `cpt-template-calendar-calendar-kit-nfr-react-free-core` and the template's dependency-cruiser rules.
 - [ ] A calendar-only source change bumps only this package — verifiable via `cpt-template-calendar-calendar-kit-nfr-independent-versioning` and `policy:version-bump-on-change`, which governs the package once it is no longer private.
 

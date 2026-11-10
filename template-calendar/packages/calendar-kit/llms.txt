@@ -38,7 +38,7 @@ Rules an assistant should follow when writing code against this package:
 - [CalendarToolbar](dist/docs/calendar-toolbar.md): title, Today, previous/next, view switcher
 - [EventCard](dist/docs/event-card.md): the default event surface
 - [EventDetailPanel](dist/docs/event-detail-panel.md): inline event detail region
-- [CreateEventPopover](dist/docs/create-event.md): create-event form with recurrence and discard guard
+- [CreateEventPanel](dist/docs/create-event.md): create-event form with recurrence and discard guard
 - [ConflictIndicator](dist/docs/conflict-indicator.md): named scheduling conflicts
 - [AvailabilityGrid](dist/docs/availability-grid.md): paint free time
 - [CalendarSidePanel](dist/docs/calendar-side-panel.md): side-panel shell

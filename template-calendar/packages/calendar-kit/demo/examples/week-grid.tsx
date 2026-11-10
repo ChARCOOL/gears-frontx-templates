@@ -1,5 +1,5 @@
 import {
-  CreateEventPopover,
+  CreateEventPanel,
   EventDetailPanel,
   parseLocalTime,
 } from "@gears-frontx/calendar-kit";
@@ -154,9 +154,9 @@ const WeekGridDemo = ({ direction }: { direction: CalendarDirection }) => {
       <div className="demo-columns">
         <DemoSection
           title="Create shell"
-          hint="CreateEventPopover draft workflow, open by default."
+          hint="CreateEventPanel draft workflow, open by default."
         >
-          <CreateEventPopover
+          <CreateEventPanel
             calendars={sampleCalendars}
             people={samplePeople}
             locations={sampleLocations}

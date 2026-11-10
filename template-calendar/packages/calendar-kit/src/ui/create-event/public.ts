@@ -1,8 +1,9 @@
 export {
-  CreateEventPopover,
-  type CreateEventPopoverHandle,
-  type CreateEventPopoverProps,
-} from "./create-event-popover";
+  CreateEventPanel,
+  type CreateEventKind,
+  type CreateEventPanelHandle,
+  type CreateEventPanelProps,
+} from "./create-event-panel";
 
 export {
   useCreateEventController,

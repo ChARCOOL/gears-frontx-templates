@@ -160,7 +160,7 @@ assert_tar_file 'dist/theme.css' 'calendar theme stylesheet is published'
 assert_tar_file 'dist/reset.css' 'calendar reset stylesheet is published'
 assert_tar_file 'dist/docs/create-event.md' 'create-event documentation uses the emitted entry name'
 assert_tar_file 'dist/docs/event-detail-panel.md' 'event-detail-panel documentation uses the emitted entry name'
-assert_tar_absent '^package/dist/docs/create-event-popover\.md$' 'obsolete create-event-popover documentation is absent'
+assert_tar_absent '^package/dist/docs/create-event-panel\.md$' 'obsolete create-event-panel documentation is absent'
 assert_tar_absent '^package/dist/docs/detail-panel\.md$' 'obsolete detail-panel documentation is absent'
 
 for family in agenda-view availability-grid calendar-list calendar-side-panel calendar-toolbar conflict-indicator create-event day-grid event-card event-detail-panel grid month-grid month-navigator search-results time-zone-list week-grid world-clocks; do
@@ -300,7 +300,7 @@ import {
   CalendarSidePanel,
   CalendarToolbar,
   ConflictIndicator,
-  CreateEventPopover,
+  CreateEventPanel,
   DayGrid,
   EventCard,
   EventDetailPanel,
@@ -318,7 +318,7 @@ import type {
   CalendarListProps,
   CalendarSidePanelProps,
   CalendarToolbarProps,
-  CreateEventPopoverProps,
+  CreateEventPanelProps,
   DayGridProps,
   EventCardProps,
   EventDetailPanelProps,
@@ -355,8 +355,8 @@ import {
   type ConflictIndicatorProps,
 } from '@gears-frontx/calendar-kit/conflict-indicator';
 import {
-  CreateEventPopover as FlatCreateEventPopover,
-  type CreateEventPopoverProps as FlatCreateEventPopoverProps,
+  CreateEventPanel as FlatCreateEventPanel,
+  type CreateEventPanelProps as FlatCreateEventPanelProps,
 } from '@gears-frontx/calendar-kit/create-event';
 import {
   DayGrid as FlatDayGrid,
@@ -430,7 +430,7 @@ export const resolvedExports = [
   CalendarSidePanel,
   CalendarToolbar,
   ConflictIndicator,
-  CreateEventPopover,
+  CreateEventPanel,
   DayGrid,
   EventCard,
   EventDetailPanel,
@@ -447,7 +447,7 @@ export const resolvedExports = [
   FlatCalendarSidePanel,
   FlatCalendarToolbar,
   FlatConflictIndicator,
-  FlatCreateEventPopover,
+  FlatCreateEventPanel,
   FlatDayGrid,
   FlatEventCard,
   FlatEventDetailPanel,
@@ -486,7 +486,7 @@ export type FirstAlphaTypes = {
   readonly calendarList: CalendarListProps;
   readonly calendarSidePanel: CalendarSidePanelProps;
   readonly calendarToolbar: CalendarToolbarProps;
-  readonly createEvent: CreateEventPopoverProps;
+  readonly createEvent: CreateEventPanelProps;
   readonly day: DayGridProps;
   readonly eventCard: EventCardProps;
   readonly eventDetail: EventDetailPanelProps;
@@ -502,7 +502,7 @@ export type FirstAlphaTypes = {
   readonly flatCalendarList: FlatCalendarListProps;
   readonly flatCalendarSidePanel: FlatCalendarSidePanelProps;
   readonly flatCalendarToolbar: FlatCalendarToolbarProps;
-  readonly flatCreateEvent: FlatCreateEventPopoverProps;
+  readonly flatCreateEvent: FlatCreateEventPanelProps;
   readonly flatDay: FlatDayGridProps;
   readonly flatEventCard: FlatEventCardProps;
   readonly flatEventDetail: FlatEventDetailPanelProps;
@@ -724,7 +724,7 @@ import {
   CalendarSidePanel,
   CalendarToolbar,
   ConflictIndicator,
-  CreateEventPopover,
+  CreateEventPanel,
   DayGrid,
   EventCard,
   EventDetailPanel,
@@ -742,7 +742,7 @@ import { CalendarList as FlatCalendarList } from '@gears-frontx/calendar-kit/cal
 import { CalendarSidePanel as FlatCalendarSidePanel } from '@gears-frontx/calendar-kit/calendar-side-panel';
 import { CalendarToolbar as FlatCalendarToolbar } from '@gears-frontx/calendar-kit/calendar-toolbar';
 import { ConflictIndicator as FlatConflictIndicator } from '@gears-frontx/calendar-kit/conflict-indicator';
-import { CreateEventPopover as FlatCreateEventPopover } from '@gears-frontx/calendar-kit/create-event';
+import { CreateEventPanel as FlatCreateEventPanel } from '@gears-frontx/calendar-kit/create-event';
 import { DayGrid as FlatDayGrid } from '@gears-frontx/calendar-kit/day-grid';
 import { EventDetailPanel as FlatEventDetailPanel } from '@gears-frontx/calendar-kit/event-detail-panel';
 import { EventCard as FlatEventCard } from '@gears-frontx/calendar-kit/event-card';
@@ -915,7 +915,7 @@ describe('first-alpha installed consumer', () => {
     expect(typeof CalendarList).toBe('function');
     expect(typeof CalendarSidePanel).toBe('function');
     expect(typeof CalendarToolbar).toBe('function');
-    expect(typeof CreateEventPopover).toBe('function');
+    expect(typeof CreateEventPanel).toBe('function');
     expect(typeof DayGrid).toBe('function');
     expect(typeof MonthGrid).toBe('function');
     expect(typeof MonthNavigator).toBe('function');
@@ -927,7 +927,7 @@ describe('first-alpha installed consumer', () => {
     expect(typeof FlatCalendarList).toBe('function');
     expect(typeof FlatCalendarSidePanel).toBe('function');
     expect(typeof FlatCalendarToolbar).toBe('function');
-    expect(typeof FlatCreateEventPopover).toBe('function');
+    expect(typeof FlatCreateEventPanel).toBe('function');
     expect(typeof FlatDayGrid).toBe('function');
     expect(typeof FlatMonthGrid).toBe('function');
     expect(typeof FlatMonthNavigator).toBe('function');
