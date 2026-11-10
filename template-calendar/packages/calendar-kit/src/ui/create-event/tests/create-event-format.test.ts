@@ -13,6 +13,7 @@ import {
   WEEKDAY_ORDER,
   createDefaultAnchorRect,
   firstLetter,
+  formatDateInputText,
   formatDateRowLabel,
   formatRepeatHint,
   formatRepeatSummary,
@@ -124,6 +125,26 @@ describe("create-event-format", () => {
         utcInstant("2026-07-15T12:00:00.000Z")
       )
     ).toContain("EDT");
+  });
+
+  it("reads a date field as weekday, day and month, with the year on request", () => {
+    assert(formatDateInputText(calendarDate("2026-08-12"), "en-US")).toBe(
+      "Wed, 12 Aug"
+    );
+    assert(
+      formatDateInputText(calendarDate("2026-09-14"), "en-US", true)
+    ).toBe("Mon, 14 Sep, 2026");
+  });
+
+  it("names the city behind a zone id after its offset", () => {
+    assert(
+      formatTimeZone(
+        "Europe/Sofia",
+        "en-US",
+        t,
+        utcInstant("2026-08-12T12:00:00.000Z")
+      )
+    ).toMatch(/ Sofia$/u);
   });
 
   it("formats dates, zones, names, and weekday labels without app dependencies", () => {

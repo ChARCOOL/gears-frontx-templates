@@ -4,7 +4,10 @@ import { weekdayIndex } from "../../core/temporal";
 import { calendarDate } from "../../core/validation";
 import type { CalendarTranslate } from "../../i18n/calendar-localization";
 import { englishTranslate } from "../../i18n/english";
-import { formatDateFieldLabel } from "../primitives/date-field/date-field-format";
+import {
+  formatDateFieldLabel,
+  formatDateInputLabel,
+} from "../primitives/date-field/date-field-format";
 
 const UNTIL_DATE_PATTERN = /^\d{8}(?:T\d{6}Z)?$/u;
 const WHITESPACE_PATTERN = /\s+/u;
@@ -251,6 +254,12 @@ export const formatDateRowLabel = (
   includeYear = false
 ): string => formatDateFieldLabel(date, locale, includeYear);
 
+export const formatDateInputText = (
+  date: CalendarDate,
+  locale: string,
+  includeYear = false
+): string => formatDateInputLabel(date, locale, includeYear);
+
 export const dateRangeDayCount = (
   startDate: CalendarDate,
   endDate: CalendarDate | null
@@ -279,7 +288,12 @@ export const formatTimeZone = (
     return `${offset} ${t("calendar.timeZone.cityGroup.berlinBratislavaBelgrade")}`;
   }
 
-  return offset ?? timeZone;
+  // The city behind the zone id, as the detail view names it: "GMT+2 Sofia".
+  const city = timeZone.includes("/")
+    ? timeZone.split("/").pop()?.replaceAll("_", " ")
+    : undefined;
+
+  return [offset, city].filter(Boolean).join(" ") || timeZone;
 };
 
 export const initials = (displayName: string): string => {
