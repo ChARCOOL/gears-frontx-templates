@@ -52,7 +52,7 @@ Overlays (popovers, dialogs, the create form) portal out of the component that o
 | `EventDetailPanel` | `anchorElement` (popover or dialog), `comparisonTimeZone`, `maxVisibleParticipants`, `readOnly` |
 | `CreateEventPopover` | `expanded`, `anchorRect` / `anchorRef` |
 | `ConflictIndicator` | `compact` |
-| `AvailabilityGrid` | `interactionMode` (`read-only`) |
+| `AvailabilityGrid` | `interactionMode` (`read-only`), `paintMode` (`cells`), `headerFormat` (`weekday`), `showHourLabels`, `onHourClick`, `onDayClick` |
 | `WorldClocks`, `MonthNavigator`, `SearchResults` | `now` |
 
 Turning a feature off usually means leaving its callback out: without `onEdit` there is no edit button, without `onCreateCalendar` no create button, without `onQuickCreate` an empty slot does nothing.
@@ -132,7 +132,7 @@ A render slot replaces the content of one part and keeps the kit's positioning, 
 | `WorldClocks` | `renderClock`, `renderEditor` |
 | `CalendarList` | `renderCalendar`, `renderCreateCalendar` |
 | `CalendarSidePanel` | `slots.header`, `.search`, `.body`, `.monthNavigator`, `.timeZones`, `.worldClocks`, `.calendarList`, `.searchResults` |
-| `CalendarGrid` | `renderCell`, `renderHeader` |
+| `CalendarGrid` | `renderCell`, `renderHeader`, `renderRowLabel` |
 
 Tips:
 

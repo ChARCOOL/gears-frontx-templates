@@ -388,10 +388,12 @@ Back and close in nested panels.
 
 <!-- generated:messages calendar.availability -->
 
-| Translation ID                | English       | Values |
-| ----------------------------- | ------------- | ------ |
-| `calendar.availability.empty` | No time slots |        |
-| `calendar.availability.label` | Availability  |        |
+| Translation ID                     | English                | Values |
+| ---------------------------------- | ---------------------- | ------ |
+| `calendar.availability.empty`      | No time slots          |        |
+| `calendar.availability.label`      | Availability           |        |
+| `calendar.availability.selectDay`  | Select all of {{day}}  | `day`  |
+| `calendar.availability.selectHour` | Select all at {{time}} | `time` |
 
 <!-- /generated -->
 
