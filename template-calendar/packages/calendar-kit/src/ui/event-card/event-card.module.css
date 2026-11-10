@@ -326,7 +326,7 @@ button.card.unavailable {
   min-inline-size: 0;
   font-size: var(--cal-text-meta-size);
   line-height: var(--cal-text-meta-line-height);
-  color: var(--cal-color-muted);
+  color: var(--button-fg);
 }
 
 .metadataRow {

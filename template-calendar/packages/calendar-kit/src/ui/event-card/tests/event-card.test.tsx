@@ -747,6 +747,12 @@ describe("EventCard unit behaviour beyond the acceptance suite", () => {
 });
 
 describe("EventCard styles", () => {
+  it("colours metadata with the card's own foreground, so it stays readable on a filled card", () => {
+    expect(declarations(cardCss, ".metadata").get("color")).toBe(
+      "var(--button-fg)"
+    );
+  });
+
   it("element-qualifies the card rules that tie with the ui-kit button", () => {
     expect(declarations(cardCss, "button.card").get("position")).toBe(
       "absolute"
