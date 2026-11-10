@@ -167,40 +167,32 @@ describe(useAgendaViewController, () => {
     expect(result.current.dayGroups.at(-1)?.date).toBe("2026-08-31");
   });
 
-  it("bounds each event day axis to its events", () => {
+  it("lists each day's events in start order with all-day rows first", () => {
     const { result } = renderComplexAgenda();
     const eventDay = groupFor(result.current.dayGroups, "2026-08-02");
 
-    expect(eventDay.eventCount).toBe(3);
-    expect(eventDay.allDayEvents.map((row) => row.event.id)).toStrictEqual([
+    expect(eventDay.rows.map((row) => row.event.id)).toStrictEqual([
       "all-day",
+      "early",
+      "late",
     ]);
-    expect(
-      eventDay.hourRows.map((row) => row.hourStart?.slice(11, 13))
-    ).toStrictEqual(["09", "10"]);
-    expect(
-      eventDay.hourRows[0]?.events.map((row) => row.event.title)
-    ).toStrictEqual(["Early", "Late"]);
-    expect(eventDay.hourRows[1]?.events).toHaveLength(0);
   });
 
-  it("keeps all-day-only days empty of timed rows", () => {
+  it("keeps all-day-only days free of timed rows", () => {
     const { result } = renderComplexAgenda();
     const allDayOnly = groupFor(result.current.dayGroups, "2026-08-03");
 
-    expect(allDayOnly.allDayEvents).toHaveLength(1);
-    expect(allDayOnly.allDayEvents[0]?.start).toBeNull();
-    expect(allDayOnly.allDayEvents[0]?.end).toBeNull();
-    expect(allDayOnly.hourRows).toStrictEqual([
-      { events: [], hourStart: null },
-    ]);
+    expect(allDayOnly.rows).toHaveLength(1);
+    expect(allDayOnly.rows[0]?.kind).toBe("allday");
+    expect(allDayOnly.rows[0]?.start).toBeNull();
+    expect(allDayOnly.rows[0]?.end).toBeNull();
   });
 
   it("retains empty days and flat event-row indices", () => {
     const { result } = renderComplexAgenda();
     const emptyDay = groupFor(result.current.dayGroups, "2026-08-04");
 
-    expect(emptyDay.hourRows).toStrictEqual([{ events: [], hourStart: null }]);
+    expect(emptyDay.rows).toStrictEqual([]);
     expect(result.current.eventRows.map((row) => row.focusIndex)).toStrictEqual(
       [0, 1, 2, 3]
     );
@@ -236,14 +228,18 @@ describe(useAgendaViewController, () => {
       "into-september:2026-08-31:start",
       "into-september:2026-09-01:end",
     ]);
-    expect(groupFor(result.current.dayGroups, "2026-09-01").eventCount).toBe(1);
+    expect(groupFor(result.current.dayGroups, "2026-09-01").rows).toHaveLength(
+      1
+    );
     expect(
-      groupFor(result.current.dayGroups, "2026-08-30").allDayEvents
-    ).toHaveLength(1);
+      groupFor(result.current.dayGroups, "2026-08-30").rows.map((row) => row.kind)
+    ).toStrictEqual(["allday"]);
     expect(
-      groupFor(result.current.dayGroups, "2026-08-31").allDayEvents
-    ).toHaveLength(1);
-    expect(groupFor(result.current.dayGroups, "2026-08-29").eventCount).toBe(0);
+      groupFor(result.current.dayGroups, "2026-08-31").rows.map((row) => row.kind)
+    ).toStrictEqual(["allday", "timed"]);
+    expect(groupFor(result.current.dayGroups, "2026-08-29").rows).toStrictEqual(
+      []
+    );
   });
 
   it("starts the rolling window at today", () => {
@@ -283,8 +279,8 @@ describe(useAgendaViewController, () => {
     );
 
     const emptyDay = groupFor(result.current.dayGroups, "2026-08-25");
-    expect(emptyDay.eventCount).toBe(0);
-    expect(emptyDay.hourRows).toStrictEqual([{ events: [], hourStart: null }]);
+    expect(emptyDay.rows).toStrictEqual([]);
+    expect(emptyDay.nowIndex).toBeNull();
   });
 
   it("starts a navigated window at its anchor date", () => {
@@ -324,7 +320,7 @@ describe(useAgendaViewController, () => {
     expect(result.current.dayGroups).toHaveLength(30);
   });
 
-  it("marks past and in-progress rows and describes the current-day now line", () => {
+  it("marks past and in-progress rows and places the current-day now line", () => {
     const { result, rerender } = renderHook(
       ({ date }) =>
         useAgendaViewController({
@@ -361,14 +357,12 @@ describe(useAgendaViewController, () => {
       ["now", false, true],
       ["future", false, false],
     ]);
-    const nowLine = result.current.dayGroups[0]?.nowLine;
-    expect(nowLine?.hourRowIndex).toBe(1);
-    expect(nowLine?.minutePercent).toBeCloseTo(96.6666666667, 8);
+    expect(result.current.dayGroups[0]?.nowIndex).toBe(2);
 
     rerender({ date: calendarDate("2026-09-24") });
 
     expect(
-      result.current.dayGroups.every((group) => group.nowLine === null)
+      result.current.dayGroups.every((group) => group.nowIndex === null)
     ).toBeTruthy();
   });
 

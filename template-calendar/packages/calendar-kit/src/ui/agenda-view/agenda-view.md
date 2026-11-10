@@ -1,8 +1,8 @@
 # AgendaView
 
-`AgendaView` renders a thirty-day, viewer-local agenda as grouped day sections. Each day contains an all-day lane and an event-bounded timed axis; the current day also keeps a real hour row for the now line when its events do not cover the current hour.
+`AgendaView` renders a thirty-day, viewer-local agenda as one card per day. A card lists its events in start order with all-day events first, and a day without events shows "No events". On the current day a now line sits between the events it falls between.
 
-Each hour row and the all-day lane keep the same anatomy: the row's own gutter carries the axis label (the hour, or the translated all-day label), and every event is one slot laid out as three columns - the event's own time gutter, its colour bar, and its body. A timed slot prints its start over its end in that gutter, an all-day slot prints the all-day label there, and the body carries the title over icon/value metadata rows (duration, organizer, attendee count). A metadata row is rendered only when its value exists, so an event with no attendees gets no attendee row.
+Every event is one slot laid out as three columns - the event's own time gutter, its colour bar, and its body. A timed slot prints its start over its end in that gutter, an all-day slot prints the all-day label there, and the body carries the title over icon/value metadata rows (duration, organizer, attendee count). A metadata row is rendered only when its value exists, so an event with no attendees gets no attendee row.
 
 ## Usage
 
@@ -31,12 +31,12 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 ## Accessibility and empty data
 
 - The root is an accessible region with one polite atomic status for the visible date range and each day count.
-- An empty event collection still renders the rolling day rows and their all-day/timed lanes. No loading, error, or empty-state shell, alert, or additional status region is created.
+- An empty event collection still renders one card per day, each showing "No events". No loading, error, or empty-state shell, alert, or additional status region is created.
 - Events render as native buttons, carry the public `data-event-id` hook, and expose selected/unavailable state through `aria-pressed`, `aria-disabled`, and CSS Module classes.
 - The slot's time gutter stamps carry `data-slot-time`, and each metadata row carries `data-agenda-metadata` naming the fact it holds (`timing`, `organizer`, `attendees`). Metadata icons are decorative (`aria-hidden`).
 - Event rows share one roving tab stop. Arrow Up/Down, Home, and End move focus across the flat event sequence; Enter and Space select available events.
 
-Relative hints, attendee counts, durations, viewer-zone offsets, and the current-time line are formatted from the supplied locale and time zone. Fetching and failure presentation remain host concerns.
+Relative hints, attendee counts, durations, and the current-time line are formatted from the supplied locale and time zone. Fetching and failure presentation remain host concerns.
 
 ## Messages
 

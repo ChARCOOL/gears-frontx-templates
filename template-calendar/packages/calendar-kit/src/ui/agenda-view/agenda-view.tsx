@@ -2,14 +2,20 @@
 
 import { clsx } from "clsx";
 import { TimerIcon, UserIcon, UsersIcon } from "lucide-react";
-import { createContext, memo, useContext, useId, useMemo } from "react";
+import {
+  createContext,
+  Fragment,
+  memo,
+  useContext,
+  useId,
+  useMemo,
+} from "react";
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 
 import {
   formatCalendarList,
   formatDuration,
   formatRelativeHint,
-  formatViewerTimeZoneOffset,
 } from "../../core/format";
 import type {
   CalendarDate,
@@ -36,7 +42,6 @@ import { Button } from "../primitives/button/button";
 import {
   buildLiveAnnouncement,
   formatAgendaDate,
-  formatAgendaEventCount,
   formatAgendaTime,
   getRelativeDayLabel,
 } from "./agenda-format";
@@ -364,10 +369,8 @@ const AgendaEventButton = memo(AgendaEventButtonImpl);
 
 const AgendaNowLine = ({
   currentInstant,
-  minutePercent,
 }: {
   readonly currentInstant: UtcInstant;
-  readonly minutePercent: number;
 }) => {
   const { locale } = useCalendarLocalization();
   const { timeZone } = useCalendarContext();
@@ -379,7 +382,6 @@ const AgendaNowLine = ({
       className={clsx(styles.nowLine, "nowLine")}
       data-current-time={currentTimeLabel}
       data-testid="agenda-now-line"
-      style={{ insetBlockStart: `${minutePercent}%` }}
     >
       <span className={styles.nowGutter} aria-hidden="true">
         {currentTimeLabel}
@@ -405,7 +407,6 @@ const AgendaDayGroup = ({
   const isToday = group.date === todayDate;
   const relativeLabel = getRelativeDayLabel(group.date, todayDate, t);
   const dateLabel = formatAgendaDate(dayStart, timeZone, locale);
-  const isAbsoluteOnly = relativeLabel === null && group.eventCount === 0;
 
   return (
     <li
@@ -413,93 +414,37 @@ const AgendaDayGroup = ({
       data-agenda-date={group.date}
       data-today={isToday}
     >
-      <div
-        className={clsx(
-          styles.dayHeader,
-          isAbsoluteOnly && styles.dayHeaderAbsoluteOnly
-        )}
-        data-today={isToday}
-      >
-        <span className={clsx(styles.dayGutter, "dayGutter")} title={timeZone}>
-          {formatViewerTimeZoneOffset(dayStart, timeZone, locale)}
-        </span>
-        <div className={styles.dayCell}>
-          {renderDayHeader ? (
-            renderDayHeader(group.date)
-          ) : (
-            <>
-              {relativeLabel !== null && (
-                <span className={styles.dayRelative} data-agenda-relative-label>
-                  {relativeLabel}
-                </span>
-              )}
-              <span className={clsx(styles.dayDate, "dayDate")}>
-                {dateLabel}
+      <div className={styles.dayHeader} data-today={isToday}>
+        {renderDayHeader ? (
+          renderDayHeader(group.date)
+        ) : (
+          <>
+            {relativeLabel !== null && (
+              <span className={styles.dayRelative} data-agenda-relative-label>
+                {relativeLabel}
               </span>
-              {group.eventCount > 0 && (
-                <span className={styles.dayCount} data-agenda-event-count>
-                  {formatAgendaEventCount(group.eventCount, t)}
-                </span>
-              )}
-            </>
-          )}
-        </div>
+            )}
+            <span className={clsx(styles.dayDate, "dayDate")}>{dateLabel}</span>
+          </>
+        )}
       </div>
 
-      {group.allDayEvents.length > 0 && (
-        <div className={clsx(styles.row, "row", styles.rowAllDay)}>
-          <div className={clsx(styles.rowGutter, "rowGutter")}>
-            {t("calendar.agenda.allDay")}
-          </div>
-          <div className={styles.rowContent}>
-            {group.allDayEvents.map((row) => (
-              <AgendaEventButton key={row.key} row={row} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {group.hourRows.map((hourRow, hourIndex) => {
-        const isEmpty = hourRow.events.length === 0;
-
-        const nowLine =
-          group.nowLine?.hourRowIndex === hourIndex ? group.nowLine : null;
-
-        return (
-          <div
-            className={clsx(styles.row, "row", isEmpty && styles.rowEmpty)}
-            data-agenda-empty-row={
-              isEmpty && group.eventCount === 0 && group.date !== todayDate
-                ? "true"
-                : undefined
-            }
-            data-agenda-hour-row
-            key={`${group.date}:${hourRow.hourStart ?? "all-day"}`}
-          >
-            <div className={clsx(styles.rowGutter, "rowGutter")}>
-              {hourRow.hourStart === null
-                ? ""
-                : formatAgendaTime(hourRow.hourStart, timeZone, locale)}
-            </div>
-            <div className={styles.rowContent}>
-              {isEmpty && group.eventCount === 0 && (
-                <span className={clsx(styles.emptyDay, "emptyDay")}>
-                  {t("calendar.agenda.emptyDay")}
-                </span>
-              )}
-              {hourRow.events.map((row) => (
-                <AgendaEventButton key={row.key} row={row} />
-              ))}
-            </div>
-            {nowLine !== null && (
-              <AgendaNowLine
-                currentInstant={currentInstant}
-                minutePercent={nowLine.minutePercent}
-              />
+      <div className={styles.dayEvents}>
+        {group.rows.length === 0 && (
+          <p className={styles.noEvents}>{t("calendar.agenda.emptyDay")}</p>
+        )}
+        {group.rows.map((row, index) => (
+          <Fragment key={row.key}>
+            {group.nowIndex === index && (
+              <AgendaNowLine currentInstant={currentInstant} />
             )}
-          </div>
-        );
-      })}
+            <AgendaEventButton row={row} />
+          </Fragment>
+        ))}
+        {group.nowIndex === group.rows.length && (
+          <AgendaNowLine currentInstant={currentInstant} />
+        )}
+      </div>
     </li>
   );
 };
@@ -555,6 +500,7 @@ const AgendaViewContent = ({
 
   const liveText = buildLiveAnnouncement(
     controller.announcement,
+    controller.windowRange,
     controller.dayGroups,
     controller.eventRows,
     locale,

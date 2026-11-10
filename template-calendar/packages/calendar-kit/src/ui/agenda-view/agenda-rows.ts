@@ -21,7 +21,6 @@ import {
   fromViewerDateTime,
   toViewerDateTime,
 } from "../../core/temporal";
-import { localTimeFromMinutes } from "../../core/time-input";
 
 type TimedCalendarEvent = Extract<CalendarEvent, { readonly allDay: false }>;
 
@@ -30,11 +29,6 @@ type AllDayCalendarEvent = Extract<CalendarEvent, { readonly allDay: true }>;
 export interface AgendaWindowRange {
   readonly start: CalendarDate;
   readonly endExclusive: CalendarDate;
-}
-
-interface AgendaNowLine {
-  readonly hourRowIndex: number;
-  readonly minutePercent: number;
 }
 
 interface AgendaAllDayRow {
@@ -65,17 +59,12 @@ interface AgendaTimedRow {
 
 export type AgendaEventRow = AgendaAllDayRow | AgendaTimedRow;
 
-interface AgendaHourRow {
-  readonly hourStart: UtcInstant | null;
-  readonly events: readonly AgendaTimedRow[];
-}
-
 export interface AgendaDayGroup {
   readonly date: CalendarDate;
-  readonly eventCount: number;
-  readonly allDayEvents: readonly AgendaAllDayRow[];
-  readonly hourRows: readonly AgendaHourRow[];
-  readonly nowLine: AgendaNowLine | null;
+  /** The day's rows in start order; all-day rows come first. Empty on a day without events. */
+  readonly rows: readonly AgendaEventRow[];
+  /** Where the now line sits among `rows`; `rows.length` when every row has started. Null off today and on an empty day. */
+  readonly nowIndex: number | null;
 }
 
 interface AgendaModel {
@@ -122,7 +111,18 @@ const compareRawRows = (left: RawAgendaRow, right: RawAgendaRow): number => {
     return left.date < right.date ? -1 : 1;
   }
 
-  return compareUtcInstants(left.sortStart, right.sortStart);
+  const byStart = compareUtcInstants(left.sortStart, right.sortStart);
+
+  if (byStart !== 0) {
+    return byStart;
+  }
+
+  // An all-day row starts at the day's midnight, so it ties with a timed row starting then.
+  if (left.kind !== right.kind) {
+    return left.kind === "allday" ? -1 : 1;
+  }
+
+  return 0;
 };
 
 const resolveRowFlags = (
@@ -136,7 +136,7 @@ const resolveRowFlags = (
     return { now: inProgress, past };
   }
 
-  // All-day rows never carry a live now state: the current-time line is hour-based.
+  // All-day rows never carry a live now state.
   return { now: false, past: row.date < todayDate };
 };
 
@@ -211,104 +211,12 @@ const buildWindowDates = (start: CalendarDate): CalendarDate[] => {
   return dates;
 };
 
-const hourInstant = (
-  date: CalendarDate,
-  hour: number,
-  timeZone: IanaTimeZone
-): UtcInstant =>
-  fromViewerDateTime({
-    date,
-    time: localTimeFromMinutes(hour * 60),
-    timeZone,
-  });
-
-const localHour = (instant: UtcInstant, timeZone: IanaTimeZone): number =>
-  Number(toViewerDateTime(instant, timeZone).time.slice(0, 2));
-
-const buildHourRows = (
-  windowDate: CalendarDate,
-  timedRows: readonly AgendaTimedRow[],
-  isToday: boolean,
-  now: UtcInstant,
-  timeZone: IanaTimeZone
-): AgendaHourRow[] => {
-  if (timedRows.length === 0) {
-    if (isToday) {
-      return [
-        {
-          events: [],
-          hourStart: hourInstant(
-            windowDate,
-            localHour(now, timeZone),
-            timeZone
-          ),
-        },
-      ];
-    }
-
-    return [{ events: [], hourStart: null }];
-  }
-
-  let minStartHour = 24;
-  let maxEndHour = -1;
-
-  for (const row of timedRows) {
-    minStartHour = Math.min(minStartHour, localHour(row.start, timeZone));
-    maxEndHour = Math.max(maxEndHour, localHour(row.end, timeZone));
-  }
-
-  const rowsByHour = new Map<number, AgendaTimedRow[]>();
-  const hours = new Set<number>();
-
-  for (const row of timedRows) {
-    const hour = localHour(row.start, timeZone);
-    hours.add(hour);
-    const rows = rowsByHour.get(hour);
-
-    if (rows === undefined) {
-      rowsByHour.set(hour, [row]);
-    } else {
-      rows.push(row);
-    }
-  }
-
-  for (let hour = minStartHour; hour <= maxEndHour; hour += 1) {
-    hours.add(hour);
-  }
-
-  if (isToday) {
-    hours.add(localHour(now, timeZone));
-  }
-
-  const sortedHours = sortCopy([...hours], (left, right) => left - right);
-
-  return sortedHours.map((hour) => ({
-    events: sortCopy(rowsByHour.get(hour) ?? [], (left, right) =>
-      compareUtcInstants(left.start, right.start)
-    ),
-    hourStart: hourInstant(windowDate, hour, timeZone),
-  }));
-};
-
-const buildNowLine = (
-  hourRows: readonly AgendaHourRow[],
-  now: UtcInstant,
-  timeZone: IanaTimeZone
-): AgendaNowLine | null => {
-  const currentHour = localHour(now, timeZone);
-
-  const hourRowIndex = hourRows.findIndex(
-    (row) =>
-      row.hourStart !== null &&
-      localHour(row.hourStart, timeZone) === currentHour
+const findNowIndex = (rows: readonly AgendaEventRow[], now: UtcInstant): number => {
+  const nextStart = rows.findIndex(
+    (row) => row.kind === "timed" && compareUtcInstants(row.start, now) > 0
   );
 
-  if (hourRowIndex === -1) {
-    return null;
-  }
-
-  const minute = Number(toViewerDateTime(now, timeZone).time.slice(3, 5));
-  return { hourRowIndex, minutePercent: (minute / 60) * 100 };
+  return nextStart === -1 ? rows.length : nextStart;
 };
 
 const collectRawRows = (
@@ -369,46 +277,24 @@ const collectRawRows = (
   return rawRows;
 };
 
-const isAllDayRow = (row: AgendaEventRow): row is AgendaAllDayRow =>
-  row.kind === "allday";
-
-const buildDayGroup = (
-  windowDate: CalendarDate,
+const buildDayGroups = (
+  windowDates: readonly CalendarDate[],
   eventRows: readonly AgendaEventRow[],
   now: UtcInstant,
-  todayDate: CalendarDate,
-  timeZone: IanaTimeZone
-): AgendaDayGroup => {
-  const dayRows: AgendaEventRow[] = [];
-  const allDayEvents: AgendaAllDayRow[] = [];
-  const timedRows: AgendaTimedRow[] = [];
+  todayDate: CalendarDate
+): AgendaDayGroup[] =>
+  windowDates.map((windowDate) => {
+    const rows = eventRows.filter((row) => row.date === windowDate);
 
-  for (const row of eventRows) {
-    if (row.date !== windowDate) {
-      continue;
-    }
-
-    dayRows.push(row);
-
-    if (isAllDayRow(row)) {
-      allDayEvents.push(row);
-    } else {
-      timedRows.push(row);
-    }
-  }
-
-  const isToday = windowDate === todayDate;
-  const hourRows = buildHourRows(windowDate, timedRows, isToday, now, timeZone);
-  const nowLine = isToday ? buildNowLine(hourRows, now, timeZone) : null;
-
-  return {
-    allDayEvents,
-    date: windowDate,
-    eventCount: dayRows.length,
-    hourRows,
-    nowLine,
-  };
-};
+    return {
+      date: windowDate,
+      nowIndex:
+        windowDate === todayDate && rows.length > 0
+          ? findNowIndex(rows, now)
+          : null,
+      rows,
+    };
+  });
 
 export const buildAgendaModel = (input: BuildAgendaModelInput): AgendaModel => {
   const { date, timeZone, events, now } = input;
@@ -422,9 +308,7 @@ export const buildAgendaModel = (input: BuildAgendaModelInput): AgendaModel => {
     toEventRow(row, index, now, todayDate)
   );
 
-  const dayGroups = windowDates.map((windowDate) =>
-    buildDayGroup(windowDate, eventRows, now, todayDate, timeZone)
-  );
+  const dayGroups = buildDayGroups(windowDates, eventRows, now, todayDate);
 
   return {
     dayGroups,

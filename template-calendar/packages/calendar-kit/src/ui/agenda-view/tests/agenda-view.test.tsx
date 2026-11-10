@@ -48,7 +48,7 @@ const dayGroupContaining = (label: string): HTMLElement =>
   requiredElement(screen.getByText(label, { exact: true }).closest("li"));
 
 describe(AgendaView, () => {
-  it("renders a native rolling list with localized day headers, counts, lanes, and hour gutters", () => {
+  it("renders a native rolling list with localized day headers and lanes, with no zone gutter or event count", () => {
     renderAgenda({
       events: [
         allDayEvent("all-day", "All-day event", "2026-08-24", "2026-08-25"),
@@ -74,32 +74,49 @@ describe(AgendaView, () => {
     screen.getByText("Today");
     screen.getByText("Tomorrow");
     screen.getByText("Mon, Aug 24");
-    screen.getByText("1 event");
-    screen.getByText("2 events");
-    const offsets = screen.getAllByTitle("UTC");
     const todayGroup = dayGroupContaining("Today");
     const tomorrowGroup = dayGroupContaining("Tomorrow");
     expect({
       allDayCount: screen.getAllByText("All day").length,
+      countLabels: screen.queryAllByText(/^\d+ events?$/u).length,
       facts: ["Aylin Demir", "3", "1 hr 30 min", "Now", "Starts in 1 day"].map(
         (text) => screen.getByText(text).textContent
       ),
-      firstOffset: offsets[0]?.textContent,
       nineCount: screen.getAllByText("09:00").length,
-      offsetCount: offsets.length,
       tenCount: screen.getAllByText("10:00").length,
       today: todayGroup.dataset.today,
       tomorrow: tomorrowGroup.dataset.today,
+      zoneLabels: screen.queryAllByTitle("UTC").length,
     }).toStrictEqual({
-      allDayCount: 2,
+      allDayCount: 1,
+      countLabels: 0,
       facts: ["Aylin Demir", "3", "1 hr 30 min", "Now", "Starts in 1 day"],
-      firstOffset: "GMT+0",
-      nineCount: 2,
-      offsetCount: RENDERED_DAY_COUNT,
-      tenCount: 3,
+      nineCount: 1,
+      tenCount: 1,
       today: "true",
       tomorrow: "false",
+      zoneLabels: 0,
     });
+  });
+
+  it("shows No events in a day card that has no events", () => {
+    renderAgenda({
+      events: [
+        timedEvent(
+          "tomorrow",
+          "Tomorrow event",
+          "2026-08-25T10:00:00.000Z",
+          "2026-08-25T11:00:00.000Z"
+        ),
+      ],
+    });
+
+    expect(
+      within(dayGroupContaining("Today")).getByText("No events")
+    ).toBeVisible();
+    expect(
+      within(dayGroupContaining("Tomorrow")).queryByText("No events")
+    ).toBeNull();
   });
 
   it("does not render a timed empty state for an all-day-only day", () => {
@@ -111,7 +128,7 @@ describe(AgendaView, () => {
 
     const day = dayGroupContaining("All-day only");
 
-    expect(within(day).getByText("1 event")).toBeVisible();
+    expect(within(day).getByText("All day")).toBeVisible();
     expect(within(day).queryByText("No events")).toBeNull();
   });
 
@@ -244,54 +261,55 @@ describe(AgendaView, () => {
     expect(liveRegion).toHaveAttribute("aria-atomic", "true");
     expect(liveRegion).toHaveTextContent("Aug 24");
     expect(liveRegion).toHaveTextContent("1 event");
-    expect(liveRegion).toHaveTextContent("0 events");
+    expect(liveRegion).not.toHaveTextContent("0 events");
   });
 
-  it("renders ordinary rolling rows for empty events with no status regions", () => {
+  it("renders a No events card for every day of the window and no status regions for empty events", () => {
     renderAgenda({ events: [] });
 
     const agenda = screen.getByRole("region", { name: "Agenda view" });
-    const today = dayGroupContaining("Today");
-    const emptyDays = within(screen.getByRole("list"))
-      .getAllByText("No events")
-      .filter((emptyDay) => !today.contains(emptyDay));
 
     expect({
       busy: agenda.hasAttribute("aria-busy"),
-      emptyDayCount: emptyDays.length,
+      dayCards: screen.queryAllByRole("listitem").length,
       loading: screen.queryByRole("status", { name: "Loading agenda…" }),
-      nowLabel: screen.getByText("09:58").textContent,
-      todayGutter: within(today).getByText("09:00").textContent,
-      todayHasEmptyLabel: within(today).queryByText("No events") !== null,
+      noEvents: screen.queryAllByText("No events").length,
+      nowLine: screen.queryByTestId("agenda-now-line"),
     }).toStrictEqual({
       busy: false,
-      emptyDayCount: RENDERED_DAY_COUNT - 1,
+      dayCards: RENDERED_DAY_COUNT,
       loading: null,
-      nowLabel: "09:58",
-      todayGutter: "09:00",
-      todayHasEmptyLabel: true,
+      noEvents: RENDERED_DAY_COUNT,
+      nowLine: null,
     });
   });
 
-  it("anchors the now line to the real hour when it falls outside the event span", () => {
+  it("places the now line between the events it falls between", () => {
     renderAgenda({
       events: [
         timedEvent(
-          "later",
-          "Later",
+          "past",
+          "Past",
+          "2026-08-24T08:00:00.000Z",
+          "2026-08-24T09:00:00.000Z"
+        ),
+        timedEvent(
+          "future",
+          "Future",
           "2026-08-24T13:00:00.000Z",
           "2026-08-24T14:00:00.000Z"
         ),
       ],
     });
 
-    const today = dayGroupContaining("Today");
+    const nowLine = requiredElement(
+      document.querySelector<HTMLElement>("[data-testid='agenda-now-line']")
+    );
 
-    expect(within(today).getByText("09:00")).toBeVisible();
-    expect(within(today).getAllByText("13:00")).not.toHaveLength(0);
-
-    expect(document.querySelector("[data-current-time]")).toBeVisible();
-    expect(within(today).getByText("09:00")).toBeVisible();
+    expect(nowLine).toHaveAttribute("data-current-time", "09:58");
+    expect(nowLine).toHaveAttribute("aria-hidden", "true");
+    expect(nowLine.previousElementSibling).toHaveTextContent("Past");
+    expect(nowLine.nextElementSibling).toHaveTextContent("Future");
   });
 
   it("draws the current time line only in the displayed current-day group", () => {
@@ -392,14 +410,12 @@ describe(AgendaView, () => {
         within(eventButton).getByText("12:30").textContent,
       ],
       startCount: screen.getAllByText("11:00").length,
-      zoneCount: screen.getAllByText("GMT+2").length,
     }).toStrictEqual({
       date: "Mo., Aug 24",
       direction: null,
       endCount: 1,
       eventTimes: ["11:00", "12:30"],
-      startCount: 2,
-      zoneCount: RENDERED_DAY_COUNT,
+      startCount: 1,
     });
   });
 

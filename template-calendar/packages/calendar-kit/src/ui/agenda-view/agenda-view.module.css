@@ -24,53 +24,14 @@
 }
 
 .dayHeader {
-  display: grid;
-  grid-template-columns: var(--grid-gutter-width) minmax(0, 1fr);
-  min-block-size: 48px;
-  background: var(--cal-color-raised);
-}
-
-.dayGutter {
-  composes: gutterCell from "../../styles/modules/grid.module.css";
-  min-inline-size: 0;
-  padding: var(--cal-space-2) var(--cal-space-2) 0;
-  border-block-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
-  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
-  color: var(--cal-color-subtle);
-  font-size: var(--cal-text-caption-size);
-  font-weight: var(--cal-text-caption-weight);
-  line-height: var(--cal-text-caption-line-height);
-}
-
-.dayHeader .dayGutter {
-  padding: var(--cal-space-2) var(--cal-space-2) 0;
-  color: var(--cal-color-subtle);
-  font-size: var(--cal-text-caption-size);
-  line-height: var(--cal-text-caption-line-height);
-}
-
-.dayCell {
-  composes: gutterCell from "../../styles/modules/grid.module.css";
-}
-
-/* Outranks the composed gutterCell's display: block. */
-.dayHeader .dayCell {
   display: flex;
+  min-block-size: 48px;
   min-inline-size: 0;
   flex-direction: column;
-  position: relative;
-  padding: var(--cal-space-2) var(--cal-space-2) 0;
-  border-block-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
-  color: inherit;
-  font-size: inherit;
-  line-height: inherit;
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
-}
-
-.dayHeaderAbsoluteOnly .dayCell {
   justify-content: center;
+  padding: var(--cal-space-2);
+  border-block-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
+  background: var(--cal-color-raised);
 }
 
 .dayRelative {
@@ -98,68 +59,19 @@
   line-height: 1.5rem;
 }
 
-.dayCount {
-  position: absolute;
-  inset-block-start: var(--cal-space-2);
-  inset-inline-end: var(--cal-space-2);
-  color: var(--cal-color-subtle);
-  font-size: var(--cal-text-caption-size);
-  font-weight: var(--cal-text-caption-weight);
-  line-height: var(--cal-text-caption-line-height);
-  letter-spacing: var(--cal-text-caption-tracking);
-  white-space: nowrap;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: var(--grid-gutter-width) minmax(0, 1fr);
-  min-block-size: var(--cal-control-height-lg);
-  min-inline-size: 0;
-  position: relative;
-  background: var(--cal-color-surface);
-}
-
-.rowGutter,
-.rowContent {
-  min-inline-size: 0;
-  border-block-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
-}
-
-.row:last-child .rowGutter,
-.row:last-child .rowContent {
-  border-block-end: 0;
-}
-
-.rowGutter {
-  display: flex;
-  align-items: flex-start;
-  overflow: hidden;
-  padding: var(--cal-space-2);
-  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
-  color: var(--cal-color-muted);
-  font-size: var(--cal-text-meta-size);
-  font-weight: var(--cal-text-meta-weight);
-  line-height: var(--cal-text-meta-line-height);
-  letter-spacing: var(--cal-text-meta-tracking);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.rowContent {
+.dayEvents {
   display: flex;
   min-inline-size: 0;
   flex-direction: column;
-  gap: var(--cal-space-1);
-  padding: var(--cal-space-1);
-  position: relative;
+  background: var(--cal-color-surface);
 }
 
-.rowEmpty .rowContent {
-  padding: 0;
-}
-
-.emptyDay {
-  align-self: center;
+.noEvents {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 80px;
+  margin: 0;
   padding: var(--cal-space-3) var(--cal-space-4);
   color: var(--cal-color-muted);
   font-size: var(--cal-text-meta-size);
@@ -478,33 +390,26 @@ button.agendaEvent:not(.unavailable):hover {
 }
 
 .nowLine {
-  display: grid;
-  grid-template-columns: var(--grid-gutter-width) minmax(0, 1fr);
-  inset-block-start: 0;
-  inset-inline: 0;
+  display: flex;
   align-items: center;
+  gap: var(--cal-space-1);
   min-block-size: var(--cal-text-caption-line-height);
+  padding-inline: var(--cal-space-2);
   pointer-events: none;
-  position: absolute;
-  transform: translateY(-50%);
-  z-index: 1;
 }
 
 .nowGutter {
-  padding-inline: 0 var(--cal-space-1);
+  flex: none;
   color: var(--cal-color-now-label);
   font-size: var(--cal-text-caption-size);
   font-weight: var(--cal-text-caption-weight);
   line-height: var(--cal-text-caption-line-height);
-  text-align: end;
   white-space: nowrap;
 }
 
 .nowRule {
-  display: block;
+  flex: 1 1 auto;
   min-inline-size: 0;
-  margin-inline-start: -1px;
-  inline-size: calc(100% + 1px);
   border-block-start: var(--cal-border-width-1) solid var(--cal-color-now);
 }
 
@@ -519,7 +424,7 @@ button.agendaEvent:not(.unavailable):hover {
 @media (forced-colors: active), (prefers-contrast: more) {
   .agendaView,
   .dayHeader,
-  .row {
+  .dayEvents {
     color: CanvasText;
     background: Canvas;
   }

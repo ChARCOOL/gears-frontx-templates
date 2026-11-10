@@ -6,7 +6,11 @@ import { addCalendarDays, fromViewerDateTime } from "../../core/temporal";
 import { parseIanaTimeZone, utcInstant } from "../../core/validation";
 import type { CalendarTranslate } from "../../i18n/calendar-localization";
 import type { AgendaAnnouncement } from "../../react/controllers/use-agenda-view-controller";
-import type { AgendaDayGroup, AgendaEventRow } from "./agenda-rows";
+import type {
+  AgendaDayGroup,
+  AgendaEventRow,
+  AgendaWindowRange,
+} from "./agenda-rows";
 
 export {
   formatDuration,
@@ -59,13 +63,13 @@ export const formatAgendaDate = (
   return `${weekday}, ${month} ${day}`;
 };
 
-const formatAgendaGroupDate = (
-  group: AgendaDayGroup,
+const formatAgendaDay = (
+  date: CalendarDate,
   timeZone: IanaTimeZone,
   locale: string
 ): string =>
   formatAgendaDate(
-    fromViewerDateTime({ date: group.date, time: "00:00", timeZone }),
+    fromViewerDateTime({ date, time: "00:00", timeZone }),
     timeZone,
     locale
   );
@@ -77,27 +81,28 @@ export const formatAgendaEventCount = (
 
 export const buildLiveAnnouncement = (
   announcement: AgendaAnnouncement | null,
+  windowRange: AgendaWindowRange,
   dayGroups: readonly AgendaDayGroup[],
   eventRows: readonly AgendaEventRow[],
   locale: string,
   timeZone: IanaTimeZone,
   t: CalendarTranslate
 ): string => {
-  const firstGroup = arrayAt(dayGroups, 0);
-  const lastGroup = arrayAt(dayGroups, -1);
-  if (firstGroup === undefined || lastGroup === undefined) {
-    return "";
-  }
-
-  const firstLabel = formatAgendaGroupDate(firstGroup, timeZone, locale);
-  const lastLabel = formatAgendaGroupDate(lastGroup, timeZone, locale);
-
-  const counts = dayGroups.map((group) =>
-    formatCalendarList(locale, [
-      formatAgendaGroupDate(group, timeZone, locale),
-      formatAgendaEventCount(group.eventCount, t),
-    ])
+  const firstLabel = formatAgendaDay(windowRange.start, timeZone, locale);
+  const lastLabel = formatAgendaDay(
+    addCalendarDays(windowRange.endExclusive, -1),
+    timeZone,
+    locale
   );
+
+  const counts = dayGroups
+    .filter((group) => group.rows.length > 0)
+    .map((group) =>
+      formatCalendarList(locale, [
+        formatAgendaDay(group.date, timeZone, locale),
+        formatAgendaEventCount(group.rows.length, t),
+      ])
+    );
 
   const parts = [`${firstLabel} – ${lastLabel}`, ...counts];
 

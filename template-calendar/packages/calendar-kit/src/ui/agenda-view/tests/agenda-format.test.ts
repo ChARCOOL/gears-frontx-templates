@@ -1,6 +1,10 @@
 import { describe, expect as assert, it } from "vitest";
 
-import { englishMessage, UTC } from "../../../__test-utils__/fixtures";
+import {
+  englishMessage,
+  timedEvent,
+  UTC,
+} from "../../../__test-utils__/fixtures";
 import { calendarDate, utcInstant } from "../../../core/model";
 import {
   buildLiveAnnouncement,
@@ -8,15 +12,7 @@ import {
   formatAgendaEventCount,
   getRelativeDayLabel,
 } from "../agenda-format";
-import type { AgendaDayGroup } from "../agenda-rows";
-
-const group = (date: string, eventCount: number): AgendaDayGroup => ({
-  allDayEvents: [],
-  date: calendarDate(date),
-  eventCount,
-  hourRows: [{ events: [], hourStart: null }],
-  nowLine: null,
-});
+import { buildAgendaModel } from "../agenda-rows";
 
 describe("agenda formatting", () => {
   it("formats dates, plural counts, and relative day labels", () => {
@@ -50,32 +46,65 @@ describe("agenda formatting", () => {
     ).toBeNull();
   });
 
-  it("announces the date range and every day count", () => {
+  it("announces the date range and the count of each day with events", () => {
+    const { dayGroups, eventRows, windowRange } = buildAgendaModel({
+      date: calendarDate("2026-08-24"),
+      events: [
+        timedEvent(
+          "first",
+          "2026-08-24T09:00:00.000Z",
+          "2026-08-24T10:00:00.000Z"
+        ),
+        timedEvent(
+          "second",
+          "2026-08-25T09:00:00.000Z",
+          "2026-08-25T10:00:00.000Z"
+        ),
+        timedEvent(
+          "third",
+          "2026-08-25T11:00:00.000Z",
+          "2026-08-25T12:00:00.000Z"
+        ),
+      ],
+      now: utcInstant("2026-08-24T08:00:00.000Z"),
+      timeZone: UTC,
+    });
+
     const text = buildLiveAnnouncement(
       { kind: "range" },
-      [group("2026-08-24", 1), group("2026-08-25", 0)],
-      [],
+      windowRange,
+      dayGroups,
+      eventRows,
       "en-US",
       UTC,
       englishMessage("en-US")
     );
 
-    assert(text).toContain("Aug 24");
+    assert(text).toContain("Mon, Aug 24 – Tue, Sep 22");
     assert(text).toContain("1 event");
-    assert(text).toContain("0 events");
+    assert(text).toContain("2 events");
+    assert(text).not.toContain("0 events");
   });
 
-  it("handles empty announcements", () => {
+  it("announces the visible range alone when no day has events", () => {
+    const { dayGroups, eventRows, windowRange } = buildAgendaModel({
+      date: calendarDate("2026-08-24"),
+      events: [],
+      now: utcInstant("2026-08-24T08:00:00.000Z"),
+      timeZone: UTC,
+    });
+
     assert(
       buildLiveAnnouncement(
         { kind: "range" },
-        [],
-        [],
+        windowRange,
+        dayGroups,
+        eventRows,
         "en-US",
         UTC,
         englishMessage("en-US")
       )
-    ).toBe("");
+    ).toBe("Mon, Aug 24 – Tue, Sep 22");
   });
 
   it("rejects empty locales before constructing Intl formatters", () => {
