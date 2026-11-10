@@ -42,6 +42,7 @@ By default the week column labels each row `W1`…`Wn`, the week's index inside 
 | `now` | `UtcInstant` |  | Reference instant for the today marker and past styling. Omit to follow the wall clock. |
 | `onEmptyCellSelect` | `(cell: CalendarCell, anchorRect: DOMRectReadOnly) => void` |  | An empty part of a day was activated (in `selectionMode="none"`). `anchorRect` is the day cell's rectangle, for a popover. |
 | `onEventSelect` | `(event: CalendarEvent, context: CalendarEventRenderContext<unknown>, anchor?: HTMLElement…` |  | An available event was activated. `anchor` is the strip element. |
+| `onMoveRequest` | `(request: CalendarMoveRequest) => void` |  | Enables dragging a timed event to another day, keeping its time of day and length. The host confirms or cancels, as with WeekGrid. Omit to disable dragging. |
 | `onOverflowSelect` | `(payload: { readonly date: CalendarDate; readonly anchorRect?: DOMRectReadOnly \| undefine…` |  | The overflow chip was activated. `anchorRect` is the chip's rectangle, for a popover. |
 | `onSelectedDateRangeChange` | `(range: CalendarDateRange \| null) => void` |  | Called when a range is committed or cleared. |
 | `onSelectedEventIdChange` | `(eventId: string \| null) => void` |  | Called when an event is selected or deselected. |
@@ -66,6 +67,10 @@ Set `selectionMode="date-range"` to let the user pick whole days, as a term or e
 - Keyboard: Enter or Space on a day sets the start, the arrow keys move the end, and Enter or Space commits. Escape abandons a range in progress.
 - The grid is `aria-multiselectable`, every day carries `aria-selected`, and the live region announces the committed range. `renderCell` receives `isSelected` for the days in range.
 - In this mode an empty day starts a range instead of calling `onEmptyCellSelect`; events and the overflow chip keep their own activation. Days the host marks as off stay host-drawn through `renderCell`.
+
+## Drag to move
+
+Pass `onMoveRequest` to move timed events by whole days. Dragging a timed event onto another day calls `onMoveRequest({ event, from, to, confirm, cancel })`. `from` is the event's current start cell and `to` is the same time of day on the drop day, with the event's length kept. The host must call `confirm` or `cancel`; the grid commits nothing before `confirm`, as with `WeekGrid`. The day cell the event would land on carries `data-drop-target` and the drop-target outline. The mark clears on drop or cancel, when the drag ends without a drop, and when the pointer leaves the grid. Dropping on the event's own day emits nothing. Without `onMoveRequest`, events are not draggable. All-day events are not draggable yet. Keyboard use is unchanged.
 
 ## Week numbers, trailing column, and part classes
 

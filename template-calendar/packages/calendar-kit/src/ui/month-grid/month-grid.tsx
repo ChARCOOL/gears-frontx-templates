@@ -4,6 +4,7 @@ import { clsx } from "clsx";
 import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type {
   CSSProperties,
+  DragEvent as ReactDragEvent,
   FocusEvent as ReactFocusEvent,
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
@@ -12,6 +13,7 @@ import type {
   ReactNode,
 } from "react";
 
+import { isEventActionable } from "../../core/actionability";
 import { formatCalendarList, formatGridTime } from "../../core/format";
 import { dateTimeFormatter } from "../../core/intl-cache";
 import type {
@@ -23,6 +25,7 @@ import type {
   CalendarEventGeometry,
   CalendarEventRenderContext,
   CalendarEventSegment,
+  CalendarMoveRequest,
   IanaTimeZone,
   UtcInstant,
 } from "../../core/model";
@@ -138,6 +141,8 @@ export interface MonthGridProps extends CalendarContextProps {
     readonly date: CalendarDate;
     readonly anchorRect?: DOMRectReadOnly;
   }) => void;
+  /** Enables dragging a timed event to another day, keeping its time of day and length. The host confirms or cancels, as with WeekGrid. Omit to disable dragging. */
+  readonly onMoveRequest?: (request: CalendarMoveRequest) => void;
 }
 
 interface MonthEventSlotProps {
@@ -148,6 +153,7 @@ interface MonthEventSlotProps {
   readonly past: boolean;
   readonly focused: boolean;
   readonly allDay?: boolean;
+  readonly draggable?: boolean;
   readonly startColumn: number;
   readonly endColumn: number;
   readonly lane: number;
@@ -157,6 +163,7 @@ interface MonthEventSlotProps {
     context: CalendarEventRenderContext,
     anchor: HTMLElement
   ) => void;
+  readonly onDragStart?: () => void;
   readonly onFocus: () => void;
   readonly onArrowKey: (event: ReactKeyboardEvent<HTMLDivElement>) => void;
 }
@@ -230,11 +237,13 @@ const MonthEventSlot = ({
   past,
   focused,
   allDay = false,
+  draggable,
   startColumn,
   endColumn,
   lane,
   renderEvent,
   onSelect,
+  onDragStart,
   onFocus,
   onArrowKey,
 }: MonthEventSlotProps): ReactElement => {
@@ -291,6 +300,8 @@ const MonthEventSlot = ({
       aria-rowindex={allDay ? rowIndex + 2 : undefined}
       className={clsx(styles.eventSlot, "event", allDay && styles.allDaySlot)}
       style={gridStyle}
+      draggable={draggable}
+      onDragStart={onDragStart}
       onFocus={onFocus}
       onKeyDown={handleKeyDown}
     >
@@ -355,14 +366,18 @@ interface MonthTimedEventProps
   extends
     Pick<MonthEventSlotProps, "focused" | "past" | "renderEvent" | "selected">,
     MonthEventControllerProps {
+  readonly beginMove: MonthGridControllerResult["beginMove"];
   readonly columnIndex: number;
+  readonly draggable?: boolean;
   readonly key: string;
   readonly rowIndex: number;
   readonly segment: MonthTimedSegment;
 }
 
 const MonthTimedEventImpl = ({
+  beginMove,
   columnIndex,
+  draggable,
   focused,
   focusEvent,
   onGridKeyDown,
@@ -399,6 +414,10 @@ const MonthTimedEventImpl = ({
     selectEvent(event.id, context, anchor);
   };
 
+  const handleDragStart = (): void => {
+    beginMove(segment.event);
+  };
+
   return (
     <MonthEventSlot
       event={segment.event}
@@ -407,11 +426,13 @@ const MonthTimedEventImpl = ({
       selected={selected}
       past={past}
       focused={focused}
+      draggable={draggable}
       startColumn={columnIndex}
       endColumn={columnIndex + 1}
       lane={0}
       renderEvent={renderEvent}
       onSelect={handleSelect}
+      onDragStart={handleDragStart}
       onFocus={handleFocus}
       onArrowKey={handleArrowKey}
     />
@@ -543,6 +564,7 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     onSelectedEventIdChange,
     onEventSelect,
     onEmptyCellSelect,
+    onMoveRequest,
     selectionMode = "none",
     selectedDateRange,
     defaultSelectedDateRange,
@@ -561,6 +583,7 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     events,
     now,
     onEventSelect,
+    onMoveRequest,
     onSelectedEventIdChange,
     overflowByDate: monthData?.overflowByDate,
     selectedEventId,
@@ -663,18 +686,64 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     [getCellKey, rows]
   );
 
-  const dayAtTarget = (
+  const dateAtTarget = (
     target: EventTarget | null
   ): CalendarDate | undefined => {
-    if (
-      !(target instanceof Element) ||
-      target.closest(`[data-event-id], .${styles.overflow}`) !== null
-    ) {
+    if (!(target instanceof Element)) {
       return undefined;
     }
 
     const key = target.closest<HTMLElement>("[data-cell-key]")?.dataset.cellKey;
     return key === undefined ? undefined : cellsByKey.get(key)?.date;
+  };
+
+  const dayAtTarget = (target: EventTarget | null): CalendarDate | undefined =>
+    target instanceof Element &&
+    target.closest(`[data-event-id], .${styles.overflow}`) !== null
+      ? undefined
+      : dateAtTarget(target);
+
+  // Event cards sit inside a day cell, so a drag over one resolves to that day.
+  const handleMoveDragOver = (event: ReactDragEvent<HTMLDivElement>): void => {
+    if (!controller.isMoving()) {
+      return;
+    }
+
+    event.preventDefault();
+    controller.updateMove(dateAtTarget(event.target));
+  };
+
+  const handleMoveDrop = (event: ReactDragEvent<HTMLDivElement>): void => {
+    if (!controller.isMoving()) {
+      return;
+    }
+
+    event.preventDefault();
+    const dropDate = dateAtTarget(event.target);
+
+    if (dropDate === undefined) {
+      controller.cancelMove();
+
+      return;
+    }
+
+    controller.updateMove(dropDate);
+    controller.endMove();
+  };
+
+  const handleMoveDragLeave = (event: ReactDragEvent<HTMLDivElement>): void => {
+    if (
+      event.relatedTarget instanceof Node &&
+      event.currentTarget.contains(event.relatedTarget)
+    ) {
+      return;
+    }
+
+    controller.updateMove();
+  };
+
+  const handleMoveDragEnd = (): void => {
+    controller.cancelMove();
   };
 
   const handleRangePointerDown = (
@@ -793,6 +862,10 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     handleCellClick,
     handleCellFocus,
     handleCellKeyDown,
+    handleMoveDragEnd,
+    handleMoveDragLeave,
+    handleMoveDragOver,
+    handleMoveDrop,
     handleRangePointerDown,
     handleRangePointerMove,
     handleRangePointerUp,
@@ -956,6 +1029,9 @@ const MonthDayCell = ({
       aria-selected={rangeMode ? inRange : undefined}
       data-event-count={cell.eventCount}
       data-all-day-row-count={allDayRowCount}
+      data-drop-target={
+        controller.moveTargetDate === cell.date ? "" : undefined
+      }
       data-outside-month={String(cell.isOutsideMonth)}
       data-today={String(isToday)}
       tabIndex={isFocused ? 0 : -1}
@@ -976,7 +1052,13 @@ const MonthDayCell = ({
       <div className={styles.timedEvents} style={timedEventsStyle}>
         {cell.visibleTimedEvents.map((segment) => (
           <MonthTimedEvent
+            beginMove={controller.beginMove}
             columnIndex={columnIndex}
+            draggable={
+              controller.moveEnabled && isEventActionable(segment.event)
+                ? true
+                : undefined
+            }
             focusEvent={controller.focusEvent}
             focused={
               controller.focusedCell.eventId === segment.event.id &&
@@ -1029,6 +1111,10 @@ const MonthGridContent = (props: MonthGridContentProps) => {
     handleCellClick,
     handleCellFocus,
     handleCellKeyDown,
+    handleMoveDragEnd,
+    handleMoveDragLeave,
+    handleMoveDragOver,
+    handleMoveDrop,
     handleRangePointerDown,
     handleRangePointerMove,
     handleRangePointerUp,
@@ -1105,6 +1191,10 @@ const MonthGridContent = (props: MonthGridContentProps) => {
         aria-multiselectable={rangeMode ? true : undefined}
         aria-rowcount={controller.rows.length + 1}
         dir={direction}
+        onDragEnd={handleMoveDragEnd}
+        onDragLeave={handleMoveDragLeave}
+        onDragOver={handleMoveDragOver}
+        onDrop={handleMoveDrop}
         onPointerDown={handleRangePointerDown}
         onPointerEnter={handleRangePointerMove}
         onPointerMove={handleRangePointerMove}
