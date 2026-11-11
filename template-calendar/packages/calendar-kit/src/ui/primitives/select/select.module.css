@@ -128,10 +128,10 @@
   box-sizing: border-box;
   padding: var(--cal-space-2);
   gap: var(--cal-space-2);
-  border: 0;
+  border: var(--cal-border-width-1) solid var(--cal-color-overlay-border);
   border-radius: var(--cal-radius-lg);
   background: var(--cal-color-overlay-surface);
-  box-shadow: inset 0 0 0 var(--cal-border-width-1) var(--cal-color-overlay-border), var(--cal-shadow-panel);
+  box-shadow: var(--cal-shadow-panel);
 }
 
 /* prettier-ignore */
@@ -233,7 +233,7 @@
   display: flex;
   font-family: var(--cal-font-family);
   font-size: var(--cal-text-grid-size);
-  font-weight: var(--cal-text-grid-weight);
+  font-weight: var(--cal-text-label-weight);
   line-height: var(--cal-text-grid-line-height);
   letter-spacing: var(--cal-text-grid-tracking);
   min-inline-size: 0;

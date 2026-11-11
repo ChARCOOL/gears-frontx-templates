@@ -4,12 +4,14 @@ import { createRef, useRef, useState } from "react";
 import type { Ref } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { declarations } from "../../../../__test-utils__/css-declarations";
 import { Dialog, DialogContent } from "../../dialog/dialog";
 import { Listbox } from "../../listbox-internals";
 import type { ListboxOption, ListboxProps } from "../../listbox-internals";
 import { Select } from "../select";
 import type { SelectOption } from "../select";
 
+import selectCss from "../select.module.css?raw";
 import selectStyles from "../select.module.css";
 
 const activeOption = () =>
@@ -93,6 +95,17 @@ const StatefulSelect = (props: Partial<Parameters<typeof Select>[0]> = {}) => {
 };
 
 describe(Select, () => {
+  it("draws the popup with a 1px border and sets option text to the label weight", () => {
+    expect(declarations(selectCss, ".popup").get("border")).toBe(
+      "var(--cal-border-width-1) solid var(--cal-color-overlay-border)"
+    );
+    expect(
+      declarations(selectCss, ".popup [role='option'] > div > .optionText").get(
+        "font-weight"
+      )
+    ).toBe("var(--cal-text-label-weight)");
+  });
+
   it("renders a combobox trigger with selected text and closed aria state", () => {
     renderSelect();
     const trigger = screen.getByRole("combobox", { name: "Calendar" });
