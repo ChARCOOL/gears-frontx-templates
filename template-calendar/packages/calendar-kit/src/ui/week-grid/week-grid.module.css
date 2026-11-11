@@ -216,11 +216,17 @@
 /* The ghost is the dragged card as a drop would place it: above the cards around it, never
    taking the pointer, and casting the drag shadow. */
 .eventFrame.dragGhost {
-  z-index: 3;
+  z-index: 20;
   border-radius: var(--cal-radius-slot);
   box-shadow: var(--cal-shadow-drag);
   inset-block-start: 0;
   pointer-events: none;
+}
+
+/* The cell holding the ghost drops its own stacking context, so the ghost competes with the cards
+   instead of painting under all of them. */
+.cellContent:has([data-drag-ghost]) {
+  z-index: auto;
 }
 
 /* Bands are decorative and never take the pointer, so cells and events beneath stay clickable. */
@@ -260,7 +266,7 @@
   block-size: auto;
 }
 
-/* A grab strip on the bottom edge; the card's own colour shows it on hover, focus and touch. */
+/* A grab strip on the bottom edge; the card's own colour shows it on hover and touch. */
 .eventFrame.timedFrame > .resizeHandle {
   z-index: 1;
   block-size: var(--cal-space-2);
@@ -281,15 +287,14 @@
   opacity: 0;
 }
 
-/* Same rule as the day grid: hover on a fine pointer, keyboard focus, the card being resized,
-   and every card on touch; never during a move drag. */
+/* Same rule as the day grid: hover on a fine pointer, the card being resized, and every card on
+   touch; never because of focus, and never during a move drag. */
 @media (hover: hover) and (pointer: fine) {
   .eventFrame:hover > .resizeHandle:after {
     opacity: 0.6;
   }
 }
 
-.eventFrame:has(:focus-visible) > .resizeHandle:after,
 .eventFrame > .resizeHandle:active:after {
   opacity: 0.6;
 }

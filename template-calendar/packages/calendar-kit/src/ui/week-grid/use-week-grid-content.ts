@@ -537,12 +537,14 @@ export const useWeekGridContent = <Payload = unknown>(
       targetKey,
     };
   }, [drag, gridCellKey, timedLayout.byCell, timeZone]);
+  // A drop with a ghost shows the ghost alone; the span outline is for drags that have none.
   const dropTargetKeys = useMemo(() => {
     const keys = new Set<string>();
 
     if (
       !drag ||
       drag.event.allDay ||
+      dragPreview?.ghost !== undefined ||
       compareCalendarCells(drag.from, drag.to) === 0
     ) {
       return keys;
@@ -564,7 +566,7 @@ export const useWeekGridContent = <Payload = unknown>(
     }
 
     return keys;
-  }, [dayColumns, drag, gridCellKey]);
+  }, [dayColumns, drag, dragPreview, gridCellKey]);
 
   const cellAtTarget = (
     target: EventTarget | null
@@ -605,19 +607,20 @@ export const useWeekGridContent = <Payload = unknown>(
   );
 
   // Frames lie over the cells they cover, so the slot under the pointer is found below them.
+  // Hit testing runs on the root that holds the grid: document-level lookups stop at shadow hosts.
   const resizeTargetAt = (
+    root: Document | ShadowRoot,
     clientX: number,
     clientY: number
   ): ResizeTarget | null => {
-    for (const element of document.elementsFromPoint(clientX, clientY)) {
+    for (const element of root.elementsFromPoint(clientX, clientY)) {
       if (element.closest("[data-event-id]") === null) {
         const target = cellAtTarget(element);
 
         if (target !== null) {
-          return {
-            bottom: target.element.getBoundingClientRect().bottom,
-            cell: target.cell,
-          };
+          const rect = target.element.getBoundingClientRect();
+
+          return { bottom: rect.bottom, cell: target.cell, top: rect.top };
         }
       }
     }
@@ -628,7 +631,9 @@ export const useWeekGridContent = <Payload = unknown>(
   const resize = useEventResize({
     cells: timedCells,
     onResizeRequest,
-    targetAt: resizeTargetAt,
+    targetAt: (clientX, clientY, handle) =>
+      resizeTargetAt(handle.getRootNode() as Document | ShadowRoot, clientX, clientY),
+    timeZone,
   });
 
   const startTouchMove = useTouchMove({
@@ -656,7 +661,8 @@ export const useWeekGridContent = <Payload = unknown>(
       controller.cancelMove();
       draggedEventIdRef.current = null;
     },
-    cellAt: (clientX, clientY) => resizeTargetAt(clientX, clientY)?.cell ?? null,
+    cellAt: (clientX, clientY) =>
+      resizeTargetAt(document, clientX, clientY)?.cell ?? null,
     end: () => {
       controller.endMove();
       draggedEventIdRef.current = null;

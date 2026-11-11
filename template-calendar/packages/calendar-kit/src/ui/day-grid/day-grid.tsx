@@ -628,13 +628,15 @@ const useDayGridContent = (props: DayGridContentProps) => {
       const layout = handle.closest<HTMLElement>(".timedLayout");
       const slot = layout === null ? undefined : slotAtClientY(layout, clientY);
 
-      return slot === undefined
-        ? null
-        : {
-            bottom: slot.element.getBoundingClientRect().bottom,
-            cell: slot.cell,
-          };
+      if (slot === undefined) {
+        return null;
+      }
+
+      const rect = slot.element.getBoundingClientRect();
+
+      return { bottom: rect.bottom, cell: slot.cell, top: rect.top };
     },
+    timeZone,
   });
 
   const draggedEventIdRef = useRef<string | null>(null);

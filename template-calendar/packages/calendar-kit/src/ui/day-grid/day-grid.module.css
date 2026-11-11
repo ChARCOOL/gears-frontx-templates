@@ -229,16 +229,17 @@
   background: var(--cal-color-orange-background);
 }
 
-/* The ghost is the dragged card as a drop would place it: above the cards around it, never
-   taking the pointer, and casting the drag shadow. */
+/* The ghost is the dragged card as a drop would place it: above every timed card (z-index 10 to
+   19 from the layout), never taking the pointer, and casting the drag shadow. */
 .event.dragGhost {
-  z-index: 3;
+  z-index: 20;
   border-radius: var(--cal-radius-slot);
   box-shadow: var(--cal-shadow-drag);
   pointer-events: none;
 }
 
-/* A grab strip on the bottom edge; the card's own colour shows it on hover, focus and touch. */
+/* A grab strip on the bottom edge. Only pointers and touch show it; focus never does, because a
+   dialog closed with Escape returns focus to the card and that must not leave the bar behind. */
 .timedEvent > .resizeHandle {
   position: absolute;
   z-index: 1;
@@ -260,16 +261,14 @@
   opacity: 0;
 }
 
-/* The bar marks the card under a fine pointer, the keyboard-focused card, the card being resized,
-   and every card on a touch screen. Mouse focus left by a click does not count, and no bar
-   shows while a move drag runs. */
+/* The bar marks the card under a fine pointer, the card being resized (its handle is pressed), and
+   every card on a touch screen. No bar shows while a move drag runs. */
 @media (hover: hover) and (pointer: fine) {
   .timedEvent:hover > .resizeHandle:after {
     opacity: 0.6;
   }
 }
 
-.timedEvent:has(:focus-visible) > .resizeHandle:after,
 .timedEvent > .resizeHandle:active:after {
   opacity: 0.6;
 }

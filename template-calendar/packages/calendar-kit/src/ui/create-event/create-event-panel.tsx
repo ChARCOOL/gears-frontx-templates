@@ -566,7 +566,7 @@ const TimeField = ({
       disabled={disabled}
       invalid={invalid}
       aria-describedby={errorId}
-      className={styles.control}
+      className={clsx(styles.control, value === "" && styles.emptyTime)}
       iconLeft={<Clock3Icon aria-hidden="true" />}
       onValueChange={onChange}
     />

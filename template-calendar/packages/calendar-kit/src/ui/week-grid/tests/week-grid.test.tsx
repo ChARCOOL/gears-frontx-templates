@@ -350,7 +350,7 @@ describe(WeekGrid, () => {
     assert(onMoveRequest).toHaveBeenCalledOnce();
   });
 
-  it("marks the slot under a dragged event as the drop target until the drop", () => {
+  it("shows the ghost on the slot under a dragged event, without a drop-target outline", () => {
     const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
     renderWeek({
       events: [timedEvent("drop-target")],
@@ -365,18 +365,18 @@ describe(WeekGrid, () => {
       fireEvent.dragOver(target);
     });
 
-    assert(target.querySelector("[data-drop-target]")).not.toBeNull();
-    assert(getTimedCell("09:00").querySelector("[data-drop-target]")).toBeNull();
+    assert(target.querySelector("[data-drag-ghost]")).not.toBeNull();
+    assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(0);
 
     act(() => {
       fireEvent.drop(target);
     });
 
     assert(onMoveRequest).toHaveBeenCalledOnce();
-    assert(target.querySelector("[data-drop-target]")).toBeNull();
+    assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(0);
   });
 
-  it("marks every slot the dragged event spans from the pointer slot", () => {
+  it("shows a two-hour ghost from the pointer slot with no span outline", () => {
     renderWeek({
       events: [
         timedEvent({
@@ -395,75 +395,7 @@ describe(WeekGrid, () => {
       fireEvent.dragOver(getTimedCell("10:00"));
     });
 
-    assert(getTimedCell("10:00").querySelector("[data-drop-target]")).not.toBeNull();
-    assert(getTimedCell("11:00").querySelector("[data-drop-target]")).not.toBeNull();
-    assert(getTimedCell("12:00").querySelector("[data-drop-target]")).not.toBeNull();
-    assert(getTimedCell("13:00").querySelector("[data-drop-target]")).toBeNull();
-    assert(getTimedCell("09:00").querySelector("[data-drop-target]")).toBeNull();
-    assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(3);
-  });
-
-  it("clamps the marked span to the day column", () => {
-    renderWeek({
-      events: [
-        timedEvent({
-          end: utcInstant("2026-08-24T12:00:00.000Z"),
-          endTime: "12:00",
-          id: "span",
-          title: "span",
-        }),
-      ],
-      interactionMode: "paint-and-move",
-    });
-    const eventButton = screen.getByRole("button", { name: /span/u });
-
-    act(() => {
-      fireEvent.dragStart(eventButton);
-      fireEvent.dragOver(getTimedCell("23:00"));
-    });
-
-    assert(getTimedCell("23:00").querySelector("[data-drop-target]")).not.toBeNull();
-    assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(1);
-  });
-
-  it("clears the drop target when the pointer leaves the grid", () => {
-    renderWeek({
-      events: [
-        timedEvent({
-          end: utcInstant("2026-08-24T12:00:00.000Z"),
-          endTime: "12:00",
-          id: "span",
-          title: "span",
-        }),
-      ],
-      interactionMode: "paint-and-move",
-    });
-    const eventButton = screen.getByRole("button", { name: /span/u });
-
-    act(() => {
-      fireEvent.dragStart(eventButton);
-      fireEvent.dragOver(getTimedCell("10:00"));
-    });
-
-    assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(3);
-
-    // jsdom's drag events drop relatedTarget from the init dict, so it is set on the event itself.
-    const dragLeaveTo = (to: EventTarget): void => {
-      const leave = createEvent.dragLeave(getTimedCell("10:00"));
-      Object.defineProperty(leave, "relatedTarget", { value: to });
-      fireEvent(getTimedCell("10:00"), leave);
-    };
-
-    act(() => {
-      dragLeaveTo(getTimedCell("11:00"));
-    });
-
-    assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(3);
-
-    act(() => {
-      dragLeaveTo(document.body);
-    });
-
+    assert(getTimedCell("10:00").querySelector("[data-drag-ghost]")).not.toBeNull();
     assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(0);
   });
 
@@ -955,7 +887,7 @@ describe("WeekGrid drag feedback", () => {
 
     const ghost = target.querySelector<HTMLElement>("[data-drag-ghost]");
     assert(frame).toHaveAttribute("data-dragging");
-    assert(target.querySelector("[data-drop-target]")).not.toBeNull();
+    assert(document.querySelectorAll("[data-drop-target]")).toHaveLength(0);
     assert(ghost).toHaveAttribute("aria-hidden", "true");
     assert(ghost?.textContent).toMatch(/ghost/u);
     assert(ghost?.textContent).toMatch(/11:00/u);

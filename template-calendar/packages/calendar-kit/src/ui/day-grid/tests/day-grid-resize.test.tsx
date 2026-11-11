@@ -64,7 +64,7 @@ const renderDay = (props: Partial<DayGridProps>) =>
 const handle = (): HTMLElement | null =>
   document.querySelector<HTMLElement>("[data-resize-handle]");
 
-const dragHandleTo = (hour: number): void => {
+const dragHandleTo = (clientY: number): void => {
   const grip = handle();
 
   if (grip === null) {
@@ -72,8 +72,8 @@ const dragHandleTo = (hour: number): void => {
   }
 
   fireEvent.pointerDown(grip, { button: 0, pointerId: 1 });
-  pointerAt(grip, "pointermove", rowCenter(hour));
-  pointerAt(grip, "pointerup", rowCenter(hour));
+  pointerAt(grip, "pointermove", clientY);
+  pointerAt(grip, "pointerup", clientY);
 };
 
 describe("DayGrid resize", () => {
@@ -90,20 +90,37 @@ describe("DayGrid resize", () => {
     const onResizeRequest = vi.fn<(request: CalendarResizeRequest) => void>();
     renderDay({ events: [fixtureTimedEvent("resize")], onResizeRequest });
 
-    dragHandleTo(11);
+    dragHandleTo(rowCenter(11));
 
     expect(onResizeRequest).toHaveBeenCalledOnce();
     expect(onResizeRequest.mock.calls[0]?.[0].event.id).toBe("resize");
     expect(onResizeRequest.mock.calls[0]?.[0].to.endTime).toStrictEqual(
-      parseLocalTime("12:00")
+      parseLocalTime("11:30")
     );
   });
+
+  it.each([
+    [10, "11:15"],
+    [30, "11:45"],
+  ])(
+    "snaps the end to the nearest quarter hour, %d px into the 11:00 row",
+    (offset, endTime) => {
+      const onResizeRequest = vi.fn<(request: CalendarResizeRequest) => void>();
+      renderDay({ events: [fixtureTimedEvent("resize")], onResizeRequest });
+
+      dragHandleTo(11 * rowHeight + offset);
+
+      expect(onResizeRequest.mock.calls[0]?.[0].to.endTime).toStrictEqual(
+        parseLocalTime(endTime)
+      );
+    }
+  );
 
   it("refuses an end at or before the start", () => {
     const onResizeRequest = vi.fn<(request: CalendarResizeRequest) => void>();
     renderDay({ events: [fixtureTimedEvent("resize")], onResizeRequest });
 
-    dragHandleTo(8);
+    dragHandleTo(rowCenter(8));
 
     expect(onResizeRequest).not.toHaveBeenCalled();
   });
@@ -116,7 +133,7 @@ describe("DayGrid resize", () => {
       onResizeRequest: vi.fn(),
     });
 
-    dragHandleTo(11);
+    dragHandleTo(rowCenter(11));
 
     expect(onPaintSelect).not.toHaveBeenCalled();
   });

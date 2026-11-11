@@ -277,6 +277,11 @@
   min-inline-size: 0;
 }
 
+/* A disabled time with no value shows its empty segments as a placeholder, in the placeholder colour. */
+.emptyTime.emptyTime:disabled {
+  color: var(--cal-color-placeholder);
+}
+
 .rowArrow {
   block-size: var(--cal-icon-size-sm);
   color: var(--cal-color-muted);

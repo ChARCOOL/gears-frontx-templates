@@ -6,12 +6,17 @@ import type {
   CalendarCell,
   CalendarEvent,
   CalendarResizeRequest,
+  IanaTimeZone,
 } from "../../core/model";
-import { compareUtcInstants } from "../../core/temporal";
+import { utcInstant } from "../../core/model";
+import { compareUtcInstants, toViewerDateTime } from "../../core/temporal";
 
-/** The slot under the pointer and the screen position of its bottom edge. */
+const QUARTER_HOUR_MILLISECONDS = 15 * 60 * 1000;
+
+/** The slot under the pointer and the screen positions of its top and bottom edges. */
 export interface ResizeTarget {
   readonly cell: CalendarCell;
+  readonly top: number;
   readonly bottom: number;
 }
 
@@ -30,6 +35,7 @@ export interface UseEventResizeOptions {
   ) => ResizeTarget | null;
   /** Timed slots of the grid, which the keyboard steps through. */
   readonly cells: readonly CalendarCell[];
+  readonly timeZone: IanaTimeZone;
   readonly onResizeRequest?: (request: CalendarResizeRequest) => void;
 }
 
@@ -45,6 +51,35 @@ const endsAfterStart = (event: CalendarEvent, cell: CalendarCell): boolean =>
 
 const endsWhereEventEnds = (event: CalendarEvent, cell: CalendarCell): boolean =>
   !event.allDay && compareUtcInstants(cell.end, event.end) === 0;
+
+interface QuarterEnd {
+  /** The new end, as a cell that ends on the quarter hour. */
+  readonly cell: CalendarCell;
+  /** Screen position of that end. */
+  readonly bottom: number;
+}
+
+/** The pointer's time in the slot, rounded to the nearest quarter hour and kept inside the slot. */
+const quarterEndInSlot = (
+  target: ResizeTarget,
+  clientY: number,
+  timeZone: IanaTimeZone
+): QuarterEnd => {
+  const { cell, top, bottom } = target;
+  const startMs = Date.parse(cell.start);
+  const endMs = Date.parse(cell.end);
+  const pointerMs =
+    startMs + ((clientY - top) / (bottom - top)) * (endMs - startMs);
+  const quarterMs =
+    Math.round(pointerMs / QUARTER_HOUR_MILLISECONDS) * QUARTER_HOUR_MILLISECONDS;
+  const endedMs = Math.min(Math.max(quarterMs, startMs), endMs);
+  const end = utcInstant(new Date(endedMs));
+
+  return {
+    bottom: top + ((endedMs - startMs) / (endMs - startMs)) * (bottom - top),
+    cell: { ...cell, end, endTime: toViewerDateTime(end, timeZone).time },
+  };
+};
 
 /** The slot ending one step after (`1`) or before (`-1`) the event's end, on the event's own day. */
 const stepEnd = (
@@ -73,6 +108,7 @@ const stepEnd = (
 export const useEventResize = ({
   targetAt,
   cells,
+  timeZone,
   onResizeRequest,
 }: UseEventResizeOptions) => {
   const [preview, setPreview] = useState<ResizePreview | null>(null);
@@ -145,17 +181,19 @@ export const useEventResize = ({
           ? null
           : targetAt(pointer.clientX, pointer.clientY, pointer.currentTarget);
 
-      if (
-        active === null ||
-        target === null ||
-        !endsAfterStart(active.event, target.cell)
-      ) {
+      if (active === null || target === null) {
         return;
       }
 
-      active.to = target.cell;
+      const quarterEnd = quarterEndInSlot(target, pointer.clientY, timeZone);
+
+      if (!endsAfterStart(active.event, quarterEnd.cell)) {
+        return;
+      }
+
+      active.to = quarterEnd.cell;
       setPreview({
-        blockSize: target.bottom - active.top,
+        blockSize: quarterEnd.bottom - active.top,
         eventId: active.event.id,
       });
     },

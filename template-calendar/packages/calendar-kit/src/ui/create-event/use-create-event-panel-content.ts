@@ -412,12 +412,18 @@ export const useCreateEventPanelContent = (
     [idPrefix]
   );
 
-  const fieldMessages = createEventErrorMessages(controller.errors, t);
-  const firstError = firstCreateEventError(controller.errors, t);
-  const canSubmit = validateCreateEventDraft(controller.draft, {
+  const draftValidation = validateCreateEventDraft(controller.draft, {
     eventTypeIds,
     eventTypeRequired: props.eventTypeRequired,
-  }).valid;
+  });
+  // The end date message follows the draft, the same rule that disables Save, so a before-start
+  // end shows as soon as it is entered instead of only after a submit attempt.
+  const fieldMessages = createEventErrorMessages(
+    { ...controller.errors, endDate: draftValidation.errors.endDate },
+    t
+  );
+  const firstError = firstCreateEventError(controller.errors, t);
+  const canSubmit = draftValidation.valid;
   const timeZoneLabel = formatTimeZone(
     controller.draft.timeZone,
     locale,

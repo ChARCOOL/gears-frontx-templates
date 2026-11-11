@@ -42,8 +42,24 @@ const frame = (): HTMLElement => {
   return element;
 };
 
-/** Drags the handle until the pointer is over `time`'s slot, then releases. */
-const dragHandleTo = (time: string): void => {
+// jsdom has no layout: every element is one hour tall, so `clientY` inside it picks the time.
+const SLOT_HEIGHT = 60;
+
+// jsdom has no PointerEvent, so testing-library would drop `clientY`; a MouseEvent keeps it.
+const pointerAt = (
+  target: HTMLElement,
+  type: "pointermove" | "pointerup",
+  clientY: number
+): void => {
+  act(() => {
+    target.dispatchEvent(
+      new MouseEvent(type, { bubbles: true, cancelable: true, clientY })
+    );
+  });
+};
+
+/** Drags the handle to `clientY` inside `time`'s slot (half way by default), then releases. */
+const dragHandleTo = (time: string, clientY = SLOT_HEIGHT / 2): void => {
   const grip = handle();
 
   if (grip === null) {
@@ -52,17 +68,21 @@ const dragHandleTo = (time: string): void => {
 
   document.elementsFromPoint = () => [timedCell(time)];
   fireEvent.pointerDown(grip, { button: 0, pointerId: 1 });
-  fireEvent.pointerMove(grip, { pointerId: 1 });
+  pointerAt(grip, "pointermove", clientY);
   fireEvent.pointerUp(grip, { pointerId: 1 });
 };
 
 describe("WeekGrid resize", () => {
   beforeEach(() => {
     HTMLElement.prototype.setPointerCapture = vi.fn();
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 0, 100, SLOT_HEIGHT)
+    );
   });
 
   afterEach(() => {
     Reflect.deleteProperty(document, "elementsFromPoint");
+    vi.restoreAllMocks();
   });
 
   it("asks the host to end the event where the handle is released", () => {
@@ -74,9 +94,26 @@ describe("WeekGrid resize", () => {
     assert(onResizeRequest).toHaveBeenCalledOnce();
     assert(onResizeRequest.mock.calls[0]?.[0].event.id).toBe("resize");
     assert(onResizeRequest.mock.calls[0]?.[0].to.endTime).toStrictEqual(
-      parseLocalTime("12:00")
+      parseLocalTime("11:30")
     );
   });
+
+  it.each([
+    [10, "11:15"],
+    [40, "11:45"],
+  ])(
+    "snaps the end to the nearest quarter hour, %d px into the 11:00 slot",
+    (clientY, endTime) => {
+      const onResizeRequest = vi.fn<(request: CalendarResizeRequest) => void>();
+      renderWeek({ events: [timedEvent("resize")], onResizeRequest });
+
+      dragHandleTo("11:00", clientY);
+
+      assert(onResizeRequest.mock.calls[0]?.[0].to.endTime).toStrictEqual(
+        parseLocalTime(endTime)
+      );
+    }
+  );
 
   it("refuses an end at or before the start", () => {
     const onResizeRequest = vi.fn<(request: CalendarResizeRequest) => void>();
@@ -91,7 +128,7 @@ describe("WeekGrid resize", () => {
     const onResizeRequest = vi.fn<(request: CalendarResizeRequest) => void>();
     renderWeek({ events: [timedEvent("resize")], onResizeRequest });
 
-    dragHandleTo("09:00");
+    dragHandleTo("09:00", SLOT_HEIGHT);
 
     assert(onResizeRequest).not.toHaveBeenCalled();
   });
@@ -113,7 +150,7 @@ describe("WeekGrid resize", () => {
     }
 
     fireEvent.pointerDown(grip, { button: 0, pointerId: 1 });
-    fireEvent.pointerMove(grip, { pointerId: 1 });
+    pointerAt(grip, "pointermove", SLOT_HEIGHT / 2);
 
     assert(frame().style.blockSize).not.toBe(before);
 
