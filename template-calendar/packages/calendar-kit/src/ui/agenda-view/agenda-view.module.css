@@ -36,9 +36,9 @@
 
 .dayRelative {
   color: var(--cal-color-subtle);
-  font-size: var(--cal-text-caption-size);
+  font-size: var(--cal-text-meta-size);
   font-weight: var(--cal-text-caption-weight);
-  line-height: var(--cal-text-caption-line-height);
+  line-height: var(--cal-text-meta-line-height);
   letter-spacing: var(--cal-text-caption-tracking);
   text-transform: uppercase;
 }
@@ -296,9 +296,9 @@ button.agendaEvent:not(.unavailable):hover {
   justify-content: center;
   padding: var(--cal-space-1) var(--cal-space-2);
   color: var(--cal-color-muted);
-  font-size: var(--cal-text-caption-size);
+  font-size: var(--cal-text-meta-size);
   font-weight: var(--cal-text-meta-weight);
-  line-height: var(--cal-text-caption-line-height);
+  line-height: var(--cal-text-meta-line-height);
   white-space: nowrap;
 }
 
@@ -344,9 +344,9 @@ button.agendaEvent:not(.unavailable):hover {
 
 .slotTimeEnd {
   color: var(--cal-color-muted);
-  font-size: var(--cal-text-caption-size);
+  font-size: var(--cal-text-meta-size);
   font-weight: var(--cal-text-meta-weight);
-  line-height: var(--cal-text-caption-line-height);
+  line-height: var(--cal-text-meta-line-height);
 }
 
 .slotBody {
@@ -451,9 +451,9 @@ button.agendaEvent:not(.unavailable):hover {
 .nowGutter {
   flex: none;
   color: var(--cal-color-now-label);
-  font-size: var(--cal-text-caption-size);
+  font-size: var(--cal-text-meta-size);
   font-weight: var(--cal-text-caption-weight);
-  line-height: var(--cal-text-caption-line-height);
+  line-height: var(--cal-text-meta-line-height);
   white-space: nowrap;
 }
 

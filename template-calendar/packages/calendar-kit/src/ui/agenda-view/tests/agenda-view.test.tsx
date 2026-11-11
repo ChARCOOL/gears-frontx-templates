@@ -102,6 +102,13 @@ describe(AgendaView, () => {
     });
   });
 
+  it("sets agenda text at the 12px meta size, not the 10px caption size", () => {
+    expect(agendaCss).not.toContain("font-size: var(--cal-text-caption-size)");
+    expect(agendaCss).not.toContain(
+      "line-height: var(--cal-text-caption-line-height)"
+    );
+  });
+
   it("paints the Join button with the primary action colour, not the error colour", () => {
     expect(declarations(agendaCss, ".joinButton").get("background")).toBe(
       "var(--cal-color-action)"
