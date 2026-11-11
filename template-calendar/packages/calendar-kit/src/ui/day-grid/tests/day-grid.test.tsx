@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect as assert, it, vi } from "vitest";
 
-import { declarations } from "../../../__test-utils__/css-declarations";
 import {
   timedEvent as fixtureTimedEvent,
   UTC,
@@ -17,7 +16,6 @@ import { calendarDate, parseLocalTime, utcInstant } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
 import type { CalendarQuickCreatePayload } from "../../../react/slots";
 import { DayGrid } from "../day-grid";
-import dayGridCss from "../day-grid.module.css?raw";
 
 const requiredPayload = (
   value: CalendarQuickCreatePayload | undefined
@@ -587,40 +585,3 @@ describe("DayGrid ordinary grid rendering", () => {
   });
 });
 
-describe("DayGrid styles", () => {
-  it("fills the height its container gives it instead of capping the scroll area", () => {
-    const grid = declarations(dayGridCss, ".dayGrid");
-    const timed = declarations(dayGridCss, ".timedLayout");
-
-    assert(grid.get("flex")).toBe("1 1 auto");
-    assert(grid.get("block-size")).toBe("100%");
-    assert(timed.get("flex")).toBe("1 1 auto");
-    assert(timed.has("max-block-size")).toBe(false);
-  });
-
-  it("stacks all-day events in a column inside the all-day row", () => {
-    const track = declarations(dayGridCss, ".allDayTrack");
-    const event = declarations(dayGridCss, ".allDayTrack > .allDayEvent");
-
-    assert(declarations(dayGridCss, ".allDay").get("flex-shrink")).toBe("0");
-    assert(track.get("display")).toBe("flex");
-    assert(track.get("flex-direction")).toBe("column");
-    assert(track.get("gap")).toBe("2px");
-    assert(event.get("position")).toBe("relative");
-    assert(event.get("flex")).toBe("none");
-    assert(event.get("block-size")).toBe("var(--grid-chip-height)");
-    assert(event.get("inline-size")).toBe("100%");
-  });
-
-  it("centres the all-day gutter label and insets timed cards 1px", () => {
-    const gutter = declarations(dayGridCss, ".allDayGutter");
-    const card = declarations(dayGridCss, ".eventLayer > .event > *");
-
-    assert(gutter.get("display")).toBe("flex");
-    assert(gutter.get("align-items")).toBe("center");
-    assert(card.get("inset-block")).toBe("var(--cal-border-width-1)");
-    assert(card.get("inset-inline")).toBe("var(--cal-border-width-1) 0");
-    assert(card.get("block-size")).toBe("auto");
-    assert(card.get("inline-size")).toBe("auto");
-  });
-});

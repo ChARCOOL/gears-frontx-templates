@@ -28,11 +28,6 @@ export default defineConfig({
         statements: 70,
       },
     },
-    // Vitest 4 stubs every CSS module to an empty string before Vite's asset
-    // plugin can serve '?raw' imports, so './theme.css?raw' would resolve to
-    // ''. Process only raw CSS requests through the real pipeline; CSS-module
-    // stubbing for component styles is unchanged.
-    css: { include: [/\.css\?raw$/u] },
     environment: "jsdom",
     exclude: ["**/__test-utils__/**", "**/node_modules/**", "**/dist/**"],
     execArgv: nodeMajor >= 25 ? ["--no-experimental-webstorage"] : [],

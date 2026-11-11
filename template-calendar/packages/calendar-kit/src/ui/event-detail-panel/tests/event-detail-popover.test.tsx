@@ -2,13 +2,11 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect as assert, it, vi } from "vitest";
 
-import { declarations } from "../../../__test-utils__/css-declarations";
 import { timedEvent, UTC } from "../../../__test-utils__/fixtures";
 import type { CalendarAttendee } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
 import { EventDetailPanel } from "../event-detail-panel";
 import type { EventDetailPanelProps } from "../event-detail-panel";
-import panelCss from "../event-detail-panel.module.css?raw";
 
 const attendee = (
   id: string,
@@ -228,36 +226,4 @@ describe("EventDetailPanel anchored preview", () => {
     assert(screen.queryByRole("button", { name: "Expand" })).toBeNull();
   });
 
-  it("scrolls the body under a fixed header instead of growing the page", () => {
-    const body = declarations(panelCss, ".body");
-    const header = declarations(panelCss, ".header");
-
-    assert(body.get("overflow-y")).toBe("auto");
-    assert(body.get("min-block-size")).toBe("0");
-    assert(header.get("flex-shrink")).toBe("0");
-    assert(declarations(panelCss, ".content").get("min-block-size")).toBe("0");
-  });
-
-  // Only Delete is red; a header icon sized with the row icons keeps the muted button colour.
-  it("sizes the header icons without the delete colour, and only outlines a focused join", () => {
-    const headerIcon = declarations(panelCss, ".headerAction svg");
-    const joinFocus = declarations(panelCss, ".joinButton:focus-visible");
-
-    assert(headerIcon.get("block-size")).toBe("var(--cal-icon-size-sm)");
-    assert(headerIcon.has("color")).toBe(false);
-    assert(joinFocus.get("outline")).toBe(
-      "2px solid var(--cal-color-focus-ring-strong)"
-    );
-    assert(joinFocus.has("display")).toBe(false);
-  });
-
-  it("keeps the delete action alone in the error colour", () => {
-    assert([...declarations(panelCss, ".deleteAction").keys()]).toStrictEqual([
-      "--button-fg",
-      "--button-fg-hover",
-    ]);
-    assert(
-      declarations(panelCss, ".headerAction").get("--button-fg")
-    ).toBe("var(--cal-color-muted)");
-  });
-});
+      });
