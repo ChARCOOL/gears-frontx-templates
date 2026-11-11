@@ -35,7 +35,6 @@ export interface TimedEventGeometry {
 interface NormalizedEvent extends TimedLayoutInput {
   readonly startEpoch: number;
   readonly endEpoch: number;
-  readonly inputIndex: number;
   columnIndex: number;
 }
 
@@ -53,7 +52,8 @@ const compareEvents = (
     return rightDuration - leftDuration;
   }
 
-  return left.inputIndex - right.inputIndex;
+  // Ids are unique and survive refetches; input order does not, so lanes would swap after an update.
+  return left.id < right.id ? -1 : 1;
 };
 
 const layoutGroup = (
@@ -146,7 +146,7 @@ const normalizeTimedEvents = (
   const seenIds = new Set<string>();
   const timedEvents: NormalizedEvent[] = [];
 
-  for (const [inputIndex, event] of events.entries()) {
+  for (const event of events) {
     if (event.allDay === true) {
       continue;
     }
@@ -180,7 +180,6 @@ const normalizeTimedEvents = (
       ...event,
       columnIndex: -1,
       endEpoch,
-      inputIndex,
       startEpoch,
     });
   }

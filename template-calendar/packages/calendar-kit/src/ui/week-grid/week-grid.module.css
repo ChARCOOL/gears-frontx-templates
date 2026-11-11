@@ -281,8 +281,15 @@
   opacity: 0;
 }
 
-.eventFrame:hover > .resizeHandle:after,
-.eventFrame:focus-within > .resizeHandle:after,
+/* Same rule as the day grid: hover on a fine pointer, keyboard focus, the card being resized,
+   and every card on touch; never during a move drag. */
+@media (hover: hover) and (pointer: fine) {
+  .eventFrame:hover > .resizeHandle:after {
+    opacity: 0.6;
+  }
+}
+
+.eventFrame:has(:focus-visible) > .resizeHandle:after,
 .eventFrame > .resizeHandle:active:after {
   opacity: 0.6;
 }
@@ -295,6 +302,10 @@
   .eventFrame > .resizeHandle:after {
     opacity: 0.6;
   }
+}
+
+.interactionSurface:has([data-dragging]) .eventFrame > .resizeHandle:after {
+  opacity: 0;
 }
 
 .allDayFrame {

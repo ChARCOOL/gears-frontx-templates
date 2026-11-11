@@ -671,8 +671,6 @@ const useDayGridContent = (props: DayGridContentProps) => {
           },
           slotIndex: cellIndexByKey.get(cellKey(interaction.drag.to)) ?? 0,
         };
-  const dropTargetKey =
-    interaction.drag === null ? null : cellKey(interaction.drag.to);
 
   const currentTimeLabel = formatGridTime(currentInstant, timeZone, locale);
   const defaultActiveCell = arrayAt(gridCells, 8);
@@ -1036,7 +1034,6 @@ const useDayGridContent = (props: DayGridContentProps) => {
     handleTimedLayoutPointerUp,
     draggedEventId,
     dropGhost,
-    dropTargetKey,
     interactionMode: resolvedInteractionMode,
     isToday,
     isWorkingDay,
@@ -1092,7 +1089,6 @@ const DayGridContent = (props: DayGridContentProps) => {
     handleTimedLayoutDrop,
     draggedEventId,
     dropGhost,
-    dropTargetKey,
     interactionMode,
     paintKeys,
     slotStarts,
@@ -1169,7 +1165,6 @@ const DayGridContent = (props: DayGridContentProps) => {
         data-color-family={
           paintKeys.has(context.key) ? paintColorFamily : undefined
         }
-        data-drop-target={dropTargetKey === context.key ? "" : undefined}
       >
         {renderCell?.(cellContext)}
       </div>

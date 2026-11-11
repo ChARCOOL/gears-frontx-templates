@@ -229,12 +229,6 @@
   background: var(--cal-color-orange-background);
 }
 
-.cellContent[data-drop-target] {
-  background: var(--cal-slot-selected);
-  outline: var(--cal-border-width-1) dashed var(--cal-slot-selected-ring);
-  outline-offset: calc(-1 * var(--cal-border-width-1));
-}
-
 /* The ghost is the dragged card as a drop would place it: above the cards around it, never
    taking the pointer, and casting the drag shadow. */
 .event.dragGhost {
@@ -266,8 +260,16 @@
   opacity: 0;
 }
 
-.timedEvent:hover > .resizeHandle:after,
-.timedEvent:focus-within > .resizeHandle:after,
+/* The bar marks the card under a fine pointer, the keyboard-focused card, the card being resized,
+   and every card on a touch screen. Mouse focus left by a click does not count, and no bar
+   shows while a move drag runs. */
+@media (hover: hover) and (pointer: fine) {
+  .timedEvent:hover > .resizeHandle:after {
+    opacity: 0.6;
+  }
+}
+
+.timedEvent:has(:focus-visible) > .resizeHandle:after,
 .timedEvent > .resizeHandle:active:after {
   opacity: 0.6;
 }
@@ -280,6 +282,10 @@
   .timedEvent > .resizeHandle:after {
     opacity: 0.6;
   }
+}
+
+.eventLayer:has([data-dragging]) .timedEvent > .resizeHandle:after {
+  opacity: 0;
 }
 
 .timedEvent[data-dragging] {

@@ -166,7 +166,8 @@ describe("DayGrid paint-and-move", () => {
     expect(ghost).not.toBeNull();
     expect(ghost).toHaveAttribute("aria-hidden", "true");
     expect(ghost?.textContent).toMatch(/12:00/u);
-    expect(container.querySelector("[data-drop-target]")).not.toBeNull();
+    // The ghost is the drop feedback; a full-width cell outline would hide which lane it lands in.
+    expect(container.querySelector("[data-drop-target]")).toBeNull();
 
     dragAt(cells[12], "drop", rowCenter(12));
 

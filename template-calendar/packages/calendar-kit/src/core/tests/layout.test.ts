@@ -141,4 +141,18 @@ describe("timed event overlap layout", () => {
     assert(firstOverlap?.width).toBeGreaterThan(98 / 3);
     assert(result.every(({ left, width }) => left + width <= 98)).toBeTruthy();
   });
+
+  it("keeps each event in its lane when the same events arrive in another order", () => {
+    const start = instant("2026-08-24", "10:00");
+    const end = instant("2026-08-24", "11:00");
+    const chem = { end, id: "chem-attendees", start };
+    const gate = { end, id: "gate-reminder", start };
+
+    const leftById = (events: readonly TimedLayoutInput[]) =>
+      Object.fromEntries(
+        layoutTimedEvents(events).map(({ id, left }) => [id, left])
+      );
+
+    assert(leftById([chem, gate])).toStrictEqual(leftById([gate, chem]));
+  });
 });
