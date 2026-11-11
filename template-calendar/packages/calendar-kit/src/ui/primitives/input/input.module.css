@@ -21,7 +21,7 @@
   align-items: center;
   box-sizing: border-box;
   background: var(--cal-color-surface);
-  border: var(--cal-border-width-1) solid var(--cal-color-grid-line);
+  border: var(--cal-border-width-1) solid var(--cal-color-input);
   border-radius: var(--cal-radius-md);
   display: flex;
   font-size: var(--cal-text-grid-size);
@@ -83,7 +83,7 @@
 .shellReadOnly:hover,
 .shellReadOnly:focus-within {
   background: var(--cal-color-input-disabled);
-  border-color: var(--cal-color-grid-line);
+  border-color: var(--cal-color-input);
 }
 
 .shell:has(:disabled),
@@ -169,7 +169,7 @@
 }
 
 .control::placeholder {
-  color: var(--cal-color-subtle);
+  color: var(--cal-color-muted);
 }
 
 .control:disabled {

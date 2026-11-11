@@ -40,7 +40,7 @@
 .controlStandalone {
   background: var(--cal-color-surface);
   box-sizing: border-box;
-  border: var(--cal-border-width-1) solid var(--cal-color-grid-line);
+  border: var(--cal-border-width-1) solid var(--cal-color-input);
   border-radius: var(--cal-radius-md);
   color: var(--cal-color-text);
   font-size: var(--cal-text-grid-size);
