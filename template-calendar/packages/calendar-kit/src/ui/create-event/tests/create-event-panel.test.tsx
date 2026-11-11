@@ -1722,7 +1722,7 @@ describe("CreateEventPanel Event and Reminder kinds", () => {
     assert(onKindChange).toHaveBeenCalledExactlyOnceWith("reminder");
   });
 
-  it("shows the title, URL and repeat fields only for a reminder", () => {
+  it("shows the title, URL and time zone for a reminder, without calendar, people or conferencing", () => {
     renderPopover({ kind: "reminder", onKindChange: vi.fn() });
 
     assert(screen.getByLabelText("Title")).toBeInTheDocument();
@@ -1732,8 +1732,31 @@ describe("CreateEventPanel Event and Reminder kinds", () => {
     assert(
       screen.queryByRole("combobox", { name: "Conferencing" })
     ).toBeNull();
-    assert(screen.queryByLabelText("Time zone")).toBeNull();
+    assert(screen.getByLabelText("Time zone")).toBeInTheDocument();
     assert(screen.queryByRole("button", { name: "Add a location" })).toBeNull();
+  });
+
+  it("orders a reminder from title to time zone, with notify before repeat", () => {
+    renderPopover({ kind: "reminder", onKindChange: vi.fn() });
+
+    const fields = [
+      screen.getByLabelText("Title"),
+      screen.getByLabelText("URL"),
+      screen.getByLabelText("Start time"),
+      screen.getByLabelText("End time"),
+      screen.getByLabelText("Start date"),
+      screen.getByLabelText("End date"),
+      screen.getByRole("switch", { name: "Notify me" }),
+      screen.getByRole("combobox", { name: "Repeat" }),
+      screen.getByLabelText("Time zone"),
+    ];
+    const inDomOrder = [...fields].sort((first, second) =>
+      first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING
+        ? -1
+        : 1
+    );
+
+    expect(inDomOrder).toEqual(fields);
   });
 
   it("saves the reminder URL with the draft", async () => {
@@ -1856,10 +1879,10 @@ describe("CreateEventPanel reminder notify", () => {
     const onSubmit = submitSpy();
     renderPopover({ kind: "reminder", onKindChange: vi.fn(), onSubmit });
 
-    await user.click(screen.getByRole("switch", { name: "Notify" }));
+    await user.click(screen.getByRole("switch", { name: "Notify me" }));
 
     await waitFor(() => {
-      assert(screen.getByRole("switch", { name: "Notify" })).toBeChecked();
+      assert(screen.getByRole("switch", { name: "Notify me" })).toBeChecked();
     });
     assert(requestPermission).toHaveBeenCalledOnce();
     assert(
@@ -1879,9 +1902,9 @@ describe("CreateEventPanel reminder notify", () => {
     const requestPermission = stubNotification("granted");
     renderPopover({ kind: "reminder", onKindChange: vi.fn() });
 
-    await user.click(screen.getByRole("switch", { name: "Notify" }));
+    await user.click(screen.getByRole("switch", { name: "Notify me" }));
 
-    assert(screen.getByRole("switch", { name: "Notify" })).toBeChecked();
+    assert(screen.getByRole("switch", { name: "Notify me" })).toBeChecked();
     assert(requestPermission).not.toHaveBeenCalled();
   });
 
@@ -1890,11 +1913,11 @@ describe("CreateEventPanel reminder notify", () => {
     const requestPermission = stubNotification("denied");
     renderPopover({ kind: "reminder", onKindChange: vi.fn() });
 
-    await user.click(screen.getByRole("switch", { name: "Notify" }));
+    await user.click(screen.getByRole("switch", { name: "Notify me" }));
 
-    assert(screen.getByRole("switch", { name: "Notify" })).not.toBeChecked();
+    assert(screen.getByRole("switch", { name: "Notify me" })).not.toBeChecked();
     assert(requestPermission).not.toHaveBeenCalled();
-    assert(screen.getByText(/notifications are blocked/iu)).toBeInTheDocument();
+    assert(screen.getByText("Enable notifications in your browser")).toBeInTheDocument();
   });
 
   it("keeps Notify off when the permission prompt is dismissed", async () => {
@@ -1902,12 +1925,12 @@ describe("CreateEventPanel reminder notify", () => {
     stubNotification("default", "default");
     renderPopover({ kind: "reminder", onKindChange: vi.fn() });
 
-    await user.click(screen.getByRole("switch", { name: "Notify" }));
+    await user.click(screen.getByRole("switch", { name: "Notify me" }));
 
     await waitFor(() => {
-      assert(screen.getByText(/notifications are blocked/iu)).toBeInTheDocument();
+      assert(screen.getByText("Enable notifications in your browser")).toBeInTheDocument();
     });
-    assert(screen.getByRole("switch", { name: "Notify" })).not.toBeChecked();
+    assert(screen.getByRole("switch", { name: "Notify me" })).not.toBeChecked();
   });
 
   it("keeps Notify off with the message when the browser has no Notification API", async () => {
@@ -1915,10 +1938,10 @@ describe("CreateEventPanel reminder notify", () => {
     vi.stubGlobal("Notification", undefined);
     renderPopover({ kind: "reminder", onKindChange: vi.fn() });
 
-    await user.click(screen.getByRole("switch", { name: "Notify" }));
+    await user.click(screen.getByRole("switch", { name: "Notify me" }));
 
-    assert(screen.getByRole("switch", { name: "Notify" })).not.toBeChecked();
-    assert(screen.getByText(/notifications are blocked/iu)).toBeInTheDocument();
+    assert(screen.getByRole("switch", { name: "Notify me" })).not.toBeChecked();
+    assert(screen.getByText("Enable notifications in your browser")).toBeInTheDocument();
   });
 
   it("saves the lead time chosen in Notify before", async () => {
@@ -1927,7 +1950,7 @@ describe("CreateEventPanel reminder notify", () => {
     const onSubmit = submitSpy();
     renderPopover({ kind: "reminder", onKindChange: vi.fn(), onSubmit });
 
-    await user.click(screen.getByRole("switch", { name: "Notify" }));
+    await user.click(screen.getByRole("switch", { name: "Notify me" }));
     chooseSelectOption(/notify before/iu, "At time of event");
     await user.click(getSubmitButton());
 
@@ -1950,14 +1973,14 @@ describe("CreateEventPanel reminder notify", () => {
     vi.stubGlobal("Notification", { permission: "default", requestPermission });
     renderPopover({ kind: "reminder", onKindChange: vi.fn() });
 
-    await user.click(screen.getByRole("switch", { name: "Notify" }));
+    await user.click(screen.getByRole("switch", { name: "Notify me" }));
     await user.type(screen.getByLabelText("Title"), " review");
     act(() => {
       answerPrompt("granted");
     });
 
     await waitFor(() => {
-      assert(screen.getByRole("switch", { name: "Notify" })).toBeChecked();
+      assert(screen.getByRole("switch", { name: "Notify me" })).toBeChecked();
     });
     assert(screen.getByLabelText("Title")).toHaveValue("Planning session review");
   });
@@ -1972,7 +1995,7 @@ describe("CreateEventPanel reminder notify", () => {
       onSubmit,
     });
 
-    await user.click(screen.getByRole("switch", { name: "Notify" }));
+    await user.click(screen.getByRole("switch", { name: "Notify me" }));
     await user.click(screen.getByRole("button", { name: "Event" }));
     rerender(
       <CreateEventPanel

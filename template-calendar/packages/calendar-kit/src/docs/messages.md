@@ -273,7 +273,7 @@ Event state words shared by the views.
 | `calendar.create_event.field.event_type` | Event type |  |
 | `calendar.create_event.field.location` | Location |  |
 | `calendar.create_event.field.location_level` | Location level {{level}} | `level` |
-| `calendar.create_event.field.notify` | Notify |  |
+| `calendar.create_event.field.notify` | Notify me |  |
 | `calendar.create_event.field.notify_lead` | Notify before |  |
 | `calendar.create_event.field.people` | People |  |
 | `calendar.create_event.field.repeat` | Repeat |  |
@@ -288,7 +288,7 @@ Event state words shared by the views.
 | `calendar.create_event.location.add` | Add a location |  |
 | `calendar.create_event.location.no_results` | No locations |  |
 | `calendar.create_event.no_options` | No options available |  |
-| `calendar.create_event.notify.blocked` | Notifications are blocked. Allow them in your browser settings to get reminders. |  |
+| `calendar.create_event.notify.blocked` | Enable notifications in your browser |  |
 | `calendar.create_event.notify.lead_minutes_one` | {{count}} minute before | `count` |
 | `calendar.create_event.notify.lead_minutes_other` | {{count}} minutes before | `count` |
 | `calendar.create_event.notify.lead_now` | At time of event |  |
@@ -300,7 +300,7 @@ Event state words shared by the views.
 | `calendar.create_event.placeholder.location` | Search for address |  |
 | `calendar.create_event.placeholder.location_level` | Choose a location |  |
 | `calendar.create_event.placeholder.people` | Add people |  |
-| `calendar.create_event.placeholder.url` | Add a URL |  |
+| `calendar.create_event.placeholder.url` | URL to activity |  |
 | `calendar.create_event.repeat.biweekly` | Biweekly |  |
 | `calendar.create_event.repeat.custom` | Custom… |  |
 | `calendar.create_event.repeat.daily` | Daily |  |

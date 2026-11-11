@@ -1616,7 +1616,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
         {/* Always rendered to hold the four columns; as in the design, empty until the dates span
             a day. */}
         <span className={styles.dayCount}>
-          {dayCount > 0
+          {dayCount > 0 && !isReminder
             ? t("calendar.create_event.dayCount", { count: dayCount })
             : null}
         </span>
@@ -1695,30 +1695,29 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
           {isReminder ? null : calendarField}
           {isReminder ? null : eventTypeField}
           {scheduleRows}
+          {isReminder ? (
+            <div className={clsx(styles.fields, styles.groupStart)}>
+              <NotifyFields
+                blocked={notifyBlocked}
+                disabled={controller.isSubmitting}
+                fieldId={fieldId}
+                leadItems={notifyLeadItems}
+                notify={controller.draft.notify}
+                onChange={onNotifyChange}
+                onLeadChange={onNotifyLeadChange}
+              />
+            </div>
+          ) : null}
         </div>
 
         {repeatField}
         {repeatEditor}
 
-        {isReminder ? (
-          <div className={styles.fields}>
-            <NotifyFields
-              blocked={notifyBlocked}
-              disabled={controller.isSubmitting}
-              fieldId={fieldId}
-              leadItems={notifyLeadItems}
-              notify={controller.draft.notify}
-              onChange={onNotifyChange}
-              onLeadChange={onNotifyLeadChange}
-            />
-          </div>
-        ) : null}
-
         <div
           className={clsx(styles.fields, repeatEditing && styles.dimmed)}
           inert={repeatEditing}
         >
-          {isReminder ? null : timeZoneField}
+          {timeZoneField}
           {isReminder ? null : (
             <>
               {peopleField}
