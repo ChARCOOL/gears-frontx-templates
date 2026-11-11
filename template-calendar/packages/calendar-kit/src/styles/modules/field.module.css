@@ -3,6 +3,12 @@
   color: var(--cal-color-placeholder);
 }
 
+/* Every field draws its leading glyph at one size and one hairline stroke, so the set reads as one. */
+.fieldIcon svg {
+  /* Lucide draws on a 24-unit grid; 1.5 units at 16px renders the 1px hairline the reference set uses. */
+  stroke-width: 1.5;
+}
+
 .topLabel {
   align-items: center;
   color: var(--cal-color-text);

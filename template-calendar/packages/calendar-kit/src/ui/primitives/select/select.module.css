@@ -109,8 +109,8 @@
 }
 
 .triggerIcon svg {
-  block-size: 14px;
-  inline-size: 14px;
+  block-size: var(--cal-icon-size-sm);
+  inline-size: var(--cal-icon-size-sm);
 }
 
 .chevron {

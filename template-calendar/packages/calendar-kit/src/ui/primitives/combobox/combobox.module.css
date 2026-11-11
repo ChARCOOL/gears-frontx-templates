@@ -120,9 +120,9 @@
 }
 
 .iconLeft svg {
-  block-size: 14px;
+  block-size: var(--cal-icon-size-sm);
   flex-shrink: 0;
-  inline-size: 14px;
+  inline-size: var(--cal-icon-size-sm);
 }
 
 .inputWrap {

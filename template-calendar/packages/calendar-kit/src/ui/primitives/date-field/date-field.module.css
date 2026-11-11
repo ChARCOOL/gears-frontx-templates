@@ -37,6 +37,8 @@ input.control.control {
   cursor: pointer;
   display: flex;
   justify-content: center;
+  /* The shell pads 8px; the other fields set their glyph 12px in, so the calendar glyph lines up with them. */
+  margin-inline-start: calc(var(--cal-space-1) - var(--cal-border-width-1));
   padding: 0;
 }
 
@@ -56,6 +58,8 @@ input.control.control {
 .actionIcon {
   block-size: var(--cal-icon-size-sm);
   inline-size: var(--cal-icon-size-sm);
+  /* Lucide draws on a 24-unit grid; 1.5 units at 16px renders the 1px hairline the reference set uses. */
+  stroke-width: 1.5;
 }
 
 .panel {
