@@ -710,17 +710,10 @@ describe("EventDetailPanel keyboard and event absence", () => {
 });
 
 describe("EventDetailPanel reminder, course and activity rows", () => {
-  it("shows a bell before the title of a reminder only", () => {
-    const { unmount } = renderPanel({
+  it("renders a reminder title with no icon, as for events", () => {
+    renderPanel({
       event: timedEvent({ ...BASE_EVENT, eventType: "reminder" }),
     });
-
-    expect(
-      screen.getByRole("heading", { level: 2, name: EVENT_TITLE }).querySelector("svg")
-    ).not.toBeNull();
-
-    unmount();
-    renderPanel();
 
     expect(
       screen.getByRole("heading", { level: 2, name: EVENT_TITLE }).querySelector("svg")

@@ -352,16 +352,6 @@
   composes: srOnly from "../../styles/modules/sr-only.module.css";
 }
 
-/* The reminder bell sits before the title, on its first line. */
-.reminderIcon {
-  block-size: var(--cal-icon-size-xs);
-  color: var(--cal-color-text);
-  display: inline-block;
-  inline-size: var(--cal-icon-size-xs);
-  margin-inline-end: var(--cal-space-1);
-  vertical-align: text-bottom;
-}
-
 .notice {
   align-items: flex-start;
   background: var(--cal-color-raised);
