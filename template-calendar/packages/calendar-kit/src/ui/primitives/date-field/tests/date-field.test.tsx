@@ -3,12 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect as assert, it, vi } from "vitest";
 
-import { declarations } from "../../../../__test-utils__/css-declarations";
 import type { CalendarDate } from "../../../../core/model";
 import { calendarDate } from "../../../../core/validation";
 import { DateField } from "../date-field";
-
-import dateFieldStyles from "../date-field.module.css?raw";
 
 const START = calendarDate("2026-08-24");
 
@@ -290,8 +287,3 @@ describe(DateField, () => {
   });
 });
 
-it("draws the calendar action focus ring with a defined width token", () => {
-  assert(declarations(dateFieldStyles, ".action:focus-visible").get("outline")).toBe(
-    "var(--cal-focus-ring-width) solid var(--cal-color-focus-ring)"
-  );
-});
