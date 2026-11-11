@@ -252,6 +252,7 @@ Event state words shared by the views.
 | `calendar.create_event.calendarSchedule` | Schedule: |  |
 | `calendar.create_event.cancel` | Cancel |  |
 | `calendar.create_event.close` | Close |  |
+| `calendar.create_event.collapse` | Collapse |  |
 | `calendar.create_event.create_dialog` | Create event |  |
 | `calendar.create_event.dayCount_one` | {{count}} day | `count` |
 | `calendar.create_event.dayCount_other` | {{count}} days | `count` |
@@ -263,6 +264,7 @@ Event state words shared by the views.
 | `calendar.create_event.error.event_type_required` | Event type is required |  |
 | `calendar.create_event.error.invalid` | Enter a valid value |  |
 | `calendar.create_event.error.required` | Title is required |  |
+| `calendar.create_event.expand` | Expand |  |
 | `calendar.create_event.field.calendar` | Calendar |  |
 | `calendar.create_event.field.conferencing` | Conferencing |  |
 | `calendar.create_event.field.description` | Description |  |

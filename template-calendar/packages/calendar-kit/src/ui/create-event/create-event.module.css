@@ -157,6 +157,19 @@
   gap: var(--cal-space-2);
 }
 
+/* People sit in the right column at the top; every other block flows down the left column. */
+.expandedFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  column-gap: var(--cal-space-4);
+}
+
+.expandedFields > .peopleBlock {
+  grid-column: 2;
+  grid-row: 1;
+}
+
 .groupStart {
   margin-block-start: var(--cal-space-3);
 }

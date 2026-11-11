@@ -2173,3 +2173,42 @@ describe("CreateEventPanel location hierarchy", () => {
     assert(levels[2]?.textContent).toContain("Room 204");
   });
 });
+
+describe("CreateEventPanel expanded layout", () => {
+  it("puts people in the second column and keeps typed values when toggled", () => {
+    const { container } = renderPopover();
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Title" }), {
+      target: { value: "Design review" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Expand" }));
+
+    assert(container.querySelector(`.${styles.expandedFields}`)).not.toBeNull();
+    assert(
+      screen
+        .getByLabelText(/people|attendee/iu)
+        .closest(`.${styles.peopleBlock}`)
+    ).not.toBeNull();
+    assert(screen.getByRole("textbox", { name: "Title" })).toHaveValue(
+      "Design review"
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse" }));
+
+    assert(container.querySelector(`.${styles.expandedFields}`)).toBeNull();
+    assert(screen.getByRole("button", { name: "Expand" })).toBeInTheDocument();
+  });
+
+  it("lays out the expanded body as two columns with people fixed to the second", () => {
+    assert(
+      declarations(createEventCss, ".expandedFields").get(
+        "grid-template-columns"
+      )
+    ).toBe("repeat(2, minmax(0, 1fr))");
+    assert(
+      declarations(createEventCss, ".expandedFields > .peopleBlock").get(
+        "grid-column"
+      )
+    ).toBe("2");
+  });
+});
