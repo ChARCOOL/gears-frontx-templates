@@ -57,7 +57,13 @@ const makeAllDayEvent = (endDate: string): CalendarEvent => ({
 describe(formatEventRange, () => {
   it("formats a timed event as date plus clock range in the viewer zone", () => {
     expect(formatEventRange(makeTimedEvent(), UTC, "en-US")).toBe(
-      "Aug 24, 2026, 9:00 AM – 10:00 AM"
+      "Aug 24, 2026, 09:00 – 10:00"
+    );
+  });
+
+  it("shows the clock times in the viewer zone, not the event zone", () => {
+    expect(formatEventRange(makeTimedEvent(), BERLIN, "en-US")).toBe(
+      "Aug 24, 2026, 11:00 – 12:00"
     );
   });
 
@@ -69,14 +75,14 @@ describe(formatEventRange, () => {
     });
 
     expect(formatEventRange(occurrence, UTC, "en-US")).toBe(
-      "Aug 31, 2026, 9:00 AM – 10:00 AM"
+      "Aug 31, 2026, 09:00 – 10:00"
     );
   });
 
   it("omits the end clock when the event has no end time", () => {
     expect(
       formatEventRange(makeTimedEvent({ endTime: null }), UTC, "en-US")
-    ).toBe("Aug 24, 2026, 9:00 AM");
+    ).toBe("Aug 24, 2026, 09:00");
   });
 
   it("keeps the date and clock range in the viewer zone when the event has its own zone", () => {
@@ -92,7 +98,7 @@ describe(formatEventRange, () => {
     });
 
     expect(formatEventRange(overnight, sofia, "en-US")).toBe(
-      "Nov 10, 2026, 12:00 AM – 2:00 AM"
+      "Nov 10, 2026, 00:00 – 02:00"
     );
   });
 

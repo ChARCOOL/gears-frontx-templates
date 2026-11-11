@@ -315,11 +315,11 @@
 }
 
 .calendarColorDot {
-  block-size: var(--cal-icon-size-md);
+  block-size: 20px;
   border-radius: var(--cal-radius-pill);
   display: inline-block;
   flex-shrink: 0;
-  inline-size: var(--cal-icon-size-md);
+  inline-size: 20px;
 }
 
 .calendarColorTurquoise {

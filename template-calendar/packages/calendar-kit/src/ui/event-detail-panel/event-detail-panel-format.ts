@@ -132,6 +132,8 @@ const formatViewerDay = (
   return formatViewerDate(dayStart, timeZone, locale);
 };
 
+const SHORT_24H_TIME = { hour12: false, timeStyle: "short" } as const;
+
 export const formatEventRange = (
   event: CalendarEvent,
   timeZone: IanaTimeZone,
@@ -149,11 +151,11 @@ export const formatEventRange = (
   // Date and times come from the same instants in one zone; mixing the viewer's date with the
   // event's own wall-clock times shows a range on the wrong day.
   const date = formatViewerDate(event.start, timeZone, locale);
-  const startTime = formatViewerTime(event.start, timeZone, locale);
+  const startTime = formatViewerTime(event.start, timeZone, locale, SHORT_24H_TIME);
   if (event.endTime === null) {
     return `${date}, ${startTime}`;
   }
-  return `${date}, ${startTime} – ${formatViewerTime(event.end, timeZone, locale)}`;
+  return `${date}, ${startTime} – ${formatViewerTime(event.end, timeZone, locale, SHORT_24H_TIME)}`;
 };
 
 export const formatComparisonLine = (
@@ -180,8 +182,6 @@ export const formatComparisonLine = (
 
   return `${end} (${comparisonTimeZone})`;
 };
-
-const SHORT_24H_TIME = { hour12: false, timeStyle: "short" } as const;
 
 /** "GMT+3 Sofia, 10:00 - 11:00": one line of the detail's Time zone section. */
 export const formatZoneLine = (
