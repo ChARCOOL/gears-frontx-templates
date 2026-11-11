@@ -44,6 +44,12 @@
   --warning-foreground: #9a3316;
   --accent: #f8eaff;
   --accent-foreground: #841dba;
+  --purple: #841dba;
+  --purple-soft: #f8eaff;
+  --purple-accent: #d07aff;
+  --orange: #9a3316;
+  --orange-soft: #ffeadb;
+  --orange-accent: #fe781b;
   --blue: #37569c;
   --blue-soft: #e8eefe;
   --blue-accent: #7498f8;

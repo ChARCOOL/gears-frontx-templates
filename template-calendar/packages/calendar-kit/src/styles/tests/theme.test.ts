@@ -47,18 +47,18 @@ const ALIASES = {
   "--cal-color-muted": "--muted-foreground",
   "--cal-color-now": "--now",
   "--cal-color-now-label": "--now-label",
-  "--cal-color-orange-accent": "--warning",
-  "--cal-color-orange-background": "--warning-soft",
-  "--cal-color-orange-border": "--warning",
-  "--cal-color-orange-foreground": "--warning-foreground",
+  "--cal-color-orange-accent": "--orange-accent",
+  "--cal-color-orange-background": "--orange-soft",
+  "--cal-color-orange-border": "--orange",
+  "--cal-color-orange-foreground": "--orange",
   "--cal-color-orange-pattern": "--warning",
   "--cal-color-overlay-border": "--popover-border",
   "--cal-color-overlay-surface": "--popover",
   "--cal-color-placeholder": "--placeholder-foreground",
-  "--cal-color-purple-accent": "--accent-foreground",
-  "--cal-color-purple-background": "--accent",
-  "--cal-color-purple-border": "--accent-foreground",
-  "--cal-color-purple-foreground": "--accent-foreground",
+  "--cal-color-purple-accent": "--purple-accent",
+  "--cal-color-purple-background": "--purple-soft",
+  "--cal-color-purple-border": "--purple",
+  "--cal-color-purple-foreground": "--purple",
   "--cal-color-purple-pattern": "--accent",
   "--cal-color-raised": "--surface-elevated",
   "--cal-color-scrim": "--overlay",
@@ -146,6 +146,14 @@ const ALIASES = {
   "--cal-text-title-weight": "--text-heading-2-weight",
 } as const;
 
+// Seams shared by two tokens with different fallbacks, keyed by calendar token.
+const TOKEN_FALLBACKS = new Map<string, string>([
+  [
+    "--cal-color-orange-foreground",
+    "var(--warning-foreground, var(--warning, #d97706))",
+  ],
+]);
+
 const FALLBACKS = new Map<string, string>([
   ["--foreground", "#0f172a"],
   ["--muted-foreground", "#64748b"],
@@ -165,6 +173,12 @@ const FALLBACKS = new Map<string, string>([
   ["--text-label-weight", "500"],
   ["--text-label-tracking", "0px"],
   ["--now", "var(--primary, #8257e6)"],
+  ["--purple", "var(--accent-foreground, #6d28d9)"],
+  ["--purple-soft", "var(--accent, #f3e8ff)"],
+  ["--purple-accent", "var(--accent-foreground, #6d28d9)"],
+  ["--orange", "var(--warning, #d97706)"],
+  ["--orange-soft", "var(--warning-soft, #fdf3e2)"],
+  ["--orange-accent", "var(--warning, #d97706)"],
   ["--now-label", "var(--primary, #8257e6)"],
   ["--primary-foreground", "#ffffff"],
   ["--popover", "#ffffff"],
@@ -314,7 +328,8 @@ describe("calendar theme contract", () => {
     const tokens = declarations(themeCss, "[data-theme]");
 
     for (const [calendarToken, hostToken] of Object.entries(ALIASES)) {
-      const fallback = FALLBACKS.get(hostToken);
+      const fallback =
+        TOKEN_FALLBACKS.get(calendarToken) ?? FALLBACKS.get(hostToken);
 
       const expected =
         fallback === undefined
@@ -323,7 +338,7 @@ describe("calendar theme contract", () => {
 
       assert(
         normalizeCssValue(tokens.get(calendarToken)),
-        `${calendarToken} is missing`
+        `${calendarToken} is missing`,
       ).toBe(expected);
     }
   });
@@ -334,7 +349,7 @@ describe("calendar theme contract", () => {
     for (const [calendarToken, literal] of Object.entries(OWNED)) {
       assert(
         normalizeCssValue(tokens.get(calendarToken)),
-        `${calendarToken} is missing`
+        `${calendarToken} is missing`,
       ).toBe(literal);
     }
   });
@@ -367,14 +382,14 @@ describe("calendar theme contract", () => {
 
       assert(
         [...Object.keys(ALIASES), ...Object.keys(OWNED)],
-        `${token} is not in the §2.3 contract`
+        `${token} is not in the §2.3 contract`,
       ).toContain(token);
     }
   });
 
   it("never exposes fixed implementation geometry as a public --cal-* token", () => {
     assert(
-      [...declarations(themeCss, "[data-theme]").keys()].join("\n")
+      [...declarations(themeCss, "[data-theme]").keys()].join("\n"),
     ).not.toMatch(FORBIDDEN_GEOMETRY);
   });
 
@@ -382,7 +397,7 @@ describe("calendar theme contract", () => {
     const light = declarations(themeCss, "[data-theme]");
     const dark = declarations(
       mediaContents(themeCss, "@media (prefers-color-scheme: dark)"),
-      ':root:not([data-theme="light"])'
+      ':root:not([data-theme="light"])',
     );
 
     assert(light.get("--cal-color-surface")).toBe("var(--surface, #ffffff)");
@@ -392,29 +407,29 @@ describe("calendar theme contract", () => {
   it("uses dark-compatible fallbacks without removing host-token overrides", () => {
     const dark = declarations(
       mediaContents(themeCss, "@media (prefers-color-scheme: dark)"),
-      ':root:not([data-theme="light"])'
+      ':root:not([data-theme="light"])',
     );
 
     assert(dark.get("--cal-color-text")).toBe("var(--foreground, #f8fafc)");
     // react-kit's dark blue surface, so a blue card is not a light block on a dark grid.
     assert(dark.get("--cal-color-blue-background")).toBe(
-      "var(--blue-soft, #262d47)"
+      "var(--blue-soft, #262d47)",
     );
     assert(dark.get("--cal-color-muted")).toBe(
-      "var(--muted-foreground, #8d96a8)"
+      "var(--muted-foreground, #8d96a8)",
     );
     assert(dark.get("--cal-slot-selected-foreground")).toBe(
-      "var(--foreground, #f8fafc)"
+      "var(--foreground, #f8fafc)",
     );
     assert(normalizeCssValue(dark.get("--cal-color-overlay-border"))).toBe(
-      "var(--popover-border, color-mix(in oklab, var(--foreground, #f8fafc) 10%, transparent))"
+      "var(--popover-border, color-mix(in oklab, var(--foreground, #f8fafc) 10%, transparent))",
     );
   });
 
   it("keeps forced-colors and every reduced-motion override in their media branches", () => {
     const reducedMotion = declarations(
       mediaContents(themeCss, "@media (prefers-reduced-motion: reduce)"),
-      ":root"
+      ":root",
     );
     assert(reducedMotion.get("--cal-motion-duration-short")).toBe("0s");
     assert(reducedMotion.get("--cal-motion-duration-medium")).toBe("0s");
@@ -424,7 +439,7 @@ describe("calendar theme contract", () => {
   it("remaps focus, surface, text, disabled, and action semantics to system colors in forced colors", () => {
     const forcedBlock = mediaContents(
       themeCss,
-      "@media (forced-colors: active)"
+      "@media (forced-colors: active)",
     );
 
     const forced = declarations(forcedBlock, ":root");
@@ -449,7 +464,7 @@ describe("calendar theme contract", () => {
       }
 
       assert(value, `${token} has an undeclared raw palette value`).not.toMatch(
-        RAW_PALETTE
+        RAW_PALETTE,
       );
     }
   });
@@ -459,18 +474,18 @@ describe("example theme preset", () => {
   it("defines every upstream seam that theme.css reads through a fallback", () => {
     const seams = upstreamSeams(themeCss);
     const defined = new Set(
-      declarations(exampleCss, '[data-theme="light"]').keys()
+      declarations(exampleCss, '[data-theme="light"]').keys(),
     );
 
     assert(seams.length, "theme.css declares no upstream seam").toBeGreaterThan(
-      0
+      0,
     );
 
     const missing = seams.filter((seam) => !defined.has(seam));
 
     assert(
       missing,
-      `themes/example.css does not define ${missing.join(", ")}`
+      `themes/example.css does not define ${missing.join(", ")}`,
     ).toStrictEqual([]);
   });
 
@@ -482,18 +497,18 @@ describe("example theme preset", () => {
 
     assert(
       extra,
-      `themes/example.css declares non-seam ${extra.join(", ")}`
+      `themes/example.css declares non-seam ${extra.join(", ")}`,
     ).toStrictEqual([]);
   });
 
   it("ships literal values so the preset stands alone without host tokens", () => {
     for (const [name, value] of declarations(
       exampleCss,
-      '[data-theme="light"]'
+      '[data-theme="light"]',
     )) {
       assert(
         value,
-        `${name} resolves through another custom property`
+        `${name} resolves through another custom property`,
       ).not.toMatch(/var\(--/u);
     }
   });
@@ -501,7 +516,7 @@ describe("example theme preset", () => {
   it("covers the dark scheme the same way theme.css does", () => {
     const darkScheme = declarations(
       mediaContents(exampleCss, "@media (prefers-color-scheme: dark)"),
-      ':root:not([data-theme="light"])'
+      ':root:not([data-theme="light"])',
     );
     assert(darkScheme.get("--surface")).toBe("#111827");
     assert(darkScheme.get("--surface-elevated")).toBe("#1f2937");

@@ -109,6 +109,12 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 | `--warning-soft` | Orange category background · **dark** | `#fdf3e2` | `#ffeadb` / `#51485a` |
 | `--accent` | Purple category background; dragging state | `#f3e8ff` | `#f8eaff` / `#484b5e` |
 | `--accent-foreground` | Purple category foreground, border, accent; dragging text | `#6d28d9` | `#841dba` / `#f3d7bf` |
+| `--purple` | Purple category foreground, border. Falls back to `--accent-foreground` | `var(--accent-foreground)` | `#841dba` |
+| `--purple-soft` | Purple category background. Falls back to `--accent` | `var(--accent)` | `#f8eaff` |
+| `--purple-accent` | Purple category accent (card bar). Falls back to `--accent-foreground` | `var(--accent-foreground)` | `#d07aff` |
+| `--orange` | Orange category foreground, border. Falls back to `--warning-foreground`, `--warning` | `var(--warning)` | `#9a3316` |
+| `--orange-soft` | Orange category background · **dark**. Falls back to `--warning-soft` | `var(--warning-soft)` | `#ffeadb` |
+| `--orange-accent` | Orange category accent (card bar). Falls back to `--warning` | `var(--warning)` | `#fe781b` |
 | `--blue` | Blue category foreground, border | `#37569c` | `#37569c` |
 | `--blue-soft` | Blue category background · **dark** | `#e8eefe` | `#e8eefe` |
 | `--blue-accent` | Blue category accent | `#7498f8` | `#7498f8` |
@@ -203,7 +209,7 @@ Four seams have no counterpart in the example token set. The preset restates the
 
 These are not missing values but places where the seam namespace is coarser than the example set's, so one seam has to serve two purposes:
 
-- **Event-category border and accent.** The example set gives each category a distinct foreground, border, and accent (turquoise foreground `#266068` vs border `#0fadbf`). For turquoise, purple, and orange, `theme.css` drives `--cal-color-*-foreground`, `-border`, `-accent`, and `-pattern` from a single seam, so the preset sets it to the category **foreground** and the border and accent inherit that value. Blue has its own accent seam, `--blue-accent`.
+- **Event-category border and accent.** The example set gives each category a distinct foreground, border, and accent (turquoise foreground `#266068` vs border `#0fadbf`). For turquoise, `theme.css` drives `--cal-color-*-foreground`, `-border`, `-accent`, and `-pattern` from a single seam, so the preset sets it to the category **foreground** and the border and accent inherit that value. Purple, orange and blue have their own accent seams (`--purple-accent`, `--orange-accent`, `--blue-accent`).
 - **Generic status vs category colour.** `--info` and `--warning` serve both `--cal-color-info` / `--cal-color-warning` and the turquoise / orange category families. The preset optimises for the categories, because they are what the calendar actually renders.
 - **Day number vs grid text.** `--text-body-size` drives both. The example sizes the day number at `16px` and body text at `14px`; the preset uses `14px`.
 - **Dragging state.** `--accent` / `--accent-foreground` serve both the purple category and the drag state, which the example styles independently.
