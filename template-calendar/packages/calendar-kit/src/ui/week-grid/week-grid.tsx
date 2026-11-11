@@ -94,6 +94,11 @@ import type {
 import gridStyles from "../grid/calendar-grid.module.css";
 import styles from "./week-grid.module.css";
 
+interface EventFrameHookProps {
+  readonly className?: string;
+  readonly "data-tone"?: string;
+}
+
 export interface WeekGridProps<Payload = unknown> extends CalendarContextProps {
   /** Class added to the component root. */
   readonly className?: string;
@@ -139,6 +144,13 @@ export interface WeekGridProps<Payload = unknown> extends CalendarContextProps {
   readonly renderEvent?: CalendarEventRenderer<Payload>;
   /** Replaces the metadata rows (location, organizer, type) of the default `EventCard`. */
   readonly renderEventMetadata?: CalendarEventRenderer<Payload>;
+  /**
+   * Class and `data-tone` for the event's card frame, so host CSS can mark a state such as a
+   * conflict or a busy block. No inline style: the kit keeps the focus outline out of reach.
+   */
+  readonly getEventFrameProps?: (
+    context: CalendarEventRenderContext<Payload>
+  ) => EventFrameHookProps | undefined;
   /** Replaces how each conflict renders inside the default card. */
   readonly renderConflict?: CalendarConflictRenderer;
   /** Renders an inline detail for the selected event. Receives `close`. */
@@ -629,6 +641,7 @@ interface WeekGridEventProps<Payload> {
   readonly renderConflict?: CalendarConflictRenderer;
   readonly renderEvent?: CalendarEventRenderer<Payload>;
   readonly renderEventMetadata?: CalendarEventRenderer<Payload>;
+  readonly getEventFrameProps?: WeekGridProps<Payload>["getEventFrameProps"];
   readonly selectedEventId: string | null;
   readonly segment: CalendarEventSegment;
 }
@@ -642,6 +655,7 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
     currentInstant,
     event,
     geometry,
+    getEventFrameProps,
     onSelect,
     readOnly,
     renderConflict,
@@ -663,6 +677,7 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
     translate: t,
   });
   const { context, description, conflicts, isAvailable, isPast } = presentation;
+  const frameProps = getEventFrameProps?.(context);
 
   const handleSelect = (anchor?: HTMLElement): void => {
     onSelect(event.id, context, anchor);
@@ -692,8 +707,10 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
         className={clsx(
           styles.customEvent,
           !isAvailable && styles.unavailable,
-          context.isSelected && styles.selectedRing
+          context.isSelected && styles.selectedRing,
+          frameProps?.className
         )}
+        data-tone={frameProps?.["data-tone"]}
         data-event-id={event.id}
         aria-label={event.title}
         aria-disabled={isAvailable ? undefined : "true"}
@@ -746,6 +763,8 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
       available={isAvailable}
       past={isPast}
       readOnly={readOnly}
+      className={frameProps?.className}
+      data-tone={frameProps?.["data-tone"]}
       renderConflict={renderConflict}
       renderMetadata={renderEventMetadata}
       renderTime={renderTime}
@@ -820,6 +839,7 @@ interface WeekGridCellContentProps<Payload> {
   readonly renderConflict?: CalendarConflictRenderer;
   readonly renderEvent?: CalendarEventRenderer<Payload>;
   readonly renderEventMetadata?: CalendarEventRenderer<Payload>;
+  readonly getEventFrameProps?: WeekGridProps<Payload>["getEventFrameProps"];
   readonly renderOverflow?: WeekGridProps["renderOverflow"];
   readonly renderUnavailable?: (cell: CalendarCell) => ReactNode;
   readonly renderTimeRange?: WeekGridProps["renderTimeRange"];
@@ -869,6 +889,7 @@ const WeekGridCellContent = <Payload,>(
     renderConflict,
     renderEvent,
     renderEventMetadata,
+    getEventFrameProps,
     renderOverflow,
     renderUnavailable,
     renderTimeRange,
@@ -985,6 +1006,7 @@ const WeekGridCellContent = <Payload,>(
             renderConflict={renderConflict}
             renderEvent={renderEvent}
             renderEventMetadata={renderEventMetadata}
+            getEventFrameProps={getEventFrameProps}
             selectedEventId={selectedEventId}
             segment={position.segment}
           />
@@ -1030,6 +1052,7 @@ const WeekGridCellContent = <Payload,>(
               renderConflict={renderConflict}
               renderEvent={renderEvent}
               renderEventMetadata={renderEventMetadata}
+              getEventFrameProps={getEventFrameProps}
               selectedEventId={selectedEventId}
               segment={position.segment}
             />
@@ -1115,6 +1138,7 @@ const WeekGridContent = <Payload = unknown,>(
     gutterClassName,
     onOverflowSelect,
     paintColorFamily,
+    getEventFrameProps,
     renderDetail,
     renderEventMetadata,
     renderHeader,
@@ -1169,6 +1193,7 @@ const WeekGridContent = <Payload = unknown,>(
       renderConflict={renderConflict}
       renderEvent={renderEvent}
       renderEventMetadata={renderEventMetadata}
+      getEventFrameProps={getEventFrameProps}
       overflow={overflowByCell.get(gridCellKey(context.cell))}
       onOverflowSelect={onOverflowSelect}
       paintColorFamily={paintColorFamily}

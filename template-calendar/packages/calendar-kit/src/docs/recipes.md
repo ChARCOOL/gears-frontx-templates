@@ -358,6 +358,46 @@ export const CourseWeek = ({
 
 <!-- /generated -->
 
+## Mark conflicting cards
+
+`getEventFrameProps` adds a class and a `data-tone` to the card frame, for both the default card and `renderEvent`. Style the state in host CSS, keyed on the tone. The kit sets no inline style on the frame, so its focus outline stays intact.
+
+<!-- generated:example demo/examples/recipes/event-frame-state.tsx -->
+
+```tsx
+// demo/examples/recipes/event-frame-state.tsx
+import { WeekGrid } from "@gears-frontx/calendar-kit";
+import type { CalendarDate, CalendarEvent } from "@gears-frontx/calendar-kit";
+
+export const ExamWeek = ({
+  date,
+  events,
+  conflictIds,
+}: {
+  readonly date: CalendarDate;
+  readonly events: readonly CalendarEvent[];
+  readonly conflictIds: ReadonlySet<string>;
+}) => (
+  <WeekGrid
+    date={date}
+    events={events}
+    getEventFrameProps={({ event }) =>
+      conflictIds.has(event.id)
+        ? { className: "exam-conflict", "data-tone": "conflict" }
+        : undefined
+    }
+  />
+);
+```
+
+<!-- /generated -->
+
+```css
+.exam-conflict[data-tone="conflict"] {
+  background: repeating-linear-gradient(45deg, #fde2e2 0 6px, #fff 6px 12px);
+}
+```
+
 ## Confirm moves with your server
 
 `paint-and-move` never moves an event itself: persist the request, then call `confirm`, or `cancel` to snap it back and restore focus.

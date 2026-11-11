@@ -116,7 +116,7 @@ A render slot replaces the content of one part and keeps the kit's positioning, 
 
 | Component | Slots |
 | --- | --- |
-| `WeekGrid` | `renderEvent`, `renderEventMetadata`, `renderConflict`, `renderDetail`, `renderCell`, `renderHeader`, `renderUnavailable`, `renderOverflow` |
+| `WeekGrid` | `renderEvent`, `renderEventMetadata`, `getEventFrameProps`, `renderConflict`, `renderDetail`, `renderCell`, `renderHeader`, `renderUnavailable`, `renderOverflow` |
 | `DayGrid` | `renderEvent`, `renderConflict`, `renderCell` |
 | `MonthGrid` | `renderEvent`, `renderCell`, `renderOverflow` |
 | `AgendaView` | `renderEvent`, `renderDayHeader` |

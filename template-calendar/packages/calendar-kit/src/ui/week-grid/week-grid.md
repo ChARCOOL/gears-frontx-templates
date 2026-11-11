@@ -36,6 +36,7 @@ import { WeekGrid } from "@gears-frontx/calendar-kit/week-grid";
 | `defaultInteractionMode` | `WeekGridInteractionMode` |  | Initial interaction mode when uncontrolled. |
 | `defaultSelectedEventId` | `string` |  | Initial selected event when uncontrolled. |
 | `getCellState` | `(cell: CalendarCell) => CalendarCellState \| undefined` |  | Host state per cell. `unavailable` blocks the cell; it stays focusable. |
+| `getEventFrameProps` | `(context: CalendarEventRenderContext<Payload>) => EventFrameHookProps \| undefined` |  | Class and `data-tone` for the event's card frame, so host CSS can mark a state such as a conflict or a busy block. No inline style: the kit keeps the focus outline out of reach. |
 | `gutterClassName` | `string` |  | Class on every gutter label: hours, all-day, zone and the trailing copy. |
 | `interactionMode` | `WeekGridInteractionMode` |  | Controlled interaction mode. Default `quick-create`. |
 | `maxEventsPerSlot` | `number` |  | Most cards that start in one row of a day. Later ones hide behind a `+N` chip. Default: no cap. |
@@ -110,7 +111,7 @@ Events are clipped to the visible hours, and events wholly outside them are not 
 
 ## Slots and states
 
-`renderEventMetadata` replaces the metadata rows of the default card and keeps its button and frame; use it for one row. `renderEvent`, `renderConflict` and `renderDetail` replace host-specific event, conflict and detail content. Event contexts retain opaque `metadata`; conflict contexts retain the event and host-supplied dimension label. The default event uses `EventCard`; a custom event renders inside a button, and conflicts use `ConflictIndicator`. Loading, error, and empty-state presentation remains outside the kit: the supplied events render directly into the ordinary grid, including when the collection is empty. The custom detail slot receives `close`, which dismisses the composed detail surface without performing a backend operation.
+`renderEventMetadata` replaces the metadata rows of the default card and keeps its button and frame; use it for one row. `getEventFrameProps` returns a `className` and a `data-tone` for the event's card frame, so host CSS can mark a conflict or busy state. It cannot set inline styles, so the focus outline stays in the kit's CSS. `renderEvent`, `renderConflict` and `renderDetail` replace host-specific event, conflict and detail content. Event contexts retain opaque `metadata`; conflict contexts retain the event and host-supplied dimension label. The default event uses `EventCard`; a custom event renders inside a button, and conflicts use `ConflictIndicator`. Loading, error, and empty-state presentation remains outside the kit: the supplied events render directly into the ordinary grid, including when the collection is empty. The custom detail slot receives `close`, which dismisses the composed detail surface without performing a backend operation.
 
 ## Accessibility and styling
 

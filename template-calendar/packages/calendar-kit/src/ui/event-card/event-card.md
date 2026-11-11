@@ -30,6 +30,7 @@ import { EventCard } from "@gears-frontx/calendar-kit/event-card";
 | `data-color-family` | `string` |  | Set by the owning grid for host CSS. |
 | `data-continues-after` | `"true"` |  | Marks a segment that continues to the next day. |
 | `data-continues-before` | `"true"` |  | Marks a segment that continues from the previous day. |
+| `data-tone` | `string` |  | Set by the owning grid for host CSS, e.g. a conflict or busy state. |
 | `geometry` | `CalendarEventGeometry` |  | Placement and size. The height also picks the card's density tier. |
 | `onKeyDown` | `CalendarEventKeyDownHandler<Payload>` |  | Called before the card's own Enter/Space handling. |
 | `onSelect` | `(event: CalendarEvent<Payload>, context: CalendarEventRenderContext<Payload>, anchor: HTM…` |  | `anchor` is the card element, so a host can open a preview beside it. |

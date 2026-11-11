@@ -70,6 +70,8 @@ export interface EventCardProps<
   readonly tabIndex?: number;
   /** Set by the owning grid for host CSS. */
   readonly "data-color-family"?: string;
+  /** Set by the owning grid for host CSS, e.g. a conflict or busy state. */
+  readonly "data-tone"?: string;
   /** Marks a segment that continues from the previous day. */
   readonly "data-continues-before"?: "true";
   /** Marks a segment that continues to the next day. */
@@ -701,6 +703,7 @@ const EventCardContent = <Payload = unknown,>(
     style,
     tabIndex,
     "data-color-family": dataColorFamily,
+    "data-tone": dataTone,
     "data-continues-before": dataContinuesBefore,
     "data-continues-after": dataContinuesAfter,
   } = props;
@@ -765,6 +768,7 @@ const EventCardContent = <Payload = unknown,>(
       style={geometryStyle}
       tabIndex={tabIndex}
       data-color-family={dataColorFamily}
+      data-tone={dataTone}
       data-continues-before={dataContinuesBefore}
       data-continues-after={dataContinuesAfter}
       data-event-id={event.id}
