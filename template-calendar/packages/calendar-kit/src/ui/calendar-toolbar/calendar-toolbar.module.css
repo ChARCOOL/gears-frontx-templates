@@ -28,6 +28,11 @@
   min-inline-size: 0;
 }
 
+/* The host's trailing control is a plain button; its icon is primary text, not the ghost muted tone. */
+.trailing button {
+  color: var(--cal-color-text);
+}
+
 .title {
   composes: heading from "../../styles/modules/text.module.css";
   flex: none;
@@ -86,6 +91,11 @@
 .stepper {
   display: inline-flex;
   gap: var(--cal-space-1);
+}
+
+/* The ghost variant paints its icon muted; the stepper arrows are primary-text glyphs. */
+.stepper > .step {
+  color: var(--cal-color-text);
 }
 
 @media (max-width: 48rem) {

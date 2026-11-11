@@ -1,7 +1,6 @@
 "use client";
 
 import { clsx } from "clsx";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 
 import type { CalendarDate, CalendarView } from "../../core/model";
@@ -16,6 +15,27 @@ import { Button } from "../primitives/button/button";
 import { visibleViewOptions } from "./view-options";
 
 import styles from "./calendar-toolbar.module.css";
+
+// Lucide's chevrons are 4px wide and read light next to the calendar's type; these are the Constructor glyphs.
+const chevronLeftIcon = (
+  <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" fill="currentColor">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M10.5303 2.9697a.75.75 0 0 1 0 1.0606L6.5607 8l3.9696 3.9697a.75.75 0 1 1-1.0606 1.0606l-4.5-4.5a.75.75 0 0 1 0-1.0606l4.5-4.5a.75.75 0 0 1 1.0606 0"
+    />
+  </svg>
+);
+
+const chevronRightIcon = (
+  <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" fill="currentColor">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M5.4697 13.0303a.75.75 0 0 1 0-1.0606L9.4393 8 5.4697 4.0303a.75.75 0 0 1 1.0606-1.0606l4.5 4.5a.75.75 0 0 1 0 1.0606l-4.5 4.5a.75.75 0 0 1-1.0606 0"
+    />
+  </svg>
+);
 
 export interface CalendarToolbarProps extends CalendarContextProps {
   /** Class added to the component root. */
@@ -166,17 +186,19 @@ const CalendarToolbarContent = ({
             <Button
               size="l"
               variant="ghost"
+              className={styles.step}
               aria-label={t(activeOption.previousKey)}
               onlyIcon
-              leftIcon={<ChevronLeft />}
+              leftIcon={chevronLeftIcon}
               onClick={onPrevious}
             />
             <Button
               size="l"
               variant="ghost"
+              className={styles.step}
               aria-label={t(activeOption.nextKey)}
               onlyIcon
-              leftIcon={<ChevronRight />}
+              leftIcon={chevronRightIcon}
               onClick={onNext}
             />
           </div>
