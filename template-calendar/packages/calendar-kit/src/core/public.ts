@@ -86,6 +86,8 @@ export type {
   ViewerDateEventSegment,
 } from "./grid";
 
+export { addAvailabilityCells } from "./availability";
+
 export {
   buildSelectionRange,
   createInteractionState,

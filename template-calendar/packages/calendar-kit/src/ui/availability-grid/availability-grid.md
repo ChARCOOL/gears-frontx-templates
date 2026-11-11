@@ -19,6 +19,10 @@ The host supplies each `CalendarAvailabilityCell`; the kit does not fetch or int
 
 `paintMode="cells"` paints only the cells a drag passes, and earlier painting stays. The default `span` paints everything between the two drag ends in time order and replaces the previous range.
 
+`rowHeight` sets the height of one row in pixels; the default is `43`. It must be a positive finite number, or render throws a `RangeError`, as on `WeekGrid`.
+
+`addAvailabilityCells(range, cells)` is exported from the package root. It returns the union of a `CalendarSelectionRange` and extra cells, sorted by start time, or `null` when the union is empty. Use it to add cells to a host range without rebuilding the range by hand.
+
 `showHourLabels` draws each row's start time beside both edges of the grid. `onHourClick` makes those labels buttons and receives every cell of that hour; `onDayClick` makes the column headers buttons and receives every cell of that day. The kit only reports the cells; the host decides what a click means. `headerFormat="weekday"` shows day names without dates; the default `date` keeps the weekday and date.
 
 An empty `cells` collection renders the grid structure with no rows and says "No time slots" (`calendar.availability.empty`) under it. The kit does not create loading or error shells, alerts, or status regions; multi-step-flow and fetch-state presentation remains host-owned.
@@ -44,6 +48,7 @@ The root accepts `className`; styles use the calendar theme aliases and include 
 | `onSelectedRangeChange` | `(range: CalendarSelectionRange \| null) => void` |  | Called when the painted range changes or clears. |
 | `paintMode` | `"span" \| "cells"` |  | `span` (default) paints everything between the drag ends; `cells` paints only the cells a drag passes and keeps earlier painting. |
 | `renderCell` | `(context: CalendarCellContext & { readonly available: boolean; readonly state: string \| u…` |  | Replaces cell content. The context adds the cell's `available` flag and host `state`. |
+| `rowHeight` | `number` |  | Height of one row in pixels. Default `43`. |
 | `selectedRange` | `CalendarSelectionRange` |  | Controlled painted range. |
 | `showHourLabels` | `boolean` |  | Draws each row's start time beside both edges of the grid. |
 

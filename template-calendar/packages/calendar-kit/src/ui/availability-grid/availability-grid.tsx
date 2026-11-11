@@ -2,7 +2,11 @@
 
 import { clsx } from "clsx";
 import { useMemo } from "react";
-import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import type {
+  CSSProperties,
+  PointerEvent as ReactPointerEvent,
+  ReactNode,
+} from "react";
 
 import { dateTimeFormatter } from "../../core/intl-cache";
 import type {
@@ -38,6 +42,8 @@ export interface AvailabilityGridProps extends CalendarContextProps {
   readonly paintMode?: "span" | "cells";
   /** Column header text: `date` (default) shows the weekday and date, `weekday` only the weekday. */
   readonly headerFormat?: "date" | "weekday";
+  /** Height of one row in pixels. Default `43`. */
+  readonly rowHeight?: number;
   /** Draws each row's start time beside both edges of the grid. */
   readonly showHourLabels?: boolean;
   /** Makes the hour labels buttons. Receives every cell of that row. */
@@ -69,6 +75,10 @@ export interface AvailabilityGridProps extends CalendarContextProps {
 
 const DEFAULT_MODE = "paint" as const;
 const DEFAULT_HEADER_FORMAT = "date" as const;
+
+interface AvailabilityGridStyle extends CSSProperties {
+  readonly "--grid-hour-height"?: string;
+}
 
 const formatColumnLabel = (
   cell: CalendarAvailabilityCell,
@@ -132,6 +142,7 @@ const AvailabilityGridContent = ({
   onSelectedRangeChange,
   paintMode,
   renderCell,
+  rowHeight,
   selectedRange,
   showHourLabels = false,
 }: AvailabilityGridContentProps) => {
@@ -349,9 +360,23 @@ const AvailabilityGridContent = ({
 
   const isEmpty = gridRows.length === 0;
 
+  // Throws like WeekGrid: a zero or NaN height would collapse every cell without a message.
+  if (
+    rowHeight !== undefined &&
+    (!Number.isFinite(rowHeight) || rowHeight <= 0)
+  ) {
+    throw new RangeError(`rowHeight must be a positive number: ${rowHeight}`);
+  }
+
+  const rootStyle: AvailabilityGridStyle | undefined =
+    rowHeight === undefined
+      ? undefined
+      : { "--grid-hour-height": `${rowHeight}px` };
+
   return (
     <div
       className={clsx(styles.root, className)}
+      style={rootStyle}
       onPointerCancel={handlePointerCancel}
       onPointerDown={handlePointerDown}
       onPointerEnter={handlePointerMove}

@@ -271,6 +271,7 @@ export {
   calculateMonthCellCapacity,
   layoutTimedEvents,
   validateInteractionEvent,
+  addAvailabilityCells,
   buildSelectionRange,
   createInteractionState,
   transitionInteraction,

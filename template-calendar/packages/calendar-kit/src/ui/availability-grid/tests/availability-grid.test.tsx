@@ -521,3 +521,41 @@ describe("AvailabilityGrid hour and day labels", () => {
     );
   });
 });
+
+describe("AvailabilityGrid row height", () => {
+  const rootElement = (container: HTMLElement): HTMLElement => {
+    const root = container.firstElementChild;
+
+    if (!(root instanceof HTMLElement)) {
+      throw new Error("Expected the availability root element");
+    }
+
+    return root;
+  };
+
+  it("sizes each row from rowHeight through the grid hour-height token", () => {
+    const { container } = renderAvailability({ rowHeight: 60 });
+
+    expect(
+      rootElement(container).style.getPropertyValue("--grid-hour-height")
+    ).toBe("60px");
+  });
+
+  it("leaves the default row height to the stylesheet when rowHeight is omitted", () => {
+    const { container } = renderAvailability();
+
+    expect(
+      rootElement(container).style.getPropertyValue("--grid-hour-height")
+    ).toBe("");
+  });
+
+  it.each([0, -1, Number.NaN])("rejects rowHeight %s", (height) => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    expect(() => renderAvailability({ rowHeight: height })).toThrow(RangeError);
+
+    consoleError.mockRestore();
+  });
+});
