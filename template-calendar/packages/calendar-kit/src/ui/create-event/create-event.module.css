@@ -184,7 +184,7 @@
 }
 
 .comboboxFieldControl :global(input) {
-  font-size: var(--cal-text-label-size);
+  font-size: var(--cal-text-field-size);
   line-height: var(--cal-text-label-line-height);
 }
 

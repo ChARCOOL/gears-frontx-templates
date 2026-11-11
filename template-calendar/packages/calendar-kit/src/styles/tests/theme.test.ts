@@ -123,6 +123,7 @@ const ALIASES = {
   "--cal-text-day-number-size": "--text-body-size",
   "--cal-text-day-number-tracking": "--text-body-tracking",
   "--cal-text-day-number-weight": "--text-body-weight",
+  "--cal-text-field-size": "--text-body-size",
   "--cal-text-grid-line-height": "--text-body-line-height",
   "--cal-text-grid-size": "--text-body-size",
   "--cal-text-grid-tracking": "--text-body-tracking",

@@ -73,6 +73,7 @@
   --cal-text-label-line-height: var(--text-label-line-height, 1.25rem);
   --cal-text-label-weight: var(--text-label-weight, 500);
   --cal-text-label-tracking: var(--text-label-tracking, 0px);
+  --cal-text-field-size: var(--text-body-size, 0.9375rem);
   --cal-text-title-size: var(--text-heading-2-size, 1rem);
   --cal-text-title-line-height: var(--text-heading-2-line-height, 1.5rem);
   --cal-text-title-weight: var(--text-heading-2-weight, 600);
