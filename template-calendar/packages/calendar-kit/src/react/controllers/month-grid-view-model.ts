@@ -306,13 +306,13 @@ export const buildMonthGridRows = (
       const heldBack = Number.isFinite(hiddenFromApi)
         ? Math.max(0, Math.floor(hiddenFromApi))
         : 0;
+      const eventCount = candidate.eventIds.length + heldBack;
 
       const visibility = visibleCountForCell(
         input.cellHeight,
-        candidate.eventIds.length,
+        eventCount,
         input.densityCap
       );
-      const eventCount = candidate.eventIds.length + heldBack;
       const visibleIds = new Set<string>();
 
       for (const span of candidate.allDaySpans) {

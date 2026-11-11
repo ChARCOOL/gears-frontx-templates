@@ -430,7 +430,7 @@ describe(MonthGrid, () => {
     assert(screen.getByRole("status").textContent).toContain("+6 hidden");
   });
 
-  it("keeps all local chips visible when only API held-back events overflow the cell", () => {
+  it("drops local chips to make room for API held-back events in a full cell", () => {
     const date = calendarDate("2025-09-04");
 
     const events = Array.from({ length: 3 }, (_, index) =>
@@ -455,8 +455,8 @@ describe(MonthGrid, () => {
           (button) =>
             !(button.getAttribute("aria-label")?.includes("hidden") ?? false)
         )
-    ).toHaveLength(3);
-    within(cell).getByText("+1 hidden");
+    ).toHaveLength(2);
+    within(cell).getByText("+2 hidden");
     assert(cell.dataset.eventCount).toBe("4");
   });
 
