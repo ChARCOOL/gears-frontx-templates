@@ -77,88 +77,24 @@ interface MfeManifestConfig {
 }
 
 /**
- * Scoped schema registration: only register schemas whose $id matches an action ID
- * declared by at least one entry in this package. Action schemas are validated
- * against declared entry actions; non-action schemas (derived ExtensionDomain
- * and Extension type schemas owned by parent MFEs) are registered separately
- * via `registerNonActionSchemas` because they have no action ID counterpart.
+ * First pass over every package: register every schema with an `$id` it
+ * ships (its action types, and any derived `ExtensionDomain` or `Extension`
+ * type a parent MFE declares) before any instance. A domain or entry names
+ * action types and an extension chains through derived types by GTS type
+ * reference, which the store requires to exist, so registering every
+ * package's schemas first keeps the walk independent of the order of
+ * `generated-mfe-manifests.json`.
+ * `registerSchema` resolves no reference and keeps the first definition of an
+ * id, so the order within this pass does not matter.
  */
-function collectDeclaredActionIds(entries: MfeEntryMF[]): Set<string> {
-  const declaredActionIds = new Set<string>();
-  for (const entry of entries) {
-    for (const actionId of entry.actions) declaredActionIds.add(actionId);
-    for (const actionId of entry.domainActions) declaredActionIds.add(actionId);
-  }
-  return declaredActionIds;
-}
-
-const GTS_SCHEMA_ID_PREFIX = 'gts://';
-
-/** A schema's `$id` is its type id behind the `gts://` prefix, so it is an action schema exactly when that type id is a declared action id. */
-function isDeclaredActionSchema(schemaId: string, declaredActionIds: ReadonlySet<string>): boolean {
-  return schemaId.startsWith(GTS_SCHEMA_ID_PREFIX) && declaredActionIds.has(schemaId.slice(GTS_SCHEMA_ID_PREFIX.length));
-}
-
-function registerScopedSchemas(
-  registry: MfeRegistry,
-  schemas: JSONSchema[],
-  declaredActionIds: Set<string>,
-): void {
-  for (const schema of schemas) {
-    const schemaId = schema.$id;
-    if (!schemaId) continue;
-    if (isDeclaredActionSchema(schemaId, declaredActionIds)) {
-      registry.typeSystem.registerSchema(schema);
-    }
-  }
-}
-
-/**
- * Register schemas that are not action schemas. Derived `ExtensionDomain` and
- * `Extension` type schemas declared by a parent MFE (e.g., demo-mfe's widgets
- * domain derived schema) must be registered before any leaf MFE's extension
- * instance is validated against the chain — per
- * `cpt-frontx-dod-mfe-registry-mfe-schema-registration` (parent
- * registers schemas before entries / extensions). The action-id-match filter
- * in `registerScopedSchemas` does not apply to these schemas because their
- * `$id` is a domain or extension type ID, not an action ID.
- *
- * `gtsPlugin.registerSchema` accepts a schema registered twice, so
- * registering all non-action schemas across all packages in a first pass
- * is safe and keeps the schema chain available before any leaf-MFE extension
- * registration.
- */
-function registerNonActionSchemas(
-  registry: MfeRegistry,
-  schemas: JSONSchema[],
-  declaredActionIds: Set<string>,
-): void {
-  for (const schema of schemas) {
-    const schemaId = schema.$id;
-    if (!schemaId) continue;
-    if (!isDeclaredActionSchema(schemaId, declaredActionIds)) {
-      registry.typeSystem.registerSchema(schema);
-    }
-  }
-}
-
-/**
- * First pass over every package: register all non-action schemas on the gts
- * singleton so leaf-MFE extension validation later in the second pass can chain
- * through derived schemas declared by parent MFEs (regardless of iteration
- * order in `generated-mfe-manifests.json`).
- */
-function registerAllNonActionSchemas(
+function registerAllSchemas(
   registry: MfeRegistry,
   manifests: readonly MfeManifestConfig[],
 ): void {
   for (const config of manifests) {
-    if (!config.schemas) continue;
-    registerNonActionSchemas(
-      registry,
-      config.schemas,
-      collectDeclaredActionIds(config.entries),
-    );
+    for (const schema of config.schemas ?? []) {
+      if (schema.$id) registry.typeSystem.registerSchema(schema);
+    }
   }
 }
 
@@ -168,27 +104,35 @@ function registerAllNonActionSchemas(
  * extensions. Foreign-domain extensions (those whose target domain is owned by
  * a different runtime, like the widgets domain owned by demo-mfe's child
  * FrontX app) MUST NOT be registered on the host registry; they reach their
- * owning runtime through a content-addressed dispatcher (see
- * `cpt-frontx-algo-framework-composition-content-addressed-discovery`).
+ * owning runtime through a content-addressed dispatcher: that runtime reads
+ * the same manifests and registers the extensions whose `domain` is the GTS
+ * instance ID of a domain it owns.
  */
 function hostOwnsDomain(registry: MfeRegistry, domainId: string): boolean {
   return registry.getDomain(domainId) !== undefined;
 }
 
-async function registerMfePackage(
+/**
+ * Registers one package's manifest, domains and entries, after every
+ * package's schemas and before any package's extensions. Runs for every
+ * package before any extension is
+ * registered, because an extension's `domain` and `entry` are GTS instance
+ * references the store requires to exist, and a package's extension may name
+ * a domain another package declares (widgets-fixture-a's widgets target the
+ * widgets domain demo-mfe declares), whatever order the manifests come in.
+ */
+function registerMfePackageEntities(
   registry: MfeRegistry,
   config: MfeManifestConfig,
-): Promise<void> {
-  if (config.schemas) {
-    registerScopedSchemas(registry, config.schemas, collectDeclaredActionIds(config.entries));
-  }
+): void {
   // register() validates each instance against its schema and throws on
   // failure — invalid manifests/entries fail startup loudly rather than
   // persisting broken state into the registry. The aggregator script inlines
   // the resolved MfManifest object into each entry's `manifest` field so the
   // host registers entries opaquely — no spread/override needed here.
   registry.typeSystem.register(config.manifest);
-  // Registration order: schemas → manifest → domains → entries → extensions.
+  // Registration order: every package's schemas, then manifest → domains →
+  // entries per package, then every package's extensions (`bootstrapMFE`).
   // Domains MUST be registered before any extension references them so the
   // content-addressed dispatcher can resolve target-domain ownership at the
   // GTS runtime store. Domain registration is opaque — the aggregator passes
@@ -200,6 +144,13 @@ async function registerMfePackage(
   for (const entry of config.entries) {
     registry.typeSystem.register(entry);
   }
+}
+
+/** Registers one package's extensions, after every package's entities. */
+async function registerMfePackageExtensions(
+  registry: MfeRegistry,
+  config: MfeManifestConfig,
+): Promise<void> {
   for (const extension of config.extensions ?? []) {
     // Only extensions whose target domain is owned by this host registry are
     // registered here. Extensions targeting a domain owned by another FrontX
@@ -211,7 +162,7 @@ async function registerMfePackage(
       // this extension — but it still needs the declaration present on its
       // own type system: a registry's type system is not
       // guaranteed to share the realm store (an isolated `GtsPlugin` does
-      // not), and `x-gts-ref` admission validation for an
+      // not), and `x-gts-instance-ref` admission validation for an
       // action originating here (e.g. Hello World's ping dispatched at the
       // shell's own registry, escalating down to widget-a two hops away)
       // checks referenced entities against THIS store, before the action
@@ -241,8 +192,9 @@ export type DomainRegistration = (app: FrontXApp) => void;
  * Runs each of `domains` first, so every domain the host implements is
  * registered before the manifest walk decides, per extension, whether this
  * host admits it (`hostOwnsDomain`). The registry admits an extension only
- * when its domain is already registered: a domain registered after the walk
- * does not pick up the extensions the walk recorded for it. The registry
+ * when its domain is already registered, and an extension whose domain is
+ * not on the type system at all fails the walk, so a domain registered after
+ * the walk admits none of the extensions the manifests declare for it. The registry
  * admits each routed domain to the router of `@gears-frontx/routing` that
  * the framework injects into it, and starts and stops the domain when its
  * root attaches and detaches; this function builds no routing wiring. It then
@@ -286,12 +238,20 @@ export async function bootstrapMFE(app: FrontXApp, domains: readonly DomainRegis
     );
     return;
   }
-  // First pass: register every package's non-action schemas (derived
-  // ExtensionDomain / Extension type schemas) so leaf-MFE extension validation
-  // in the second pass can chain through them regardless of manifest order.
-  registerAllNonActionSchemas(registry, manifests);
+  // Three passes, each over every package, so no reference to a type,
+  // manifest, domain or entry depends on manifest order: schemas, then
+  // manifests, domains and entries, then extensions. Extensions are checked
+  // one by one, so one whose type references another extension needs it
+  // earlier. A lifecycle hook's action `target` is checked at registration
+  // too, so it must be the hooked instance itself or one registered earlier:
+  // a domain's hook can target no declared extension, since every domain
+  // registers first.
+  registerAllSchemas(registry, manifests);
   for (const config of manifests) {
-    await registerMfePackage(registry, config);
+    registerMfePackageEntities(registry, config);
+  }
+  for (const config of manifests) {
+    await registerMfePackageExtensions(registry, config);
   }
   menuLabels.configure(manifests, aggregateUrl, registry.typeSystem);
 }
