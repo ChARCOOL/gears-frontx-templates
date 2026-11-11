@@ -6,11 +6,16 @@
  * run has to stop before it builds anything, naming the port and the package.
  */
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:net';
-import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 import { PREVIEW_HOST, isPortFree, previewCommand } from '../scripts/lib/preview-ports';
+
+const SHELL_DIR = resolve(__dirname, '..');
 
 const holders: Server[] = [];
 
@@ -62,3 +67,62 @@ describe('previewCommand', () => {
   });
 });
 
+describe('dev:all with a taken preview port', () => {
+  let project: string;
+
+  beforeEach(() => {
+    project = mkdtempSync(join(tmpdir(), 'dev-all-port-'));
+  });
+
+  afterEach(() => {
+    rmSync(project, { recursive: true, force: true });
+  });
+
+  function previewPackage(name: string, port: number): void {
+    const packageDir = join(project, 'src-app', 'mfe_packages', name);
+    mkdirSync(packageDir, { recursive: true });
+    writeFileSync(join(packageDir, 'mfe.json'), '{ "entries": [], "extensions": [] }');
+    writeFileSync(join(packageDir, 'package.json'), JSON.stringify({ name, scripts: { preview: `vite preview --port ${port}` } }));
+  }
+
+  function runDevAll() {
+    writeFileSync(join(project, 'package.json'), JSON.stringify({ name: 'fixture', private: true }));
+    return spawnSync(
+      process.execPath,
+      [join(SHELL_DIR, 'node_modules', 'tsx', 'dist', 'cli.mjs'), join(SHELL_DIR, 'scripts', 'dev-all.ts')],
+      { cwd: project, encoding: 'utf-8' },
+    );
+  }
+
+  it('stops before building when two packages declare the same port, naming the port and both packages', async () => {
+    const port = await holdPort();
+    await release(holders.pop()!);
+    previewPackage('orders-mfe', port);
+    previewPackage('orders-copy-mfe', port);
+
+    const run = runDevAll();
+
+    expect(run.status).toBe(1);
+    expect(run.stderr).toMatch(new RegExp(`port ${port}: (orders-copy-mfe, orders-mfe|orders-mfe, orders-copy-mfe)`));
+    expect(run.stdout).not.toContain('Building MFE packages');
+  });
+
+  it('stops before building, naming every taken port with its package and no free one', async () => {
+    const ordersPort = await holdPort();
+    const reportsPort = await holdPort();
+    // A port that was free a moment ago: taken and released, so nothing holds it.
+    const billingPort = await holdPort();
+    await release(holders.pop()!);
+    previewPackage('orders-mfe', ordersPort);
+    previewPackage('billing-mfe', billingPort);
+    previewPackage('reports-mfe', reportsPort);
+
+    const run = runDevAll();
+
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain(`port ${ordersPort} (orders-mfe, src-app/mfe_packages/orders-mfe/package.json)`);
+    expect(run.stderr).toContain(`port ${reportsPort} (reports-mfe, src-app/mfe_packages/reports-mfe/package.json)`);
+    expect(run.stderr).not.toContain('billing-mfe');
+    expect(run.stdout).not.toContain('Building MFE packages');
+  });
+});
