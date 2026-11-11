@@ -21,6 +21,7 @@ import type {
   CalendarEventSegment,
   CalendarGridColumn,
   CalendarGridRow,
+  CalendarTimeRange,
   CalendarTimeWindow,
   IanaTimeZone,
   UtcInstant,
@@ -29,6 +30,7 @@ import type {
 import {
   addCalendarDays,
   buildDayRange,
+  buildTimeWindowRange,
   compareUtcInstants,
   isWithinTimeWindow,
   toUtcRange,
@@ -701,6 +703,87 @@ export const buildTimedPositions = <Payload>(
 
   return { byCell, overflowByCell };
   // @cpt-end:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-derive
+};
+
+export interface PositionedTimeRange {
+  readonly range: CalendarTimeRange;
+  readonly geometry: CalendarEventGeometry;
+}
+
+export const buildTimeRangePositions = (
+  timeRanges: readonly CalendarTimeRange[],
+  dayColumns: readonly WeekGridDayColumn[],
+  getCellKey: (cell: CalendarCell) => string,
+  timeZone: IanaTimeZone,
+  rowHeight: number
+): ReadonlyMap<string, readonly PositionedTimeRange[]> => {
+  const byCell = new Map<string, PositionedTimeRange[]>();
+
+  for (const column of dayColumns) {
+    const { range: columnRange, slots } = column;
+    const rangeStartEpoch = Date.parse(columnRange.start);
+    const rangeDuration = Date.parse(columnRange.end) - rangeStartEpoch;
+    const columnHeight = Math.max(slots.length, 1) * rowHeight;
+
+    for (const timeRange of timeRanges) {
+      if (timeRange.date !== undefined && timeRange.date !== column.date) {
+        continue;
+      }
+
+      const dayRange = buildTimeWindowRange(column.date, timeZone, timeRange);
+
+      if (compareUtcInstants(dayRange.start, dayRange.end) >= 0) {
+        throw new RangeError(
+          `Time range "${timeRange.key}" must end after it starts`
+        );
+      }
+
+      const [clipped] = clipSegmentsToRange([dayRange], columnRange);
+
+      if (clipped === undefined) {
+        continue;
+      }
+
+      const startIndex = findCellIndex(slots, clipped.start, clipped.end);
+      const startCell = arrayAt(slots, startIndex);
+
+      if (!startCell) {
+        continue;
+      }
+
+      const top =
+        ((Date.parse(clipped.start) - rangeStartEpoch) / rangeDuration) *
+          columnHeight -
+        startIndex * rowHeight;
+
+      const height =
+        ((Date.parse(clipped.end) - Date.parse(clipped.start)) / rangeDuration) *
+        columnHeight;
+
+      // Above the cell content (z 0), below event frames (z 2).
+      const positioned: PositionedTimeRange = {
+        geometry: {
+          height,
+          inlineSize: 100,
+          insetInlineStart: 0,
+          top,
+          zIndex: 1,
+        },
+        range: timeRange,
+      };
+
+      const key = getCellKey(startCell);
+      const current = byCell.get(key);
+
+      if (current) {
+        current.push(positioned);
+      } else {
+        byCell.set(key, [positioned]);
+      }
+    }
+  }
+
+  return byCell;
 };
 
 export const buildAllDayPositions = <Payload>(

@@ -42,6 +42,7 @@ import {
   buildAllDayPositions,
   buildGridData,
   buildNowPosition,
+  buildTimeRangePositions,
   buildTimedPositions,
   buildTimedSegments,
   buildUnavailableCellKeys,
@@ -160,6 +161,7 @@ export const useWeekGridContent = <Payload = unknown>(
     slotMinutes,
     rowHeight = HOUR_ROW_HEIGHT,
     maxEventsPerSlot,
+    timeRanges = EMPTY_LIST,
     workingHours,
     trailingGutter = false,
     interactionMode,
@@ -389,6 +391,18 @@ export const useWeekGridContent = <Payload = unknown>(
       rowHeight,
       timedSegments,
     ]
+  );
+
+  const timeRangePositionsByCell = useMemo(
+    () =>
+      buildTimeRangePositions(
+        timeRanges,
+        controller.dayColumns,
+        gridCellKey,
+        timeZone,
+        rowHeight
+      ),
+    [controller.dayColumns, gridCellKey, rowHeight, timeRanges, timeZone]
   );
 
   const allDayPositionsByCell = useMemo(
@@ -954,6 +968,7 @@ export const useWeekGridContent = <Payload = unknown>(
     overflowByCell: timedLayout.overflowByCell,
     paintRefused,
     paintTouchesUnavailable,
+    timeRangePositionsByCell,
     timedPositionsByCell: timedLayout.byCell,
     trailingGutter,
     unavailableCellKeys,

@@ -314,6 +314,7 @@ export type {
   CalendarSelectionRange,
   CalendarDateRange,
   CalendarSlotMinutes,
+  CalendarTimeRange,
   CalendarTimeWindow,
   CalendarEventSegment,
   CalendarEventGeometry,

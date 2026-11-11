@@ -35,6 +35,7 @@ import type {
   CalendarResizeRequest,
   CalendarSelectionRange,
   CalendarSlotMinutes,
+  CalendarTimeRange,
   CalendarTimeWindow,
   UtcInstant,
   WeekGridInteractionMode,
@@ -86,6 +87,7 @@ import type {
   CellMeta,
   NowPosition,
   PositionedEvent,
+  PositionedTimeRange,
   SlotOverflow,
 } from "./week-grid-layout";
 
@@ -152,6 +154,13 @@ export interface WeekGridProps<Payload = unknown> extends CalendarContextProps {
   readonly onOverflowSelect?: (cell: CalendarCell, anchor: HTMLElement) => void;
   /** Drawn in cells covered by an unavailable or busy timed event, or in cells `getCellState` marks unavailable. */
   readonly renderUnavailable?: (cell: CalendarCell) => ReactNode;
+  /** Host bands drawn behind the timed events. Clipped to `visibleHours`. */
+  readonly timeRanges?: readonly CalendarTimeRange[];
+  /** Renders the content of each band in `timeRanges`. Without it no band is drawn. */
+  readonly renderTimeRange?: (
+    range: CalendarTimeRange,
+    context: { readonly geometry: CalendarEventGeometry }
+  ) => ReactNode;
   /** Host state per cell. `unavailable` blocks the cell; it stays focusable. */
   readonly getCellState?: (cell: CalendarCell) => CalendarCellState | undefined;
   /** Replaces the weekday and day number of each day header. The time column keeps its label. */
@@ -813,6 +822,7 @@ interface WeekGridCellContentProps<Payload> {
   readonly renderEventMetadata?: CalendarEventRenderer<Payload>;
   readonly renderOverflow?: WeekGridProps["renderOverflow"];
   readonly renderUnavailable?: (cell: CalendarCell) => ReactNode;
+  readonly renderTimeRange?: WeekGridProps["renderTimeRange"];
   readonly dropTargetKeys: ReadonlySet<string>;
   readonly onOverflowSelect?: WeekGridProps["onOverflowSelect"];
   readonly overflow?: SlotOverflow;
@@ -820,6 +830,7 @@ interface WeekGridCellContentProps<Payload> {
   readonly paintInvalid: boolean;
   readonly selectedEventId: string | null;
   readonly selectedPaintKeys: ReadonlySet<string>;
+  readonly timeRangePositions: readonly PositionedTimeRange[];
   readonly timedPositions: readonly PositionedEvent<Payload>[];
   readonly unavailableCellKeys: ReadonlySet<string>;
 }
@@ -860,6 +871,7 @@ const WeekGridCellContent = <Payload,>(
     renderEventMetadata,
     renderOverflow,
     renderUnavailable,
+    renderTimeRange,
     onOverflowSelect,
     overflow,
     paintColorFamily,
@@ -868,6 +880,7 @@ const WeekGridCellContent = <Payload,>(
     resize,
     selectedEventId,
     selectedPaintKeys,
+    timeRangePositions,
     timedPositions,
     unavailableCellKeys,
   } = props;
@@ -929,6 +942,23 @@ const WeekGridCellContent = <Payload,>(
           </div>
         )}
       </div>
+      {renderTimeRange !== undefined &&
+        timeRangePositions.map((position) => (
+          <div
+            key={position.range.key}
+            className={styles.timeRangeFrame}
+            aria-hidden="true"
+            style={{
+              blockSize: `${position.geometry.height}px`,
+              insetBlockStart: `${position.geometry.top}px`,
+              insetInlineStart: `${position.geometry.insetInlineStart}%`,
+              inlineSize: `${position.geometry.inlineSize}%`,
+              zIndex: position.geometry.zIndex,
+            }}
+          >
+            {renderTimeRange(position.range, { geometry: position.geometry })}
+          </div>
+        ))}
       {overflow !== undefined && (
         <WeekGridOverflowButton
           overflow={overflow}
@@ -1072,6 +1102,7 @@ const WeekGridContent = <Payload = unknown,>(
     selectedPaintKeys,
     setPaintRefused,
     t,
+    timeRangePositionsByCell,
     timedPositionsByCell,
     trailingGutter,
     unavailableCellKeys,
@@ -1088,6 +1119,7 @@ const WeekGridContent = <Payload = unknown,>(
     renderEventMetadata,
     renderHeader,
     renderOverflow,
+    renderTimeRange,
     rowHeight,
   } = props;
 
@@ -1143,9 +1175,13 @@ const WeekGridContent = <Payload = unknown,>(
       paintInvalid={paintTouchesUnavailable}
       renderOverflow={renderOverflow}
       renderUnavailable={renderUnavailable}
+      renderTimeRange={renderTimeRange}
       dropTargetKeys={dropTargetKeys}
       selectedEventId={controller.selectedEventId}
       selectedPaintKeys={selectedPaintKeys}
+      timeRangePositions={
+        timeRangePositionsByCell.get(gridCellKey(context.cell)) ?? EMPTY_LIST
+      }
       timedPositions={
         timedPositionsByCell.get(gridCellKey(context.cell)) ?? EMPTY_LIST
       }

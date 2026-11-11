@@ -453,6 +453,17 @@ export interface CalendarTimeWindow {
   readonly end: LocalTime;
 }
 
+/** A host band drawn behind the timed events of a day. */
+export interface CalendarTimeRange<Metadata = unknown>
+  extends CalendarTimeWindow {
+  /** Stable key. */
+  readonly key: string;
+  /** Day the band applies to. Omitted: every visible day. */
+  readonly date?: CalendarDate;
+  /** Host data passed back to `renderTimeRange`. */
+  readonly metadata?: Metadata;
+}
+
 export type CalendarSlotMinutes = 5 | 10 | 15 | 20 | 30 | 60;
 
 /** Both ends inclusive. */

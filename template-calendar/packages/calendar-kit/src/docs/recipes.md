@@ -516,6 +516,7 @@ See [Headless controllers](headless.md#example-your-own-toolbar).
 - **Five-day weeks with short days:** `visibleDays={5}`, `visibleHours={{ start: "08:00", end: "18:00" }}`, `slotMinutes={30}`.
 - **Term or exam windows:** `MonthGrid` with `selectionMode="date-range"` and `onSelectedDateRangeChange`.
 - **Timetables:** `trailingGutter` repeats the hour labels on the far edge.
+- **Breaks, holds and slots as background bands:** pass `timeRanges` and `renderTimeRange` to `WeekGrid`, e.g. `timeRanges={[{ key: "lunch", start: "12:00", end: "13:00" }]}` and `renderTimeRange={() => <div className="lunch" />}`. A band with `date` draws on that day only; without it, on every visible day. Bands sit behind events, take no pointer input and are hidden from assistive technology, so state that matters also goes in an event or the host UI.
 - **Blocked days and greyed weekends:** `getCellState` returns `{ unavailable: true }` for blocked days on `MonthGrid` or `WeekGrid`. On `WeekGrid`, `renderHeader` reads `column.date` to grey Saturday and Sunday headers.
 - **Hide calendars:** keep `hiddenCalendarIds` in host state, pass it to `CalendarList`, and filter `events` before they reach the grid. The grid shows whatever it is given.
 - **Screenshots and visual tests:** pass `now` everywhere so the today marker, the now line and past styling never move.

@@ -231,6 +231,19 @@
   pointer-events: none;
 }
 
+/* Bands are decorative and never take the pointer, so cells and events beneath stay clickable. */
+.timeRangeFrame {
+  position: absolute;
+  pointer-events: none;
+}
+
+.timeRangeFrame > * {
+  position: absolute;
+  block-size: 100%;
+  inline-size: 100%;
+  inset: 0;
+}
+
 .eventFrame {
   position: absolute;
   z-index: 2;
