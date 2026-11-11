@@ -649,14 +649,30 @@ export const useComboboxField = ({
         preventBaseUIHandler?.();
         setOpenAndPortal(true);
       }
+
+      // Base UI would drop the last value even when no chip shows it, so the last rendered tag goes.
+      if (tags && key === "Backspace" && event.currentTarget.value === "") {
+        const values = selectedValues ?? NO_SELECTED_VALUES;
+        const lastTag = values.filter((value) => optionsByValue.has(value)).at(-1);
+
+        if (lastTag !== undefined) {
+          event.preventDefault();
+          preventBaseUIHandler?.();
+          handleMultipleValueChange(values.filter((value) => value !== lastTag));
+        }
+      }
     },
     [
       commitHighlightedOption,
       disabled,
+      handleMultipleValueChange,
       navigateHighlightedOption,
       onKeyDown,
+      optionsByValue,
       readOnly,
+      selectedValues,
       setOpenAndPortal,
+      tags,
     ]
   );
 

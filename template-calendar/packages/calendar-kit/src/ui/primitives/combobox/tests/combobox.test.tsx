@@ -414,6 +414,28 @@ describe(Combobox, () => {
     expect(onTagRemove).toHaveBeenCalledWith("a");
   });
 
+  it("removes the last tag with Backspace in an empty tags field", async () => {
+    const onTagRemove = vi.fn<(value: string) => void>();
+    renderCombobox({ onTagRemove, selectedValues: ["a", "c"], tags: true });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("combobox"));
+    await user.keyboard("{Backspace}");
+
+    expect(onTagRemove).toHaveBeenCalledExactlyOnceWith("c");
+  });
+
+  it("removes the last rendered tag, not a value without an option, with Backspace", async () => {
+    const onTagRemove = vi.fn<(value: string) => void>();
+    renderCombobox({ onTagRemove, selectedValues: ["a", "gone"], tags: true });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("combobox"));
+    await user.keyboard("{Backspace}");
+
+    expect(onTagRemove).toHaveBeenCalledExactlyOnceWith("a");
+  });
+
   it("renders removable tags and sends removed option through onSelect", async () => {
     const onSelect = vi.fn<() => void>();
     renderCombobox({ onSelect, selectedValues: ["a", "c"], tags: true });
