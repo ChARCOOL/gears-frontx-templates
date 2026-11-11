@@ -274,8 +274,9 @@ describe(CalendarSidePanel, () => {
     expect(
       container.querySelector("[class*='collapsed'] > button")
     ).not.toBeNull();
-    expect(collapsed.get("padding-block-start")).toBe(
-      "calc((64px - var(--cal-control-height-md)) / 2)"
+    expect(collapsed.get("padding-block-start")).toBe("18px");
+    expect(declarations(sidePanelCss, ".panel").get("padding-block")).toBe(
+      "18px"
     );
     expect(collapsed.get("block-size")).toBe("var(--cal-control-height-md)");
     expect(collapsed.get("padding-inline-end")).toBe("var(--cal-space-4)");
