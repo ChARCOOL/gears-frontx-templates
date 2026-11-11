@@ -47,7 +47,7 @@
   padding: var(--cal-space-2) var(--cal-space-3);
 }
 
-/* Figma draws the close glyph in the brand colour; the ghost variant paints it muted. */
+/* The close glyph takes the brand colour; the ghost variant would paint it muted. */
 .headerActions > .closeButton.closeButton {
   color: var(--cal-color-brand);
 }
@@ -77,7 +77,7 @@
   opacity: 1;
 }
 
-/* Figma's Save is the brand action colour; the kit primary variant paints the error token. */
+/* Save takes the brand action colour; the kit primary variant would paint the error token. */
 .footerActions > .saveButton.saveButton,
 .repeatActions > .saveButton.saveButton {
   --button-bg: var(--cal-color-action);
@@ -150,7 +150,7 @@
   opacity: 1;
 }
 
-/* Fields stack 8px apart; each Figma group starts 20px below the previous one (.groupStart). */
+/* Fields stack 8px apart; each group starts 20px below the previous one (.groupStart). */
 .fields {
   display: flex;
   flex-direction: column;
@@ -367,7 +367,7 @@
   margin-block: var(--cal-space-3);
 }
 
-/* Figma sets the description 36px below the location button: the 8px field gap plus this 28px. */
+/* The description sits 36px below the location button: the 8px field gap plus this 28px. */
 .descriptionField {
   margin-block-start: calc(var(--cal-space-3) + var(--cal-space-4));
 }
@@ -444,7 +444,7 @@
   --cal-select-selected-text: var(--cal-color-muted);
 }
 
-/* The field primitive's wrapper spans its row; here each control keeps the Figma 88px width. */
+/* The field primitive's wrapper spans its row; here each control keeps its 88px width. */
 .repeatIntervalRow > div {
   flex: none;
   inline-size: 88px;

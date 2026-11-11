@@ -8,7 +8,6 @@
   flex-direction: column;
   inline-size: var(--cal-side-panel-width);
   max-inline-size: 100%;
-  /* Figma sidebar: 18px bottom, 16px sides. */
   padding-block: 18px;
 
   /* Shares the toolbar's 64px band so the collapse control does not hop. */

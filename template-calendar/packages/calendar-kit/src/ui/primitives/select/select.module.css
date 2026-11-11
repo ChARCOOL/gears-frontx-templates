@@ -189,7 +189,7 @@
   color: var(--cal-color-text);
 }
 
-/* The check marks the selection and the label greys (Figma selected row); the highlighted row keeps ink for focus. */
+/* The check marks the selection and the label greys on the selected row; the highlighted row keeps ink for focus. */
 /* prettier-ignore */
 .popup [role='option'][data-selected]:not([data-highlighted]) {
   background-color: transparent;

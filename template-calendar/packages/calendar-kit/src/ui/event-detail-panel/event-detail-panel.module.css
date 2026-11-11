@@ -17,7 +17,7 @@
   overflow: hidden;
 }
 
-/* The Figma sheet header: 64px tall with the title and actions centred, 12px in from each edge.
+/* The sheet header: 64px tall with the title and actions centred, 12px in from each edge.
    A long title grows it, up to three lines. */
 .header {
   align-items: center;
@@ -232,7 +232,7 @@
   margin-block-start: var(--cal-space-2);
 }
 
-/* Figma overlaps each avatar on the one before it: 28px avatars on a 25px step, ringed in the
+/* Each avatar overlaps the one before it: 28px avatars on a 25px step, ringed in the
    sheet colour so the edge of the one below stays readable. */
 .avatarStack > li + li {
   margin-inline-start: -3px;
