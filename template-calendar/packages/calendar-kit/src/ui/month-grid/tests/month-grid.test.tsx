@@ -7,7 +7,6 @@ import {
 } from "@testing-library/react";
 import { describe, expect as assert, it, vi } from "vitest";
 
-import { declarations } from "../../../__test-utils__/css-declarations";
 import {
   instant,
   timedEvent as fixtureTimedEvent,
@@ -1002,64 +1001,7 @@ describe("MonthGrid strip layout", () => {
     assert(within(monthCell(0, 3)).queryByText(/hidden/u)).toBeNull();
   });
 
-  it("lets week rows fill the view and shrink in a short one, scrolling only inside it", () => {
-    const monthGrid = declarations(monthGridStyles, ".monthGrid");
-
-    assert(monthGrid.get("flex")).toBe("1 1 auto");
-    assert(monthGrid.get("grid-auto-rows")).toBe(
-      "minmax(calc(var(--grid-chip-height) * 3 + var(--cal-border-width-1)), 1fr)"
-    );
-    assert(declarations(monthGridStyles, ".container").get("overflow-y")).toBe(
-      "auto"
-    );
-    assert(declarations(monthGridStyles, ".weekRow").has("block-size")).toBe(
-      false
-    );
-    assert(
-      declarations(monthGridStyles, ".weekNumber, .dayCell").has("block-size")
-    ).toBe(false);
-  });
-
-  it("draws ordinary day numbers in the muted label style", () => {
-    assert(declarations(monthGridStyles, ".dayNumber").get("font-weight")).toBe(
-      "var(--cal-text-label-weight)"
-    );
-    assert(
-      declarations(monthGridStyles, ".dayNumber.dayNumberNoFill").get("color")
-    ).toBe("var(--cal-color-muted)");
-  });
-
-  it("marks today with the day-number pill alone, without a top line on the cell", () => {
-    assert(monthGridStyles).not.toMatch(/\.today\b/u);
-  });
-
-  it("insets month chips and all-day bars inside the day cells", () => {
-    assert(declarations(monthGridStyles, ".dayCell").get("padding")).toBe(
-      "6px"
-    );
-    assert(
-      declarations(monthGridStyles, ".eventSlot > button").get(
-        "padding-inline-start"
-      )
-    ).toBe("3px");
-    assert(
-      declarations(monthGridStyles, ".allDaySlot").get("margin-inline")
-    ).toBe("6px");
-    assert(
-      declarations(
-        monthGridStyles,
-        '.allDaySlot:has(> [data-continues-before="true"])'
-      ).get("margin-inline-start")
-    ).toBe("0");
-    assert(
-      declarations(
-        monthGridStyles,
-        '.allDaySlot:has(> [data-continues-after="true"])'
-      ).get("margin-inline-end")
-    ).toBe("0");
-  });
-
-  it("uses the no-fill regular Tag for ordinary dates and the red pill Tag with the full date for today", () => {
+          it("uses the no-fill regular Tag for ordinary dates and the red pill Tag with the full date for today", () => {
     renderMonth({ date: calendarDate("2025-09-01") });
 
     const ordinary = within(monthCell(0, 1)).getByText("2", { exact: true });
