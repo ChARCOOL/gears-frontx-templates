@@ -64,7 +64,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 Set `selectionMode="date-range"` to let the user pick whole days, as a term or exam window. The value is a `CalendarDateRange` whose `start` and `end` are both inclusive; use `selectedDateRange` with `onSelectedDateRangeChange`, or `defaultSelectedDateRange` for uncontrolled use.
 
-- Pointer: drag from the first day to the last, or click the first day and then the last. The second click may be in another month after navigating.
+- Pointer: drag from the first day to the last, or click the first day and then the last. The second click may be in another month after navigating. A drag passes over event and overflow chips; a press that starts on a chip activates it and does not start a range.
 - Keyboard: Enter or Space on a day sets the start, the arrow keys move the end, and Enter or Space commits. Escape abandons a range in progress.
 - The grid is `aria-multiselectable`, every day carries `aria-selected`, and the live region announces the committed range. `renderCell` receives `isSelected` for the days in range.
 - In this mode an empty day starts a range instead of calling `onEmptyCellSelect`; events and the overflow chip keep their own activation. `renderCell` also receives `isRangeStart` and `isRangeEnd` for the first and last day of the range.

@@ -795,6 +795,8 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
     controller.cancelMove();
   };
 
+  // A press on an event or overflow chip belongs to that control, not to range selection.
+  // Drag and release resolve the day under the chip, so a range can cross event chips.
   const handleRangePointerDown = (
     event: ReactPointerEvent<HTMLDivElement>
   ): void => {
@@ -810,7 +812,7 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
   const handleRangePointerMove = (
     event: ReactPointerEvent<HTMLDivElement>
   ): void => {
-    const day = dayAtTarget(event.target);
+    const day = dateAtTarget(event.target);
 
     if (rangeMode && day !== undefined) {
       rangeSelection.hover(day);
@@ -820,7 +822,7 @@ const useMonthGridContent = (props: MonthGridContentProps) => {
   const handleRangePointerUp = (
     event: ReactPointerEvent<HTMLDivElement>
   ): void => {
-    const day = dayAtTarget(event.target);
+    const day = dateAtTarget(event.target);
 
     if (rangeMode && day !== undefined) {
       rangeSelection.release(day);

@@ -64,6 +64,34 @@ describe("MonthGrid date range selection", () => {
     );
   });
 
+  it("extends a range across event chips while dragging", () => {
+    const { onSelectedDateRangeChange } = renderMonth({
+      events: [timedEvent({ id: "review", startDate: "2025-09-08", title: "Review" })],
+    });
+    const chip = screen.getByRole("button", { name: /Review/u });
+
+    fireEvent.pointerDown(day("Wednesday, September 3, 2025"), { button: 0 });
+    fireEvent.pointerMove(chip);
+    fireEvent.pointerUp(chip);
+
+    assert(onSelectedDateRangeChange).toHaveBeenCalledWith({
+      end: calendarDate("2025-09-08"),
+      start: calendarDate("2025-09-03"),
+    });
+  });
+
+  it("does not start a range from a press on an event chip", () => {
+    const { onSelectedDateRangeChange } = renderMonth({
+      events: [timedEvent({ id: "review", startDate: "2025-09-08", title: "Review" })],
+    });
+
+    fireEvent.pointerDown(screen.getByRole("button", { name: /Review/u }), { button: 0 });
+    fireEvent.pointerMove(day("Thursday, September 11, 2025"));
+    fireEvent.pointerUp(day("Thursday, September 11, 2025"));
+
+    assert(onSelectedDateRangeChange).not.toHaveBeenCalled();
+  });
+
   it("selects a range with Enter on the start and end days, and announces it", async () => {
     const user = userEvent.setup();
     const { onSelectedDateRangeChange } = renderMonth();
