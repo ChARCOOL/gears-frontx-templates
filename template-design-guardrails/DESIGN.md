@@ -1,7 +1,7 @@
 ---
 name: "FrontX"
-version: "0.4.1"
-description: "Names the @gears-frontx/ui-kit 0.4.1 design tokens; their values live in the installed kit theme (@gears-frontx/ui-kit/theme.css) and the product theme, never here. Check the names and the version against the installed kit with node .frontx/ai/@gears-frontx/template-design-guardrails/skills/frontx-design/scripts/check-design-md.mjs from the project root."
+version: "0.5.0"
+description: "Names the @gears-frontx/ui-kit 0.5.0 design tokens; their values live in the installed kit theme (@gears-frontx/ui-kit/theme.css) and the product theme, never here. Check the names and the version against the installed kit with node .frontx/ai/@gears-frontx/template-design-guardrails/skills/frontx-design/scripts/check-design-md.mjs from the project root."
 colors:
   background: "var(--background)"
   foreground: "var(--foreground)"
@@ -116,6 +116,18 @@ typography:
     lineHeight: "var(--text-micro-line-height)"
     fontWeight: "var(--text-micro-weight)"
     letterSpacing: "var(--text-micro-tracking)"
+  kpi:
+    fontFamily: "var(--font-sans)"
+    fontSize: "var(--text-kpi-size)"
+    lineHeight: "var(--text-kpi-line-height)"
+    fontWeight: "var(--text-kpi-weight)"
+    letterSpacing: "var(--text-kpi-tracking)"
+  kpi-lg:
+    fontFamily: "var(--font-sans)"
+    fontSize: "var(--text-kpi-lg-size)"
+    lineHeight: "var(--text-kpi-lg-line-height)"
+    fontWeight: "var(--text-kpi-lg-weight)"
+    letterSpacing: "var(--text-kpi-lg-tracking)"
 rounded:
   base: "var(--radius)"
   xs: "var(--radius-xs)"
@@ -155,6 +167,7 @@ controls:
 elevation:
   overlay-panel-blur: "var(--overlay-panel-blur)"
   popover-shadow: "var(--popover-shadow)"
+  panel-shadow: "var(--panel-shadow)"
 components:
   body:
     backgroundColor: "{colors.background}"
@@ -204,15 +217,15 @@ components:
     borderColor: "{colors.destructive}"
   badge-success:
     backgroundColor: "{colors.success-soft}"
-    textColor: "{colors.success}"
+    textColor: "{colors.success-foreground}"
     rounded: "{rounded.full}"
   badge-warning:
     backgroundColor: "{colors.warning-soft}"
-    textColor: "{colors.warning}"
+    textColor: "{colors.warning-foreground}"
     rounded: "{rounded.full}"
   badge-danger:
     backgroundColor: "{colors.danger-soft}"
-    textColor: "{colors.danger}"
+    textColor: "{colors.danger-foreground}"
     rounded: "{rounded.full}"
   badge-info:
     backgroundColor: "{colors.info-soft}"
@@ -262,7 +275,7 @@ components:
 
 # FrontX design guardrails
 
-Template version: `0.1.0-alpha.5`\
+Template version: `0.1.0-alpha.7`\
 UI base: `@gears-frontx/ui-kit`  
 Scope: interface generation and advisory design review
 
@@ -338,9 +351,7 @@ Below 768 px the shell menu starts collapsed to its 56 px icon rail beside the s
 
 ## Known Gaps
 
-- Three kit badge pairs are below 4.5:1 in the light theme, as the render runner's `--design-md` mode prints them on kit `0.4.1` (cut to two decimals, never rounded up): `{colors.success}` on `{colors.success-soft}` 3.43:1, `{colors.warning}` on `{colors.warning-soft}` 1.99:1 and `{colors.danger}` on `{colors.danger-soft}` 4.27:1. The kit keeps these drawn values on purpose and routes contrast to its designer; do not rely on badge colour alone, and raise the pairs with the kit owner. The contrast run reports them as COL-001 findings until the kit changes them.
-- The kit has no generic layout grid or stack component; page layout is composed with CSS Modules on `--space-*` tokens.
+- The kit's `Grid` (`Grid` and `GridItem`) places an ordered group of blocks by size class (small, medium, large) on 12 columns; it takes no exact spans or manual placement, and the kit has no stack component. Other page layout is composed with CSS Modules on `--space-*` tokens.
 - Only the kit's `Table` has a density axis; other components have one density.
-- Kit `0.4.1` has no KPI type role; a KPI value takes the display or heading roles (APP-002).
 - The `components` map covers the kit components whose colours and sizes a screen most often pairs, not every kit component or state; the installed kit documentation stays the reference for the rest.
 - `scripts/check-design-md.mjs` checks names and the kit version only. Whether a product theme keeps text readable is seen only in the rendered app: the render runner's `--design-md` run measures the text contrast of every `components` pair in each theme (`references/design-md.md`, "Measure its contrast"); non-text contrast stays with the browser check and the review.
