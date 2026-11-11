@@ -356,7 +356,7 @@ describe(CalendarList, () => {
       expect(actions.onDeleteCalendar).toHaveBeenCalledWith("cal-personal");
     });
 
-    it("saves the picked color on Apply and drops it on Cancel", async () => {
+    it("saves the picked color on Apply and keeps an unapplied pick through Cancel", async () => {
       const user = userEvent.setup();
       const actions = optionActions();
 
@@ -377,7 +377,7 @@ describe(CalendarList, () => {
 
       await user.click(screen.getByRole("button", { name: /Color/ }));
 
-      expect(screen.getByRole("radio", { name: "Blue" })).toBeChecked();
+      expect(screen.getByRole("radio", { name: "Violet" })).toBeChecked();
 
       await user.click(screen.getByRole("radio", { name: "Violet" }));
       await user.click(screen.getByRole("button", { name: "Apply" }));

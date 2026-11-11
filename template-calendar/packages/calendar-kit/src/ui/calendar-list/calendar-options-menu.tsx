@@ -102,11 +102,6 @@ export const CalendarOptionsMenu = ({
     onClose();
   };
 
-  const cancelPicker = (): void => {
-    setSelectedFamily(calendar.colorFamily);
-    setPicking(false);
-  };
-
   const applyColor = (): void => {
     if (selectedFamily === calendar.colorFamily) {
       onClose();
@@ -188,7 +183,9 @@ export const CalendarOptionsMenu = ({
               size="l"
               type="button"
               variant="secondary"
-              onClick={cancelPicker}
+              onClick={() => {
+                setPicking(false);
+              }}
             >
               {t("calendar.list.cancel")}
             </Button>
