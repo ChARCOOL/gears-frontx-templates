@@ -405,6 +405,10 @@
   block-size: var(--repeat-row-height);
 }
 
+.repeatUnitPopup {
+  --c-select-popup-width: max-content;
+}
+
 /* The field primitive's wrapper spans its row; here each control keeps its own width. */
 .repeatIntervalRow > div {
   flex: none;

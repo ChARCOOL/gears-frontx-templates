@@ -1044,6 +1044,35 @@ describe("CreateEventPanel coverage paths", () => {
   });
 });
 
+describe("CreateEventPanel repeat unit popup", () => {
+  it("sizes the unit popup to its longest label instead of the narrow field", () => {
+    expect(
+      declarations(createEventCss, ".repeatUnitPopup").get(
+        "--c-select-popup-width"
+      )
+    ).toBe("max-content");
+  });
+});
+
+describe("CreateEventPanel conflict result", () => {
+  it("keeps the form open without an inline error for a conflict", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSubmit = submitSpy({
+      error: { kind: "conflict", message: "Room A is booked" },
+    });
+
+    renderPopover({ onSubmit });
+    await user.click(getSubmitButton());
+
+    await waitFor(() => {
+      assert(onSubmit).toHaveBeenCalledOnce();
+    });
+    assert(getCreateDialog()).toBeInTheDocument();
+    assert(screen.queryByText("Room A is booked")).toBeNull();
+    assert(screen.queryByRole("status")).toBeNull();
+  });
+});
+
 describe("CreateEventPanel host cancel handle", () => {
   it("resolves requestCancel with true once a clean form has closed", async () => {
     const ref = createRef<CreateEventPanelHandle>();

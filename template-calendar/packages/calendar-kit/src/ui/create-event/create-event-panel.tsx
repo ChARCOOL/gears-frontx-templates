@@ -659,6 +659,7 @@ const CustomRepeatView = ({
             size="m"
             showSelectedCheck
             className={styles.repeatUnit}
+            popupClassName={styles.repeatUnitPopup}
             onValueChange={(value) => {
               onChangeUnit(resolveRepeatUnit(value));
             }}
@@ -829,7 +830,7 @@ const SubmitError = ({
 }: SubmitErrorProps): ReactNode => {
   const { t } = useCalendarLocalization();
 
-  if (error === null) {
+  if (error === null || error.kind === "conflict") {
     return null;
   }
 
