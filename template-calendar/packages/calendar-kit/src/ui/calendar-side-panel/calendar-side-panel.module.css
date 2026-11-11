@@ -48,7 +48,7 @@
   display: flex;
   align-items: center;
   block-size: var(--cal-control-height-md);
-  padding-block-start: 18px;
+  padding-block-start: calc((64px - var(--cal-control-height-md)) / 2);
   padding-inline-end: var(--cal-space-4);
 }
 
