@@ -1757,6 +1757,8 @@ describe("CreateEventPanel Event and Reminder kinds", () => {
     );
 
     expect(inDomOrder).toEqual(fields);
+    expect(screen.getByLabelText("Start time")).toHaveAttribute("placeholder", "Start");
+    expect(screen.getByLabelText("End time")).toHaveAttribute("placeholder", "End");
   });
 
   it("saves the reminder URL with the draft", async () => {

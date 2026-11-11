@@ -174,10 +174,12 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.people.optional` | Optional |  |
 | `calendar.create_event.placeholder.calendar` | Choose a calendar |  |
 | `calendar.create_event.placeholder.conferencing` | Add conferencing |  |
+| `calendar.create_event.placeholder.end` | End |  |
 | `calendar.create_event.placeholder.event_type` | Choose an event type |  |
 | `calendar.create_event.placeholder.location` | Search for address |  |
 | `calendar.create_event.placeholder.location_level` | Choose a location |  |
 | `calendar.create_event.placeholder.people` | Add people |  |
+| `calendar.create_event.placeholder.start` | Start |  |
 | `calendar.create_event.placeholder.url` | URL to activity |  |
 | `calendar.create_event.repeat.biweekly` | Biweekly |  |
 | `calendar.create_event.repeat.custom` | Custom… |  |

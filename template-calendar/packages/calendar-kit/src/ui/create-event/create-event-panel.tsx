@@ -235,6 +235,7 @@ interface DateFieldProps {
 interface TimeFieldProps {
   readonly id: string;
   readonly label: string;
+  readonly placeholder?: string;
   readonly value: string;
   readonly disabled: boolean;
   readonly invalid?: boolean;
@@ -543,6 +544,7 @@ const DateField = ({
 const TimeField = ({
   id,
   label,
+  placeholder,
   value,
   disabled,
   invalid = false,
@@ -560,7 +562,7 @@ const TimeField = ({
       type="time"
       size="l"
       value={value}
-      placeholder={label}
+      placeholder={placeholder ?? label}
       disabled={disabled}
       invalid={invalid}
       aria-describedby={errorId}
@@ -1556,6 +1558,11 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
         <TimeField
           id={fieldId("start-time")}
           label={t("calendar.create_event.field.start_time")}
+          placeholder={
+            isReminder
+              ? t("calendar.create_event.placeholder.start")
+              : undefined
+          }
           value={controller.draft.startTime ?? ""}
           disabled={controller.isSubmitting || controller.draft.allDay}
           className={styles.rowField}
@@ -1565,6 +1572,9 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
         <TimeField
           id={fieldId("end-time")}
           label={t("calendar.create_event.field.end_time")}
+          placeholder={
+            isReminder ? t("calendar.create_event.placeholder.end") : undefined
+          }
           value={controller.draft.endTime ?? ""}
           invalid={fieldMessages.endTime !== null}
           errorId={fieldErrorId(
