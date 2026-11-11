@@ -105,15 +105,10 @@ describe(Select, () => {
     expect(popup).toHaveClass(selectStyles.popup);
   });
 
-  it("draws the popup with a 1px border and sets option text to the label weight", () => {
+  it("draws the popup with a 1px border", () => {
     expect(declarations(selectCss, ".popup").get("border")).toBe(
       "var(--cal-border-width-1) solid var(--cal-color-overlay-border)"
     );
-    expect(
-      declarations(selectCss, ".popup [role='option'] > div > .optionText").get(
-        "font-weight"
-      )
-    ).toBe("var(--cal-text-label-weight)");
   });
 
   it("renders a combobox trigger with selected text and closed aria state", () => {

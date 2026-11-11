@@ -233,7 +233,7 @@
   display: flex;
   font-family: var(--cal-font-family);
   font-size: var(--cal-text-grid-size);
-  font-weight: var(--cal-text-label-weight);
+  font-weight: var(--cal-text-grid-weight);
   line-height: var(--cal-text-grid-line-height);
   letter-spacing: var(--cal-text-grid-tracking);
   min-inline-size: 0;
