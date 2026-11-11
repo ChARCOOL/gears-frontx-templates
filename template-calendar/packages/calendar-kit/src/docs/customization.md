@@ -162,7 +162,7 @@ The views carry their own print rules, so printing the page prints the whole vie
 
 - **Internal class names.** CSS Module names are private so the kit can restructure markup without breaking hosts. Style through tokens, part classes and the attributes above.
 - **Grid geometry.** The one-line event strip height (21px) and the `DayGrid` row height (43px) are fixed because layout math in TypeScript depends on them. `WeekGrid` takes `rowHeight` (default 43px). They are single-sourced constants, checked against the CSS by a test.
-- **Week start.** Week and month grids start on Monday; `MonthNavigator` starts on Sunday.
+- **Week start.** Week, month and `MonthNavigator` rows start on Monday.
 - **Scheduling decisions.** Conflicts, availability and permissions are always the host's input.
 
 If one of these blocks you, open an issue describing the use case; widening a contract is a deliberate change.
