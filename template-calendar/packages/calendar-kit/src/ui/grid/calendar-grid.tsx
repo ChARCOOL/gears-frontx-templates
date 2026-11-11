@@ -32,6 +32,8 @@ import styles from "./calendar-grid.module.css";
 export type { CalendarGridCellKeyDownHandler } from "../../react/slots";
 
 export interface CalendarGridProps extends CalendarContextProps {
+  /** Accessible name of the grid. Defaults to the generic calendar grid name. */
+  readonly label?: string;
   /** Class added to the component root. */
   readonly className?: string;
   /** Column headers, in visual order. */
@@ -154,6 +156,7 @@ type CalendarGridContentProps = Omit<
 
 const CalendarGridContent = ({
   activeCellKey,
+  label,
   className,
   columns,
   defaultActiveCellKey,
@@ -271,7 +274,7 @@ const CalendarGridContent = ({
       <div
         className={clsx(styles.root, className)}
         role="grid"
-        aria-label={t("calendar.grid.label")}
+        aria-label={label ?? t("calendar.grid.label")}
         aria-colcount={columns.length}
         aria-rowcount={rows.length + 1}
         dir={direction}

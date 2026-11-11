@@ -120,6 +120,19 @@ describe(CalendarGrid, () => {
     expect(second).toHaveAttribute("tabindex", "-1");
   });
 
+  it("names the grid with the host label and falls back to the generic name", () => {
+    const { unmount } = renderGrid({ label: "Room A bookings" });
+
+    expect(
+      screen.getByRole("grid", { name: "Room A bookings" })
+    ).toBeInTheDocument();
+    unmount();
+
+    renderGrid();
+
+    expect(screen.getByRole("grid", { name: "Calendar grid" })).toBeInTheDocument();
+  });
+
   it("uses the two-argument label callback as the accessible cell name", () => {
     const getCellLabel = vi.fn<CalendarGridProps["getCellLabel"]>(
       (cell, context) => `${cell.date}/${context.key}`

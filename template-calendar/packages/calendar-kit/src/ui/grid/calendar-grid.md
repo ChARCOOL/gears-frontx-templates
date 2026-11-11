@@ -33,6 +33,7 @@ import { CalendarGrid } from "@gears-frontx/calendar-kit/grid";
 | `className` | `string` |  | Class added to the component root. |
 | `defaultActiveCellKey` | `string` |  | Initial active cell when uncontrolled. |
 | `isCellNavigable` | `(cell: CalendarCell) => boolean` |  | Return `false` to let arrow keys skip a cell. |
+| `label` | `string` |  | Accessible name of the grid. Defaults to the generic calendar grid name. |
 | `onActiveCellChange` | `(cell: CalendarCell) => void` |  | Called with the domain cell when focus moves. |
 | `onCellKeyDown` | `CalendarGridCellKeyDownHandler` |  | Runs before built-in navigation; call `preventDefault()` to consume the key. |
 | `renderHeader` | `(column: CalendarGridColumn) => ReactNode` |  | Replaces a column header's content. |
