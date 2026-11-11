@@ -171,8 +171,9 @@ button.agendaEvent:not(.unavailable):hover {
   background: var(--cal-state-hover);
 }
 
-.selected {
-  composes: selectedRing from "../../styles/modules/state.module.css";
+/* Rows touch their neighbours, which clip an outer ring to a stray top line; the fill alone marks the row. */
+button.agendaEvent.selected {
+  background: var(--cal-state-hover);
 }
 
 .agendaEvent.now {
