@@ -12,7 +12,7 @@
 .gutterCell {
   overflow: hidden;
   padding: var(--cal-space-2);
-  color: var(--cal-color-muted);
+  color: var(--cal-color-subtle);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

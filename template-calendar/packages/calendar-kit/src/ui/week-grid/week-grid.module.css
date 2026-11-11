@@ -127,6 +127,11 @@
 .weekday {
   composes: weekdayLabel from "../../styles/modules/text.module.css";
   display: block;
+}
+
+/* Doubled classes outrank the composed text classes, whose sizes and colours land later in the bundle. */
+.weekday.weekday {
+  color: var(--cal-color-subtle);
   font-size: var(--cal-text-caption-size);
   font-weight: var(--cal-text-caption-weight);
   line-height: var(--cal-text-caption-line-height);
@@ -135,6 +140,12 @@
 .dayNumber {
   composes: dayNumber from "../../styles/modules/text.module.css";
   display: block;
+}
+
+.dayNumber.dayNumber {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
 }
 
 /* Doubled class outranks the composed dayNumber and weekdayLabel. */
