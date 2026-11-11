@@ -1,14 +1,14 @@
-# E5: Event detail popover
+# E5: Event detail in the side panel
 
-An event detail panel shown next to a card, with a two-line title, edit, delete, close, time zone and description.
+The event detail panel in the host's side panel, with a two-line title, edit, delete, close, time zone and description.
 
 Parts: `EventDetailPanel`.
 Props: `event`, `open`, `onOpenChange`, `onClose`, `onEdit`, `onDelete`, `renderActions`, `renderMetadata`.
 
-<!-- generated:example demo/examples/recipes/e05-event-popover.tsx -->
+<!-- generated:example demo/examples/recipes/e05-event-detail-side-panel.tsx -->
 
 ```tsx
-// demo/examples/recipes/e05-event-popover.tsx
+// demo/examples/recipes/e05-event-detail-side-panel.tsx
 import { useState } from "react";
 
 import { EventDetailPanel } from "@gears-frontx/calendar-kit";
@@ -18,9 +18,9 @@ interface Props {
   readonly event: CalendarEvent;
 }
 
-// The kit has no anchored popover. The host places this panel and passes
-// `open`, and the panel keeps its own edit, delete and close controls.
-export function EventPopover({ event }: Props) {
+// The host places this panel in its side panel and passes `open`. The panel
+// keeps its own edit, delete and close controls.
+export function EventDetailSidePanel({ event }: Props) {
   const [open, setOpen] = useState(true);
 
   return (
@@ -46,6 +46,6 @@ export function EventPopover({ event }: Props) {
 
 Rules:
 
-- `EventDetailPanel` is controlled by `open`. The kit draws it inline and has no anchored popover in gears.
-- To place it next to a card, the host wraps the content in its own popover and passes the card position.
+- `EventDetailPanel` is controlled by `open`. It renders inline; the kit draws no popover, dialog or anchored position.
+- The host places the panel in its side panel and owns the open state. `onClose` runs from the close button and Escape.
 - `renderActions` replaces the edit and delete buttons, so the host sets the delete look.

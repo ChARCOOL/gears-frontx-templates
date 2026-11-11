@@ -44,8 +44,8 @@ Rules an assistant should follow when writing code against this package:
   - [E2 event term](dist/docs/e02-event-term.md): joined card line and toolbar action
   - [E3 event detail sheet](dist/docs/e03-event-detail-sheet.md): EventDetailContent with sections and rows
   - [E4 event wizard](dist/docs/e04-event-wizard.md): host page with host inputs
-  - [E5 event popover](dist/docs/e05-event-popover.md): EventDetailPanel controlled by open
-  - [E6 create dialog](dist/docs/e06-create-dialog.md): CreateEventPanel with its required lists
+  - [E5 event detail in the side panel](dist/docs/e05-event-detail-side-panel.md): EventDetailPanel controlled by open
+  - [E6 create form in the side panel](dist/docs/e06-create-side-panel.md): CreateEventPanel with its required lists
 - [Testing](dist/docs/testing.md): jsdom stubs, frozen time, queries
 - [Troubleshooting](dist/docs/troubleshooting.md): symptoms and fixes
 - [Accessibility](dist/docs/accessibility.md): keyboard and screen-reader behaviour

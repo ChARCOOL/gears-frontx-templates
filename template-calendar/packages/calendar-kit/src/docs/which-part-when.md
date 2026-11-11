@@ -16,9 +16,9 @@ Find the goal in the first column, then use the component and prop in the second
 | Hidden events behind a chip | `maxEventsPerSlot` with `onOverflowSelect` | [S12](recipes/s12-solutions-calendar.md) |
 | Greyed weekend or closed-day header | `WeekGrid` `renderHeader`, using `date` | [E1](recipes/e01-exam-term-solutions.md) |
 | Detail in a host sheet | `EventDetailContent`, `EventDetailSection`, `EventDetailRow`, `EventDetailDivider` | [E3](recipes/e03-event-detail-sheet.md) |
-| Detail next to a card | `EventDetailPanel` `open` (host places it) | [E5](recipes/e05-event-popover.md) |
+| Event detail in the side panel | `EventDetailPanel` `open` (host places it) | [E5](recipes/e05-event-detail-side-panel.md) |
 | Toolbar version select, filters, primary action | `CalendarToolbar` `renderLeading`, `renderTrailing` | [S12](recipes/s12-solutions-calendar.md) |
-| Create-event form in a dialog | `CreateEventPanel` | [E6](recipes/e06-create-dialog.md) |
+| Create-event form in the side panel | `CreateEventPanel` (host places it) | [E6](recipes/e06-create-side-panel.md) |
 | Host page with its own inputs | none. Use host form controls | [E4](recipes/e04-event-wizard.md) |
 
 ## Invariants

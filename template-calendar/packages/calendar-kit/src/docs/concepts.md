@@ -62,7 +62,7 @@ The exclusive end is the most common source of off-by-one bugs; see [Troubleshoo
 | `timeZone` | `IanaTimeZone` | yes | Scheduling zone; `startDate`/`startTime` are wall-clock values in it. |
 | `title` | `string` | yes | Card text and detail heading; empty shows the translatable "(untitled)" and "Event details". |
 | `access` | `"full" \| "busy"` |  | `busy` is inert (no selection, no drag); the detail shows only its time. |
-| `attendees` | `readonly CalendarAttendee[]` |  | Invitees shown as avatars and, in the expanded detail, grouped by response. |
+| `attendees` | `readonly CalendarAttendee[]` |  | Invitees shown as avatars and, in the event detail, grouped by response. |
 | `available` | `boolean` |  | `false` renders the event as unavailable and ignores activation. Default `true`. |
 | `calendarId` | `string` |  | The calendar this event belongs to; matches `CalendarRef.id`. |
 | `calendarName` | `string` |  | Display name of the calendar, for hosts that render it in a slot. |

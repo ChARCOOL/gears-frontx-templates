@@ -56,7 +56,7 @@ The kit exposes roles and accessible names, so tests can avoid class names entir
 screen.getByRole("grid");
 screen.getByRole("button", { name: /stand-up/i }); // an event
 screen.getByRole("radio", { name: "Month" }); // a toolbar view
-screen.getByRole("dialog", { name: "Create event" });
+screen.getByRole("region", { name: "Create event" });
 ```
 
 `[data-event-id="…"]` is a stable hook when a role query is not specific enough.

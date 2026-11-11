@@ -8,7 +8,7 @@ Only `theme.css` is loaded, so every token uses its neutral default. Map the sea
 
 ### Dark mode only half works; popovers stay light
 
-The dark tokens resolve on the element that carries `data-theme="dark"`, and on `:root` or `:host`. Overlays (popovers, dialogs, the create form) do not render inside the component that opened them: inside a shadow root they portal to the root itself, otherwise next to their trigger or into `document.body`. If `data-theme` sits on an inner element, overlays miss it. Put it on `<html>` or on the shadow host, or pass `container` pointing inside the themed element.
+The dark tokens resolve on the element that carries `data-theme="dark"`, and on `:root` or `:host`. Overlays (popovers, dialogs) do not render inside the component that opened them: inside a shadow root they portal to the root itself, otherwise next to their trigger or into `document.body`. If `data-theme` sits on an inner element, overlays miss it. Put it on `<html>` or on the shadow host, or pass `container` pointing inside the themed element.
 
 ### The page resets or fonts change after importing `reset.css`
 

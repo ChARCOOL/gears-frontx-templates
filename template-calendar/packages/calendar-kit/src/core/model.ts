@@ -44,7 +44,7 @@ export interface CalendarAttendee {
   readonly id: string;
   /** Name shown next to the avatar; its initials fill the avatar. */
   readonly displayName: string;
-  /** Shown under the name in the expanded invitee list. */
+  /** Shown under the name in the event detail. */
   readonly email?: string | null;
   /** RSVP state. `needs-action` groups under "awaiting"; `null` lists the guest as invited. */
   readonly response?:
@@ -111,7 +111,7 @@ export interface CalendarEventBase<Payload = unknown> {
   readonly organizer?: string | null;
   /** Shown under the organizer in the detail panel. */
   readonly organizerEmail?: string | null;
-  /** Invitees shown as avatars and, in the expanded detail, grouped by response. */
+  /** Invitees shown as avatars and, in the event detail, grouped by response. */
   readonly attendees?: readonly CalendarAttendee[];
   /** Id of the conferencing provider the host offers in the create form. */
   readonly conferencingProviderId?: string | null;

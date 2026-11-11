@@ -10,7 +10,7 @@ There are eight ways to change the calendar, from global to local. Use the highe
 | [4. Text](#4-text) | Any label, announcement or message | Wording, translation |
 | [5. Classes and DOM hooks](#5-classes-and-dom-hooks) | Styling one part of one component | Striping cells, highlighting a column |
 | [6. Render slots](#6-render-slots) | The content of one part | Host-specific cards, cells, headers |
-| [7. Composition](#7-composition) | Which pieces appear and where | Your own side panel, your own dialog shell |
+| [7. Composition](#7-composition) | Which pieces appear and where | Your own side panel, your own sheet |
 | [8. Headless](#8-headless) | Everything; you render the markup | A layout the components cannot produce |
 
 ## 1. Theme tokens
@@ -50,7 +50,7 @@ Overlays (popovers, dialogs) portal out of the component that opened them: into 
 | `CalendarToolbar` | `availableViews` (which views, in which order) |
 | `EventCard` | `positioned`, `selected`, `past`, `available`, `readOnly` |
 | `EventDetailPanel` | `comparisonTimeZone`, `maxVisibleParticipants`, `readOnly` |
-| `CreateEventPanel` | `anchorRect` / `anchorRef` |
+| `CreateEventPanel` | `kind`, `now` |
 | `ConflictIndicator` | `compact` |
 | `AvailabilityGrid` | `interactionMode` (`read-only`), `paintMode` (`cells`), `headerFormat` (`weekday`), `showHourLabels`, `onHourClick`, `onDayClick` |
 | `WorldClocks`, `MonthNavigator`, `SearchResults` | `now` |

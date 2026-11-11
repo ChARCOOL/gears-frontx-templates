@@ -58,7 +58,7 @@ Events are clipped to the visible hours, and events wholly outside them are not 
 
 ## Interaction
 
-- `onEventSelect` receives an event, its render context, and the activated card element when an available event is clicked or activated with Enter/Space. Pass that element to `EventDetailPanel` as `anchorElement` to open the detail beside the card.
+- `onEventSelect` receives an event, its render context, and the activated card element when an available event is clicked or activated with Enter/Space. The host opens `EventDetailPanel` in its side panel with that event; the kit does not position it beside the card.
 - `onQuickCreate` receives a serializable one-slot selection and the cell's `DOMRectReadOnly` anchor in quick-create mode.
 - `paint-and-move` mode paints a range with a pointer drag and emits `onPaintSelect`, the same as the week grid. Enter or Space on an empty cell paints that one cell.
 - Dropping an event on a new slot in `paint-and-move` mode emits `onMoveRequest`; the host calls `confirm` or `cancel`. Recurring events and events with `movable: false` do not move. A timed, single-day event that can move also has a handle on its bottom edge, or Alt+ArrowDown and Alt+ArrowUp on the card, that emits `onResizeRequest({ event, to, confirm, cancel })`, as in the week grid.

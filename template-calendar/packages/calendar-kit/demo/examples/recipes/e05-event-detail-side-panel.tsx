@@ -7,9 +7,9 @@ interface Props {
   readonly event: CalendarEvent;
 }
 
-// The kit has no anchored popover. The host places this panel and passes
-// `open`, and the panel keeps its own edit, delete and close controls.
-export function EventPopover({ event }: Props) {
+// The host places this panel in its side panel and passes `open`. The panel
+// keeps its own edit, delete and close controls.
+export function EventDetailSidePanel({ event }: Props) {
   const [open, setOpen] = useState(true);
 
   return (
