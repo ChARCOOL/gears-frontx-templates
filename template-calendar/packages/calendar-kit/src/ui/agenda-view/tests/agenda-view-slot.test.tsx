@@ -170,7 +170,7 @@ describe("agenda event slot", () => {
     assert(slot.get("display")).toBe("block");
     assert(slot.get("padding")).toBe("var(--cal-space-1) 0");
     assert(slot.get("text-align")).toBe("start");
-    assert(slot.get("background")).toBe("var(--cal-color-raised)");
+    assert(slot.get("background")).toBe("var(--cal-color-surface)");
     assert(
       declarations(
         agendaViewCss,

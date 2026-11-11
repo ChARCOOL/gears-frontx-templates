@@ -102,11 +102,23 @@ describe(AgendaView, () => {
     });
   });
 
-  it("sets agenda text at the 12px meta size, not the 10px caption size", () => {
-    expect(agendaCss).not.toContain("font-size: var(--cal-text-caption-size)");
-    expect(agendaCss).not.toContain(
-      "line-height: var(--cal-text-caption-line-height)"
+  it("sets the day label and end time at the 10px caption size, event text at 12px", () => {
+    for (const selector of [".dayRelative", ".slotTimeEnd"]) {
+      expect(declarations(agendaCss, selector).get("font-size")).toBe(
+        "var(--cal-text-caption-size)"
+      );
+    }
+    expect(declarations(agendaCss, ".eventTitle").get("font-size")).toBe(
+      "var(--cal-text-meta-size)"
     );
+  });
+
+  it("draws the now time tag as a filled caption pill", () => {
+    const tag = declarations(agendaCss, ".nowGutter");
+
+    expect(tag.get("background")).toBe("var(--cal-color-now-label)");
+    expect(tag.get("color")).toBe("var(--cal-color-action-foreground)");
+    expect(tag.get("font-size")).toBe("var(--cal-text-caption-size)");
   });
 
   it("paints the Join button with the primary action colour, not the error colour", () => {

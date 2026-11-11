@@ -6,13 +6,8 @@ const stylesheets = import.meta.glob<string>("../../ui/**/*.module.css", {
   query: "?raw",
 });
 
-// The agenda accent has no upstream token.
-const ALLOWED = new Set(["#7498f8"]);
-
 const rawColours = (css: string): string[] =>
-  (css.match(/#[0-9a-fA-F]{3,8}\b|(?:rgb|rgba|hsl|hsla)\(/gu) ?? []).filter(
-    (literal) => !ALLOWED.has(literal)
-  );
+  css.match(/#[0-9a-fA-F]{3,8}\b|(?:rgb|rgba|hsl|hsla)\(/gu) ?? [];
 
 describe("component stylesheets", () => {
   it("loads every component stylesheet", () => {
