@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { PanelRightIcon, SearchIcon, XIcon } from "lucide-react";
+import { SearchIcon, XIcon } from "lucide-react";
 import { Activity } from "react";
 import type { ReactNode } from "react";
 
@@ -27,7 +27,16 @@ import { Separator } from "../primitives/separator/separator";
 
 import styles from "./calendar-side-panel.module.css";
 
-const sidePanelToggleIcon = <PanelRightIcon aria-hidden="true" />;
+// A rounded panel with a filled right column: the Constructor layout glyph that the calendar uses.
+const sidePanelToggleIcon = (
+  <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16" fill="currentColor">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M10 3.5H4c-.8284 0-1.5.6716-1.5 1.5v6c0 .8284.6716 1.5 1.5 1.5h6zm1.5 0h.5c.8284 0 1.5.6716 1.5 1.5v6c0 .8284-.6716 1.5-1.5 1.5h-.5zM15 5c0-1.6568-1.3431-3-3-3H4C2.3432 2 1 3.3432 1 5v6c0 1.6569 1.3432 3 3 3h8c1.6569 0 3-1.3431 3-3z"
+    />
+  </svg>
+);
 const sidePanelSearchIcon = <SearchIcon aria-hidden="true" />;
 
 export interface CalendarSidePanelSlots {
