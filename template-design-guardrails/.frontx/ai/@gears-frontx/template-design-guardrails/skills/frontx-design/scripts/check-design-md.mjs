@@ -62,7 +62,7 @@ const GROUP = /^[a-z][a-z0-9-]*$/;
 // Keys that would reach Object.prototype through a lookup or an assignment.
 const RESERVED = new Set(['__proto__', 'constructor', 'prototype']);
 // Prefixes of kit custom properties the front matter need not name. Empty:
-// every property the kit 0.4.1 theme declares is public token surface (its
+// every property the kit theme declares is public token surface (its
 // header says a consumer brands the kit by overriding them), so coverage
 // applies to all of them.
 const IGNORE = [];
@@ -72,6 +72,13 @@ const REF_ONLY = /^\{([^{}.]+)\.([^{}]+)\}$/;
 const BODY_REF = /\{([a-z][a-z0-9-]*)\.([\w.-]+)\}/g;
 
 export class InputError extends Error {}
+
+// [[DefineOwnProperty]] (not [[Set]]): a key like __proto__ sets an own property
+// on the null-prototype map instead of running an inherited setter. The static
+// guard against prototype-pollution findings on dynamic-key assignment.
+function defineOwn(map, key, value) {
+  Object.defineProperty(map, key, { value, writable: true, configurable: true, enumerable: true });
+}
 
 function readInput(file, what) {
   let stat;
@@ -184,7 +191,9 @@ function parseFrontMatter(lines) {
     }
     if (open) {
       if (depth !== open.depth + 1) throw bad(`"${open.at}" has no entries`);
-      stack[depth] = open.map[open.key] = Object.create(null);
+      const nested = Object.create(null);
+      defineOwn(open.map, open.key, nested);
+      stack[depth] = nested;
     } else if (depth >= stack.length) {
       throw bad('unexpected indent');
     }
@@ -207,7 +216,7 @@ function parseFrontMatter(lines) {
     if (m[3] === undefined) {
       open = { map, key, depth, at };
     } else {
-      map[key] = m[3].replace(/^"|"$/g, '');
+      defineOwn(map, key, m[3].replace(/^"|"$/g, ''));
       open = null;
     }
   }
@@ -243,7 +252,7 @@ function check(lines, front, end, themeNames, kit) {
       : [[at, value]];
   const tokenMaps = Object.create(null);
   for (const [key, value] of Object.entries(front)) {
-    if (key !== 'components' && !META_KEYS.has(key)) tokenMaps[key] = value;
+    if (key !== 'components' && !META_KEYS.has(key)) defineOwn(tokenMaps, key, value);
   }
   const missing = ([, group, key]) => !Object.hasOwn(tokenMaps, group) || !Object.hasOwn(tokenMaps[group], key);
 
