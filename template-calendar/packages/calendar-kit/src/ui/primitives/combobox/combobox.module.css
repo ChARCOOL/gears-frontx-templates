@@ -110,9 +110,13 @@
   color: var(--cal-color-subtle);
 }
 
-.controlLocked :global(input),
-.controlLocked :global(input::placeholder) {
+.controlLocked :global(input) {
   color: var(--cal-color-subtle);
+}
+
+.controlLocked :global(input::placeholder) {
+  color: var(--cal-color-placeholder);
+  opacity: 1;
 }
 
 .iconLeft {
@@ -158,7 +162,8 @@
 }
 
 .input::placeholder {
-  color: var(--cal-color-subtle);
+  color: var(--cal-color-muted);
+  opacity: 1;
 }
 
 .inputStandalone {
@@ -202,7 +207,8 @@
 }
 
 .chipsInput::placeholder {
-  color: var(--cal-color-subtle);
+  color: var(--cal-color-muted);
+  opacity: 1;
 }
 
 .item {

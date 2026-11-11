@@ -92,7 +92,12 @@
 }
 
 .control::placeholder {
-  color: var(--cal-color-subtle);
+  color: var(--cal-color-muted);
+  opacity: 1;
+}
+
+.control:disabled::placeholder {
+  color: var(--cal-color-placeholder);
 }
 
 .control:disabled {
