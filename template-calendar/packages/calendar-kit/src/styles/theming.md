@@ -114,6 +114,7 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 | `--purple-soft` | Purple category background. Falls back to `--accent` | `var(--accent)` | `#f8eaff` |
 | `--purple-accent` | Purple category accent (card bar). Falls back to `--accent-foreground` | `var(--accent-foreground)` | `#d07aff` |
 | `--turquoise-accent` | Turquoise category accent (card bar). Falls back to `--info` | `var(--info)` | `#0fadbf` |
+| `--brand` | Brand glyph colour: sheet close buttons | `#19213a` | `#19213a` |
 | `--orange` | Orange category foreground, border. Falls back to `--warning-foreground`, `--warning` | `var(--warning)` | `#9a3316` |
 | `--orange-soft` | Orange category background · **dark**. Falls back to `--warning-soft` | `var(--warning-soft)` | `#ffeadb` |
 | `--orange-accent` | Orange category accent (card bar). Falls back to `--warning` | `var(--warning)` | `#fe781b` |
@@ -146,6 +147,9 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 | `--text-heading-1-line-height` | Heading line height | `1.5rem` | `24px` |
 | `--text-heading-1-weight` | Heading weight | `600` | `600` |
 | `--text-heading-1-tracking` | Heading letter spacing | `-0.1px` | `0px` |
+| `--text-panel-title-size` | Side sheet title size: create form and event detail | `1rem` | `16px` |
+| `--text-panel-title-line-height` | Side sheet title line height | `1.5rem` | `24px` |
+| `--text-panel-title-weight` | Side sheet title weight | `600` | `600` |
 | `--text-label-size` | Control label size: buttons, segmented options, field labels | `0.875rem` | `14px` |
 | `--text-label-line-height` | Control label line height | `1.25rem` | `20px` |
 | `--text-label-weight` | Control label weight | `500` | `500` |
