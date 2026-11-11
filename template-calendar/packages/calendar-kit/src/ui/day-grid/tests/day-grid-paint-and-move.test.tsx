@@ -162,7 +162,10 @@ describe("DayGrid paint-and-move", () => {
     fireEvent.dragStart(frame!, { dataTransfer: { setDragImage: vi.fn() } });
     dragAt(cells[12], "dragover", rowCenter(12));
 
-    expect(container.querySelector("[data-drag-ghost]")).not.toBeNull();
+    const ghost = container.querySelector<HTMLElement>("[data-drag-ghost]");
+    expect(ghost).not.toBeNull();
+    expect(ghost).toHaveAttribute("aria-hidden", "true");
+    expect(ghost?.textContent).toMatch(/12:00/u);
     expect(container.querySelector("[data-drop-target]")).not.toBeNull();
 
     dragAt(cells[12], "drop", rowCenter(12));

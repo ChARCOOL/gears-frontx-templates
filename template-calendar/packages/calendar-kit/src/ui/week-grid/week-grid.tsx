@@ -821,7 +821,7 @@ const WeekGridOverflowButton = ({
 interface WeekGridCellContentProps<Payload> {
   readonly allDayPositions: readonly AllDayPosition<Payload>[];
   readonly cellClassName?: string;
-  readonly dragPreview: WeekGridDragPreview | null;
+  readonly dragPreview: WeekGridDragPreview<Payload> | null;
   readonly gutterClassName?: string;
   readonly context: CalendarCellContext;
   readonly currentInstant: UtcInstant;
@@ -952,14 +952,35 @@ const WeekGridCellContent = <Payload,>(
       >
         {renderCell?.(cellContext)}
         {unavailable && renderUnavailable?.(context.cell)}
-        {dropTarget?.height !== undefined && (
+        {dropTarget?.ghost !== undefined && (
           <div
-            className={styles.dragGhost}
+            className={clsx(
+              styles.eventFrame,
+              styles.timedFrame,
+              styles.dragGhost
+            )}
             aria-hidden="true"
             data-drag-ghost=""
-            style={{ blockSize: `${dropTarget.height}px` }}
+            inert
+            style={{
+              blockSize: `${dropTarget.ghost.height}px`,
+              inlineSize: `${dropTarget.ghost.geometry.inlineSize}%`,
+              insetInlineStart: `${dropTarget.ghost.geometry.insetInlineStart}%`,
+            }}
           >
-            {dropTarget.title}
+            <WeekGridEvent<Payload>
+              currentInstant={currentInstant}
+              event={dropTarget.ghost.event}
+              geometry={dropTarget.ghost.geometry}
+              onSelect={onSelect}
+              readOnly={readOnly}
+              renderConflict={renderConflict}
+              renderEvent={renderEvent}
+              renderEventMetadata={renderEventMetadata}
+              getEventFrameProps={getEventFrameProps}
+              selectedEventId={selectedEventId}
+              segment={dropTarget.ghost.segment}
+            />
           </div>
         )}
       </div>

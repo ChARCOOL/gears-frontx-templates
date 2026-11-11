@@ -238,6 +238,30 @@ export const buildSelectionRange = (
   // @cpt-end:cpt-template-calendar-calendar-kit-algo-week-grid-paint-range:p1:inst-paint-return
 };
 
+// A drop keeps the event's length and starts it in the target slot. The wall-clock fields follow
+// the viewer's zone, as the grid draws them.
+export const movedTimedEvent = <Payload>(
+  event: Extract<CalendarEvent<Payload>, { readonly allDay: false }>,
+  slotStart: UtcInstant,
+  timeZone: IanaTimeZone
+): Extract<CalendarEvent<Payload>, { readonly allDay: false }> => {
+  const end = utcInstant(
+    Date.parse(slotStart) + Date.parse(event.end) - Date.parse(event.start)
+  );
+  const start = toViewerDateTime(slotStart, timeZone);
+  const finish = toViewerDateTime(end, timeZone);
+
+  return {
+    ...event,
+    end,
+    endDate: finish.date,
+    endTime: finish.time,
+    start: slotStart,
+    startDate: start.date,
+    startTime: start.time,
+  };
+};
+
 export const createInteractionState = (
   mode: WeekGridInteractionMode,
   timeZone?: IanaTimeZone

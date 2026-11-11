@@ -940,7 +940,7 @@ describe("WeekGrid drag feedback", () => {
     return frame;
   };
 
-  it("shows a ghost card and a dashed outline on the target slot and dims the dragged card", () => {
+  it("shows the dragged card at its size and width in the target slot and dims the source", () => {
     renderWeek({
       events: [timedEvent("ghost")],
       interactionMode: "paint-and-move",
@@ -953,15 +953,16 @@ describe("WeekGrid drag feedback", () => {
       fireEvent.dragOver(target);
     });
 
+    const ghost = target.querySelector<HTMLElement>("[data-drag-ghost]");
     assert(frame).toHaveAttribute("data-dragging");
     assert(target.querySelector("[data-drop-target]")).not.toBeNull();
-    assert(target.querySelector("[data-drag-ghost]")?.textContent).toMatch(
-      /ghost/u
-    );
-    assert(target.querySelector("[data-drag-ghost]")).toHaveAttribute(
-      "aria-hidden",
-      "true"
-    );
+    assert(ghost).toHaveAttribute("aria-hidden", "true");
+    assert(ghost?.textContent).toMatch(/ghost/u);
+    assert(ghost?.textContent).toMatch(/11:00/u);
+    assert(ghost?.style.blockSize).toBe(frame.style.blockSize);
+    assert(ghost?.style.inlineSize).toMatch(/%$/u);
+    assert(ghost?.style.inlineSize).toBe(frame.style.inlineSize);
+    assert(ghost?.style.insetInlineStart).toBe(frame.style.insetInlineStart);
   });
 
   it("clears the ghost, the outline and the dimming when the drop lands", () => {

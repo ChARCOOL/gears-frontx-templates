@@ -16,11 +16,15 @@ import type {
 import { isEventActionable, isEventMovable } from "../../core/actionability";
 import { arrayAt } from "../../core/array";
 import { compareCalendarCells } from "../../core/calendar-cell";
+import { movedTimedEvent } from "../../core/interactions";
 import type {
   CalendarCell,
   CalendarCellContext,
   CalendarDate,
+  CalendarEvent,
+  CalendarEventGeometry,
   CalendarEventRenderContext,
+  CalendarEventSegment,
   CalendarGridColumn,
   WeekGridInteractionMode,
 } from "../../core/model";
@@ -110,12 +114,19 @@ const buildRangeEdges = (
   return edges;
 };
 
-export interface WeekGridDragPreview {
+export interface WeekGridDragGhost<Payload = unknown> {
+  readonly event: CalendarEvent<Payload>;
+  readonly geometry: CalendarEventGeometry;
+  readonly height: number;
+  readonly segment: CalendarEventSegment;
+}
+
+export interface WeekGridDragPreview<Payload = unknown> {
   readonly eventId: string;
-  /** The dragged card's height in the grid, or `undefined` when it is not laid out. */
-  readonly height: number | undefined;
+  /** The dragged card as a drop on `targetKey` would place it. `undefined` when the
+   *  event has no timed layout in its origin cell, as for all-day events. */
+  readonly ghost: WeekGridDragGhost<Payload> | undefined;
   readonly targetKey: string;
-  readonly title: string;
 }
 
 export type WeekGridContentProps<Payload> = Omit<
@@ -493,20 +504,39 @@ export const useWeekGridContent = <Payload = unknown>(
 
   // A drag that has not left its origin drops nowhere, so it marks no span.
   const { dayColumns, drag } = controller;
-  const dragPreview = useMemo<WeekGridDragPreview | null>(
-    () =>
-      drag === null
-        ? null
-        : {
-            eventId: drag.event.id,
-            height: timedLayout.byCell
-              .get(gridCellKey(drag.from))
-              ?.find((position) => position.event.id === drag.event.id)?.height,
-            targetKey: gridCellKey(drag.to),
-            title: drag.event.title,
-          },
-    [drag, gridCellKey, timedLayout.byCell]
-  );
+  const dragPreview = useMemo<WeekGridDragPreview<Payload> | null>(() => {
+    if (drag === null) {
+      return null;
+    }
+
+    const source = timedLayout.byCell
+      .get(gridCellKey(drag.from))
+      ?.find((position) => position.event.id === drag.event.id);
+    const targetKey = gridCellKey(drag.to);
+
+    if (source === undefined || source.event.allDay) {
+      return { eventId: drag.event.id, ghost: undefined, targetKey };
+    }
+
+    const event = movedTimedEvent(source.event, drag.to.start, timeZone);
+
+    return {
+      eventId: drag.event.id,
+      ghost: {
+        event,
+        geometry: source.geometry,
+        height: source.height,
+        segment: {
+          date: drag.to.date,
+          end: event.end,
+          event,
+          segment: null,
+          start: event.start,
+        },
+      },
+      targetKey,
+    };
+  }, [drag, gridCellKey, timedLayout.byCell, timeZone]);
   const dropTargetKeys = useMemo(() => {
     const keys = new Set<string>();
 

@@ -14,6 +14,7 @@ import type {
 import { isEventActionable, isEventMovable } from "../../core/actionability";
 import { arrayAt } from "../../core/array";
 import { rangesOverlap } from "../../core/event-overlap";
+import { movedTimedEvent } from "../../core/interactions";
 import {
   formatGridTime,
   formatViewerDate,
@@ -325,9 +326,11 @@ const renderDayGridEventCard = ({
 );
 
 interface DropGhost {
-  readonly slotIndex: number;
+  readonly event: CalendarEvent;
+  readonly geometry: DayGridTimedEvent["geometry"];
   readonly heightPercent: number;
-  readonly title: string;
+  readonly segment: CalendarEventSegment;
+  readonly slotIndex: number;
 }
 
 const DayGridEventLayerImpl = ({
@@ -421,15 +424,31 @@ const DayGridEventLayerImpl = ({
     })}
     {dropGhost !== null && (
       <div
-        className={styles.dragGhost}
+        className={clsx(styles.event, styles.timedEvent, styles.dragGhost)}
         aria-hidden="true"
         data-drag-ghost=""
+        inert
         style={{
           blockSize: `${dropGhost.heightPercent}%`,
+          inlineSize: `calc(${dropGhost.geometry.width}% - var(--calendar-event-inset))`,
           insetBlockStart: `${(dropGhost.slotIndex / slotCount) * 100}%`,
+          insetInlineStart: `${dropGhost.geometry.left}%`,
         }}
       >
-        {dropGhost.title}
+        {renderDayGridEventCard({
+          config,
+          event: dropGhost.event,
+          geometry: dayEventGeometry(
+            dropGhost.geometry,
+            (dropGhost.slotIndex / slotCount) * 100,
+            dropGhost.heightPercent,
+            slotCount
+          ),
+          past: compareUtcInstants(dropGhost.segment.end, currentInstant) <= 0,
+          positioned: false,
+          segment: dropGhost.segment,
+          selected: false,
+        })}
       </div>
     )}
     {nowPercent !== null && (
@@ -624,13 +643,33 @@ const useDayGridContent = (props: DayGridContentProps) => {
   const draggedPlacement = timedEvents.find(
     (placement) => placement.segment.event.id === draggedEventId
   );
+  const dropEvent =
+    interaction.drag === null ||
+    draggedPlacement === undefined ||
+    interaction.drag.event.allDay
+      ? null
+      : movedTimedEvent(
+          interaction.drag.event,
+          interaction.drag.to.start,
+          timeZone
+        );
   const dropGhost: DropGhost | null =
-    interaction.drag === null || draggedPlacement === undefined
+    interaction.drag === null ||
+    draggedPlacement === undefined ||
+    dropEvent === null
       ? null
       : {
+          event: dropEvent,
+          geometry: draggedPlacement.geometry,
           heightPercent: draggedPlacement.heightPercent,
+          segment: {
+            date: interaction.drag.to.date,
+            end: dropEvent.end,
+            event: dropEvent,
+            segment: null,
+            start: dropEvent.start,
+          },
           slotIndex: cellIndexByKey.get(cellKey(interaction.drag.to)) ?? 0,
-          title: interaction.drag.event.title,
         };
   const dropTargetKey =
     interaction.drag === null ? null : cellKey(interaction.drag.to);

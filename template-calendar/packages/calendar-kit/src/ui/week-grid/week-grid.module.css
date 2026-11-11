@@ -213,21 +213,13 @@
   outline-offset: calc(-1 * var(--cal-border-width-1));
 }
 
-/* The ghost is the card that will land in the target slot; it never takes the pointer. */
-.dragGhost {
-  position: absolute;
-  z-index: 2;
-  inset-block-start: 0;
-  inset-inline: var(--cal-border-width-1) 0;
-  overflow: hidden;
-  border: var(--cal-border-width-1) solid var(--cal-border-event);
+/* The ghost is the dragged card as a drop would place it: above the cards around it, never
+   taking the pointer, and casting the drag shadow. */
+.eventFrame.dragGhost {
+  z-index: 3;
   border-radius: var(--cal-radius-slot);
-  background: var(--cal-color-raised);
-  color: var(--cal-color-text);
-  font-size: var(--cal-text-meta-size);
-  opacity: 0.8;
-  padding-block: var(--cal-space-1);
-  padding-inline: var(--cal-space-2);
+  box-shadow: var(--cal-shadow-drag);
+  inset-block-start: 0;
   pointer-events: none;
 }
 
