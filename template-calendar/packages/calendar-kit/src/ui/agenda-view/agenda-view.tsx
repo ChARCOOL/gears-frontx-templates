@@ -167,9 +167,13 @@ const AgendaEventContent = ({ relativeHint, row }: AgendaEventContentProps) => {
   const { locale, t } = useCalendarLocalization();
 
   const title =
-    row.event.title.trim() === ""
-      ? t("calendar.event.type.default")
-      : row.event.title;
+    row.event.title.trim() !== ""
+      ? row.event.title
+      : t(
+          row.event.access === "busy"
+            ? "calendar.event.busy"
+            : "calendar.event.type.default"
+        );
 
   const isTimed = row.kind === "timed";
   const { organizer } = row.event;

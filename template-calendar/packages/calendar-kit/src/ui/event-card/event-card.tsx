@@ -651,7 +651,13 @@ const buildEventCardViewModel = <Payload,>({
       : style;
 
   const titleText =
-    event.title.trim() === "" ? t("calendar.eventCard.unnamed") : event.title;
+    event.title.trim() !== ""
+      ? event.title
+      : t(
+          event.access === "busy"
+            ? "calendar.event.busy"
+            : "calendar.eventCard.unnamed"
+        );
 
   return {
     conflicts: presentation.conflicts,

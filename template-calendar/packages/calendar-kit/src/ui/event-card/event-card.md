@@ -67,7 +67,7 @@ Unavailable and busy events are disabled but stay in the tab order, so they rema
 ## Accessibility
 
 - Each card renders as one native button, providing the role, focusability, and click semantics.
-- The accessible name carries the event title; an empty title falls back to the translated `calendar.eventCard.unnamed` string so the name is never empty.
+- The accessible name carries the event title. An empty title falls back to the translated `calendar.event.busy` string ("Busy") for a busy event, and to `calendar.eventCard.unnamed` otherwise, so the name is never empty.
 - A non-repeated Enter/Space activation calls `preventDefault()` so the native button activation does not double-fire the selection.
 - Past and read-only states are exposed through the accessible description (`aria-describedby` → visually-hidden translated marker), keeping them observable to screen readers without polluting the event's name.
 - Decorative time, metadata, recurrence and reminder icons use `aria-hidden="true"`. A reminder (`eventType: "reminder"`) shows a bell icon before its title.

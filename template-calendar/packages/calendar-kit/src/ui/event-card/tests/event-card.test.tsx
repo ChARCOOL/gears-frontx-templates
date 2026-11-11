@@ -136,6 +136,21 @@ const eventGeometry = (height: number): CalendarEventGeometry => ({
 });
 
 describe(EventCard, () => {
+it("names an empty busy title Busy and an empty title (untitled)", () => {
+  const { unmount } = renderCard({
+    event: { ...scheduleEvent(), access: "busy", title: "" },
+  });
+
+  expect(screen.getByRole("button", { name: /^Busy\b/u })).toBeInTheDocument();
+  unmount();
+
+  renderCard({ event: { ...scheduleEvent(), title: "" } });
+
+  expect(
+    screen.getByRole("button", { name: /^\(untitled\)/u })
+  ).toBeInTheDocument();
+});
+
   it("renders the default title, time range, and event-id CSS hook for a timed event", () => {
     renderCard();
     const card = getCard();

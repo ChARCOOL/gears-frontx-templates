@@ -168,6 +168,7 @@ Event state words shared by the views.
 | Translation ID                | English     | Values |
 | ----------------------------- | ----------- | ------ |
 | `calendar.event.allDay`       | All day     |        |
+| `calendar.event.busy`         | Busy        |        |
 | `calendar.event.past`         | Past        |        |
 | `calendar.event.type.default` | Event       |        |
 | `calendar.event.unavailable`  | Unavailable |        |

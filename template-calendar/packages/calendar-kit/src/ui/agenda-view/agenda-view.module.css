@@ -153,7 +153,7 @@ button.agendaEvent {
   padding-inline: var(--cal-space-4);
   border-radius: var(--cal-radius-md);
   color: var(--cal-color-action-foreground);
-  background: var(--cal-color-error);
+  background: var(--cal-color-action);
   font-size: var(--cal-text-label-size);
   font-weight: var(--cal-text-label-weight);
   line-height: var(--cal-text-label-line-height);

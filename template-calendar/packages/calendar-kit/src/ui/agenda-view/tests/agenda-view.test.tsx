@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { declarations } from "../../../__test-utils__/css-declarations";
 import { allDayEvent, timedEvent, UTC } from "../../../__test-utils__/fixtures";
 import type { CalendarEvent } from "../../../core/model";
 import {
@@ -14,6 +15,7 @@ import { englishTranslate as t } from "../../../i18n/english";
 import type { CalendarEventRenderer } from "../../../react/public";
 import { AgendaView } from "../agenda-view";
 import type { AgendaViewProps } from "../agenda-view";
+import agendaCss from "../agenda-view.module.css?raw";
 import agendaStyles from "../agenda-view.module.css";
 
 type CalendarEventRenderContext = Parameters<CalendarEventRenderer>[0];
@@ -98,6 +100,45 @@ describe(AgendaView, () => {
       tomorrow: "false",
       zoneLabels: 0,
     });
+  });
+
+  it("paints the Join button with the primary action colour, not the error colour", () => {
+    expect(declarations(agendaCss, ".joinButton").get("background")).toBe(
+      "var(--cal-color-action)"
+    );
+  });
+
+  it("titles an empty busy event Busy and an empty event Event in the agenda", () => {
+    const { unmount } = renderAgenda({
+      events: [
+        {
+          ...timedEvent(
+            "busy",
+            "",
+            "2026-08-24T10:00:00.000Z",
+            "2026-08-24T11:00:00.000Z"
+          ),
+          access: "busy",
+        },
+      ],
+    });
+
+    expect(screen.getByText("Busy")).toBeVisible();
+    expect(screen.queryByText("Event")).toBeNull();
+    unmount();
+
+    renderAgenda({
+      events: [
+        timedEvent(
+          "untitled",
+          "",
+          "2026-08-24T10:00:00.000Z",
+          "2026-08-24T11:00:00.000Z"
+        ),
+      ],
+    });
+
+    expect(screen.getByText("Event")).toBeVisible();
   });
 
   it("shows No events in a day card that has no events", () => {
