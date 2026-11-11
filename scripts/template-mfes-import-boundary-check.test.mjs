@@ -1,9 +1,63 @@
 // @cpt-dod:cpt-frontx-dod-unit-test-generation-and-agent-verification-standard-test-convention:p1
-import { describe, expect, it } from 'vitest';
-import { CONCRETE_EXPORT_DENYLIST, findConsumerViolations, findMfesImportSites, isConcreteImplementationName, parseImportedNames, stripComments } from './template-mfes-import-boundary-check.mjs';
+import path from 'node:path';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { afterEach, describe, expect, it } from 'vitest';
+import {
+  CONCRETE_EXPORT_DENYLIST,
+  findConsumerFiles,
+  findConsumerViolations,
+  findMfesImportSites,
+  isConcreteImplementationName,
+  parseImportedNames,
+  runCli,
+  stripComments,
+} from './template-mfes-import-boundary-check.mjs';
 
 /** @type {string | undefined} */
 let rootDir;
+
+afterEach(async () => {
+  if (rootDir) await rm(rootDir, { recursive: true, force: true });
+});
+
+async function makeRoot() {
+  rootDir = await mkdtemp(path.join(tmpdir(), 'frontx-mfes-boundary-'));
+  return rootDir;
+}
+
+/**
+ * @param {string} root
+ * @param {string} relativePath
+ * @param {string} content
+ */
+async function writeSource(root, relativePath, content) {
+  const filePath = path.join(root, relativePath);
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, content);
+}
+
+/**
+ * A minimal marker manifest - discovery only checks for the file's presence
+ * (`findTemplateDirs`), never its content.
+ *
+ * @param {string} root
+ * @param {string} templateDirName
+ */
+async function writeManifest(root, templateDirName) {
+  await writeSource(root, `${templateDirName}/frontx-template.json`, '{}\n');
+}
+
+/** Runs the guard with its output captured, so a case can assert what it named. */
+/** @param {string} root */
+function run(root) {
+  /** @type {string[]} */
+  const lines = [];
+  /** @param {string} line */
+  const record = (line) => lines.push(line);
+  const exitCode = runCli({ rootDir: root, log: record, logError: record });
+  return { exitCode, output: lines.join('\n') };
+}
 
 // The forbidden set is a naming rule, not a list (see the guard's docblock):
 // a class list would leave the next DefaultFooManager born unguarded.
@@ -325,3 +379,142 @@ describe('findConsumerViolations', () => {
   });
 });
 
+describe('runCli', () => {
+  it('passes a repo whose templates all honor the boundary', async () => {
+    const root = await makeRoot();
+    await writeManifest(root, 'template-shell');
+    await writeSource(
+      root,
+      'template-shell/packages/framework/src/mfe/registry.ts',
+      "import { createMfeRegistryFactory, type MfeRegistryFactory } from '@gears-frontx/mfes'\n",
+    );
+    const { exitCode, output } = run(root);
+    expect(exitCode).toBe(0);
+    expect(output).toContain('import-boundary check passed');
+  });
+
+  it('fails when a consumer couples to a concrete class — the exact #540 template-shell coupling', async () => {
+    const root = await makeRoot();
+    await writeManifest(root, 'template-shell');
+    await writeSource(
+      root,
+      'template-shell/packages/framework/src/mfe/registry.ts',
+      "import { DefaultMfeRegistryFactory } from '@gears-frontx/mfes'\nexport const f = new DefaultMfeRegistryFactory()\n",
+    );
+    const { exitCode, output } = run(root);
+    expect(exitCode).toBe(1);
+    expect(output).toContain('template-shell/packages/framework/src/mfe/registry.ts'.split('/').join(path.sep));
+    expect(output).toContain('DefaultMfeRegistryFactory');
+  });
+
+  // template-dashboard has no manifest yet; the guard still walks it (SysoevAndrey on #98).
+  it('catches a deep import in the listed template that has no manifest yet', async () => {
+    const root = await makeRoot();
+    await writeManifest(root, 'template-shell');
+    await writeSource(root, 'template-shell/src/a.ts', "import { createMfeRegistryFactory } from '@gears-frontx/mfes'\n");
+    await writeSource(root, 'template-dashboard/src-app/mfe_packages/dashboard/src/root.ts', "import { x } from '@gears-frontx/mfes/src/internal'\nexport { x }\n");
+    const { exitCode, output } = run(root);
+    expect(exitCode).toBe(1);
+    expect(output).toContain('template-dashboard/src-app/mfe_packages/dashboard/src/root.ts'.split('/').join(path.sep));
+  });
+
+  it('catches a violation in a second template, not just the first discovered', async () => {
+    const root = await makeRoot();
+    await writeManifest(root, 'template-shell');
+    await writeManifest(root, 'template-mfe');
+    await writeSource(root, 'template-shell/src/app.ts', 'export {}\n');
+    await writeSource(
+      root,
+      'template-mfe/src-app/mfe_packages/demo-mfe/src/index.ts',
+      "import { DefaultMfeRegistry } from '@gears-frontx/mfes/dist/runtime/DefaultMfeRegistry'\n",
+    );
+    const { exitCode, output } = run(root);
+    expect(exitCode).toBe(1);
+    expect(output).toContain('template-mfe/src-app/mfe_packages/demo-mfe/src/index.ts'.split('/').join(path.sep));
+  });
+
+  it('never scans node_modules/dist trees under a template', async () => {
+    const root = await makeRoot();
+    await writeManifest(root, 'template-shell');
+    await writeSource(
+      root,
+      'template-shell/node_modules/@gears-frontx/mfes/dist/index.js',
+      "export { DefaultMfeRegistry } from '@gears-frontx/mfes/internal'\n",
+    );
+    await writeSource(root, 'template-shell/src/app.ts', 'export {}\n');
+    expect(run(root).exitCode).toBe(0);
+  });
+
+  it('ignores a stale .claude/worktrees/* copy of this repo carrying the pre-#540 coupling', async () => {
+    const root = await makeRoot();
+    await writeManifest(root, 'template-shell');
+    await writeSource(
+      root,
+      'template-shell/packages/framework/src/mfe/registry.ts',
+      "import { createMfeRegistryFactory, type MfeRegistryFactory } from '@gears-frontx/mfes'\n",
+    );
+    // As vitest.config.mjs's own worktree note documents (see the ecosystem
+    // repo's original), `.claude/worktrees/*` can hold a full second copy of
+    // this repo — a stale one here still importing the pre-#540 concrete
+    // factory must not fail a local guard run.
+    await writeSource(
+      root,
+      '.claude/worktrees/stale/template-shell/packages/framework/src/mfe/registry.ts',
+      "import { DefaultMfeRegistryFactory } from '@gears-frontx/mfes'\nexport const f = new DefaultMfeRegistryFactory()\n",
+    );
+    const { exitCode, output } = run(root);
+    expect(exitCode).toBe(0);
+    expect(output).toContain('import-boundary check passed');
+  });
+
+  it('fails closed when no template is found — discovery broken, not the boundary clean', async () => {
+    const root = await makeRoot();
+    const { exitCode, output } = run(root);
+    expect(exitCode).toBe(1);
+    expect(output).toContain('no template found');
+  });
+
+  it('fails closed when the walk finds a template but no scannable consumer files in it', async () => {
+    const root = await makeRoot();
+    await writeManifest(root, 'template-shell');
+    const { exitCode, output } = run(root);
+    expect(exitCode).toBe(1);
+    expect(output).toContain('no consumer source files');
+  });
+});
+
+describe('findConsumerFiles', () => {
+  it('walks only scannable extensions under manifest-discovered templates, not the whole repo', async () => {
+    const root = await makeRoot();
+    await writeManifest(root, 'template-shell');
+    await writeSource(root, 'template-shell/README.md', 'prose\n');
+    await writeSource(root, 'template-shell/src/app.tsx', 'export {}\n');
+    // A directory with no frontx-template.json is not a template, however
+    // named — this guard's own test fixtures quote the statements the guard
+    // forbids, and root repo scripts declare no dependency on the runtime
+    // package at all.
+    await writeSource(root, 'not-a-template/src/index.ts', 'export {}\n');
+    await writeSource(root, 'scripts/some-guard.test.mjs', "import { DefaultMfeRegistry } from '@gears-frontx/mfes'\n");
+    expect(findConsumerFiles(root)).toEqual([path.join('template-shell', 'src', 'app.tsx')]);
+  });
+
+  it('walks every discovered template, not just the first', async () => {
+    const root = await makeRoot();
+    await writeManifest(root, 'template-shell');
+    await writeManifest(root, 'template-mfe');
+    await writeSource(root, 'template-shell/src/app.ts', 'export {}\n');
+    await writeSource(root, 'template-mfe/src-app/mfe_packages/demo-mfe/src/index.ts', 'export {}\n');
+    expect(findConsumerFiles(root)).toEqual([
+      path.join('template-mfe', 'src-app', 'mfe_packages', 'demo-mfe', 'src', 'index.ts'),
+      path.join('template-shell', 'src', 'app.ts'),
+    ]);
+  });
+
+  it('does not walk dot-directories, such as a stale .claude/worktrees/* repo copy', async () => {
+    const root = await makeRoot();
+    await writeManifest(root, 'template-shell');
+    await writeSource(root, 'template-shell/src/app.tsx', 'export {}\n');
+    await writeSource(root, '.claude/worktrees/stale/template-shell/src/app.ts', 'export {}\n');
+    expect(findConsumerFiles(root)).toEqual([path.join('template-shell', 'src', 'app.tsx')]);
+  });
+});
