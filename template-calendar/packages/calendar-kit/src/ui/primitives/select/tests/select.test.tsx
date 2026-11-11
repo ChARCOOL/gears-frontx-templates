@@ -95,6 +95,16 @@ const StatefulSelect = (props: Partial<Parameters<typeof Select>[0]> = {}) => {
 };
 
 describe(Select, () => {
+  it("adds the host popupClassName to the popup it opens", () => {
+    renderSelect({ popupClassName: "host-popup" });
+    fireEvent.click(screen.getByRole("combobox"));
+
+    const popup = screen.getByRole("listbox").closest<HTMLElement>(".host-popup");
+
+    expect(popup).toBeInTheDocument();
+    expect(popup).toHaveClass(selectStyles.popup);
+  });
+
   it("draws the popup with a 1px border and sets option text to the label weight", () => {
     expect(declarations(selectCss, ".popup").get("border")).toBe(
       "var(--cal-border-width-1) solid var(--cal-color-overlay-border)"

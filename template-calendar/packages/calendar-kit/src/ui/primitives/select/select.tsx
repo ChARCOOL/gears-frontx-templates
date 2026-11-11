@@ -117,6 +117,8 @@ interface SelectProps extends Omit<
   readonly disabled?: boolean;
   readonly iconLeft?: ReactNode;
   readonly showSelectedCheck?: boolean;
+  /** Class added to the popup, for example to size it to its longest label. */
+  readonly popupClassName?: string;
   /** Opens the list as soon as the select mounts. */
   readonly defaultOpen?: boolean;
   /** Called when the list opens or closes. */
@@ -163,6 +165,7 @@ interface SelectPopupProps {
   readonly portalContainer: HTMLElement | ShadowRoot;
   readonly popupId: string;
   readonly showSelectedCheck: boolean;
+  readonly popupClassName?: string;
 }
 
 const SelectPopup = ({
@@ -177,6 +180,7 @@ const SelectPopup = ({
   portalContainer,
   popupId,
   showSelectedCheck,
+  popupClassName,
 }: SelectPopupProps) => {
   const handlePopupPointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
@@ -290,7 +294,7 @@ const SelectPopup = ({
       side="bottom"
       align="start"
       sideOffset={4}
-      className={styles.popup}
+      className={clsx(styles.popup, popupClassName)}
       onPointerDown={handlePopupPointerDown}
       onKeyDown={handlePopupKeyDown}
     >
@@ -369,6 +373,7 @@ export const Select = ({
   placeholder = "",
   emptyMessage,
   showSelectedCheck = false,
+  popupClassName,
   defaultOpen = false,
   onOpenChange,
   label,
@@ -678,6 +683,7 @@ export const Select = ({
             portalContainer={portalContainer}
             popupId={popupId}
             showSelectedCheck={showSelectedCheck}
+            popupClassName={popupClassName}
           />
         )}
       </UiSelect>
