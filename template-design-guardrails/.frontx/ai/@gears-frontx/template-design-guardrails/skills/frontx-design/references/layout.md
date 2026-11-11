@@ -42,6 +42,12 @@ The numbers (spacing scale, fallback grid, regions, responsive order) are in
 - Use the host grid when it exists, otherwise `fallbackGrid`. Its values
   are starting points: a breakpoint goes where content fails, not where a
   device name says.
+- An ordered group of blocks whose widths follow size classes (small,
+  medium, large) takes the kit's `Grid` and `GridItem`; exact spans, manual
+  placement, page regions and blocks whose height follows their content
+  stay on `fallbackGrid` with CSS Modules. Grid items have fixed row-track
+  heights, scroll taller content inside and clip outer shadows and outlines
+  (`references/data.md`).
 - Two reusable spans, full and half (dashboard rules in `references/data.md`).
 - Forms keep a readable width instead of stretching fields across the
   viewport; prose measure is in `references/typography.md`.
