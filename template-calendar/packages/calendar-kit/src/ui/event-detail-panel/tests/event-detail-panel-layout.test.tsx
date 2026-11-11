@@ -181,7 +181,17 @@ describe("EventDetailPanel inline layout", () => {
     assert(declarations(panelCss, ".content").get("min-block-size")).toBe("0");
   });
 
-  // Only Delete is red; a header icon sized with the row icons keeps the muted button colour.
+  it("sets the Figma header height and title size, and overlaps the avatar stack", () => {
+    assert(declarations(panelCss, ".header").get("min-block-size")).toBe("4rem");
+    assert(declarations(panelCss, ".title").get("font-size")).toBe(
+      "var(--cal-text-panel-title-size)"
+    );
+    assert(declarations(panelCss, ".avatarStack > li + li").get("margin-inline-start")).toBe(
+      "-3px"
+    );
+  });
+
+  // Only Delete is red; the close glyph uses the Figma brand colour, not the muted text colour.
   it("sizes the header icons without the delete colour, and only outlines a focused join", () => {
     const headerIcon = declarations(panelCss, ".headerAction svg");
     const joinFocus = declarations(panelCss, ".joinButton:focus-visible");
@@ -200,7 +210,7 @@ describe("EventDetailPanel inline layout", () => {
       "--button-fg-hover",
     ]);
     assert(declarations(panelCss, ".headerAction").get("--button-fg")).toBe(
-      "var(--cal-color-muted)"
+      "var(--cal-color-brand)"
     );
   });
 });

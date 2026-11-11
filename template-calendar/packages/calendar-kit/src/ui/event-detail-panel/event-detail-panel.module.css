@@ -17,14 +17,15 @@
   overflow: hidden;
 }
 
-/* One row: the title on the start side, the actions on the end side on its first line. The end
-   inset is half the start one because the close button's own padding makes up the rest. */
+/* The Figma sheet header: 64px tall with the title and actions centred, 12px in from each edge.
+   A long title grows it, up to three lines. */
 .header {
-  align-items: flex-start;
+  align-items: center;
   display: flex;
   flex-shrink: 0;
   gap: var(--cal-space-3);
-  padding: var(--cal-space-4) var(--cal-space-2) 0 var(--cal-space-4);
+  min-block-size: 4rem;
+  padding: var(--cal-space-2) var(--cal-space-3);
 }
 
 /* A long title would grow the fixed header past the viewport; three lines, then an ellipsis.
@@ -35,13 +36,14 @@
   color: var(--cal-color-text);
   display: -webkit-box;
   flex: 1 1 auto;
-  font-size: var(--cal-text-title-size);
-  font-weight: var(--cal-text-title-weight);
-  line-height: var(--cal-text-title-line-height);
+  font-size: var(--cal-text-panel-title-size);
+  font-weight: var(--cal-text-panel-title-weight);
+  line-height: var(--cal-text-panel-title-line-height);
   margin: 0;
   min-inline-size: 0;
   overflow: hidden;
   overflow-wrap: anywhere;
+  padding-inline: var(--cal-space-2) var(--cal-space-1);
 }
 
 /* The title takes focus when the panel opens; the heading needs no ring for that. */
@@ -49,21 +51,17 @@
   outline: none;
 }
 
-/* The 32px buttons centre on the title's 24px first line. */
 .headerActions {
   align-items: center;
   display: flex;
   flex: none;
   gap: var(--cal-space-1);
-  margin-block: calc(
-    (var(--cal-text-title-line-height) - var(--cal-control-height-sm)) / 2
-  );
 }
 
 .headerAction {
   --button-bg-hover: var(--cal-state-hover);
-  --button-fg: var(--cal-color-muted);
-  --button-fg-hover: var(--cal-color-muted);
+  --button-fg: var(--cal-color-brand);
+  --button-fg-hover: var(--cal-color-brand);
   border-radius: var(--cal-radius-md);
 }
 
@@ -227,13 +225,23 @@
   color: var(--cal-color-text);
 }
 
-/* Side by side rather than overlapped: at 24px an overlap covers half of each avatar's initials. */
 .avatarStack {
   composes: listReset from "../../styles/modules/list.module.css";
   display: flex;
   flex-wrap: wrap;
-  gap: var(--cal-space-1);
   margin-block-start: var(--cal-space-2);
+}
+
+/* Figma overlaps each avatar on the one before it: 28px avatars on a 25px step, ringed in the
+   sheet colour so the edge of the one below stays readable. */
+.avatarStack > li + li {
+  margin-inline-start: -3px;
+}
+
+.avatarStack .stackAvatar,
+.avatarStack .stackOverflow {
+  box-shadow: 0 0 0 3px var(--cal-color-surface);
+  font-weight: 600;
 }
 
 /* 28px avatars as designed; the +N chip matches them. */
@@ -327,9 +335,9 @@
   column-gap: var(--cal-space-1);
   display: flex;
   flex-wrap: wrap;
-  font-size: var(--cal-text-meta-size);
-  font-weight: var(--cal-text-meta-weight);
-  line-height: var(--cal-text-meta-line-height);
+  font-size: var(--cal-text-label-size);
+  font-weight: var(--cal-text-label-weight);
+  line-height: var(--cal-text-label-line-height);
   margin: 0;
 }
 
