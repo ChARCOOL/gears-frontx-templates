@@ -36,7 +36,7 @@
   --cal-color-turquoise-background: var(--info-soft, #eaf6ff);
   --cal-color-turquoise-foreground: var(--info, #0284c7);
   --cal-color-turquoise-border: var(--info, #0284c7);
-  --cal-color-turquoise-accent: var(--info, #0284c7);
+  --cal-color-turquoise-accent: var(--turquoise-accent, var(--info, #0284c7));
   --cal-color-turquoise-pattern: var(--info, #0284c7);
   --cal-color-purple-background: var(--purple-soft, var(--accent, #f3e8ff));
   --cal-color-purple-foreground: var(--purple, var(--accent-foreground, #6d28d9));
@@ -98,6 +98,7 @@
   --cal-text-grid-line-height: var(--text-body-line-height, 1.25rem);
   --cal-text-grid-weight: var(--text-body-weight, 400);
   --cal-text-grid-tracking: var(--text-body-tracking, 0px);
+  --cal-text-event-title-weight: var(--text-event-title-weight, 700);
 
   --cal-space-1: var(--space-1, 0.25rem);
   --cal-space-2: var(--space-2, 0.5rem);

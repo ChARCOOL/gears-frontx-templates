@@ -72,7 +72,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 `slotMinutes?: 15 | 20 | 30 | 60` sets the length of one row; the default is `60`. The gutter labels only rows that start on the hour. `visibleHours` snaps outward to whole slots: the start rounds down and the end rounds up. An empty or reversed window throws a `RangeError`.
 
-`workingHours?: CalendarTimeWindow` sets the working part of the day; the default is 08:00–18:00. Cells outside it are hatched with diagonal stripes, and their accessible name says "non-working hour". It is independent of `visibleHours` and also sets where the grid first scrolls to.
+`workingHours?: CalendarTimeWindow` sets the working part of the day; the default is 08:00–18:00. Cells outside it are not hatched (the day grid hatches them); their accessible name says "non-working hour". It is independent of `visibleHours` and also sets where the grid first scrolls to.
 
 Events are clipped to the visible hours, and events wholly outside them are not rendered. The now line is hidden while the current time is outside them. Slots follow elapsed time, so a daylight-saving day has one slot fewer or more.
 

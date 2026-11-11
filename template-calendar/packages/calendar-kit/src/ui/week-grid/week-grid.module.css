@@ -127,6 +127,9 @@
 .weekday {
   composes: weekdayLabel from "../../styles/modules/text.module.css";
   display: block;
+  font-size: var(--cal-text-caption-size);
+  font-weight: var(--cal-text-caption-weight);
+  line-height: var(--cal-text-caption-line-height);
 }
 
 .dayNumber {
@@ -154,14 +157,6 @@
    grey fill behind the grey card read as a second, wider block. The day grid draws none either. */
 .unavailableSlot {
   cursor: not-allowed;
-}
-
-.nonWorkingHour {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    var(--cal-slot-non-working-stripe) 0 2px,
-    transparent 2px 7.07px
-  );
 }
 
 .cellContent[data-paint] {

@@ -48,6 +48,7 @@
   --purple: #841dba;
   --purple-soft: #f8eaff;
   --purple-accent: #d07aff;
+  --turquoise-accent: #0fadbf;
   --orange: #9a3316;
   --orange-soft: #ffeadb;
   --orange-accent: #fe781b;
@@ -85,6 +86,7 @@
   --text-caption-line-height: 12px;
   --text-caption-weight: 500;
   --text-caption-tracking: 0px;
+--text-event-title-weight: 700;
   --text-body-size: 14px;
   --text-body-line-height: 20px;
   --text-body-weight: 400;

@@ -8,12 +8,13 @@ const HATCH =
   "repeating-linear-gradient(-45deg, var(--cal-slot-non-working-stripe) 0 2px, transparent 2px 7.07px)";
 
 describe("non-working hour hatch", () => {
-  it.each([
-    ["day", dayGridCss],
-    ["week", weekGridCss],
-  ])("hatches non-working hours in the %s grid", (_, css) => {
-    expect(declarations(css, ".nonWorkingHour").get("background-image")).toBe(
+  it("hatches non-working hours in the day grid", () => {
+    expect(declarations(dayGridCss, ".nonWorkingHour").get("background-image")).toBe(
       HATCH
     );
+  });
+
+  it("has no hatch rule in the week grid", () => {
+    expect(weekGridCss).not.toContain("nonWorkingHour");
   });
 });

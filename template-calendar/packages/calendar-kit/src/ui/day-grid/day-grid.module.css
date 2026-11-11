@@ -84,7 +84,7 @@
   flex-shrink: 0;
   grid-template-columns: var(--grid-gutter-width) minmax(0, 1fr);
   min-block-size: 44px;
-  background: var(--cal-color-raised);
+  background: var(--cal-color-surface);
 }
 
 .gutterBase {

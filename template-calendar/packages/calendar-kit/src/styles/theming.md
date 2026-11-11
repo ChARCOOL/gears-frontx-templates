@@ -112,6 +112,7 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 | `--purple` | Purple category foreground, border. Falls back to `--accent-foreground` | `var(--accent-foreground)` | `#841dba` |
 | `--purple-soft` | Purple category background. Falls back to `--accent` | `var(--accent)` | `#f8eaff` |
 | `--purple-accent` | Purple category accent (card bar). Falls back to `--accent-foreground` | `var(--accent-foreground)` | `#d07aff` |
+| `--turquoise-accent` | Turquoise category accent (card bar). Falls back to `--info` | `var(--info)` | `#0fadbf` |
 | `--orange` | Orange category foreground, border. Falls back to `--warning-foreground`, `--warning` | `var(--warning)` | `#9a3316` |
 | `--orange-soft` | Orange category background · **dark**. Falls back to `--warning-soft` | `var(--warning-soft)` | `#ffeadb` |
 | `--orange-accent` | Orange category accent (card bar). Falls back to `--warning` | `var(--warning)` | `#fe781b` |
@@ -153,6 +154,7 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 | `--text-caption-line-height` | Caption line height | `0.75rem` | `12px` |
 | `--text-caption-weight` | Caption weight | `500` | `500` |
 | `--text-caption-tracking` | Caption letter spacing | `0px` | `0px` |
+| `--text-event-title-weight` | Event card title weight | `700` | `700` |
 | `--text-body-size` | Grid and day-number size | `0.9375rem` | `14px` |
 | `--text-body-line-height` | Grid and day-number line height | `1.25rem` | `20px` |
 | `--text-body-weight` | Grid and day-number weight | `400` | `400` |
@@ -209,7 +211,7 @@ Four seams have no counterpart in the example token set. The preset restates the
 
 These are not missing values but places where the seam namespace is coarser than the example set's, so one seam has to serve two purposes:
 
-- **Event-category border and accent.** The example set gives each category a distinct foreground, border, and accent (turquoise foreground `#266068` vs border `#0fadbf`). For turquoise, `theme.css` drives `--cal-color-*-foreground`, `-border`, `-accent`, and `-pattern` from a single seam, so the preset sets it to the category **foreground** and the border and accent inherit that value. Purple, orange and blue have their own accent seams (`--purple-accent`, `--orange-accent`, `--blue-accent`).
+- **Event-category border and accent.** The example set gives each category a distinct foreground, border, and accent (turquoise foreground `#266068` vs border `#0fadbf`). For turquoise, `theme.css` drives `-foreground`, `-border`, and `-pattern` from `--info`, so the preset sets it to the category **foreground** and the border inherits that value. The card bar uses its own `--turquoise-accent`, set to the Figma bar colour `#0fadbf`. Purple, orange, blue and turquoise have their own accent seams (`--purple-accent`, `--orange-accent`, `--blue-accent`, `--turquoise-accent`).
 - **Generic status vs category colour.** `--info` and `--warning` serve both `--cal-color-info` / `--cal-color-warning` and the turquoise / orange category families. The preset optimises for the categories, because they are what the calendar actually renders.
 - **Day number vs grid text.** `--text-body-size` drives both. The example sizes the day number at `16px` and body text at `14px`; the preset uses `14px`.
 - **Dragging state.** `--accent` / `--accent-foreground` serve both the purple category and the drag state, which the example styles independently.

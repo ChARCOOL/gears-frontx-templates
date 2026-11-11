@@ -310,7 +310,7 @@ button.card.unavailable {
   overflow: hidden;
   color: var(--button-fg);
   font-size: var(--cal-text-meta-size);
-  font-weight: var(--cal-text-label-weight);
+  font-weight: var(--cal-text-event-title-weight);
   line-height: var(--cal-text-meta-line-height);
   white-space: nowrap;
 }
@@ -344,9 +344,12 @@ button.card.unavailable {
 .time {
   composes: metaText from "../../styles/modules/text.module.css";
   min-inline-size: 0;
+  overflow: hidden;
   font-size: var(--cal-text-meta-size);
   font-weight: var(--cal-text-meta-weight);
   line-height: var(--cal-text-meta-line-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Doubled class outranks the composed metaText, which sets the muted colour. */

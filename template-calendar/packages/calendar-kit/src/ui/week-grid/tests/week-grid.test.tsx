@@ -551,6 +551,13 @@ describe("WeekGrid unit behaviour", () => {
     assert(renderCell).toHaveBeenCalledWith(assert.anything());
   });
 
+  it("shows an all-day chip with its title only, no time row", () => {
+    renderWeek({ events: [allDayEvent()], t: (key) => key });
+
+    const chip = screen.getByRole("button", { name: /All day/u });
+    assert(chip.querySelector("[data-event-card-time]")).toBeNull();
+  });
+
   it("emits a quick-create payload from an empty click with an anchor rectangle", async () => {
     const user = userEvent.setup();
     const onQuickCreate =

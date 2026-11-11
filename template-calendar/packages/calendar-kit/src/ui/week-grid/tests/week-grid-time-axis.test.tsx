@@ -113,14 +113,14 @@ describe("WeekGrid time axis", () => {
     assert(dayCell(sevenRow)).not.toHaveAccessibleName(/non-working/u);
   });
 
-  it("hatches only the non-working hour cells", () => {
+  it("leaves non-working hour cells unhatched, as in the design", () => {
     renderWeek({
       visibleHours: timeWindow("06:00", "08:00"),
       workingHours: timeWindow("07:00", "08:00"),
     });
 
     const [sixRow, sevenRow] = timedRows();
-    assert(dayCell(sixRow)?.querySelector('[class*="nonWorkingHour"]')).not.toBeNull();
+    assert(dayCell(sixRow)?.querySelector('[class*="nonWorkingHour"]')).toBeNull();
     assert(dayCell(sevenRow)?.querySelector('[class*="nonWorkingHour"]')).toBeNull();
   });
 

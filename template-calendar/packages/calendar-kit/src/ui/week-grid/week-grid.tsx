@@ -695,8 +695,9 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
   const renderTime = (
     eventContext: CalendarEventRenderContext<Payload>
   ): ReactNode => {
+    // The all-day chip shows its title only, as in the design.
     if (eventContext.event.allDay) {
-      return t("calendar.eventCard.allDay");
+      return null;
     }
 
     const start = formatGridTime(eventContext.segment.start, timeZone, locale);
@@ -884,7 +885,6 @@ const WeekGridCellContent = <Payload,>(
       <div
         className={clsx(
           styles.cellContent,
-          meta.nonWorkingHour && styles.nonWorkingHour,
           unavailable && styles.unavailableSlot,
           cellClassName
         )}
