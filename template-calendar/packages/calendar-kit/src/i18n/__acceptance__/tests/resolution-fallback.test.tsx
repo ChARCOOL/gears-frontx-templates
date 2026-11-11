@@ -89,7 +89,7 @@ const assertA1VisibleElements = (): void => {
 
 const assertA1TranslationOutput = (): void => {
   expect(screen.getByTestId("translations")).toHaveTextContent(
-    "calendar.create_event.placeholder.location=Add a location"
+    "calendar.create_event.placeholder.location=Search for address"
   );
   expect(screen.getByTestId("translations")).toHaveTextContent(
     "calendar.month.eventCount=3 events"

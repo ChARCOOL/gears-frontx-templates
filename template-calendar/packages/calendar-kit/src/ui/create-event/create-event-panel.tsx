@@ -428,9 +428,10 @@ const FormHeader = ({
     <div className={styles.headerActions}>
       <Button
         aria-label={t("calendar.create_event.close")}
+        className={styles.closeButton}
         leftIcon={<XIcon aria-hidden="true" />}
         onlyIcon
-        size="m"
+        size="l"
         type="button"
         variant="ghost"
         onClick={onClose}
@@ -451,7 +452,6 @@ const FormHeader = ({
         {renderHeader?.()}
         {actions}
       </div>
-      <Separator decorative className={styles.headerDivider} />
     </div>
   );
 };
@@ -482,6 +482,7 @@ const FormFooter = ({
         <Button
           type="submit"
           size="l"
+          className={styles.saveButton}
           form={formId}
           loading={isSubmitting}
           disabled={!canSubmit}
@@ -559,7 +560,7 @@ const TimeField = ({
     <Input
       id={id}
       type="time"
-      size="xl"
+      size="l"
       value={value}
       placeholder={label}
       disabled={disabled}
@@ -1118,12 +1119,15 @@ const CreateEventAdditionalFields = (
             setLocationEditorOpen(true);
           }}
         >
-          {t("calendar.create_event.placeholder.location")}
+          {t("calendar.create_event.location.add")}
         </Button>
       )}
 
-      <Field className={styles.field}>
-        <FieldLabel htmlFor={fieldId("description")}>
+      <Field className={clsx(styles.field, styles.descriptionField)}>
+        <FieldLabel
+          htmlFor={fieldId("description")}
+          className={styles.descriptionLabel}
+        >
           {t("calendar.create_event.field.description")}
         </FieldLabel>
         <Textarea
@@ -1175,7 +1179,7 @@ const CreateEventPeopleField = ({
   const optionalIds = controller.draft.optionalAttendeeIds ?? [];
 
   return (
-    <Field className={styles.field}>
+    <Field className={clsx(styles.field, styles.groupStart)}>
       <Combobox
         id={fieldId("people")}
         aria-label={t("calendar.create_event.field.people")}
@@ -1440,14 +1444,22 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
     />
   );
 
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Runs after the controller's layout effect records the opener, so closing returns focus there.
+  useEffect(() => {
+    titleInputRef.current?.focus();
+  }, []);
+
   const titleField = (
     <Field className={styles.field}>
       <Input
         id={fieldId("title")}
         aria-label={t("calendar.create_event.field.title")}
         placeholder={t("calendar.create_event.field.title")}
+        ref={titleInputRef}
         value={controller.draft.title}
-        size="xl"
+        size="l"
         invalid={fieldMessages.title !== null}
         aria-describedby={fieldErrorId(
           fieldMessages.title,
@@ -1527,7 +1539,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
 
   const scheduleRows = (
     <>
-      <div className={styles.timeRow}>
+      <div className={clsx(styles.timeRow, styles.groupStart)}>
         <TimeField
           id={fieldId("start-time")}
           label={t("calendar.create_event.field.start_time")}
@@ -1600,7 +1612,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
   );
 
   const repeatField = (
-    <Field className={styles.field}>
+    <Field className={clsx(styles.field, styles.groupStart)}>
       <Select
         ref={repeatAnchorRef}
         id={fieldId("repeat")}
@@ -1637,7 +1649,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
         id={fieldId("timezone")}
         aria-label={timeZoneFieldLabel}
         value={timeZoneLabel}
-        size="xl"
+        size="l"
         readOnly
         iconLeft={<Globe2Icon aria-hidden="true" />}
       />

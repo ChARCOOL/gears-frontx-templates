@@ -290,6 +290,12 @@ describe("CreateEventPanel public shell", () => {
     );
     assert(screen.queryByRole("dialog", { name: /create/iu })).toBeNull();
   });
+
+  it("focuses the title when the form opens", () => {
+    renderPopover();
+
+    assert(screen.getByRole("textbox", { name: "Title" })).toHaveFocus();
+  });
 });
 
 describe("CreateEventPanel date and time row fidelity", () => {

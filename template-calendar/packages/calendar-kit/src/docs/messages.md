@@ -283,6 +283,7 @@ Event state words shared by the views.
 | `calendar.create_event.kind.event` | Event |  |
 | `calendar.create_event.kind.label` | Event type |  |
 | `calendar.create_event.kind.reminder` | Reminder |  |
+| `calendar.create_event.location.add` | Add a location |  |
 | `calendar.create_event.location.no_results` | No locations |  |
 | `calendar.create_event.no_options` | No options available |  |
 | `calendar.create_event.notify.blocked` | Notifications are blocked. Allow them in your browser settings to get reminders. |  |
@@ -294,7 +295,7 @@ Event state words shared by the views.
 | `calendar.create_event.placeholder.calendar` | Choose a calendar |  |
 | `calendar.create_event.placeholder.conferencing` | Add conferencing |  |
 | `calendar.create_event.placeholder.event_type` | Choose an event type |  |
-| `calendar.create_event.placeholder.location` | Add a location |  |
+| `calendar.create_event.placeholder.location` | Search for address |  |
 | `calendar.create_event.placeholder.location_level` | Choose a location |  |
 | `calendar.create_event.placeholder.people` | Add people |  |
 | `calendar.create_event.placeholder.url` | Add a URL |  |
