@@ -98,9 +98,12 @@
   color: var(--cal-color-subtle);
 }
 
-.shell:has(:disabled) .icon,
 .shell:has(:disabled) .affix {
   color: var(--cal-color-subtle);
+}
+
+.shell:has(:disabled) .icon {
+  color: var(--cal-color-placeholder);
 }
 
 .controlLabel {
