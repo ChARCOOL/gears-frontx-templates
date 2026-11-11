@@ -9,8 +9,10 @@
  * quietly covering nothing.
  *
  * Every CI guard that walks templates (`validate-templates.mjs`,
- * `template-pin-drift-check.mjs`, `version-bump-on-change-check.mjs`)
- * discovers them through this one function.
+ * `template-pin-drift-check.mjs`, `version-bump-on-change-check.mjs` and the
+ * rest) discovers them through this module: `validate-templates.mjs` and the
+ * manifest-only roots of `version-bump-on-change-check.mjs` through
+ * `findTemplateDirs`, the policy guards through `findGuardedTemplateDirs`.
  * Two copies of the rule is how they would come to disagree about what a
  * template is - and a discovery rule that finds nothing reports as a pass in
  * every caller that forgets to check (CodeRabbit on #493, which found the
@@ -56,4 +58,35 @@ export function findTemplateDirs(rootDir, manifestFilename = MANIFEST_FILENAME) 
     .map((entry) => path.join(rootDir, entry.name))
     .filter((dir) => fs.existsSync(path.join(dir, manifestFilename)))
     .sort();
+}
+
+/**
+ * Templates that are in the repo but carry no manifest yet. `template-dashboard`
+ * lands package by package, and its manifest comes with the runtime slice that
+ * makes it appliable. Until then the policy guards still have to see its
+ * packages, or a broken token or a deep `@gears-frontx/mfes` import there would
+ * pass CI. Remove an entry in the PR that adds that template's manifest.
+ *
+ * Only the policy guards read this list. `validate-templates.mjs` checks the
+ * manifest itself, so it keeps to `findTemplateDirs`.
+ */
+export const PRE_MANIFEST_TEMPLATE_DIRS = Object.freeze(['template-dashboard']);
+
+/**
+ * What every policy guard walks: the templates `findTemplateDirs` finds, plus
+ * each `PRE_MANIFEST_TEMPLATE_DIRS` entry that exists as a directory under
+ * `rootDir`. When manifest discovery finds nothing it returns nothing too, so
+ * a guard's "zero templates is a discovery bug" check still fires instead of
+ * passing on the listed directories alone.
+ *
+ * @param {string} rootDir
+ * @returns {string[]} absolute paths, sorted, no duplicates
+ */
+export function findGuardedTemplateDirs(rootDir) {
+  const withManifest = findTemplateDirs(rootDir);
+  if (withManifest.length === 0) return [];
+  const listed = PRE_MANIFEST_TEMPLATE_DIRS.map((name) => path.join(rootDir, name)).filter(
+    (dir) => fs.statSync(dir, { throwIfNoEntry: false })?.isDirectory() === true,
+  );
+  return [...new Set([...withManifest, ...listed])].sort();
 }

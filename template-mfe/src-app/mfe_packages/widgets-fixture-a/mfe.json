@@ -13,12 +13,12 @@
       "additionalProperties": false,
       "properties": {
         "type": {
-          "x-gts-ref": "/$id",
+          "x-gts-type-ref": "/$id",
           "$comment": "Self-reference to this action's schema type ID"
         },
         "target": {
-          "x-gts-ref": "gts.frontx.mfes.ext.extension.v1~*",
-          "$comment": "Type ID of the target extension instance"
+          "x-gts-instance-ref": "gts.frontx.mfes.ext.extension.v1~*",
+          "$comment": "Instance ID of the target extension"
         },
         "payload": {
           "type": "object",
