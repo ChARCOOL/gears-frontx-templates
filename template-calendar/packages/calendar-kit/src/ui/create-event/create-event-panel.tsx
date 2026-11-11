@@ -8,8 +8,6 @@ import {
   Globe2Icon,
   Link2Icon,
   MapPinIcon,
-  Maximize2Icon,
-  Minimize2Icon,
   RefreshCwIcon,
   UsersIcon,
   XIcon,
@@ -202,10 +200,8 @@ interface DraftChangeProps {
 }
 
 interface FormHeaderProps {
-  readonly expanded: boolean;
   readonly kind: CreateEventKind;
   readonly onClose: () => void;
-  readonly onExpandedChange: (expanded: boolean) => void;
   readonly onKindChange?: (kind: CreateEventKind) => void;
   readonly renderHeader?: () => ReactNode;
   readonly titleId: string;
@@ -416,10 +412,8 @@ const KindSwitch = ({ kind, onKindChange }: KindSwitchProps) => {
 };
 
 const FormHeader = ({
-  expanded,
   kind,
   onClose,
-  onExpandedChange,
   onKindChange,
   renderHeader,
   titleId,
@@ -430,27 +424,6 @@ const FormHeader = ({
 
   const actions = (
     <div className={styles.headerActions}>
-      <Button
-        aria-label={t(
-          expanded
-            ? "calendar.create_event.collapse"
-            : "calendar.create_event.expand"
-        )}
-        leftIcon={
-          expanded ? (
-            <Minimize2Icon aria-hidden="true" />
-          ) : (
-            <Maximize2Icon aria-hidden="true" />
-          )
-        }
-        onlyIcon
-        size="l"
-        type="button"
-        variant="ghost"
-        onClick={() => {
-          onExpandedChange(!expanded);
-        }}
-      />
       <Button
         aria-label={t("calendar.create_event.close")}
         className={styles.closeButton}
@@ -1019,7 +992,6 @@ interface CreateEventFormProps {
     readonly label: string;
     readonly value: string;
   }[];
-  readonly expanded: boolean;
   readonly fieldId: (name: string) => string;
   readonly fieldMessages: ReturnType<typeof createEventErrorMessages>;
   readonly firstError: string | null;
@@ -1027,7 +999,6 @@ interface CreateEventFormProps {
   readonly kind: CreateEventKind;
   readonly notifyBlocked: boolean;
   readonly notifyLeadItems: readonly ResourceItem[];
-  readonly onExpandedChange: (expanded: boolean) => void;
   readonly onKindChange?: (kind: CreateEventKind) => void;
   readonly onNotifyChange: (enabled: boolean) => Promise<void>;
   readonly onNotifyLeadChange: (value: string) => void;
@@ -1190,7 +1161,6 @@ type CreateEventFieldsProps = Omit<
   | "onKindChange"
   | "onSubmit"
   | "discardOpen"
-  | "onExpandedChange"
   | "renderFooter"
   | "renderHeader"
 >;
@@ -1390,7 +1360,6 @@ const NotifyFields = ({
 
 const CreateEventFields = (props: CreateEventFieldsProps) => {
   const {
-    expanded,
     kind,
     notifyBlocked,
     notifyLeadItems,
@@ -1706,13 +1675,9 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
     </Field>
   );
 
-  const dimmedFields = clsx(styles.fields, repeatEditing && styles.dimmed);
-
   return (
     <ScrollRegion className={styles.body}>
-      <FieldGroup
-        className={clsx(styles.fields, expanded && styles.expandedFields)}
-      >
+      <FieldGroup className={styles.fields}>
         {/* The other fields take no input while the repeat editor is open, as in the design. */}
         <div
           className={clsx(styles.fields, repeatEditing && styles.dimmed)}
@@ -1749,52 +1714,44 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
           </div>
         ) : null}
 
-        {isReminder ? null : (
-          <div className={dimmedFields} inert={repeatEditing}>
-            {timeZoneField}
-          </div>
-        )}
-        {isReminder ? null : (
-          <div
-            className={clsx(dimmedFields, styles.peopleBlock)}
-            inert={repeatEditing}
-          >
-            {peopleField}
-          </div>
-        )}
-
-        <div className={dimmedFields} inert={repeatEditing}>
+        <div
+          className={clsx(styles.fields, repeatEditing && styles.dimmed)}
+          inert={repeatEditing}
+        >
+          {isReminder ? null : timeZoneField}
           {isReminder ? null : (
             <>
-              <Field className={styles.field}>
-                <Select
-                  id={fieldId("conferencing")}
-                  aria-label={t("calendar.create_event.field.conferencing")}
-                  emptyMessage={noOptionsLabel}
-                  options={conferencingItems}
-                  value={controller.draft.conferencingProviderId ?? ""}
-                  size="xl"
-                  showSelectedCheck
-                  iconLeft={<Link2Icon aria-hidden="true" />}
-                  disabled={controller.isSubmitting}
-                  placeholder={t("calendar.create_event.placeholder.conferencing")}
-                  onValueChange={changeConferencingProvider}
-                />
-              </Field>
+              {peopleField}
 
-              <Separator decorative className={styles.separator} />
+          <Field className={styles.field}>
+            <Select
+              id={fieldId("conferencing")}
+              aria-label={t("calendar.create_event.field.conferencing")}
+              emptyMessage={noOptionsLabel}
+              options={conferencingItems}
+              value={controller.draft.conferencingProviderId ?? ""}
+              size="xl"
+              showSelectedCheck
+              iconLeft={<Link2Icon aria-hidden="true" />}
+              disabled={controller.isSubmitting}
+              placeholder={t("calendar.create_event.placeholder.conferencing")}
+              onValueChange={changeConferencingProvider}
+            />
+          </Field>
 
-              <CreateEventAdditionalFields
-                controller={controller}
-                fieldId={fieldId}
-                onLocationSelection={onLocationSelection}
-                locationEditorOpen={locationEditorOpen}
-                locationItems={locationItems}
-                locationQuery={locationQuery}
-                setDraft={setDraft}
-                setLocationEditorOpen={setLocationEditorOpen}
-                updateLocation={updateLocation}
-              />
+          <Separator decorative className={styles.separator} />
+
+          <CreateEventAdditionalFields
+            controller={controller}
+            fieldId={fieldId}
+            onLocationSelection={onLocationSelection}
+            locationEditorOpen={locationEditorOpen}
+            locationItems={locationItems}
+            locationQuery={locationQuery}
+            setDraft={setDraft}
+            setLocationEditorOpen={setLocationEditorOpen}
+            updateLocation={updateLocation}
+          />
             </>
           )}
 
@@ -1814,23 +1771,20 @@ const CreateEventForm = ({
   formId,
   onSubmit,
   discardOpen,
-  onExpandedChange,
   onKindChange,
   renderFooter,
   renderHeader,
   ...fieldProps
 }: CreateEventFormProps) => {
-  const { controller, expanded, fieldId, kind } = fieldProps;
+  const { controller, fieldId, kind } = fieldProps;
 
   return (
     <>
       <FormHeader
-        expanded={expanded}
         kind={kind}
         onClose={() => {
           void controller.requestCancel();
         }}
-        onExpandedChange={onExpandedChange}
         onKindChange={onKindChange}
         renderHeader={renderHeader}
         titleId={fieldId("title-heading")}
@@ -1967,7 +1921,7 @@ const CreateEventPanelContent = (props: CreateEventPanelProps) => {
   } = view;
 
   const { t } = useCalendarLocalization();
-  const [expanded, setExpanded] = useState(false);
+
 
   const calendarItems = useMemo(
     () =>
@@ -2075,8 +2029,6 @@ const CreateEventPanelContent = (props: CreateEventPanelProps) => {
       controller={controller}
       discardOpen={controller.isDiscardDialogOpen}
       displayedEndDate={displayedEndDate}
-      expanded={expanded}
-      onExpandedChange={setExpanded}
       eventTypeItems={eventTypeItems}
       fieldId={fieldId}
       fieldMessages={fieldMessages}

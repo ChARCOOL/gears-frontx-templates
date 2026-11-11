@@ -41,7 +41,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 ## Behaviour
 
-- The header shows an event-type title (`Event` by default), a slot for host header content, an expand/collapse icon action, and a close icon action, each with its accessible label. Expand switches the body to two columns: People in the right column, every other field in the left. The expanded state is internal to the panel and the host cannot set it. The body scrolls inside its region above the Cancel/Save footer.
+- The header shows an event-type title (`Event` by default), a slot for host header content, and a close icon action with its accessible label. The body scrolls inside its region above the Cancel/Save footer.
 - Title, schedule, time range, all-day switch, dates with a day count once they span a day, recurrence, timezone, people, conferencing, location, and description fields update one draft.
 - With `onKindChange`, the header shows an Event/Reminder switch and `kind` selects the form. Reminder shows title, URL, time range, all-day, and repeat; it hides calendar, event type, time zone, people, conferencing, location, and description, and switching to it clears those draft fields. Switching to Event clears `url`. The URL must be an `http(s)` link without credentials, at most 2048 characters, and shows `Enter a valid value` while invalid. Notify stores `notify: { leadMinutes }` (0, 5, 10, 15, 30 or 60, default 10) or `null` when off. Turning it on asks for browser permission only when the permission is `default`; a denied, missing or dismissed prompt keeps it off with an inline message. The form only stores the choice; the host delivers the notification.
 - Dates and times use the large icon-left field treatment; the schedule shows its calendar colour as a dot in the selected value and each option, and people tags use stroke tags with dismiss and clear-all actions.
@@ -132,7 +132,6 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.calendarSchedule` | Schedule: |  |
 | `calendar.create_event.cancel` | Cancel |  |
 | `calendar.create_event.close` | Close |  |
-| `calendar.create_event.collapse` | Collapse |  |
 | `calendar.create_event.create_dialog` | Create event |  |
 | `calendar.create_event.dayCount_one` | {{count}} day | `count` |
 | `calendar.create_event.dayCount_other` | {{count}} days | `count` |
@@ -144,7 +143,6 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.create_event.error.event_type_required` | Event type is required |  |
 | `calendar.create_event.error.invalid` | Enter a valid value |  |
 | `calendar.create_event.error.required` | Title is required |  |
-| `calendar.create_event.expand` | Expand |  |
 | `calendar.create_event.field.calendar` | Calendar |  |
 | `calendar.create_event.field.conferencing` | Conferencing |  |
 | `calendar.create_event.field.description` | Description |  |

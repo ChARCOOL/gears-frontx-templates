@@ -34,5 +34,4 @@ Rules:
 
 - `onSubmit` returns `{ error }` to keep the form open. Return nothing to close it.
 - The unsaved-changes guard runs on close. `onCancel` runs after a clean cancel or a confirmed discard.
-- The expanded layout is an internal toggle with two columns. People sit on the right in expanded mode. The host has no prop to force it.
 - The "0 days" label is not shown at zero. It shows for one or more days.

@@ -50,7 +50,7 @@ Overlays (popovers, dialogs) portal out of the component that opened them: into 
 | `CalendarToolbar` | `availableViews` (which views, in which order) |
 | `EventCard` | `positioned`, `selected`, `past`, `available`, `readOnly` |
 | `EventDetailPanel` | `comparisonTimeZone`, `maxVisibleParticipants`, `readOnly` |
-| `CreateEventPanel` | `expanded`, `anchorRect` / `anchorRef` |
+| `CreateEventPanel` | `anchorRect` / `anchorRef` |
 | `ConflictIndicator` | `compact` |
 | `AvailabilityGrid` | `interactionMode` (`read-only`), `paintMode` (`cells`), `headerFormat` (`weekday`), `showHourLabels`, `onHourClick`, `onDayClick` |
 | `WorldClocks`, `MonthNavigator`, `SearchResults` | `now` |
