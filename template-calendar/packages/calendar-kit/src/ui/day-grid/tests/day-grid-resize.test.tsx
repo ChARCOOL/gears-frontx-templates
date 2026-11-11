@@ -14,6 +14,7 @@ import type { CalendarResizeRequest } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
 import { DayGrid } from "../day-grid";
 import type { DayGridProps } from "../day-grid";
+import dayGridCss from "../day-grid.module.css?raw";
 
 // jsdom has no layout, so each hour row is given a fixed height for the pointer-to-slot lookup.
 const rowHeight = 43;
@@ -158,5 +159,12 @@ describe("DayGrid resize", () => {
     });
 
     expect(handle()).toBeNull();
+  });
+});
+
+describe("DayGrid resize handle layout", () => {
+  it("keeps the card inset rule off the handle so the handle stays a bottom band", () => {
+    expect(dayGridCss).toMatch(/\.eventLayer > \.event > :not\(\.resizeHandle\)\s*\{/u);
+    expect(dayGridCss).not.toMatch(/\.eventLayer > \.event > \*\s*\{/u);
   });
 });

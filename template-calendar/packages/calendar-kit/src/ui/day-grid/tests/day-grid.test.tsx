@@ -614,7 +614,7 @@ describe("DayGrid styles", () => {
 
   it("centres the all-day gutter label and insets timed cards 1px", () => {
     const gutter = declarations(dayGridCss, ".allDayGutter");
-    const card = declarations(dayGridCss, ".eventLayer > .event > *");
+    const card = declarations(dayGridCss, ".eventLayer > .event > :not(.resizeHandle)");
 
     assert(gutter.get("display")).toBe("flex");
     assert(gutter.get("align-items")).toBe("center");

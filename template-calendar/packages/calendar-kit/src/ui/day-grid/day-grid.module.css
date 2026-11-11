@@ -319,7 +319,7 @@
 
 /* Timed cards keep 1px off the hour line above and the column line before them, as in the
    design; the 2px end gap is the wrapper's --calendar-event-inset. */
-.eventLayer > .event > * {
+.eventLayer > .event > :not(.resizeHandle) {
   inset-block: var(--cal-border-width-1);
   inset-inline: var(--cal-border-width-1) 0;
   inline-size: auto;
