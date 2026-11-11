@@ -18,6 +18,7 @@
 
   --primary: #19213a;
   --primary-foreground: #ffffff;
+  --brand: #19213a;
 
   --now: #ff7065;
   --now-label: #d40834;
@@ -115,6 +116,9 @@
 
   /* No example-token counterpart; kit defaults. */
   --text-heading-2-tracking: -0.1px;
+  --text-panel-title-size: 16px;
+  --text-panel-title-line-height: 24px;
+  --text-panel-title-weight: 600;
   --text-meta-tracking: 0.1px;
   --text-body-tracking: 0px;
   --ring-inset: 1px;

@@ -7,6 +7,7 @@
   --cal-color-text: var(--foreground, #0f172a);
   --cal-color-muted: var(--muted-foreground, #64748b);
   --cal-color-subtle: var(--subtle-foreground, #5f6f88);
+  --cal-color-brand: var(--brand, #19213a);
   --cal-color-placeholder: var(--placeholder-foreground, #bbbbbb);
   --cal-color-grid-line: var(--border, #64748b);
   --cal-color-divider: var(--divider, rgb(0 0 0 / 0.09));
@@ -78,6 +79,9 @@
   --cal-text-title-line-height: var(--text-heading-2-line-height, 1.5rem);
   --cal-text-title-weight: var(--text-heading-2-weight, 600);
   --cal-text-title-tracking: var(--text-heading-2-tracking, -0.1px);
+  --cal-text-panel-title-size: var(--text-panel-title-size, 1rem);
+  --cal-text-panel-title-line-height: var(--text-panel-title-line-height, 1.5rem);
+  --cal-text-panel-title-weight: var(--text-panel-title-weight, 600);
   --cal-text-meta-size: var(--text-meta-size, 0.75rem);
   --cal-text-meta-line-height: var(--text-meta-line-height, 1rem);
   --cal-text-meta-weight: var(--text-meta-weight, 400);
@@ -196,6 +200,7 @@
     color-mix(in oklab, var(--foreground, #f8fafc) 10%, transparent)
   );
   --cal-color-subtle: var(--subtle-foreground, #7a8396);
+  --cal-color-brand: var(--foreground, #f8fafc);
   --cal-color-placeholder: var(--placeholder-foreground, #777777);
   --cal-color-divider: var(--divider, #282b32);
   --cal-color-grid-line-strong: var(--border-strong, #303a4d);
@@ -226,6 +231,7 @@
       color-mix(in oklab, var(--foreground, #f8fafc) 10%, transparent)
     );
     --cal-color-subtle: var(--subtle-foreground, #7a8396);
+    --cal-color-brand: var(--foreground, #f8fafc);
     --cal-color-placeholder: var(--placeholder-foreground, #777777);
     --cal-color-divider: var(--divider, #282b32);
     --cal-color-grid-line-strong: var(--border-strong, #303a4d);
