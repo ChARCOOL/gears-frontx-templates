@@ -237,7 +237,7 @@
 
 /* The ghost is the dragged card as a drop would place it: above the cards around it, never
    taking the pointer, and casting the drag shadow. */
-.dragGhost {
+.event.dragGhost {
   z-index: 3;
   border-radius: var(--cal-radius-slot);
   box-shadow: var(--cal-shadow-drag);
