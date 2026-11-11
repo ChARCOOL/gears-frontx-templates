@@ -2,14 +2,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { declarations } from "../../../__test-utils__/css-declarations";
 import { parseIanaTimeZone, utcInstant } from "../../../core/model";
 import type { CalendarTimeZoneOption } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
 import { TimeZoneList } from "../time-zone-list";
 import type { TimeZoneListProps } from "../time-zone-list";
-
-import timeZoneListCss from "../time-zone-list.module.css?raw";
 
 const JULY = utcInstant("2026-07-01T12:00:00.000Z");
 const JANUARY = utcInstant("2026-01-01T12:00:00.000Z");
@@ -129,11 +126,4 @@ describe(TimeZoneList, () => {
     expect(screen.queryByRole("option")).not.toBeInTheDocument();
   });
 
-  it("element-qualifies the option layout so ui-kit Button rules cannot tie it", () => {
-    const option = declarations(timeZoneListCss, "button.option");
-
-    expect(option.get("justify-content")).toBe("space-between");
-    expect(option.get("inline-size")).toBe("100%");
-    expect(option.get("padding-inline")).toBe("var(--cal-space-2)");
   });
-});

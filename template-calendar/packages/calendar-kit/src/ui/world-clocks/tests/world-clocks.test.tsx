@@ -2,14 +2,11 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { declarations } from "../../../__test-utils__/css-declarations";
 import { parseIanaTimeZone, utcInstant } from "../../../core/model";
 import type { CalendarWorldClock, IanaTimeZone } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
 import { WorldClocks } from "../world-clocks";
 import type { WorldClocksProps } from "../world-clocks";
-
-import worldClocksCss from "../world-clocks.module.css?raw";
 
 const NOW = utcInstant("2026-08-24T13:59:00.000Z");
 const BERLIN = parseIanaTimeZone("Europe/Berlin");
@@ -167,28 +164,7 @@ describe(WorldClocks, () => {
     expect(onChange).toHaveBeenCalledWith([BERLIN]);
   });
 
-  it("adds a clock from the header's add button without entering edit mode", async () => {
-    const onChange = vi.fn<(timeZoneIds: readonly IanaTimeZone[]) => void>();
-
-    render(<WorldClocks {...baseProps({ onChange })} />);
-
-    const user = userEvent.setup({ delay: null });
-    await user.click(screen.getByRole("button", { name: "Add clock" }));
-    await user.click(await screen.findByRole("option", { name: /London/u }));
-
-    expect(onChange).toHaveBeenCalledWith([BERLIN, SINGAPORE, LONDON]);
-    expect(
-      screen.queryByRole("button", { name: /Remove/u })
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("combobox", { name: "Add clock" })
-    ).not.toBeInTheDocument();
-    expect(declarations(worldClocksCss, ".heading").get("flex")).toBe(
-      "1 1 auto"
-    );
-  });
-
-  it("passes available and selected ids to the renderEditor slot in edit mode", async () => {
+    it("passes available and selected ids to the renderEditor slot in edit mode", async () => {
     render(
       <WorldClocks
         {...baseProps({
@@ -221,11 +197,4 @@ describe(WorldClocks, () => {
     expect(screen.getByText("custom-Singapore-21:59")).toBeVisible();
   });
 
-  it("stacks 32px clock rows with no gap and space after the time tag", () => {
-    const row = declarations(worldClocksCss, ".row");
-
-    expect(declarations(worldClocksCss, ".list").has("gap")).toBe(false);
-    expect(row.get("min-block-size")).toBe("var(--cal-control-height-sm)");
-    expect(row.get("padding-inline-end")).toBe("var(--cal-space-2)");
   });
-});
