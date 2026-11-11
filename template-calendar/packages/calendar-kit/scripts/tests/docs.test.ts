@@ -50,6 +50,22 @@ describe("docs", () => {
     assert(targets.filter((target) => !shipped.has(target))).toStrictEqual([]);
   });
 
+  it("index every recipe in llms.txt and embed a sample from demo/examples/recipes", () => {
+    const llms = fs.readFileSync(path.join(ROOT, "llms.txt"), "utf-8");
+    const recipes = fs.globSync("src/docs/recipes/*.md", { cwd: ROOT });
+    const unindexed = recipes.filter(
+      (file) => !llms.includes(`dist/docs/${path.basename(file)})`)
+    );
+    const unembedded = recipes.filter(
+      (file) =>
+        !/<!-- generated:example demo\/examples\/recipes\/[\w.-]+ -->/u.test(
+          fs.readFileSync(path.join(ROOT, file), "utf-8")
+        )
+    );
+
+    assert([...unindexed, ...unembedded]).toStrictEqual([]);
+  });
+
   it("list every seam theme.css reads in the theming reference", () => {
     const theme = fs.readFileSync(
       path.join(ROOT, "src/styles/theme.css"),
