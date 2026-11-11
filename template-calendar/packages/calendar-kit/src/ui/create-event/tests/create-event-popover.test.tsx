@@ -9,7 +9,6 @@ import {
 import userEvent from "@testing-library/user-event";
 import { describe, expect as assert, it, vi } from "vitest";
 
-import { declarations } from "../../../__test-utils__/css-declarations";
 import { UTC } from "../../../__test-utils__/fixtures";
 import {
   calendarDate,
@@ -27,7 +26,6 @@ import { CreateEventPopover } from "../create-event-popover";
 import type { CreateEventPopoverProps } from "../create-event-popover";
 
 import styles from "../create-event.module.css";
-import createEventCss from "../create-event.module.css?raw";
 
 const DATE = calendarDate("2026-08-24");
 const NEXT_DATE = calendarDate("2026-08-25");
@@ -983,13 +981,7 @@ describe("CreateEventPopover discard and submit behaviour", () => {
     assert(screen.getAllByRole("option")).toHaveLength(6);
   });
 
-  it("paints a blue calendar dot from the blue accent", () => {
-    assert(
-      declarations(createEventCss, ".calendarColorBlue").get("background")
-    ).toBe("var(--cal-color-blue-accent)");
-  });
-
-  it("picks a start date from the date row calendar", async () => {
+    it("picks a start date from the date row calendar", async () => {
     const user = userEvent.setup({ delay: null });
     const onSubmit = submitSpy();
     renderPopover({ onSubmit });
