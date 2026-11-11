@@ -20,7 +20,8 @@
   display: flex;
   min-inline-size: 0;
   flex-direction: column;
-  gap: var(--cal-space-1);
+  /* Figma pitch is 26px: 24px rows with a 2px gap. */
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -70,31 +71,31 @@
 }
 
 .colorBlue {
-  --calendar-color: var(--cal-color-blue-accent);
+  --calendar-color: var(--cal-color-calendar-blue);
 }
 
 .colorLavender {
-  --calendar-color: var(--cal-color-lavender-accent);
+  --calendar-color: var(--cal-color-calendar-lavender);
 }
 
 .colorViolet {
-  --calendar-color: var(--cal-color-violet-accent);
+  --calendar-color: var(--cal-color-calendar-violet);
 }
 
 .colorPurple {
-  --calendar-color: var(--cal-color-purple-accent);
+  --calendar-color: var(--cal-color-calendar-purple);
 }
 
 .colorOrange {
-  --calendar-color: var(--cal-color-orange-accent);
+  --calendar-color: var(--cal-color-calendar-orange);
 }
 
 .colorBrown {
-  --calendar-color: var(--cal-color-brown-accent);
+  --calendar-color: var(--cal-color-calendar-brown);
 }
 
 .colorTurquoise {
-  --calendar-color: var(--cal-color-turquoise-accent);
+  --calendar-color: var(--cal-color-calendar-turquoise);
 }
 
 /* ui-kit stretches the tick to the whole swatch. */
@@ -151,9 +152,17 @@
   opacity: 1;
 }
 
+/* Figma inline button: 20px square, radius 4, grey fill. Beats the xs size's own rules. */
+.row .moreButton {
+  block-size: 20px;
+  inline-size: 20px;
+  border-radius: var(--cal-radius-sm);
+  background-color: var(--cal-color-selection);
+}
+
 .menu {
-  border-radius: var(--cal-radius-lg);
-  inline-size: 228px;
+  border-radius: var(--cal-radius-popover);
+  inline-size: 226px;
 }
 
 .menuList {
@@ -208,7 +217,7 @@
 }
 
 .menuPicker {
-  inline-size: 278px;
+  inline-size: 276px;
 }
 
 .colorTag {

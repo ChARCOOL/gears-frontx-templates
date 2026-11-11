@@ -87,6 +87,7 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 | `--popover` | Popover and panel surface | `#ffffff` | `#ffffff` / `#171717` |
 | `--popover-border` | Popover and panel border · **dark** | `color-mix(in oklab, var(--foreground, #0f172a) 10%, transparent)` | `#00000021` / `#4b4b4b` |
 | `--popover-shadow` | Overlay, panel, and drag elevation | `0 4px 6px -1px …, 0 2px 4px -2px …` | `4px 4px 20px rgb(25 33 58 / 0.08)` / `0 0 20px rgb(0 0 0 / 0.32)` |
+| `--popover-radius` | Calendar options menu and colour picker corner radius | `1rem` | `16px` |
 | `--overlay` | Modal scrim | `oklch(0 0 0 / 50%)` | `#0a0a0a52` / `#00000099` |
 
 ### Inputs and inert state
@@ -119,6 +120,13 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 | `--blue` | Blue category foreground, border | `#37569c` | `#37569c` |
 | `--blue-soft` | Blue category background · **dark** | `#e8eefe` | `#e8eefe` |
 | `--blue-accent` | Blue category accent | `#7498f8` | `#7498f8` |
+| `--calendar-blue` | Calendar list and colour picker swatch, blue | `#3d73d8` | `#3d73d8` |
+| `--calendar-lavender` | Calendar list and colour picker swatch, lavender | `#a377f8` | `#a377f8` |
+| `--calendar-violet` | Calendar list and colour picker swatch, violet | `#6e3dd8` | `#6e3dd8` |
+| `--calendar-purple` | Calendar list and colour picker swatch, purple | `#b327ff` | `#b327ff` |
+| `--calendar-orange` | Calendar list and colour picker swatch, orange | `#d63d00` | `#d63d00` |
+| `--calendar-brown` | Calendar list and colour picker swatch, brown | `#9c6a4f` | `#9c6a4f` |
+| `--calendar-turquoise` | Calendar list and colour picker swatch, turquoise | `#0fadbf` | `#0fadbf` |
 | `--lavender` | Lavender category foreground, border | `#6b4fbb` | `#6b4fbb` |
 | `--lavender-soft` | Lavender category background · **dark** | `#f3efff` | `#f3efff` |
 | `--lavender-accent` | Lavender category accent | `#9d85e0` | `#9d85e0` |

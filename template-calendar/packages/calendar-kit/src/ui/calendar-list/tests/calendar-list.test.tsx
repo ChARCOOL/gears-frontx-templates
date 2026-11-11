@@ -126,7 +126,7 @@ describe(CalendarList, () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
-  it("fills a checked blue calendar with the blue accent", () => {
+  it("fills a checked blue calendar with the blue calendar swatch", () => {
     render(
       <CalendarList
         {...baseProps({
@@ -144,7 +144,7 @@ describe(CalendarList, () => {
     );
     expect(
       declarations(calendarListCss, ".colorBlue").get("--calendar-color")
-    ).toBe("var(--cal-color-blue-accent)");
+    ).toBe("var(--cal-color-calendar-blue)");
     expect(
       declarations(calendarListCss, ".colorBlue:is([data-checked], [data-indeterminate])").get(
         "background-color"
@@ -181,7 +181,7 @@ describe(CalendarList, () => {
     );
     expect(
       declarations(calendarListCss, ".colorBrown").get("--calendar-color")
-    ).toBe("var(--cal-color-brown-accent)");
+    ).toBe("var(--cal-color-calendar-brown)");
   });
 
   it("mutes the name and the unticked box of a hidden calendar", () => {

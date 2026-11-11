@@ -65,6 +65,15 @@
   --cal-color-brown-border: var(--brown, #6b4a2e);
   --cal-color-brown-accent: var(--brown-accent, #a0744a);
 
+  /* Calendar swatches, separate from the event accents: the calendar list and colour picker use the Decoration strong/medium family. */
+  --cal-color-calendar-blue: var(--calendar-blue, #3d73d8);
+  --cal-color-calendar-lavender: var(--calendar-lavender, #a377f8);
+  --cal-color-calendar-violet: var(--calendar-violet, #6e3dd8);
+  --cal-color-calendar-purple: var(--calendar-purple, #b327ff);
+  --cal-color-calendar-orange: var(--calendar-orange, #d63d00);
+  --cal-color-calendar-brown: var(--calendar-brown, #9c6a4f);
+  --cal-color-calendar-turquoise: var(--calendar-turquoise, #0fadbf);
+
   --cal-font-family: var(--font-sans, "Inter", sans-serif);
   --cal-text-heading-size: var(--text-heading-1-size, 1.125rem);
   --cal-text-heading-line-height: var(--text-heading-1-line-height, 1.5rem);
@@ -118,6 +127,7 @@
   --cal-radius-md: var(--radius-md, 0.5rem);
   --cal-radius-lg: var(--radius-lg, 0.75rem);
   --cal-radius-slot: var(--radius-xs, 4px);
+  --cal-radius-popover: var(--popover-radius, 1rem);
   --cal-shadow-overlay: var(
     --popover-shadow,
     0 4px 6px -1px var(--cal-color-overlay-border),
