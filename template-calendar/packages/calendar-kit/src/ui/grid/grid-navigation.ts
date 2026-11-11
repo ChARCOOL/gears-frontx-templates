@@ -28,6 +28,8 @@ export const baseCellContext = (
 ): CalendarCellContext => ({
   cell,
   isFocused,
+  isRangeEnd: false,
+  isRangeStart: false,
   isReadOnly: false,
   isSelected: false,
   isUnavailable: false,

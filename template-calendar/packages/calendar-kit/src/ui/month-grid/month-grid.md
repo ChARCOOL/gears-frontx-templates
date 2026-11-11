@@ -38,6 +38,7 @@ By default the week column labels each row `W1`…`Wn`, the week's index inside 
 | `columnHeaderClassName` | `string` |  | Class added to every weekday header. |
 | `defaultSelectedDateRange` | `CalendarDateRange` |  | Initial date range when uncontrolled. |
 | `defaultSelectedEventId` | `string` |  | Initial selected event when uncontrolled. |
+| `getCellState` | `(cell: CalendarCell) => CalendarCellState \| undefined` |  | Host state per day. `unavailable` draws the day as blocked; the day stays focusable. |
 | `monthData` | `MonthGridData` |  | Density cap and host-known hidden counts. |
 | `now` | `UtcInstant` |  | Reference instant for the today marker and past styling. Omit to follow the wall clock. |
 | `onEmptyCellSelect` | `(cell: CalendarCell, anchorRect: DOMRectReadOnly) => void` |  | An empty part of a day was activated (in `selectionMode="none"`). `anchorRect` is the day cell's rectangle, for a popover. |
@@ -66,7 +67,13 @@ Set `selectionMode="date-range"` to let the user pick whole days, as a term or e
 - Pointer: drag from the first day to the last, or click the first day and then the last. The second click may be in another month after navigating.
 - Keyboard: Enter or Space on a day sets the start, the arrow keys move the end, and Enter or Space commits. Escape abandons a range in progress.
 - The grid is `aria-multiselectable`, every day carries `aria-selected`, and the live region announces the committed range. `renderCell` receives `isSelected` for the days in range.
-- In this mode an empty day starts a range instead of calling `onEmptyCellSelect`; events and the overflow chip keep their own activation. Days the host marks as off stay host-drawn through `renderCell`.
+- In this mode an empty day starts a range instead of calling `onEmptyCellSelect`; events and the overflow chip keep their own activation. `renderCell` also receives `isRangeStart` and `isRangeEnd` for the first and last day of the range.
+
+## Blocked days and cell state
+
+`getCellState(cell)` returns `{ state?, unavailable? }` per day, or `undefined`. `unavailable: true` draws the day blocked and sets `isUnavailable` in `renderCell`; the day stays focusable. `state` is passed to `renderCell` as `state` and to the cell as `data-state`, so the host colours states in its own CSS. Blocked days stay in the selected range; the host removes them from the term when it saves.
+
+Memoize `getCellState` or key its result by cell, because it runs for every visible day on each render.
 
 ## Drag to move
 

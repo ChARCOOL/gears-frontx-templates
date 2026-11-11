@@ -472,7 +472,7 @@ const windowEndMinutes = (window: CalendarTimeWindow): number => {
 };
 
 const SLOT_MINUTES: ReadonlySet<number> = new Set<CalendarSlotMinutes>([
-  15, 20, 30, 60,
+  5, 10, 15, 20, 30, 60,
 ]);
 
 // The type is the only other guard, and a zero or negative slot never ends the slot loops.

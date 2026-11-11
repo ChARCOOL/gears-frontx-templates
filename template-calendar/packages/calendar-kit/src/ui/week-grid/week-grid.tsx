@@ -23,6 +23,7 @@ import { EVENT_CHIP_HEIGHT } from "../../core/grid";
 import type {
   CalendarCell,
   CalendarCellContext,
+  CalendarCellState,
   CalendarColorFamily,
   CalendarDate,
   CalendarEvent,
@@ -73,6 +74,7 @@ import { Button } from "../primitives/button/button";
 import { ScrollRegion } from "../primitives/scroll-region/scroll-region";
 import { EMPTY_LIST, useWeekGridContent } from "./use-week-grid-content";
 import type {
+  WeekGridCellFlags,
   WeekGridContentProps,
   WeekGridDragPreview,
   WeekGridHeaderColumn,
@@ -148,8 +150,12 @@ export interface WeekGridProps<Payload = unknown> extends CalendarContextProps {
   ) => ReactNode;
   /** The `+N` chip was activated. `anchor` is the chip, for a popover. */
   readonly onOverflowSelect?: (cell: CalendarCell, anchor: HTMLElement) => void;
-  /** Drawn in cells covered by an unavailable or busy timed event. */
+  /** Drawn in cells covered by an unavailable or busy timed event, or in cells `getCellState` marks unavailable. */
   readonly renderUnavailable?: (cell: CalendarCell) => ReactNode;
+  /** Host state per cell. `unavailable` blocks the cell; it stays focusable. */
+  readonly getCellState?: (cell: CalendarCell) => CalendarCellState | undefined;
+  /** Replaces the weekday and day number of each day header. The time column keeps its label. */
+  readonly renderHeader?: (column: WeekGridHeaderColumn) => ReactNode;
   /** An available event was activated; `anchor` is the card, for a detail popover. */
   readonly onEventSelect?: (
     event: CalendarEvent<Payload>,
@@ -306,6 +312,7 @@ const WeekGridDetail = <Payload,>({
 
 interface WeekGridHeaderProps {
   readonly columns: readonly WeekGridHeaderColumn[];
+  readonly renderHeader?: (column: WeekGridHeaderColumn) => ReactNode;
   readonly trailing: ReactNode;
   readonly columnHeaderClassName?: string;
   readonly gutterClassName?: string;
@@ -315,11 +322,16 @@ const WeekGridHeader = ({
   columns,
   columnHeaderClassName,
   gutterClassName,
+  renderHeader,
   trailing,
 }: WeekGridHeaderProps) => {
   const { timeZone } = useCalendarContext();
-  const headerCells = columns.map(
-    ({ column, dayNumber, isToday, weekday }, columnIndex) => (
+  const headerCells = columns.map((headerColumn, columnIndex) => {
+    const { column, dayNumber, isToday, weekday } = headerColumn;
+    const isDayColumn = column.key !== "time";
+    const hasBuiltInDay = weekday !== undefined && dayNumber !== undefined;
+
+    return (
       <div
         className={clsx(
           gridStyles.headerCell,
@@ -334,24 +346,24 @@ const WeekGridHeader = ({
             {column.label}
           </span>
         )}
-        {column.key !== "time" &&
-          weekday !== undefined &&
-          dayNumber !== undefined && (
-            <>
-              <span className={clsx(styles.weekday, isToday && styles.today)}>
-                {weekday}
-              </span>
-              <span className={clsx(styles.dayNumber, isToday && styles.today)}>
-                {dayNumber}
-              </span>
-            </>
-          )}
-        {column.key !== "time" &&
-          (weekday === undefined || dayNumber === undefined) &&
+        {isDayColumn && renderHeader?.(headerColumn)}
+        {isDayColumn && renderHeader === undefined && hasBuiltInDay && (
+          <>
+            <span className={clsx(styles.weekday, isToday && styles.today)}>
+              {weekday}
+            </span>
+            <span className={clsx(styles.dayNumber, isToday && styles.today)}>
+              {dayNumber}
+            </span>
+          </>
+        )}
+        {isDayColumn &&
+          renderHeader === undefined &&
+          !hasBuiltInDay &&
           column.label}
       </div>
-    )
-  );
+    );
+  });
 
   return (
     <div className={gridStyles.row} role="row" aria-rowindex={1}>
@@ -366,6 +378,8 @@ interface WeekCalendarGridProps extends CalendarGridProps {
   readonly onFrameRef?: Ref<HTMLDivElement>;
   readonly renderTimedRows: (rows: readonly ReactNode[]) => ReactNode;
   readonly renderTrailingCell?: (row: CalendarGridRow) => ReactNode;
+  readonly getCellFlags: (cell: CalendarCell) => WeekGridCellFlags;
+  readonly renderDayHeader?: (column: WeekGridHeaderColumn) => ReactNode;
   readonly columnHeaderClassName?: string;
   readonly gutterClassName?: string;
 }
@@ -378,6 +392,7 @@ const WeekCalendarGrid = (props: WeekCalendarGridProps) => {
     headerColumns,
     rows,
     getCellKey,
+    getCellFlags,
     getCellLabel,
     activeCellKey,
     defaultActiveCellKey,
@@ -385,6 +400,7 @@ const WeekCalendarGrid = (props: WeekCalendarGridProps) => {
     isCellNavigable,
     onCellKeyDown,
     renderCell,
+    renderDayHeader,
     renderTimedRows,
     renderTrailingCell,
     onFrameRef,
@@ -473,7 +489,11 @@ const WeekCalendarGrid = (props: WeekCalendarGridProps) => {
         const label =
           labelsByCell.get(cell) ?? getCellLabel(cell, provisionalContext);
 
-        const context: CalendarCellContext = { ...provisionalContext, label };
+        const context: CalendarCellContext = {
+          ...provisionalContext,
+          ...getCellFlags(cell),
+          label,
+        };
 
         const handleFocus = (): void => {
           if (activeCellKey === undefined) {
@@ -500,6 +520,7 @@ const WeekCalendarGrid = (props: WeekCalendarGridProps) => {
             }}
             role="gridcell"
             data-cell-key={key}
+            data-state={context.state}
             aria-colindex={record.columnIndex + 1}
             aria-rowindex={rowIndex + 2}
             aria-label={label}
@@ -530,6 +551,7 @@ const WeekCalendarGrid = (props: WeekCalendarGridProps) => {
           columns={headerColumns}
           columnHeaderClassName={columnHeaderClassName}
           gutterClassName={gutterClassName}
+          renderHeader={renderDayHeader}
           trailing={
             renderTrailingCell === undefined ? null : (
               <div
@@ -868,7 +890,8 @@ const WeekGridCellContent = <Payload,>(
     );
   }
 
-  const unavailable = unavailableCellKeys.has(gridCellKey);
+  const unavailable =
+    context.isUnavailable || unavailableCellKeys.has(gridCellKey);
   const painted = selectedPaintKeys.has(gridCellKey);
   const dropTarget =
     dragPreview?.targetKey === gridCellKey ? dragPreview : null;
@@ -1030,6 +1053,7 @@ const WeekGridContent = <Payload = unknown,>(
     handlePointerLeave,
     handlePointerUp,
     headerColumns,
+    getCellFlags,
     isCellNavigable,
     liveRegionText,
     nowLineStyle,
@@ -1062,6 +1086,7 @@ const WeekGridContent = <Payload = unknown,>(
     paintColorFamily,
     renderDetail,
     renderEventMetadata,
+    renderHeader,
     renderOverflow,
     rowHeight,
   } = props;
@@ -1160,11 +1185,13 @@ const WeekGridContent = <Payload = unknown,>(
         onFrameRef={frameRef}
         defaultActiveCellKey={firstTimedCellKey}
         getCellKey={gridCellKey}
+        getCellFlags={getCellFlags}
         getCellLabel={getCellLabel}
         onActiveCellChange={handleGridActiveCellChange}
         isCellNavigable={isCellNavigable}
         onCellKeyDown={handleCellKeyDown}
         renderCell={renderWeekCell}
+        renderDayHeader={renderHeader}
         renderTimedRows={renderTimedRows}
         renderTrailingCell={trailingGutter ? renderTrailingCell : undefined}
         columnHeaderClassName={columnHeaderClassName}

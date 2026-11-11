@@ -21,6 +21,7 @@ import { dateTimeFormatter } from "../../core/intl-cache";
 import type {
   CalendarCell,
   CalendarCellContext,
+  CalendarCellState,
   CalendarDate,
   CalendarDateRange,
   CalendarEvent,
@@ -133,6 +134,8 @@ export interface MonthGridProps extends CalendarContextProps {
   readonly renderOverflow?: (count: number, date: CalendarDate) => ReactNode;
   /** Replaces the content of each day cell. */
   readonly renderCell?: (context: CalendarCellContext) => ReactNode;
+  /** Host state per day. `unavailable` draws the day as blocked; the day stays focusable. */
+  readonly getCellState?: (cell: CalendarCell) => CalendarCellState | undefined;
   /** An available event was activated. `anchor` is the strip element. */
   readonly onEventSelect?: (
     event: CalendarEvent,
@@ -946,6 +949,7 @@ interface MonthDayCellProps {
   readonly onOpenOverflowList: MonthOverflowListOpen;
   readonly onOverflowSelect: MonthGridProps["onOverflowSelect"];
   readonly rangeMode: boolean;
+  readonly getCellState: MonthGridProps["getCellState"];
   readonly renderCell: MonthGridProps["renderCell"];
   readonly renderEvent: MonthGridProps["renderEvent"];
   readonly renderOverflow: MonthGridProps["renderOverflow"];
@@ -1011,6 +1015,7 @@ const MonthDayCell = ({
   controller,
   currentInstant,
   dayLabelFormatter,
+  getCellState,
   handleCellClick,
   handleCellFocus,
   handleCellKeyDown,
@@ -1037,15 +1042,19 @@ const MonthDayCell = ({
 
   const cellKey = controller.getCellKey(cell.cell);
   const inRange = rangeMode && isDateInRange(cell.date, selectedRange);
+  const cellState = getCellState?.(cell.cell);
 
   const cellContext: CalendarCellContext = {
     cell: cell.cell,
     isFocused,
+    isRangeEnd: inRange && selectedRange?.end === cell.date,
+    isRangeStart: inRange && selectedRange?.start === cell.date,
     isReadOnly: false,
     isSelected: inRange,
-    isUnavailable: false,
+    isUnavailable: cellState?.unavailable === true,
     key: cellKey,
     label: cellAnnouncement(cell, locale, timeZone, t),
+    state: cellState?.state,
   };
 
   const isToday = cell.date === today;
@@ -1076,10 +1085,12 @@ const MonthDayCell = ({
       className={clsx(
         styles.dayCell,
         cell.isOutsideMonth && styles.outsideMonth,
+        cellContext.isUnavailable && styles.unavailableDay,
         rangeClassName(cell.date, inRange ? selectedRange : null),
         cellClassName
       )}
       data-cell-key={cellKey}
+      data-state={cellContext.state}
       role="gridcell"
       aria-colindex={columnIndex + 2}
       aria-rowindex={rowIndex + 2}
@@ -1201,6 +1212,7 @@ const MonthGridContent = (props: MonthGridContentProps) => {
 
   const {
     className,
+    getCellState,
     onOverflowSelect,
     renderCell,
     renderEvent,
@@ -1359,6 +1371,7 @@ const MonthGridContent = (props: MonthGridContentProps) => {
                   controller={controller}
                   currentInstant={currentInstant}
                   dayLabelFormatter={dayLabelFormatter}
+                  getCellState={getCellState}
                   handleCellClick={handleCellClick}
                   handleCellFocus={handleCellFocus}
                   handleCellKeyDown={handleCellKeyDown}

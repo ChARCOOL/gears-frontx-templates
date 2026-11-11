@@ -102,7 +102,7 @@ The exclusive end is the most common source of off-by-one bugs; see [Troubleshoo
 | --- | --- | --- |
 | Slot | `CalendarCell` | One row of a time grid in one day column: its date, local times and UTC instants |
 | Visible hours | `CalendarTimeWindow` | The part of the day a time grid shows, for example 06:00–23:00 |
-| Slot length | `CalendarSlotMinutes` | 15, 20, 30 or 60 minutes |
+| Slot length | `CalendarSlotMinutes` | 5, 10, 15, 20, 30 or 60 minutes |
 | Working hours | `CalendarTimeWindow` | The working part of the day; cells outside it are hatched. Also the initial scroll position |
 | Segment | `CalendarEventSegment` | The part of an event on one viewer day; multi-day events produce one per day |
 | Geometry | `CalendarEventGeometry` | Pixel position and size of a timed segment in its day column |

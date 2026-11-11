@@ -180,6 +180,14 @@ export interface CalendarAvailabilityCell extends CalendarCell {
   readonly state?: string;
 }
 
+/** Host-owned state of one cell, returned by `getCellState`. */
+export interface CalendarCellState {
+  /** Host-defined id. The kit passes it to `renderCell` and to `data-state`, and nothing else. */
+  readonly state?: string;
+  /** Draws the cell as unavailable. The cell stays focusable. */
+  readonly unavailable?: boolean;
+}
+
 export interface CalendarCellContext {
   /** The cell being rendered. */
   readonly cell: CalendarCell;
@@ -195,6 +203,12 @@ export interface CalendarCellContext {
   readonly isUnavailable: boolean;
   /** The grid is in read-only mode. */
   readonly isReadOnly: boolean;
+  /** Host state from `getCellState`. */
+  readonly state?: string;
+  /** First cell of a selected run. On MonthGrid, the range start day. */
+  readonly isRangeStart: boolean;
+  /** Last cell of a selected run. On MonthGrid, the range end day. */
+  readonly isRangeEnd: boolean;
 }
 
 export interface CalendarGridColumn {
@@ -439,7 +453,7 @@ export interface CalendarTimeWindow {
   readonly end: LocalTime;
 }
 
-export type CalendarSlotMinutes = 15 | 20 | 30 | 60;
+export type CalendarSlotMinutes = 5 | 10 | 15 | 20 | 30 | 60;
 
 /** Both ends inclusive. */
 export interface CalendarDateRange {

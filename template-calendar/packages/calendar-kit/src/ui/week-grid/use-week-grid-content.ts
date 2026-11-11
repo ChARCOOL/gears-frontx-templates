@@ -29,7 +29,10 @@ import { useCalendarContext } from "../../i18n/calendar-context";
 import { useCalendarLocalization } from "../../i18n/calendar-localization";
 import type { CalendarContextProps } from "../../i18n/calendar-localization";
 import { useWeekGridController } from "../../react/controllers/use-week-grid-controller";
-import type { FocusedCell } from "../../react/controllers/use-week-grid-controller";
+import type {
+  FocusedCell,
+  WeekGridDayColumn,
+} from "../../react/controllers/use-week-grid-controller";
 import { useCurrentInstant } from "../../react/hooks/use-current-instant";
 import { useEventResize } from "../../react/hooks/use-event-resize";
 import type { ResizeTarget } from "../../react/hooks/use-event-resize";
@@ -59,10 +62,52 @@ export interface WeekGridNowLineStyle extends CSSProperties {
 
 export interface WeekGridHeaderColumn {
   readonly column: CalendarGridColumn;
+  /** The day this column shows. Undefined for the time column. */
+  readonly date: CalendarDate | undefined;
   readonly dayNumber: string | undefined;
   readonly isToday: boolean;
   readonly weekday: string | undefined;
 }
+
+/** Cell values the grid adds to `CalendarCellContext` from `getCellState` and the paint range. */
+export type WeekGridCellFlags = Pick<
+  CalendarCellContext,
+  "isRangeEnd" | "isRangeStart" | "isUnavailable" | "state"
+>;
+
+interface RangeEdge {
+  readonly start: boolean;
+  readonly end: boolean;
+}
+
+/** Marks the first and last painted cell of each run within one day column. */
+const buildRangeEdges = (
+  columns: readonly WeekGridDayColumn[],
+  painted: ReadonlySet<string>,
+  getKey: (cell: CalendarCell) => string
+): ReadonlyMap<string, RangeEdge> => {
+  const edges = new Map<string, RangeEdge>();
+
+  for (const { slots } of columns) {
+    slots.forEach((cell, index) => {
+      const key = getKey(cell);
+
+      if (!painted.has(key)) {
+        return;
+      }
+
+      const before = arrayAt(slots, index - 1);
+      const after = arrayAt(slots, index + 1);
+
+      edges.set(key, {
+        end: after === undefined || !painted.has(getKey(after)),
+        start: before === undefined || !painted.has(getKey(before)),
+      });
+    });
+  }
+
+  return edges;
+};
 
 export interface WeekGridDragPreview {
   readonly eventId: string;
@@ -127,6 +172,7 @@ export const useWeekGridContent = <Payload = unknown>(
     renderConflict,
     renderCell,
     renderUnavailable,
+    getCellState,
     onEventSelect,
     onQuickCreate,
     onPaintSelect,
@@ -261,6 +307,7 @@ export const useWeekGridContent = <Payload = unknown>(
         if (column.key === "time") {
           return {
             column,
+            date: undefined,
             dayNumber: undefined,
             isToday: false,
             weekday: undefined,
@@ -276,6 +323,7 @@ export const useWeekGridContent = <Payload = unknown>(
 
         return {
           column,
+          date: viewerDate,
           dayNumber:
             dayStart === undefined
               ? undefined
@@ -403,6 +451,30 @@ export const useWeekGridContent = <Payload = unknown>(
 
   const paintTouchesUnavailable = paintCells.some((cell) =>
     unavailableCellKeys.has(gridCellKey(cell))
+  );
+
+  const rangeEdgeByKey = useMemo(
+    () =>
+      buildRangeEdges(controller.dayColumns, selectedPaintKeys, gridCellKey),
+    [controller.dayColumns, gridCellKey, selectedPaintKeys]
+  );
+
+  const getCellFlags = useCallback(
+    (cell: CalendarCell): WeekGridCellFlags => {
+      const edge = rangeEdgeByKey.get(gridCellKey(cell));
+      const cellState =
+        gridData.metaByCell.get(cell)?.kind === "gutter"
+          ? undefined
+          : getCellState?.(cell);
+
+      return {
+        isRangeEnd: edge?.end === true,
+        isRangeStart: edge?.start === true,
+        isUnavailable: cellState?.unavailable === true,
+        state: cellState?.state,
+      };
+    },
+    [getCellState, gridCellKey, gridData.metaByCell, rangeEdgeByKey]
   );
 
   // A drag that has not left its origin drops nowhere, so it marks no span.
@@ -843,6 +915,7 @@ export const useWeekGridContent = <Payload = unknown>(
     dragPreview,
     firstTimedCellKey,
     frameRef,
+    getCellFlags,
     getCellLabel,
     gridCellKey,
     gridData,

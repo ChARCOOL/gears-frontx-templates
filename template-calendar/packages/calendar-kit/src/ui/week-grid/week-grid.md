@@ -35,6 +35,7 @@ import { WeekGrid } from "@gears-frontx/calendar-kit/week-grid";
 | `columnHeaderClassName` | `string` |  | Class added to every day header. |
 | `defaultInteractionMode` | `WeekGridInteractionMode` |  | Initial interaction mode when uncontrolled. |
 | `defaultSelectedEventId` | `string` |  | Initial selected event when uncontrolled. |
+| `getCellState` | `(cell: CalendarCell) => CalendarCellState \| undefined` |  | Host state per cell. `unavailable` blocks the cell; it stays focusable. |
 | `gutterClassName` | `string` |  | Class on every gutter label: hours, all-day, zone and the trailing copy. |
 | `interactionMode` | `WeekGridInteractionMode` |  | Controlled interaction mode. Default `quick-create`. |
 | `maxEventsPerSlot` | `number` |  | Most cards that start in one row of a day. Later ones hide behind a `+N` chip. Default: no cap. |
@@ -53,8 +54,9 @@ import { WeekGrid } from "@gears-frontx/calendar-kit/week-grid";
 | `renderDetail` | `CalendarDetailRenderer<Payload>` |  | Renders an inline detail for the selected event. Receives `close`. |
 | `renderEvent` | `CalendarEventRenderer<Payload>` |  | Replaces the default `EventCard` for timed and all-day events. Renders inside a button, so the content must not be interactive. |
 | `renderEventMetadata` | `CalendarEventRenderer<Payload>` |  | Replaces the metadata rows (location, organizer, type) of the default `EventCard`. |
+| `renderHeader` | `(column: WeekGridHeaderColumn) => ReactNode` |  | Replaces the weekday and day number of each day header. The time column keeps its label. |
 | `renderOverflow` | `(hiddenCount: number, cell: CalendarCell) => ReactNode` |  | Replaces the text of the `+N` chip. Receives the hidden count. |
-| `renderUnavailable` | `(cell: CalendarCell) => ReactNode` |  | Drawn in cells covered by an unavailable or busy timed event. |
+| `renderUnavailable` | `(cell: CalendarCell) => ReactNode` |  | Drawn in cells covered by an unavailable or busy timed event, or in cells `getCellState` marks unavailable. |
 | `rowHeight` | `number` |  | Height of one row in pixels. Default `43`. |
 | `selectedEventId` | `string` |  | Controlled selected event. |
 | `slotMinutes` | `CalendarSlotMinutes` |  | Length of one row. Default `60`. |
@@ -81,6 +83,12 @@ Events are clipped to the visible hours, and events wholly outside them are not 
 `trailingGutter` repeats the hour labels on the trailing edge, as timetable views do. The copy is hidden from assistive technology, so the grid is announced once, and it follows `direction`.
 
 `cellClassName`, `columnHeaderClassName`, and `gutterClassName` add host classes to the day cells, the day header, and every gutter label (hour rows, the all-day label, the header zone label, and the trailing copy). They are the stable styling hooks for these parts; the kit's own CSS Module class names are internal. Style by state (selected, unavailable) through `renderCell`, which receives it.
+
+## Cell state and day headers
+
+`getCellState(cell)` returns `{ state?, unavailable? }` per time cell, or `undefined`. `unavailable: true` draws the cell blocked, on top of the cells covered by unavailable or busy events, and sets `isUnavailable` in `renderCell`. The cell stays focusable. `state` reaches `renderCell` and the cell's `data-state` attribute. Cells in a paint range carry `isRangeStart` and `isRangeEnd` on the first and last cell of each run within one day column. Memoize `getCellState`, because it runs for every cell on each render.
+
+`renderHeader(column)` replaces the weekday and day number of each day header. `column.date` is the day the column shows, and it is `undefined` only for the time column, which keeps its label. Use it for a greyed weekend or a closed-day header; the cell keeps `role="columnheader"`, so keep the content inside it.
 
 ## Interaction modes
 

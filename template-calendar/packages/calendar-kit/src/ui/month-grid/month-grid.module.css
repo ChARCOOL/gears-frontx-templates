@@ -134,6 +134,13 @@
     var(--cal-slot-selected-ring);
 }
 
+/* After the range rules so a blocked day inside the range still reads as blocked. */
+.dayCell.unavailableDay {
+  color: var(--cal-slot-unavailable-foreground);
+  background: var(--cal-slot-unavailable);
+  cursor: not-allowed;
+}
+
 .dayCell[data-drop-target] {
   background: var(--cal-slot-selected);
   outline: var(--cal-border-width-1) dashed var(--cal-slot-selected-ring);

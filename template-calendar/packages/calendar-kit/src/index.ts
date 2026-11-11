@@ -302,6 +302,7 @@ export type {
   CalendarEvent,
   CalendarAvailabilityCell,
   CalendarCellContext,
+  CalendarCellState,
   CalendarGridColumn,
   CalendarGridRow,
   CalendarDetailRenderContext,
