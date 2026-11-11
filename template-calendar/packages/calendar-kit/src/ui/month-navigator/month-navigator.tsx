@@ -90,8 +90,9 @@ const MonthNavigatorContent = ({
     >
       <div className={styles.header}>
         <Button
+          className={styles.navButton}
           variant="ghost"
-          size="s"
+          size="l"
           onlyIcon
           leftIcon={<ChevronLeftIcon />}
           aria-label={t("calendar.monthNavigator.previousMonth")}
@@ -109,8 +110,9 @@ const MonthNavigatorContent = ({
         )}
 
         <Button
+          className={styles.navButton}
           variant="ghost"
-          size="s"
+          size="l"
           onlyIcon
           leftIcon={<ChevronRightIcon />}
           aria-label={t("calendar.monthNavigator.nextMonth")}

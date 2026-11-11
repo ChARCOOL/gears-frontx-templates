@@ -123,7 +123,7 @@ export const CalendarSidePanelToggle = ({
       dir={direction}
       leftIcon={sidePanelToggleIcon}
       onlyIcon
-      size="sm"
+      size="l"
       type="button"
       variant="ghost"
       onClick={onOpen}
@@ -290,7 +290,7 @@ const CalendarSidePanelContent = ({
               className={styles.toggle}
               leftIcon={sidePanelToggleIcon}
               onlyIcon
-              size="sm"
+              size="l"
               type="button"
               variant="ghost"
               onClick={closePanel}

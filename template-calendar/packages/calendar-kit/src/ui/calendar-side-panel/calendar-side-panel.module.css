@@ -8,10 +8,9 @@
   flex-direction: column;
   inline-size: var(--cal-side-panel-width);
   max-inline-size: 100%;
-  padding-block: var(--cal-space-4);
+  /* Figma sidebar: 18px top and bottom, 16px sides. */
+  padding-block: 18px;
   padding-inline: var(--cal-space-4);
-  /* Shares the toolbar's 64px band so the collapse control does not hop. */
-  padding-block-start: calc((64px - var(--cal-control-height-md)) / 2);
   border-inline-start: var(--cal-border-width-1) solid var(--cal-color-divider);
   background: var(--cal-color-surface);
   color: var(--cal-color-text);
