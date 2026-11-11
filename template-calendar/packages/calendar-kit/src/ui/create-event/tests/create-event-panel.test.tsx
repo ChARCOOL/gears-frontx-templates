@@ -377,7 +377,7 @@ describe("CreateEventPanel date and time row fidelity", () => {
     });
   });
 
-  it("keeps the end date until focus leaves the date row", async () => {
+  it("keeps a typed start that passes the end, and reports the end instead of moving it", async () => {
     const user = userEvent.setup({ delay: null });
     const onSubmit = submitSpy();
     renderPopover({
@@ -386,30 +386,37 @@ describe("CreateEventPanel date and time row fidelity", () => {
     });
 
     await user.click(screen.getByLabelText(/start date/iu));
-    await user.keyboard("0901");
+    await user.keyboard("0109");
 
-    assert(screen.getByLabelText(/start date/iu)).toHaveValue("09/01/2026");
+    assert(screen.getByLabelText(/start date/iu)).toHaveValue("01/09/2026");
     assert(screen.getByLabelText(/end date/iu)).toHaveValue("Sun, 30 Aug");
 
     await user.click(screen.getByLabelText(/end date/iu));
 
-    assert(screen.getByLabelText(/end date/iu)).toHaveValue("08/30/2026");
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("30/08/2026");
 
     await user.click(screen.getByLabelText(/title/iu));
 
-    assert(screen.getByLabelText(/end date/iu)).toHaveValue("");
-    act(() => {
-      fireEvent.click(getSubmitButton());
-    });
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("Sun, 30 Aug");
 
-    assert(onSubmit).toHaveBeenCalledWith({
-      ...BASE_DRAFT,
-      endDate: calendarDate("2026-09-01"),
-      startDate: calendarDate("2026-09-01"),
-    });
+    const form = getCreateDialog().querySelector<HTMLFormElement>("form");
+    if (form === null) {
+      throw new Error("Missing create event form");
+    }
+
+    fireEvent.submit(form);
+
+    assert(onSubmit).not.toHaveBeenCalled();
+    assert(screen.getByLabelText(/end date/iu)).toHaveAttribute(
+      "aria-invalid",
+      "true"
+    );
+    assert(screen.getByRole("status")).toHaveTextContent(
+      "End must be after start"
+    );
   });
 
-  it("moves a typed end date that lands before the start once the entry is left", async () => {
+  it("keeps a typed end that lands before the start, and reports it instead of clearing it", async () => {
     const user = userEvent.setup({ delay: null });
     const onSubmit = submitSpy();
     renderPopover({
@@ -421,25 +428,41 @@ describe("CreateEventPanel date and time row fidelity", () => {
       onSubmit,
     });
 
-    act(() => {
-      screen.getByLabelText(/end date/iu).focus();
-    });
-    await user.keyboard("0901");
+    await user.click(screen.getByLabelText(/end date/iu));
+    await user.keyboard("0109");
 
-    assert(screen.getByLabelText(/end date/iu)).toHaveValue("09/01/2026");
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("01/09/2026");
 
     await user.click(screen.getByLabelText(/title/iu));
 
-    assert(screen.getByLabelText(/end date/iu)).toHaveValue("");
-    act(() => {
-      fireEvent.click(getSubmitButton());
-    });
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("Tue, 1 Sep");
 
-    assert(onSubmit).toHaveBeenCalledWith({
-      ...BASE_DRAFT,
-      endDate: calendarDate("2026-10-06"),
-      startDate: calendarDate("2026-10-06"),
-    });
+    const form = getCreateDialog().querySelector<HTMLFormElement>("form");
+    if (form === null) {
+      throw new Error("Missing create event form");
+    }
+
+    fireEvent.submit(form);
+
+    assert(onSubmit).not.toHaveBeenCalled();
+    assert(screen.getByLabelText(/end date/iu)).toHaveAttribute(
+      "aria-invalid",
+      "true"
+    );
+    assert(screen.getByRole("status")).toHaveTextContent(
+      "End must be after start"
+    );
+  });
+
+  it("enters an empty end date from its first segment and keeps the typed date", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderPopover({ defaultDraft: { ...BASE_DRAFT, endDate: null } });
+
+    await user.click(screen.getByLabelText(/end date/iu));
+    await user.keyboard("12122026");
+    await user.click(screen.getByLabelText(/title/iu));
+
+    assert(screen.getByLabelText(/end date/iu)).toHaveValue("Sat, 12 Dec");
   });
 });
 

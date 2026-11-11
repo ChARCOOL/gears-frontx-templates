@@ -25,7 +25,7 @@ Rules every primitive follows:
 
 ### DateField
 
-A typed date input with a calendar popover. The mask is the locale's own date (`09/23/2026` in `en-US`, `23.09.2026` in `de-DE`), derived by `core/date-input.ts` from `Intl.DateTimeFormat` with the Gregorian calendar and Latin digits.
+A typed date input with a calendar popover. The mask is the locale's own date (`23/09/2026` in `en-US`, which edits day first to match its `Wed, 11 Nov` display, and `23.09.2026` in `de-DE`), derived by `core/date-input.ts` from `Intl.DateTimeFormat` with the Gregorian calendar and Latin digits.
 
 - Digits fill the segment under the caret and move on once no further digit fits (`1`, `3` in a month is `03`). `ArrowLeft`/`ArrowRight` move between segments, `ArrowUp`/`ArrowDown` step them (month and day wrap, the year clamps), `Backspace` empties one, a paste spreads its digits, `Alt+ArrowDown` opens the calendar. `Tab` and `Enter` stay with the form.
 - The value commits as soon as the mask parses; an impossible day clamps (`02/31` becomes the last day). Half-typed text stays until blur, then the field shows the committed value again.

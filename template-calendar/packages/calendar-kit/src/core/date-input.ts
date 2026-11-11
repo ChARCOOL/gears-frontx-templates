@@ -1,5 +1,6 @@
 /** Date-entry domain: the locale's segment order, its typed mask, and parsing. */
 
+import { dateEntryOrder } from "./date-text";
 import { toAsciiDigits } from "./digits";
 import { dateTimeFormatter } from "./intl-cache";
 import type { CalendarDate } from "./model";
@@ -83,8 +84,10 @@ export const dateMask = (locale: string): DateMask => {
     REFERENCE_DATE
   );
 
+  const fieldOrder = dateEntryOrder(locale);
   const segments: DateSegment[] = [];
   let empty = "";
+  let fieldIndex = 0;
 
   for (const part of parts) {
     if (!isSegmentKind(part.type)) {
@@ -92,10 +95,13 @@ export const dateMask = (locale: string): DateMask => {
       continue;
     }
 
-    const placeholder = SEGMENT_PLACEHOLDER[part.type];
+    const kind = fieldOrder[fieldIndex] ?? part.type;
+    fieldIndex += 1;
+
+    const placeholder = SEGMENT_PLACEHOLDER[kind];
 
     segments.push({
-      kind: part.type,
+      kind,
       length: placeholder.length,
       start: empty.length,
     });

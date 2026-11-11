@@ -204,6 +204,45 @@ const dateFieldOrder = (
   return order;
 };
 
+/**
+ * Whether the date field displays `Wed, 11 Nov`: a weekday first and a named month, which
+ * puts the day before the month whatever the locale's numeric order is.
+ */
+export const displaysDayFirst = (locale: string): boolean => {
+  const parts = dateTimeFormatter(locale, {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+    weekday: "short",
+  }).formatToParts(new Date(Date.UTC(2021, 0, 2, 12)));
+
+  const startsWithWeekday =
+    parts.find((part) => part.type !== "literal")?.type === "weekday";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+
+  // Numeric months (ja, zh) keep the locale's own order.
+  return startsWithWeekday && !/^\d+$/u.test(month);
+};
+
+/**
+ * The numeric field order the date input edits in. A month-first locale that displays day first
+ * (en-US) edits day, then month; year-first locales keep their own order. Text is still read in
+ * the locale's own order, see `readDateParts`.
+ */
+export const dateEntryOrder = (locale: string): readonly DateFieldName[] => {
+  const order = dateFieldOrder(locale, "numeric");
+
+  if (
+    order[0] !== "month" ||
+    order[1] !== "day" ||
+    !displaysDayFirst(locale)
+  ) {
+    return order;
+  }
+
+  return [order[1], order[0], ...order.slice(2)];
+};
+
 /** `weekday` marks a month name the locale also uses for a weekday: cy `Mawrth` is March and Tuesday.
  * It names the month only when no other word does (`Dydd Mawrth` is Tuesday). */
 type WordMatch =

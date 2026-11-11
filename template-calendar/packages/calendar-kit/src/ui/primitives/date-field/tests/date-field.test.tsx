@@ -71,7 +71,7 @@ describe(DateField, () => {
   it("renders the value as the locale's own date mask", () => {
     renderField();
 
-    assert(field().value).toBe("08/24/2026");
+    assert(field().value).toBe("24/08/2026");
   });
 
   it("shows the locale's placeholder mask while empty", () => {
@@ -89,7 +89,7 @@ describe(DateField, () => {
 
     await user.click(field());
 
-    assert(field().value).toBe("mm/dd/yyyy");
+    assert(field().value).toBe("dd/mm/yyyy");
   });
 
   it("shows displayFormat text while unfocused and filled, the mask while focused", async () => {
@@ -100,7 +100,7 @@ describe(DateField, () => {
 
     await user.click(field());
 
-    assert(field().value).toBe("08/24/2026");
+    assert(field().value).toBe("24/08/2026");
   });
 
   it("opens the calendar from the opener button and selects a day", async () => {
@@ -182,9 +182,9 @@ describe(DateField, () => {
     render(<StatefulField initialValue="" />);
 
     await user.click(field());
-    await user.keyboard("09232026");
+    await user.keyboard("23092026");
 
-    assert(field().value).toBe("09/23/2026");
+    assert(field().value).toBe("23/09/2026");
     assert(screen.getByText("2026-09-23")).toBeInTheDocument();
   });
 
@@ -242,11 +242,11 @@ describe(DateField, () => {
     await user.click(field());
     await user.keyboard("{ArrowUp}");
 
-    assert(screen.getByText("2026-09-24")).toBeInTheDocument();
+    assert(screen.getByText("2026-08-25")).toBeInTheDocument();
 
     await user.keyboard("{ArrowRight}{ArrowDown}");
 
-    assert(screen.getByText("2026-09-23")).toBeInTheDocument();
+    assert(screen.getByText("2026-07-25")).toBeInTheDocument();
   });
 
   it("ignores anything but digits", async () => {
@@ -256,7 +256,7 @@ describe(DateField, () => {
 
     await user.type(field(), "Sep");
 
-    assert(field().value).toBe("08/24/2026");
+    assert(field().value).toBe("24/08/2026");
     assert(onValueChange).not.toHaveBeenCalled();
   });
 
@@ -288,7 +288,7 @@ describe(DateField, () => {
     renderField({ onValueChange, value: "" });
 
     await user.click(field());
-    await user.paste("09232026");
+    await user.paste("23092026");
 
     assert(onValueChange).toHaveBeenLastCalledWith("2026-09-23");
   });
@@ -302,7 +302,69 @@ describe(DateField, () => {
     await user.paste("1/12/2026 10:00");
 
     assert(onValueChange).not.toHaveBeenCalled();
-    assert(field().value).toBe("mm/dd/yyyy");
+    assert(field().value).toBe("dd/mm/yyyy");
+  });
+
+  it("starts an empty field at its first segment when clicked", async () => {
+    const user = userEvent.setup();
+    renderField({ placeholder: "End date", value: "" });
+
+    await user.click(field());
+
+    assert([field().selectionStart, field().selectionEnd]).toStrictEqual([
+      0, 2,
+    ]);
+  });
+
+  it("types a full date into an empty field, highlighting the segment it is in", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn<(value: CalendarDate | "") => void>();
+    renderField({ onValueChange, placeholder: "End date", value: "" });
+
+    await user.click(field());
+    await user.keyboard("12");
+
+    assert(field().value).toBe("12/mm/yyyy");
+    assert([field().selectionStart, field().selectionEnd]).toStrictEqual([
+      3, 5,
+    ]);
+
+    await user.keyboard("12");
+
+    assert(field().value).toBe("12/12/yyyy");
+    assert([field().selectionStart, field().selectionEnd]).toStrictEqual([
+      6, 10,
+    ]);
+
+    await user.keyboard("2026");
+
+    assert(field().value).toBe("12/12/2026");
+    assert(onValueChange).toHaveBeenLastCalledWith("2026-12-12");
+  });
+
+  it("keeps a complete typed date when focus leaves the field", async () => {
+    const user = userEvent.setup();
+    render(<StatefulField initialValue="" />);
+
+    await user.click(field());
+    await user.keyboard("12122026");
+    await user.tab();
+
+    assert(field().value).toBe("12/12/2026");
+    assert(screen.getByText("2026-12-12")).toBeInTheDocument();
+  });
+
+  it("reverts an incomplete entry to the previous value when focus leaves", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn<(value: CalendarDate | "") => void>();
+    renderField({ onValueChange, value: "" });
+
+    await user.click(field());
+    await user.keyboard("12");
+    await user.click(document.body);
+
+    assert(field().value).toBe("dd/mm/yyyy");
+    assert(onValueChange).not.toHaveBeenCalled();
   });
 
   it("clears an optional value from the field", async () => {

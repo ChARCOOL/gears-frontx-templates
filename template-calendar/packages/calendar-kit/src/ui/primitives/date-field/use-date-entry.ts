@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import type {
   ChangeEvent,
   ClipboardEvent,
@@ -199,10 +200,15 @@ export const useDateEntry = ({
 
         const typed = typeDigit(text, segment, entryRef.current, event.key);
         entryRef.current = typed.entry;
-        commit(typed.text);
 
         if (typed.complete) {
+          // Writing the new text moves the caret to its end, so it must land before the next segment is selected.
+          flushSync(() => {
+            commit(typed.text);
+          });
           moveBy(1);
+        } else {
+          commit(typed.text);
         }
 
         return;
@@ -237,14 +243,15 @@ export const useDateEntry = ({
 
   const handleClick = useCallback(
     (event: MouseEvent<HTMLInputElement>): void => {
+      // An empty field's caret sits at its end, the last segment; a new entry starts at the first.
       const caret = event.currentTarget.selectionStart ?? 0;
-      const target = segmentIndexAt(mask, caret);
+      const target = text === mask.empty ? 0 : segmentIndexAt(mask, caret);
 
       entryRef.current = null;
       setIndex(target);
       selectSegment(target);
     },
-    [mask, selectSegment]
+    [mask, selectSegment, text]
   );
 
   /* Keyboards that never raise keydown, such as Android's, land here instead:

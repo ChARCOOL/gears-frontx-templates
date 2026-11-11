@@ -19,7 +19,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { FocusEvent, ReactNode, Ref, RefObject } from "react";
+import type { ReactNode, Ref, RefObject } from "react";
 import type * as React from "react";
 import { createPortal } from "react-dom";
 
@@ -304,8 +304,8 @@ const repeatUnitOptions = (
   },
 ];
 
-// Typed dates keep the end as typed until their entry is left: each keystroke commits a
-// half-typed date, and flooring it then would overwrite the end with a date nobody entered.
+// Picked dates floor the end to the start. Typed ends stay as typed: a before-start end fails
+// validation instead of being replaced, because a floored end shows as the empty same-day field.
 const floorEndDate = (draft: CreateEventDraft): CreateEventDraft => {
   // All-day end dates are exclusive, so they must come after the start day.
   const earliestEnd = draft.allDay
@@ -1430,17 +1430,6 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
     updateDateField("endDate", value, fieldUpdateContext, fromCalendar);
   };
 
-  // Blur bubbles from both date fields, so only a focus move out of the row finishes the entry.
-  const finishDateEntry = (event: FocusEvent<HTMLDivElement>): void => {
-    const next = event.relatedTarget;
-
-    if (next instanceof Node && event.currentTarget.contains(next)) {
-      return;
-    }
-
-    setDraft(floorEndDate(controller.draft));
-  };
-
   const changeConferencingProvider = (value: string): void => {
     setDraft({ ...controller.draft, conferencingProviderId: value });
   };
@@ -1596,7 +1585,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
         />
       </div>
 
-      <div className={styles.dateRow} onBlur={finishDateEntry}>
+      <div className={styles.dateRow}>
         <DateField
           id={fieldId("start-date")}
           label={t("calendar.create_event.field.start_date")}
