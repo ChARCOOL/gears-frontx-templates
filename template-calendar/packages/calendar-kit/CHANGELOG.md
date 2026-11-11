@@ -4,11 +4,22 @@ All notable changes to `@gears-frontx/calendar-kit` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the package follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and publishes pre-release versions on the `alpha` channel.
 
+## [0.1.0-alpha.1] - 2026-11-12
+
+### Changed
+
+- **Breaking:** `CalendarConflictDimension` is now `string`, so any dimension name type-checks. `dimension` keeps its name.
+- **Breaking:** `CalendarEvent` no longer has `roomId`, `classroom`, `instructor` or `course`. Put such data in `metadata` and render it with `renderMetadata` or `renderBody`. The event detail panel no longer draws Classroom, Instructor and Course rows, and the `calendar.detail.classroom`, `calendar.detail.instructor` and `calendar.detail.course` message ids are gone.
+- **Breaking:** `MonthGridTermWeekNumbering { termStart }` is `MonthGridRelativeWeekNumbering { startDate }`, and the core helper `termWeekNumber(weekStart, termStart)` is `relativeWeekNumber(weekStart, startDate)`. The behaviour is unchanged: the week holding `startDate` is week 1.
+- **Breaking:** the create-event label id `calendar.create_event.calendarSchedule` is now `calendar.create_event.calendarField`, with English text `Calendar:`.
+- **Breaking:** the `exports` map lists only the documented entries and the CSS and `package.json` files. The `./*` wildcard is removed, and `src`, `chunks`, `__test-utils__`, `core/*`, `react/*`, `ui/*`, `docs/*`, `i18n/*` and `styles/*` are not importable.
+- Documentation and examples use neutral vocabulary, for example `eventType` "Meeting" and "Workshop" and conflict dimensions `resource` and `person`.
+
 ## [0.1.0-alpha.0] - 2026-09-24
 
 ### Added
 
-- First public release: React 19 calendar UI for week, day, month and agenda screens, built over `@gears-frontx/ui-kit` primitives. The kit renders host data and reports user intent through typed callbacks; data, permissions, conflicts, persistence and translations stay with the host.
+- First public release: React 19 calendar UI for week, day, month and agenda screens, built over `@gears-frontx/ui-kit` primitives. The kit renders host data and reports user intent through typed callbacks; data, access rules, conflicts, persistence and translations stay with the host.
 - Root entry `@gears-frontx/calendar-kit`, re-exporting the components, controller hooks, parsers and types below, except the two annotated with the entry that carries them.
 - Subpath entries, each with its own declarations: `@gears-frontx/calendar-kit/core`, `@gears-frontx/calendar-kit/react`, `@gears-frontx/calendar-kit/i18n`, `@gears-frontx/calendar-kit/grid`, `@gears-frontx/calendar-kit/week-grid`, `@gears-frontx/calendar-kit/day-grid`, `@gears-frontx/calendar-kit/month-grid`, `@gears-frontx/calendar-kit/agenda-view`, `@gears-frontx/calendar-kit/calendar-toolbar`, `@gears-frontx/calendar-kit/event-card`, `@gears-frontx/calendar-kit/event-detail-panel`, `@gears-frontx/calendar-kit/create-event`, `@gears-frontx/calendar-kit/conflict-indicator`, `@gears-frontx/calendar-kit/availability-grid`, `@gears-frontx/calendar-kit/calendar-side-panel`, `@gears-frontx/calendar-kit/month-navigator`, `@gears-frontx/calendar-kit/search-results`, `@gears-frontx/calendar-kit/time-zone-list`, `@gears-frontx/calendar-kit/world-clocks` and `@gears-frontx/calendar-kit/calendar-list`.
 - Stylesheets: `@gears-frontx/calendar-kit/theme.css` maps the `--cal-*` tokens from host seams with kit fallbacks, `@gears-frontx/calendar-kit/reset.css` is the opt-in scoped reset, and `@gears-frontx/calendar-kit/themes/example.css` is an optional example preset.

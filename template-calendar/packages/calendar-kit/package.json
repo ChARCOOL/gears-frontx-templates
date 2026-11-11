@@ -1,7 +1,7 @@
 {
   "name": "@gears-frontx/calendar-kit",
-  "version": "0.1.0-alpha.0",
-  "description": "Composable calendar and scheduling components for FrontX applications",
+  "version": "0.1.0-alpha.1",
+  "description": "Composable calendar components for FrontX applications",
   "files": [
     "dist",
     "llms.txt",
@@ -20,6 +20,90 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    },
+    "./i18n": {
+      "types": "./dist/i18n.d.ts",
+      "import": "./dist/i18n.js"
+    },
+    "./grid": {
+      "types": "./dist/grid.d.ts",
+      "import": "./dist/grid.js"
+    },
+    "./week-grid": {
+      "types": "./dist/week-grid.d.ts",
+      "import": "./dist/week-grid.js"
+    },
+    "./day-grid": {
+      "types": "./dist/day-grid.d.ts",
+      "import": "./dist/day-grid.js"
+    },
+    "./month-grid": {
+      "types": "./dist/month-grid.d.ts",
+      "import": "./dist/month-grid.js"
+    },
+    "./agenda-view": {
+      "types": "./dist/agenda-view.d.ts",
+      "import": "./dist/agenda-view.js"
+    },
+    "./calendar-toolbar": {
+      "types": "./dist/calendar-toolbar.d.ts",
+      "import": "./dist/calendar-toolbar.js"
+    },
+    "./event-card": {
+      "types": "./dist/event-card.d.ts",
+      "import": "./dist/event-card.js"
+    },
+    "./event-detail-panel": {
+      "types": "./dist/event-detail-panel.d.ts",
+      "import": "./dist/event-detail-panel.js"
+    },
+    "./create-event": {
+      "types": "./dist/create-event.d.ts",
+      "import": "./dist/create-event.js"
+    },
+    "./conflict-indicator": {
+      "types": "./dist/conflict-indicator.d.ts",
+      "import": "./dist/conflict-indicator.js"
+    },
+    "./availability-grid": {
+      "types": "./dist/availability-grid.d.ts",
+      "import": "./dist/availability-grid.js"
+    },
+    "./calendar-side-panel": {
+      "types": "./dist/calendar-side-panel.d.ts",
+      "import": "./dist/calendar-side-panel.js"
+    },
+    "./month-navigator": {
+      "types": "./dist/month-navigator.d.ts",
+      "import": "./dist/month-navigator.js"
+    },
+    "./search-results": {
+      "types": "./dist/search-results.d.ts",
+      "import": "./dist/search-results.js"
+    },
+    "./time-zone-list": {
+      "types": "./dist/time-zone-list.d.ts",
+      "import": "./dist/time-zone-list.js"
+    },
+    "./world-clocks": {
+      "types": "./dist/world-clocks.d.ts",
+      "import": "./dist/world-clocks.js"
+    },
+    "./calendar-list": {
+      "types": "./dist/calendar-list.d.ts",
+      "import": "./dist/calendar-list.js"
+    },
+    "./package.json": "./package.json",
+    "./theme.css": "./dist/theme.css",
+    "./reset.css": "./dist/reset.css",
+    "./themes/example.css": "./dist/themes/example.css",
     "./src/*": null,
     "./chunks/*": null,
     "./__test-utils__/*": null,
@@ -28,14 +112,7 @@
     "./ui/*": null,
     "./docs/*": null,
     "./i18n/*": null,
-    "./package.json": "./package.json",
-    "./*": {
-      "types": "./dist/*.d.ts",
-      "import": "./dist/*.js"
-    },
-    "./theme.css": "./dist/theme.css",
-    "./reset.css": "./dist/reset.css",
-    "./themes/example.css": "./dist/themes/example.css"
+    "./styles/*": null
   },
   "publishConfig": {
     "access": "public"
@@ -43,7 +120,7 @@
   "keywords": [
     "frontx",
     "calendar",
-    "scheduling",
+    "events",
     "react",
     "components",
     "css-modules",
