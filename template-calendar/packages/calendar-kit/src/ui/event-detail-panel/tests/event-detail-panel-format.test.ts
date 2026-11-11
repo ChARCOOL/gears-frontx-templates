@@ -201,8 +201,27 @@ describe(formatRecurrenceSummary, () => {
     expect(summary("FREQ=YEARLY")).toMatch(/^Repeats every year on /u);
   });
 
+  it("says a saved rule's end in words, so no raw rule part reaches the detail", () => {
+    const summary = (recurrenceRule: string): string | undefined =>
+      formatRecurrenceSummary(
+        makeTimedEvent({ recurrenceRule }),
+        englishTranslate,
+        "en-US"
+      );
+
+    expect(summary("FREQ=WEEKLY;WKST=MO;BYDAY=MO;COUNT=12")).toBe(
+      "Repeats every week on Monday, 12 times"
+    );
+    expect(summary("FREQ=DAILY;COUNT=1")).toBe("Repeats every day, 1 time");
+    expect(summary("FREQ=WEEKLY;BYDAY=MO;UNTIL=20261201T000000Z")).toMatch(
+      /^Repeats every week on Monday until /u
+    );
+  });
+
   it("shows the host's summary in place of the rule, and the kit's own text without one", () => {
-    const t = vi.fn<CalendarTranslate>(() => "Repeats FREQ=WEEKLY;COUNT=12");
+    const t = vi.fn<CalendarTranslate>(
+      (_key, values) => `Repeats ${String(values?.rule)}`
+    );
 
     expect(
       formatRecurrenceSummary(
@@ -218,25 +237,25 @@ describe(formatRecurrenceSummary, () => {
 
     expect(
       formatRecurrenceSummary(
-        makeTimedEvent({ recurrenceRule: "FREQ=WEEKLY;COUNT=12", recurrenceSummary: "  " }),
+        makeTimedEvent({ recurrenceRule: "FREQ=WEEKLY;BYMONTHDAY=1", recurrenceSummary: "  " }),
         t,
         "en-US"
       )
-    ).toBe("Repeats FREQ=WEEKLY;COUNT=12");
+    ).toBe("Repeats FREQ=WEEKLY;BYMONTHDAY=1");
   });
 
   it("hands a rule it cannot read to the consumer translation", () => {
-    const t = vi.fn<CalendarTranslate>(() => "Repeats five times");
+    const t = vi.fn<CalendarTranslate>(() => "Repeats on day 1");
 
     const summary = formatRecurrenceSummary(
-      makeTimedEvent({ recurrenceRule: "FREQ=WEEKLY;COUNT=5" }),
+      makeTimedEvent({ recurrenceRule: "FREQ=WEEKLY;BYMONTHDAY=1" }),
       t,
       "en-US"
     );
 
-    expect(summary).toBe("Repeats five times");
+    expect(summary).toBe("Repeats on day 1");
     expect(t).toHaveBeenCalledWith("calendar.detail.recurrence", {
-      rule: "FREQ=WEEKLY;COUNT=5",
+      rule: "FREQ=WEEKLY;BYMONTHDAY=1",
     });
   });
 

@@ -229,6 +229,8 @@ Event state words shared by the views.
 | `calendar.detail.reminderLead.minutes_one` | {{count}} minute before | `count` |
 | `calendar.detail.reminderLead.minutes_other` | {{count}} minutes before | `count` |
 | `calendar.detail.reminderLead.now` | At time of event |  |
+| `calendar.detail.repeatCount_one` | {{frequency}}, {{count}} time | `frequency`, `count` |
+| `calendar.detail.repeatCount_other` | {{frequency}}, {{count}} times | `frequency`, `count` |
 | `calendar.detail.restricted` | Restricted |  |
 | `calendar.detail.rsvp.awaiting` | {{count}} awaiting | `count` |
 | `calendar.detail.rsvp.maybe` | {{count}} maybe | `count` |

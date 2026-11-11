@@ -163,6 +163,8 @@
   "calendar.detail.participants": "Participants",
   "calendar.detail.participants.more": "more",
   "calendar.detail.recurrence": "Repeats {{rule}}",
+  "calendar.detail.repeatCount_one": "{{frequency}}, {{count}} time",
+  "calendar.detail.repeatCount_other": "{{frequency}}, {{count}} times",
   "calendar.detail.reminderLead.minutes_one": "{{count}} minute before",
   "calendar.detail.reminderLead.minutes_other": "{{count}} minutes before",
   "calendar.detail.reminderLead.now": "At time of event",

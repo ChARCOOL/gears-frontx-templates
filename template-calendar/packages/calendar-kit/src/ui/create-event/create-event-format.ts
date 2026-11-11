@@ -119,7 +119,7 @@ const parseUntilDate = (value: string | undefined): CalendarDate | null => {
   }
 };
 
-const parseRule = (rule: string): Map<string, string> => {
+export const parseRule = (rule: string): Map<string, string> => {
   const fields = new Map<string, string>();
 
   for (const field of rule.split(";")) {

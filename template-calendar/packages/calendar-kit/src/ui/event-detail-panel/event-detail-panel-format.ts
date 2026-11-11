@@ -11,7 +11,10 @@ import type {
 import { addCalendarDays, fromViewerDateTime } from "../../core/temporal";
 import type { CalendarTranslate } from "../../i18n/calendar-localization";
 import type { EventDetailPanelCopyStatus } from "../../react/public";
-import { formatRepeatHint } from "../create-event/create-event-format";
+import {
+  formatRepeatHint,
+  parseRule,
+} from "../create-event/create-event-format";
 
 // The responses in the design's order; a zero count says nothing, so it is left out.
 const RSVP_LABEL_KEYS = [
@@ -67,6 +70,7 @@ export const resolveCopyAnnouncement = (
 // the words never mention; saved rules carry it.
 const DESCRIBED_REPEAT_KEYS: ReadonlySet<string> = new Set([
   "BYDAY",
+  "COUNT",
   "FREQ",
   "INTERVAL",
   "UNTIL",
@@ -78,19 +82,23 @@ const DESCRIBED_FREQUENCIES: ReadonlySet<string> = new Set([
   "WEEKLY",
   "YEARLY",
 ]);
+const POSITIVE_INTEGER = /^[1-9]\d*$/u;
 
 const describesRule = (rule: string): boolean =>
   rule.split(";").every((part) => {
     const [key = "", value = ""] = part.split("=");
 
-    return (
-      DESCRIBED_REPEAT_KEYS.has(key) &&
-      (key !== "FREQ" || DESCRIBED_FREQUENCIES.has(value))
-    );
+    if (key === "FREQ") {
+      return DESCRIBED_FREQUENCIES.has(value);
+    }
+    if (key === "COUNT") {
+      return POSITIVE_INTEGER.test(value);
+    }
+    return DESCRIBED_REPEAT_KEYS.has(key);
   });
 
-/** "Repeats every week on Monday", as the create form says it. A rule with parts the summary
- * does not read (COUNT, BYMONTHDAY, ...) goes to the translation as raw text rather than lose them. */
+/** "Repeats every week on Monday, 12 times", as the create form says it. A rule with parts the
+ * summary does not read (BYMONTHDAY, ...) goes to the translation as raw text rather than lose them. */
 export const formatRecurrenceSummary = (
   event: CalendarEvent,
   t: CalendarTranslate,
@@ -104,10 +112,15 @@ export const formatRecurrenceSummary = (
   if (hostSummary !== "") {
     return hostSummary;
   }
-  if (describesRule(rule)) {
-    return formatRepeatHint(rule, event.startDate, t, locale);
+  if (!describesRule(rule)) {
+    return t("calendar.detail.recurrence", { rule });
   }
-  return t("calendar.detail.recurrence", { rule });
+  const frequency = formatRepeatHint(rule, event.startDate, t, locale);
+  const count = parseRule(rule).get("COUNT");
+  if (frequency === undefined || count === undefined) {
+    return frequency;
+  }
+  return t("calendar.detail.repeatCount", { count: Number(count), frequency });
 };
 
 const formatViewerDay = (
