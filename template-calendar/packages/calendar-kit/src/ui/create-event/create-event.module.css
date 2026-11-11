@@ -78,7 +78,8 @@
 }
 
 /* Figma's Save is the brand action colour; the kit primary variant paints the error token. */
-.footerActions > .saveButton.saveButton {
+.footerActions > .saveButton.saveButton,
+.repeatActions > .saveButton.saveButton {
   --button-bg: var(--cal-color-action);
   --button-bg-hover: color-mix(in srgb, var(--cal-color-action) 95%, var(--cal-color-text));
 }
@@ -375,6 +376,10 @@
   font-weight: var(--cal-text-label-weight);
 }
 
+.dimmed {
+  opacity: 0.5;
+}
+
 .repeatView {
   box-sizing: border-box;
   display: flex;
@@ -384,6 +389,7 @@
 }
 
 .repeatActions {
+  align-self: stretch;
   display: flex;
   gap: var(--cal-space-2);
   justify-content: flex-end;
@@ -414,7 +420,9 @@
 .repeatInlineLabel {
   color: var(--cal-color-text);
   flex: none;
+  font-size: var(--cal-text-grid-size);
   inline-size: 40px;
+  line-height: var(--cal-text-grid-line-height);
 }
 
 .repeatUnit {
@@ -431,18 +439,23 @@
   --c-select-popup-width: max-content;
 }
 
-/* The field primitive's wrapper spans its row; here each control keeps its own width. */
-.repeatIntervalRow > div {
-  flex: none;
-  inline-size: auto;
+/* The calendar names the selected row in the muted grey, not the repeat list's tertiary grey. */
+.calendarPopup.calendarPopup {
+  --cal-select-selected-text: var(--cal-color-muted);
 }
 
-/* Two digits wide; the arrow keys still step it, so the native spin buttons go. */
+/* The field primitive's wrapper spans its row; here each control keeps the Figma 88px width. */
+.repeatIntervalRow > div {
+  flex: none;
+  inline-size: 88px;
+}
+
+/* The arrow keys still step the interval, so the native spin buttons go. */
 .repeatInterval {
   block-size: var(--repeat-row-height);
   box-sizing: border-box;
   flex: none;
-  inline-size: 56px;
+  inline-size: 88px;
   padding-inline: var(--cal-space-1);
 }
 
@@ -489,10 +502,6 @@
   padding: 0;
 }
 
-.ends legend {
-  margin-block-end: var(--cal-space-2);
-}
-
 .weekdayButtons {
   align-items: center;
   display: flex;
@@ -504,24 +513,27 @@
 
 .weekdayButtons :global(button) {
   block-size: var(--repeat-row-height);
-  inline-size: auto;
-  padding-inline: var(--cal-space-3);
+  inline-size: 60px;
 }
 
 .ends {
   align-items: center;
-  border: 0;
   box-sizing: border-box;
-  column-gap: var(--cal-space-4);
+  column-gap: var(--cal-space-2);
   display: grid;
   flex: none;
-  grid-template-columns: max-content minmax(0, 1fr);
+  grid-template-columns: 40px max-content minmax(0, 1fr);
   inline-size: 100%;
-  block-size: auto;
-  margin: 0;
-  min-inline-size: 0;
-  padding: 0;
   row-gap: var(--cal-space-2);
+}
+
+.endsLabel {
+  align-self: start;
+  color: var(--cal-color-text);
+  font-size: var(--cal-text-grid-size);
+  grid-column: 1;
+  grid-row: 1;
+  line-height: var(--cal-text-grid-line-height);
 }
 
 .endOptions {
@@ -533,7 +545,7 @@
 }
 
 .endOptions > :global(span):nth-child(1) {
-  grid-column: 1 / -1;
+  grid-column: 2 / -1;
   grid-row: 1;
 }
 
@@ -541,7 +553,7 @@
   align-items: center;
   display: flex;
   flex-direction: row;
-  grid-column: 1;
+  grid-column: 2;
   grid-row: 2;
   /* Floored to the control height so switching Never/On does not move the radio. */
   min-block-size: var(--cal-control-height-sm);
@@ -549,11 +561,10 @@
 
 .repeatEndDate {
   box-sizing: border-box;
-  grid-column: 2;
+  grid-column: 3;
   grid-row: 2;
-  inline-size: max-content;
+  inline-size: 100%;
   margin: 0;
-  max-inline-size: 100%;
   min-inline-size: 202px;
 }
 

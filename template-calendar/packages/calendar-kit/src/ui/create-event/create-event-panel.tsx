@@ -69,8 +69,6 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSet,
 } from "../primitives/field/field";
 import {
   noopCleanup,
@@ -703,8 +701,17 @@ const CustomRepeatView = ({
             })}
           </div>
         </div>
-        <FieldSet className={styles.ends}>
-          <FieldLegend>{endsLabel}</FieldLegend>
+        <div
+          className={styles.ends}
+          role="group"
+          aria-labelledby={`${idPrefix}-repeat-ends-label`}
+        >
+          <span
+            className={styles.endsLabel}
+            id={`${idPrefix}-repeat-ends-label`}
+          >
+            {endsLabel}
+          </span>
           <RadioGroup
             aria-label={endsLabel}
             className={styles.endOptions}
@@ -728,7 +735,7 @@ const CustomRepeatView = ({
               onChange={onChangeEndDate}
             />
           ) : null}
-        </FieldSet>
+        </div>
         <div className={styles.repeatActions}>
           <Button
             type="button"
@@ -738,7 +745,12 @@ const CustomRepeatView = ({
           >
             {t("calendar.create_event.cancel")}
           </Button>
-          <Button type="button" size="l" onClick={onApply}>
+          <Button
+            type="button"
+            size="l"
+            className={styles.saveButton}
+            onClick={onApply}
+          >
             {t("calendar.create_event.save")}
           </Button>
         </div>
@@ -1488,6 +1500,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
         value={controller.draft.calendarId ?? ""}
         size="xl"
         showSelectedCheck
+        popupClassName={styles.calendarPopup}
         iconLeft={
           selectedCalendar === undefined ? undefined : (
             <CalendarColorDot colorFamily={selectedCalendar.colorFamily} />
@@ -1612,7 +1625,13 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
   );
 
   const repeatField = (
-    <Field className={clsx(styles.field, styles.groupStart)}>
+    <Field
+      className={clsx(
+        styles.field,
+        styles.groupStart,
+        repeatEditing && styles.dimmed
+      )}
+    >
       <Select
         ref={repeatAnchorRef}
         id={fieldId("repeat")}
@@ -1660,7 +1679,10 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
     <ScrollRegion className={styles.body}>
       <FieldGroup className={styles.fields}>
         {/* The other fields take no input while the repeat editor is open, as in the design. */}
-        <div className={styles.fields} inert={repeatEditing}>
+        <div
+          className={clsx(styles.fields, repeatEditing && styles.dimmed)}
+          inert={repeatEditing}
+        >
           {titleField}
           {isReminder ? (
             <ReminderUrlField
@@ -1692,7 +1714,10 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
           </div>
         ) : null}
 
-        <div className={styles.fields} inert={repeatEditing}>
+        <div
+          className={clsx(styles.fields, repeatEditing && styles.dimmed)}
+          inert={repeatEditing}
+        >
           {isReminder ? null : timeZoneField}
           {isReminder ? null : (
             <>

@@ -1060,6 +1060,20 @@ describe("CreateEventPanel repeat unit popup", () => {
   });
 });
 
+describe("CreateEventPanel custom repeat dimming", () => {
+  it("dims the form fields around the open custom repeat block", () => {
+    renderPopover({ onSubmit: submitSpy() });
+
+    chooseSelectOption(/repeat/iu, /^custom/iu);
+
+    const fields = screen.getByLabelText(/title/iu).closest(`.${styles.fields}`);
+    assert(fields).toHaveClass(styles.dimmed);
+    assert(screen.getByTestId("create-event-repeat-view")).not.toHaveClass(
+      styles.dimmed
+    );
+  });
+});
+
 describe("CreateEventPanel conflict result", () => {
   it("keeps the form open without an inline error for a conflict", async () => {
     const user = userEvent.setup({ delay: null });

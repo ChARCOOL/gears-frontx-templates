@@ -125,6 +125,7 @@
 /* prettier-ignore */
 .popup {
   --cal-select-hover: var(--cal-state-hover);
+  --cal-select-selected-text: var(--cal-color-placeholder);
   box-sizing: border-box;
   padding: var(--cal-space-2);
   gap: var(--cal-space-2);
@@ -188,10 +189,11 @@
   color: var(--cal-color-text);
 }
 
-/* The check marks the selection; the row keeps normal ink and the hover fill. */
+/* The check marks the selection and the label greys (Figma selected row); the highlighted row keeps ink for focus. */
 /* prettier-ignore */
 .popup [role='option'][data-selected]:not([data-highlighted]) {
   background-color: transparent;
+  color: var(--cal-select-selected-text);
 }
 
 /* prettier-ignore */
