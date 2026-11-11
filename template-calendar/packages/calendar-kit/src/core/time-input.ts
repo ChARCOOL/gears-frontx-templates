@@ -224,7 +224,7 @@ export type TimeInputResult =
 
 export interface ParseTimeInputOptions {
   readonly locale: string;
-  /** Bare hours without a leading zero inherit the reference period in 12-hour locales. */
+  /** An hour from 1 to 11 typed without a day period takes the reference's period in 12-hour locales. */
   readonly reference?: LocalTime;
 }
 
@@ -312,12 +312,7 @@ export const parseTimeInput = (
     return { kind: TIME_INPUT.invalid };
   }
 
-  const minutes = resolveMinutes(
-    parts,
-    period,
-    locale,
-    /^(?:[1-9]|1[01])$/u.test(rest) ? reference : undefined
-  );
+  const minutes = resolveMinutes(parts, period, locale, reference);
 
   if (minutes === null) {
     return { kind: TIME_INPUT.invalid };

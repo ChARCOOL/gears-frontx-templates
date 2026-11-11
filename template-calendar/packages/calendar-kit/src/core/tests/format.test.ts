@@ -316,25 +316,34 @@ describe("calendar formatting and time-input algorithms", () => {
     });
   });
 
-  it.each(["09", "09:00", "0900", "9:00"])(
-    "treats %s as explicit with a PM reference",
+  it.each(["9", "09", "9:00", "09:00", "0900"])(
+    "takes the PM reference period for %s typed without a period",
     (text) => {
       assert(
         parseTimeInput(text, {
           locale: "en-US",
           reference: parseLocalTime("14:00"),
         })
-      ).toStrictEqual({ kind: TIME_INPUT.value, value: "09:00" });
+      ).toStrictEqual({ kind: TIME_INPUT.value, value: "21:00" });
     }
   );
 
-  it("inherits the reference period for a bare two-digit hour", () => {
+  it("inherits the reference period for a two-digit hour above 11", () => {
     assert(
       parseTimeInput("11", {
         locale: "en-US",
         reference: parseLocalTime("14:00"),
       })
     ).toStrictEqual({ kind: TIME_INPUT.value, value: "23:00" });
+  });
+
+  it("keeps an explicit day period over the reference", () => {
+    assert(
+      parseTimeInput("9:00 am", {
+        locale: "en-US",
+        reference: parseLocalTime("14:00"),
+      })
+    ).toStrictEqual({ kind: TIME_INPUT.value, value: "09:00" });
   });
 
   it.each(["es-ES", "es-MX"])(
