@@ -9,8 +9,8 @@ import type {
   TimedCreateEventDraft,
 } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
-import { CreateEventPanel } from "../create-event-panel";
-import type { CreateEventPanelProps } from "../create-event-panel";
+import { CreateEventPanel, registerNestedLayer } from "../public";
+import type { CreateEventPanelProps } from "../public";
 
 
 const DATE = calendarDate("2026-08-24");
@@ -102,6 +102,41 @@ describe("CreateEventPanel discard layout", () => {
     ).toBeInTheDocument();
     assert(onOutsidePress).not.toHaveBeenCalled();
     assert(onCancel).not.toHaveBeenCalled();
+  });
+
+  it("opens the discard confirmation on Escape for a dirty draft and keeps the form", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onCancel = vi.fn<() => void>();
+    renderPopover({ onCancel });
+    await changeTitle(user, "Changed before Escape");
+
+    await user.keyboard("{Escape}");
+
+    assert(screen.getByRole("alertdialog")).toBeInTheDocument();
+    assert(getCreateDialog()).toBeInTheDocument();
+    assert(onCancel).not.toHaveBeenCalled();
+  });
+
+  it("ignores a dirty-form press in a host layer registered to the form", async () => {
+    const user = userEvent.setup({ delay: null });
+    const hostLayer = document.createElement("div");
+    hostLayer.textContent = "Host dialog";
+    document.body.append(hostLayer);
+    renderPopover();
+    await changeTitle(user, "Changed before host dialog");
+    const unregister = registerNestedLayer(
+      hostLayer,
+      screen.getByLabelText("Title")
+    );
+
+    fireEvent.pointerDown(hostLayer);
+    assert(screen.queryByRole("alertdialog")).toBeNull();
+
+    unregister();
+    fireEvent.pointerDown(hostLayer);
+    assert(screen.getByRole("alertdialog")).toBeInTheDocument();
+
+    hostLayer.remove();
   });
 
   it("closes a pristine draft immediately on Escape without mounting confirmation", async () => {

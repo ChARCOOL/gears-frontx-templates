@@ -55,6 +55,7 @@ export type { DayGridProps } from "./ui/day-grid/public";
 
 export {
   CreateEventPanel,
+  registerNestedLayer,
   useCreateEventController,
   REPEAT_PRESET,
   REPEAT_UNIT,

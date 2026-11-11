@@ -15,6 +15,8 @@ export {
   type UseCreateEventControllerResult,
 } from "../../react/controllers/use-create-event-controller";
 
+export { registerNestedLayer } from "../primitives/portal-layer";
+
 export {
   REPEAT_PRESET,
   REPEAT_UNIT,
