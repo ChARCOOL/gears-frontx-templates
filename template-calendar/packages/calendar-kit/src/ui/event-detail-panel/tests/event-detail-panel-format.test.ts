@@ -61,6 +61,18 @@ describe(formatEventRange, () => {
     );
   });
 
+  it("dates a recurring occurrence on its own day, not the series start", () => {
+    const occurrence = makeTimedEvent({
+      end: utcInstant("2026-08-31T10:00:00.000Z"),
+      start: utcInstant("2026-08-31T09:00:00.000Z"),
+      recurrenceRule: "FREQ=WEEKLY;BYDAY=MO",
+    });
+
+    expect(formatEventRange(occurrence, UTC, "en-US")).toBe(
+      "Aug 31, 2026, 9:00 AM – 10:00 AM"
+    );
+  });
+
   it("omits the end clock when the event has no end time", () => {
     expect(
       formatEventRange(makeTimedEvent({ endTime: null }), UTC, "en-US")
