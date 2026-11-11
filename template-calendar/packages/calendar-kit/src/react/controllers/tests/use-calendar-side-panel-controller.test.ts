@@ -13,7 +13,7 @@ type ControllerOptions = Parameters<typeof useCalendarSidePanelController>[0];
 type ControllerResult = ReturnType<typeof useCalendarSidePanelController>;
 
 const CALENDARS: readonly CalendarRef[] = [
-  { colorFamily: "turquoise", id: "cal-courses", name: "Courses" },
+  { colorFamily: "turquoise", id: "cal-teams", name: "Teams" },
 ];
 
 const panelProps = (overrides: Partial<PanelProps> = {}): PanelProps => ({

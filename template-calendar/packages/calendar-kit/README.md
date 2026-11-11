@@ -1,8 +1,8 @@
 # @gears-frontx/calendar-kit
 
-A calendar and scheduling UI for FrontX host applications: week, day, month and agenda views, the event card and detail, the create-event form, availability painting, and the side-panel tools around them.
+A calendar UI for FrontX host applications: week, day, month and agenda views, the event card and detail, the create-event form, availability painting, and the side-panel tools around them.
 
-The kit renders what the host gives it and reports what the user did. It never fetches, saves or decides anything about scheduling: data, permissions, conflicts, language and persistence stay with your app.
+The kit renders what the host gives it and reports what the user did. It never fetches, saves or decides anything: data, access rules, conflicts, language and persistence stay with your app.
 
 - **Stack:** React 19 + CSS Modules, over the `@gears-frontx/ui-kit` primitives it wraps
 - **Self-contained styles:** the package ships compiled CSS; no CSS framework, preprocessor or build plugin
@@ -83,7 +83,7 @@ Entries: `core`, `react`, `i18n`, `grid`, `week-grid`, `day-grid`, `month-grid`,
 
 Both shapes drop the JavaScript of components you do not import. CSS is different: a family's stylesheet reaches your bundle through the chunk that imports it, and the root entry re-exports every family, so a root import keeps all of their CSS reachable. **Import family subpaths for CSS tree-shaking** when stylesheet weight matters — `@gears-frontx/calendar-kit/week-grid` pulls that family's CSS and no other.
 
-Anything else is private: `src/`, `dist/chunks/`, and the `core/*`, `react/*`, `ui/*`, `i18n/*`, `docs/*`, `__test-utils__/*` subpaths are blocked by the package's `exports` map.
+Anything else is private: `src/`, `dist/chunks/` and the internal folders are not in the package's `exports` map, so importing them fails.
 
 ## Documentation
 

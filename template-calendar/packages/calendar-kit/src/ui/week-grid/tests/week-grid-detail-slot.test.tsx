@@ -13,7 +13,7 @@ import { WeekGrid } from "../week-grid";
 import type { WeekGridProps } from "../week-grid";
 
 interface Payload {
-  readonly courseCode: string;
+  readonly itemId: string;
 }
 
 const event: CalendarEvent<Payload> = {
@@ -23,12 +23,12 @@ const event: CalendarEvent<Payload> = {
   endDate: calendarDate("2026-08-24"),
   endTime: parseLocalTime("10:00"),
   id: "detail-event",
-  metadata: { courseCode: "MATH-201" },
+  metadata: { itemId: "ITEM-201" },
   start: utcInstant("2026-08-24T09:00:00.000Z"),
   startDate: calendarDate("2026-08-24"),
   startTime: parseLocalTime("09:00"),
   timeZone: UTC,
-  title: "Schedule detail",
+  title: "Event detail",
 };
 
 const props: Omit<WeekGridProps<Payload>, "renderDetail"> = {
@@ -48,7 +48,7 @@ describe("WeekGrid detail-panel slot", () => {
     >((context: CalendarDetailRenderContext<Payload>) => (
       <aside aria-label="Consumer detail slot">
         <h2>{context.event.title}</h2>
-        <p>{String(context.event.metadata?.courseCode)}</p>
+        <p>{String(context.event.metadata?.itemId)}</p>
         <button
           type="button"
           onClick={() => {
@@ -71,7 +71,7 @@ describe("WeekGrid detail-panel slot", () => {
     assert(
       screen.getByRole("complementary", { name: "Consumer detail slot" })
         .textContent
-    ).toContain("Schedule detailMATH-201");
+    ).toContain("Event detailITEM-201");
     assert(renderDetail).toHaveBeenCalledOnce();
 
     const [detailContext] = renderDetail.mock.calls[0] ?? [];

@@ -133,9 +133,9 @@ describe("MonthGrid date range selection", () => {
       },
       events: [
         timedEvent({
-          id: "lecture",
+          id: "meeting",
           startDate: "2025-09-10",
-          title: "Lecture",
+          title: "Meeting",
         }),
       ],
       onEventSelect,
@@ -152,7 +152,7 @@ describe("MonthGrid date range selection", () => {
       new Set(["2025-09-01", "2025-09-02"])
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Lecture/u }));
+    fireEvent.click(screen.getByRole("button", { name: /Meeting/u }));
     assert(onEventSelect).toHaveBeenCalledOnce();
   });
 

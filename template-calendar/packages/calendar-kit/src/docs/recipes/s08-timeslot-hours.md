@@ -1,6 +1,6 @@
 # S8: Timeslot hours
 
-Allowed hours for a course. A click on an hour label or a day header adds that row or column to the painted set.
+Allowed hours for a resource. A click on an hour label or a day header adds that row or column to the painted set.
 
 Parts: `AvailabilityGrid`, `addAvailabilityCells`.
 Props: `onHourClick`, `onDayClick`, `onSelectedRangeChange`, `selectedRange`, `paintMode="cells"`.
@@ -17,7 +17,7 @@ import {
 } from "@gears-frontx/calendar-kit";
 import type { CalendarSelectionRange } from "@gears-frontx/calendar-kit";
 
-import { hourCells } from "./schedule-fixtures";
+import { hourCells } from "./recipe-fixtures";
 
 const cells = hourCells("2026-09-21", 8, 18);
 

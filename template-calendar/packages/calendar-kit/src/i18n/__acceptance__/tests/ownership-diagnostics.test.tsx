@@ -185,7 +185,7 @@ describe("i18n acceptance: ownership and diagnostics", () => {
     const event = timedEvent({
       conflicts: [
         {
-          dimension: "classroom",
+          dimension: "resource",
           id: "conflict-1",
           label: "Application conflict label",
           message: "Application conflict message",

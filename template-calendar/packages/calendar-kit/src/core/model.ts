@@ -68,19 +68,14 @@ export interface CalendarRsvp {
   readonly maybe: number;
 }
 
-export type CalendarConflictDimension =
-  | "program/section"
-  | "instructor"
-  | "student"
-  | "classroom"
-  | (string & Record<never, never>);
+export type CalendarConflictDimension = string;
 
 export interface CalendarConflict {
   /** Stable id, used as the React key. */
   readonly id: string;
-  /** What collides, for example `classroom`. Rendered as the conflict's first label. */
+  /** What collides, for example `resource`. Rendered as the conflict's first label. */
   readonly dimension: CalendarConflictDimension;
-  /** The colliding thing, for example the room name. */
+  /** The colliding thing, for example the resource name. */
   readonly label: string;
   /** Optional longer explanation shown under the label. */
   readonly message?: string;
@@ -99,9 +94,9 @@ export interface CalendarEventBase<Payload = unknown> {
   readonly calendarName?: string | null;
   /** Palette for the card, bar and chip. */
   readonly colorFamily: CalendarColorFamily;
-  /** Scheduling zone; `startDate`/`startTime` are wall-clock values in it. */
+  /** Time zone; `startDate`/`startTime` are wall-clock values in it. */
   readonly timeZone: IanaTimeZone;
-  /** Short type label ("Lecture", "Exam") shown in the card's default metadata row. */
+  /** Short type label ("Meeting", "Workshop") shown in the card's default metadata row. */
   readonly eventType?: string | null;
   /** Plain text shown in the detail panel. */
   readonly description?: string | null;
@@ -115,16 +110,8 @@ export interface CalendarEventBase<Payload = unknown> {
   readonly attendees?: readonly CalendarAttendee[];
   /** Id of the conferencing provider the host offers in the create form. */
   readonly conferencingProviderId?: string | null;
-  /** Host room id, carried through for host slots. */
-  readonly roomId?: string | null;
   /** Meeting link. Join and Copy appear only for `http(s)` URLs; anything else is plain text. */
   readonly joinUrl?: string | null;
-  /** Detail rows after Participants; each shows only when its value is set. */
-  readonly classroom?: string | null;
-  /** Detail row after Classroom; shown only when set. */
-  readonly instructor?: string | null;
-  /** Detail row after Instructor; shown only when set. */
-  readonly course?: string | null;
   /** Reminder link. The detail offers Go to page and Copy link for `http(s)` URLs only. */
   readonly url?: string | null;
   /** Reminder notification: the detail shows an early reminder notice when it is set. */

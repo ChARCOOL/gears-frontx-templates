@@ -229,7 +229,7 @@ describe(MonthGrid, () => {
       end: instant(calendarDate("2025-09-04"), "10:00"),
       id: "timed",
       start: instant(calendarDate("2025-09-04"), "09:00"),
-      title: "Timed lecture",
+      title: "Timed meeting",
     });
 
     const span = eventFixture({
@@ -257,7 +257,7 @@ describe(MonthGrid, () => {
 
     renderMonth({ events: [timed, span, middleSpan, singleSpan] });
 
-    const timedChip = screen.getByRole("button", { name: /Timed lecture/u });
+    const timedChip = screen.getByRole("button", { name: /Timed meeting/u });
     assert(timedChip.closest(`[role="presentation"]`)).not.toBeNull();
     assert(timedChip).toHaveTextContent("09:00");
     assert(timedChip.dataset.colorFamily).toBe("purple");
@@ -294,7 +294,7 @@ describe(MonthGrid, () => {
       end: instant(calendarDate("2025-09-04"), "10:00"),
       id: "parity",
       start: instant(calendarDate("2025-09-04"), "09:00"),
-      title: "Parity lecture",
+      title: "Parity meeting",
     });
 
     render(
@@ -335,10 +335,10 @@ describe(MonthGrid, () => {
       name: /September 4/iu,
     });
     const dayButton = within(dayRegion).getByRole("button", {
-      name: /Parity lecture/u,
+      name: /Parity meeting/u,
     });
     const monthButton = within(monthGrid).getByRole("button", {
-      name: /Parity lecture/u,
+      name: /Parity meeting/u,
     });
 
     if (dayButton === undefined || monthButton === undefined) {
@@ -876,14 +876,14 @@ describe("MonthGrid strip layout", () => {
         title: "Design review",
       }),
       location: "Room 42",
-      organizer: "Dr. Smith",
+      organizer: "Sam Rivera",
     } satisfies CalendarEvent;
 
     renderMonth({ events: [event] });
 
     const strip = screen.getByRole("button", { name: /Design review/u });
     assert(strip).not.toHaveTextContent("Room 42");
-    assert(strip).not.toHaveTextContent("Dr. Smith");
+    assert(strip).not.toHaveTextContent("Sam Rivera");
   });
 
   it("places timed rows after visible all-day lanes within capacity", () => {

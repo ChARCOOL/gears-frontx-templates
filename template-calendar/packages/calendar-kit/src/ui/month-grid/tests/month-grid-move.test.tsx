@@ -7,20 +7,20 @@ import { calendarDate, fromViewerDateTime } from "../../../core/model";
 import { MonthGrid } from "../month-grid";
 import type { MonthGridProps } from "../month-grid";
 
-const lecture = timedEvent({
+const meeting = timedEvent({
   endDate: "2025-09-01",
   endTime: "10:00",
-  id: "lecture",
+  id: "meeting",
   startDate: "2025-09-01",
   startTime: "09:00",
-  title: "Lecture",
+  title: "Meeting",
 });
 
 const renderMonth = (overrides: Partial<MonthGridProps> = {}) =>
   render(
     <MonthGrid
       date={calendarDate("2025-09-01")}
-      events={[lecture]}
+      events={[meeting]}
       timeZone={UTC}
       {...overrides}
     />
@@ -40,13 +40,13 @@ describe("MonthGrid drag to move", () => {
     const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
     renderMonth({ onMoveRequest });
 
-    fireEvent.dragStart(screen.getByRole("button", { name: /Lecture/u }));
+    fireEvent.dragStart(screen.getByRole("button", { name: /Meeting/u }));
     fireEvent.dragOver(dayCell(WEDNESDAY));
     fireEvent.drop(dayCell(WEDNESDAY));
 
     assert(onMoveRequest).toHaveBeenCalledOnce();
     const request = onMoveRequest.mock.calls.at(0)?.[0];
-    assert(request?.event.id).toBe("lecture");
+    assert(request?.event.id).toBe("meeting");
     assert(request?.from).toMatchObject({
       date: "2025-09-01",
       end: instant("2025-09-01", "10:00"),
@@ -64,7 +64,7 @@ describe("MonthGrid drag to move", () => {
   it("marks only the hovered day cell while the move is over another day", () => {
     renderMonth({ onMoveRequest: vi.fn() });
 
-    fireEvent.dragStart(screen.getByRole("button", { name: /Lecture/u }));
+    fireEvent.dragStart(screen.getByRole("button", { name: /Meeting/u }));
     fireEvent.dragOver(dayCell(WEDNESDAY));
 
     assert(dropTargets()).toHaveLength(1);
@@ -76,7 +76,7 @@ describe("MonthGrid drag to move", () => {
     const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
     renderMonth({ onMoveRequest });
 
-    fireEvent.dragStart(screen.getByRole("button", { name: /Lecture/u }));
+    fireEvent.dragStart(screen.getByRole("button", { name: /Meeting/u }));
     fireEvent.dragOver(dayCell(MONDAY));
     assert(dropTargets()).toHaveLength(0);
 
@@ -88,7 +88,7 @@ describe("MonthGrid drag to move", () => {
     const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
     renderMonth({ onMoveRequest });
 
-    const button = screen.getByRole("button", { name: /Lecture/u });
+    const button = screen.getByRole("button", { name: /Meeting/u });
     fireEvent.dragStart(button);
     fireEvent.dragOver(dayCell(WEDNESDAY));
     fireEvent.dragEnd(button);
@@ -100,7 +100,7 @@ describe("MonthGrid drag to move", () => {
   it("clears the mark when the pointer leaves the grid", () => {
     renderMonth({ onMoveRequest: vi.fn() });
 
-    fireEvent.dragStart(screen.getByRole("button", { name: /Lecture/u }));
+    fireEvent.dragStart(screen.getByRole("button", { name: /Meeting/u }));
     fireEvent.dragOver(dayCell(WEDNESDAY));
 
     // jsdom drops relatedTarget from the init dict, so it is set on the event itself.
@@ -114,7 +114,7 @@ describe("MonthGrid drag to move", () => {
   it("does not offer a move when no move handler is supplied", () => {
     renderMonth();
 
-    fireEvent.dragStart(screen.getByRole("button", { name: /Lecture/u }));
+    fireEvent.dragStart(screen.getByRole("button", { name: /Meeting/u }));
     fireEvent.dragOver(dayCell(WEDNESDAY));
 
     assert(dropTargets()).toHaveLength(0);

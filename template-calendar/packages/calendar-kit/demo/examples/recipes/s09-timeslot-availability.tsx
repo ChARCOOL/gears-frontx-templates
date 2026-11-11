@@ -3,7 +3,7 @@ import { useState } from "react";
 import { AvailabilityGrid } from "@gears-frontx/calendar-kit";
 import type { CalendarSelectionRange } from "@gears-frontx/calendar-kit";
 
-import { hourCells } from "./schedule-fixtures";
+import { hourCells } from "./recipe-fixtures";
 
 // The kit has no disclosure primitive, so the host uses native details.
 export function TimeslotAvailability() {
@@ -11,7 +11,7 @@ export function TimeslotAvailability() {
 
   return (
     <details open>
-      <summary>Dr. Lee</summary>
+      <summary>Ana Lee</summary>
       <AvailabilityGrid
         cells={hourCells("2026-09-21", 9, 17)}
         onSelectedRangeChange={setSelected}

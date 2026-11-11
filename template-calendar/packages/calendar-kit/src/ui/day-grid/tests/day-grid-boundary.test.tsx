@@ -298,8 +298,8 @@ describe("DayGrid boundaries", () => {
         renderEvent={renderCustomTitle}
         events={[
           event(
-            "chemistry",
-            "Introduction to Chemistry",
+            "planning",
+            "Strategy planning",
             "2026-08-24T09:00:00.000Z",
             "2026-08-24T10:00:00.000Z"
           ),
@@ -308,17 +308,17 @@ describe("DayGrid boundaries", () => {
     );
 
     assert(
-      screen.getAllByText("CUSTOM:Introduction to Chemistry").length
+      screen.getAllByText("CUSTOM:Strategy planning").length
     ).toBeGreaterThan(0);
     assert(
-      screen.getByRole("button", { name: /CUSTOM:Introduction to Chemistry/iu })
+      screen.getByRole("button", { name: /CUSTOM:Strategy planning/iu })
     ).not.toHaveTextContent(/09:00|10:00/iu);
 
     const eventLayer = byToken(container, "eventLayer");
 
     assert(
       eventLayer.querySelector('[data-testid="custom-title"]')
-    ).toHaveTextContent("CUSTOM:Introduction to Chemistry");
+    ).toHaveTextContent("CUSTOM:Strategy planning");
     assert(
       eventLayer.querySelector('[data-event-card-time="true"]')
     ).toBeNull();

@@ -30,7 +30,7 @@ import styles from "../week-grid.module.css";
 const DATE = calendarDate("2026-08-24");
 
 interface Payload {
-  readonly courseCode: string;
+  readonly itemId: string;
 }
 
 interface EventOverrides {
@@ -43,17 +43,17 @@ const event = (overrides: EventOverrides = {}): CalendarEvent<Payload> => {
     allDay: false,
     available: true,
     colorFamily: "purple",
-    conflicts: [{ dimension: "classroom", id: "conflict", label: "Classroom" }],
+    conflicts: [{ dimension: "resource", id: "conflict", label: "Resource" }],
     end: utcInstant("2026-08-24T10:00:00.000Z"),
     endDate: DATE,
     endTime: parseLocalTime("10:00"),
     id: "event-1",
-    metadata: { courseCode: "CHEM-101" },
+    metadata: { itemId: "ITEM-103" },
     start: utcInstant("2026-08-24T09:00:00.000Z"),
     startDate: DATE,
     startTime: parseLocalTime("09:00"),
     timeZone: UTC,
-    title: "Chemistry",
+    title: "Planning",
   };
 
   return { ...baseEvent, ...overrides };
@@ -190,7 +190,7 @@ describe(WeekGrid, () => {
       >();
 
     renderWeek({ events: [event()], onEventSelect });
-    const eventButton = screen.getByRole("button", { name: /Chemistry/u });
+    const eventButton = screen.getByRole("button", { name: /Planning/u });
 
     act(() => {
       eventButton.focus();
@@ -229,7 +229,7 @@ describe(WeekGrid, () => {
       events: [event({ available: false, id: "unavailable" })],
       onEventSelect,
     });
-    const eventButton = screen.getByRole("button", { name: /Chemistry/u });
+    const eventButton = screen.getByRole("button", { name: /Planning/u });
 
     assert(eventButton).toHaveAttribute("aria-disabled", "true");
 
@@ -248,7 +248,7 @@ describe(WeekGrid, () => {
       (context: CalendarEventRenderContext<Payload>) => ReactNode
     >((context: CalendarEventRenderContext<Payload>) => (
       <span>
-        Custom {context.event.metadata?.courseCode}{" "}
+        Custom {context.event.metadata?.itemId}{" "}
         {context.conflicts[0]?.label}
       </span>
     ));
@@ -265,19 +265,19 @@ describe(WeekGrid, () => {
       selectedEventId: "event-1",
     });
 
-    const customEventButton = screen.getByRole("button", { name: "Chemistry" });
+    const customEventButton = screen.getByRole("button", { name: "Planning" });
     assert(customEventButton).toHaveAttribute("aria-pressed", "true");
     assert(customEventButton).toHaveAttribute(
       "aria-description",
       "Past, Read only"
     );
     assert(customEventButton).not.toHaveAttribute("aria-disabled");
-    assert(screen.getByText("Custom CHEM-101 Classroom")).toBeTruthy();
+    assert(screen.getByText("Custom ITEM-103 Resource")).toBeTruthy();
     assert(renderEvent).toHaveBeenCalledWith(
       assert.objectContaining({ event: event() })
     );
     assert(renderConflict).toHaveBeenCalledWith(
-      assert.objectContaining({ dimension: "classroom", label: "Classroom" }),
+      assert.objectContaining({ dimension: "resource", label: "Resource" }),
       assert.objectContaining({ event: event() })
     );
   });
@@ -316,7 +316,7 @@ describe(WeekGrid, () => {
     });
     const first = getTimedCell("10:00");
     const second = getTimedCell("11:00");
-    const eventButton = screen.getByRole("button", { name: /Chemistry/u });
+    const eventButton = screen.getByRole("button", { name: /Planning/u });
 
     fireEvent.click(first);
     fireEvent.pointerDown(first);
@@ -338,7 +338,7 @@ describe(WeekGrid, () => {
       interactionMode: "paint-and-move",
       onMoveRequest,
     });
-    const eventButton = screen.getByRole("button", { name: /Chemistry/u });
+    const eventButton = screen.getByRole("button", { name: /Planning/u });
     const target = getTimedCell("13:00");
 
     // A real drag fires pointercancel and pointerleave right after dragstart.
@@ -509,7 +509,7 @@ describe("WeekGrid unit behaviour", () => {
     const renderEvent = vi.fn<
       (context: CalendarEventRenderContext<Payload>) => ReactNode
     >((context: CalendarEventRenderContext<Payload>) => (
-      <span>Course {context.event.metadata?.courseCode}</span>
+      <span>Workshop {context.event.metadata?.itemId}</span>
     ));
 
     const renderConflict = vi.fn<
@@ -525,13 +525,13 @@ describe("WeekGrid unit behaviour", () => {
       t: (key) => key,
     });
 
-    assert(screen.getByText("Course CAL-101")).toBeVisible();
-    assert(screen.getByText("Conflict Room A")).toBeVisible();
+    assert(screen.getByText("Workshop ITEM-101")).toBeVisible();
+    assert(screen.getByText("Conflict Room 1")).toBeVisible();
     assert(renderEvent).toHaveBeenCalledWith(
       assert.objectContaining({ event: timedEvent("custom") })
     );
     assert(renderConflict).toHaveBeenCalledWith(
-      assert.objectContaining({ label: "Room A" }),
+      assert.objectContaining({ label: "Room 1" }),
       assert.objectContaining({ event: timedEvent("custom") })
     );
   });

@@ -22,9 +22,9 @@ import type { EventDetailPanelProps } from "../event-detail-panel";
 
 const BERLIN = parseIanaTimeZone("Europe/Berlin");
 const DATE = calendarDate("2026-08-24");
-const EVENT_TITLE = "Chemistry";
-const SAFE_JOIN_URL = "https://join.example.com/chemistry";
-const SAFE_HTTP_JOIN_URL = "http://join.example.com/chemistry";
+const EVENT_TITLE = "Planning";
+const SAFE_JOIN_URL = "https://join.example.com/planning";
+const SAFE_HTTP_JOIN_URL = "http://join.example.com/planning";
 
 // A rule the kit cannot describe, so the host translation names it.
 const RAW_RECURRENCE_RULE = "FREQ=WEEKLY;BYDAY=MO,WE;COUNT=6";
@@ -56,18 +56,18 @@ const BASE_EVENT = {
   title: EVENT_TITLE,
 } satisfies CalendarEvent;
 
-interface ScheduleMetadata {
-  readonly courseCode: string;
-  readonly classroom: string;
+interface SampleMetadata {
+  readonly itemId: string;
+  readonly resource: string;
 }
 
-const SCHEDULE_EVENT = {
+const SAMPLE_EVENT = {
   ...BASE_EVENT,
   metadata: {
-    classroom: "Science Hall 204",
-    courseCode: "CHEM-204",
+    resource: "North Hall 204",
+    itemId: "ITEM-204",
   },
-} satisfies CalendarEvent<ScheduleMetadata>;
+} satisfies CalendarEvent<SampleMetadata>;
 
 const panelProps = (
   overrides: Partial<EventDetailPanelProps> = {}
@@ -299,29 +299,29 @@ describe(EventDetailPanel, () => {
 
   it("passes the exact typed event to product body and action slots", () => {
     const renderBody = vi.fn<(event: CalendarEvent) => ReactNode>((event) => {
-      expect(event).toBe(SCHEDULE_EVENT);
-      return <p>Course code: {SCHEDULE_EVENT.metadata.courseCode}</p>;
+      expect(event).toBe(SAMPLE_EVENT);
+      return <p>Workshop code: {SAMPLE_EVENT.metadata.itemId}</p>;
     });
 
     const renderActions = vi.fn<(event: CalendarEvent) => ReactNode>(
       (event) => {
-        expect(event).toBe(SCHEDULE_EVENT);
+        expect(event).toBe(SAMPLE_EVENT);
 
         return (
           <button type="button">
-            Room: {SCHEDULE_EVENT.metadata.classroom}
+            Room: {SAMPLE_EVENT.metadata.resource}
           </button>
         );
       }
     );
 
-    renderPanel({ event: SCHEDULE_EVENT, renderActions, renderBody });
+    renderPanel({ event: SAMPLE_EVENT, renderActions, renderBody });
 
-    expect(renderBody).toHaveBeenCalledWith(SCHEDULE_EVENT);
-    expect(renderActions).toHaveBeenCalledWith(SCHEDULE_EVENT);
-    expect(screen.getByText("Course code: CHEM-204")).toBeTruthy();
+    expect(renderBody).toHaveBeenCalledWith(SAMPLE_EVENT);
+    expect(renderActions).toHaveBeenCalledWith(SAMPLE_EVENT);
+    expect(screen.getByText("Workshop code: ITEM-204")).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: "Room: Science Hall 204" })
+      screen.getByRole("button", { name: "Room: North Hall 204" })
     ).toBeTruthy();
   });
 
@@ -584,16 +584,16 @@ const richEvent = (): CalendarEvent =>
     ...BASE_EVENT,
     conflicts: [
       {
-        dimension: "classroom",
+        dimension: "resource",
         id: "c1",
         label: "Room 204",
-        message: "Double-booked with Biology",
+        message: "Double-booked with Design",
         severity: "warning",
       },
     ],
     description: "Bring a lab coat.",
-    location: "Science Hall 204",
-    organizer: "Dr. Rivera",
+    location: "North Hall 204",
+    organizer: "Jordan Lee",
     organizerEmail: "rivera@example.com",
   });
 
@@ -619,17 +619,17 @@ describe("EventDetailPanel default presentation", () => {
   it("renders the populated location, organizer, and description sections", () => {
     renderPanel({ event: richEvent() });
 
-    expect(screen.getByText("Science Hall 204")).toBeTruthy();
-    expect(screen.getByText("Dr. Rivera")).toBeTruthy();
+    expect(screen.getByText("North Hall 204")).toBeTruthy();
+    expect(screen.getByText("Jordan Lee")).toBeTruthy();
     expect(screen.getByText("Bring a lab coat.")).toBeTruthy();
   });
 
   it("renders the conflict dimension, label, and message", () => {
     renderPanel({ event: richEvent() });
 
-    expect(screen.getByText("classroom")).toBeTruthy();
+    expect(screen.getByText("resource")).toBeTruthy();
     expect(screen.getByText("Room 204")).toBeTruthy();
-    expect(screen.getByText("Double-booked with Biology")).toBeTruthy();
+    expect(screen.getByText("Double-booked with Design")).toBeTruthy();
   });
 
   it("omits empty optional sections", () => {
@@ -709,7 +709,7 @@ describe("EventDetailPanel keyboard and event absence", () => {
   });
 });
 
-describe("EventDetailPanel reminder, course and activity rows", () => {
+describe("EventDetailPanel reminder and activity rows", () => {
   it("renders a reminder title with no icon, as for events", () => {
     renderPanel({
       event: timedEvent({ ...BASE_EVENT, eventType: "reminder" }),
@@ -727,29 +727,13 @@ describe("EventDetailPanel reminder, course and activity rows", () => {
         attendees: makeAttendees(2),
         eventType: "reminder",
         joinUrl: SAFE_JOIN_URL,
-        organizer: "Dr. Rivera",
+        organizer: "Jordan Lee",
       }),
     });
 
     expect(screen.queryByRole("heading", { name: "Organizer" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "Conferencing" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "Participants" })).toBeNull();
-  });
-
-  it("shows course rows only for the fields that are set", () => {
-    renderPanel({
-      event: timedEvent({
-        ...BASE_EVENT,
-        classroom: "Science Hall 204",
-        course: "CHEM-204",
-        instructor: null,
-      }),
-    });
-
-    expect(screen.getByRole("heading", { name: "Classroom" })).toBeTruthy();
-    expect(screen.getByText("Science Hall 204")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Course" })).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "Instructor" })).toBeNull();
   });
 
   it("shows the early-reminder notice when the event sets notify", () => {

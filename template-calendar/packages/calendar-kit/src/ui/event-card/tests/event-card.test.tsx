@@ -47,11 +47,11 @@ const UNIT_ALL_DAY_EVENT = {
   title: "All-day unit",
 };
 
-interface SchedulePayload {
-  readonly courseCode: string;
-  readonly classroom: string;
+interface SamplePayload {
+  readonly itemId: string;
+  readonly resource: string;
   readonly capacity: number;
-  readonly instructor: string;
+  readonly person: string;
   readonly programSection: string;
 }
 
@@ -59,17 +59,17 @@ type TimedEventOverrides<Payload> = Partial<
   Omit<Extract<CalendarEvent<Payload>, { readonly allDay: false }>, "allDay">
 >;
 
-const SCHEDULE_METADATA: SchedulePayload = {
+const SAMPLE_METADATA: SamplePayload = {
   capacity: 30,
-  classroom: "Room B12",
-  courseCode: "CHEM-101",
-  instructor: "Dr. Smith",
-  programSection: "BSc CS / Section 2",
+  resource: "Room 2",
+  itemId: "ITEM-103",
+  person: "Sam Rivera",
+  programSection: "Group 2",
 };
 
-const scheduleEvent = (
-  overrides: TimedEventOverrides<SchedulePayload> = {}
-): CalendarEvent<SchedulePayload> => ({
+const sampleEvent = (
+  overrides: TimedEventOverrides<SamplePayload> = {}
+): CalendarEvent<SamplePayload> => ({
   allDay: false,
   available: true,
   colorFamily: "purple",
@@ -77,16 +77,16 @@ const scheduleEvent = (
   endDate: DATE,
   endTime: parseLocalTime("10:00"),
   id: "event-1",
-  metadata: SCHEDULE_METADATA,
+  metadata: SAMPLE_METADATA,
   start: utcInstant("2026-08-24T09:00:00.000Z"),
   startDate: DATE,
   startTime: parseLocalTime("09:00"),
   timeZone: UTC,
-  title: "Chemistry",
+  title: "Planning",
   ...overrides,
 });
 
-const scheduleAllDayEvent = (): CalendarEvent<SchedulePayload> => ({
+const sampleAllDayEvent = (): CalendarEvent<SamplePayload> => ({
   allDay: true,
   colorFamily: "turquoise",
   endDate: calendarDate("2026-08-25"),
@@ -110,10 +110,10 @@ const renderUnitCard = (overrides: Partial<EventCardProps> = {}) =>
     />
   );
 
-const renderCard = (overrides: Partial<EventCardProps<SchedulePayload>> = {}) =>
+const renderCard = (overrides: Partial<EventCardProps<SamplePayload>> = {}) =>
   render(
     <EventCard
-      event={scheduleEvent()}
+      event={sampleEvent()}
       timeZone={UTC}
       locale="en-US"
       t={t}
@@ -123,7 +123,7 @@ const renderCard = (overrides: Partial<EventCardProps<SchedulePayload>> = {}) =>
   );
 
 const getCard = (): HTMLElement =>
-  screen.getByRole("button", { name: /Chemistry/u });
+  screen.getByRole("button", { name: /Planning/u });
 
 const eventGeometry = (height: number): CalendarEventGeometry => ({
   height,
@@ -136,13 +136,13 @@ const eventGeometry = (height: number): CalendarEventGeometry => ({
 describe(EventCard, () => {
 it("names an empty busy title Busy and an empty title (untitled)", () => {
   const { unmount } = renderCard({
-    event: { ...scheduleEvent(), access: "busy", title: "" },
+    event: { ...sampleEvent(), access: "busy", title: "" },
   });
 
   expect(screen.getByRole("button", { name: /^Busy\b/u })).toBeInTheDocument();
   unmount();
 
-  renderCard({ event: { ...scheduleEvent(), title: "" } });
+  renderCard({ event: { ...sampleEvent(), title: "" } });
 
   expect(
     screen.getByRole("button", { name: /^\(untitled\)/u })
@@ -154,13 +154,13 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
     const card = getCard();
 
     expect(card).toHaveAttribute("data-event-id", "event-1");
-    expect(card.textContent).toContain("Chemistry");
+    expect(card.textContent).toContain("Planning");
     expect(card.textContent).toMatch(/9:00/u);
     expect(card.textContent).toMatch(/10:00/u);
   });
 
   it("renders an all-day event without a time of day", () => {
-    renderCard({ event: scheduleAllDayEvent() });
+    renderCard({ event: sampleAllDayEvent() });
     const card = screen.getByRole("button", { name: /Faculty meeting/u });
 
     expect(card).toHaveAttribute("data-event-id", "allday-1");
@@ -168,36 +168,36 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
     expect(card.textContent).not.toMatch(/\d{1,2}:\d{2}/u);
   });
 
-  it("lets a product render Schedule metadata without changing the event card", () => {
+  it("lets a product render Event metadata without changing the event card", () => {
     const renderMetadata = vi.fn<
-      (context: CalendarEventRenderContext<SchedulePayload>) => ReactNode
+      (context: CalendarEventRenderContext<SamplePayload>) => ReactNode
     >((context) => (
       <span>
-        Schedule {context.event.metadata?.courseCode}{" "}
-        {context.event.metadata?.classroom}
+        Event {context.event.metadata?.itemId}{" "}
+        {context.event.metadata?.resource}
       </span>
     ));
 
     renderCard({ renderMetadata });
     const card = getCard();
 
-    expect(screen.getByText("Schedule CHEM-101 Room B12")).toBeVisible();
-    expect(card.textContent).toContain("Chemistry");
+    expect(screen.getByText("Event ITEM-103 Room 2")).toBeVisible();
+    expect(card.textContent).toContain("Planning");
     expect(renderMetadata).toHaveBeenCalledOnce();
     expect(renderMetadata.mock.calls[0]?.[0].event.metadata).toStrictEqual(
-      SCHEDULE_METADATA
+      SAMPLE_METADATA
     );
   });
 
   it("calls the metadata renderer with undefined metadata for events without metadata", () => {
     const renderMetadata = vi.fn<
-      (context: CalendarEventRenderContext<SchedulePayload>) => ReactNode
+      (context: CalendarEventRenderContext<SamplePayload>) => ReactNode
     >((context) => (
-      <span>{context.event.metadata?.courseCode ?? "undefined"}</span>
+      <span>{context.event.metadata?.itemId ?? "undefined"}</span>
     ));
 
     renderCard({
-      event: scheduleEvent({ metadata: undefined }),
+      event: sampleEvent({ metadata: undefined }),
       renderMetadata,
     });
 
@@ -209,11 +209,11 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
   it("replaces the default title through the renderTitle slot", () => {
     const renderTitle = vi.fn<
       (context: CalendarEventRenderContext) => ReactNode
-    >(() => <span>Custom course title</span>);
+    >(() => <span>Custom item title</span>);
     renderCard({ renderTitle });
 
-    expect(screen.getByText("Custom course title")).toBeVisible();
-    expect(screen.queryByText("Chemistry")).toBeNull();
+    expect(screen.getByText("Custom item title")).toBeVisible();
+    expect(screen.queryByText("Planning")).toBeNull();
     expect(renderTitle).toHaveBeenCalledOnce();
     expect(renderTitle.mock.calls[0]?.[0]?.event.id).toBe("event-1");
   });
@@ -254,12 +254,12 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
     const onSelect =
       vi.fn<
         (
-          event: CalendarEvent<SchedulePayload>,
-          context: CalendarEventRenderContext<SchedulePayload>
+          event: CalendarEvent<SamplePayload>,
+          context: CalendarEventRenderContext<SamplePayload>
         ) => void
       >();
 
-    const event = scheduleEvent();
+    const event = sampleEvent();
     renderCard({ event, onSelect });
     const card = getCard();
 
@@ -295,12 +295,12 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
     const onSelect =
       vi.fn<
         (
-          event: CalendarEvent<SchedulePayload>,
-          context: CalendarEventRenderContext<SchedulePayload>
+          event: CalendarEvent<SamplePayload>,
+          context: CalendarEventRenderContext<SamplePayload>
         ) => void
       >();
 
-    renderCard({ event: scheduleEvent({ available: false }), onSelect });
+    renderCard({ event: sampleEvent({ available: false }), onSelect });
     const card = getCard();
 
     expect(card).toHaveAttribute("aria-disabled", "true");
@@ -316,12 +316,12 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
     const onSelect =
       vi.fn<
         (
-          event: CalendarEvent<SchedulePayload>,
-          context: CalendarEventRenderContext<SchedulePayload>
+          event: CalendarEvent<SamplePayload>,
+          context: CalendarEventRenderContext<SamplePayload>
         ) => void
       >();
 
-    renderCard({ event: scheduleEvent({ access: "busy" }), onSelect });
+    renderCard({ event: sampleEvent({ access: "busy" }), onSelect });
     const card = getCard();
 
     expect(card).toHaveAttribute("aria-disabled", "true");
@@ -337,8 +337,8 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
     const onSelect =
       vi.fn<
         (
-          event: CalendarEvent<SchedulePayload>,
-          context: CalendarEventRenderContext<SchedulePayload>
+          event: CalendarEvent<SamplePayload>,
+          context: CalendarEventRenderContext<SamplePayload>
         ) => void
       >();
 
@@ -353,7 +353,7 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
     const { rerender } = renderCard();
 
     const expectations: readonly {
-      readonly props: Partial<EventCardProps<SchedulePayload>>;
+      readonly props: Partial<EventCardProps<SamplePayload>>;
       readonly check: (card: HTMLElement) => void;
     }[] = [
       {
@@ -385,7 +385,7 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
     for (const { props, check } of expectations) {
       rerender(
         <EventCard
-          event={scheduleEvent()}
+          event={sampleEvent()}
           timeZone={UTC}
           locale="en-US"
           t={t}
@@ -400,27 +400,27 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
 
   it("renders supplied conflicts with their dimensions by default", () => {
     const conflicts: readonly CalendarConflict[] = [
-      { dimension: "instructor", id: "c1", label: "Dr. Smith" },
+      { dimension: "person", id: "c1", label: "Sam Rivera" },
     ];
     renderCard({ conflicts });
     const card = getCard();
 
-    expect(card.textContent).toContain("instructor");
-    expect(card.textContent).toContain("Dr. Smith");
+    expect(card.textContent).toContain("person");
+    expect(card.textContent).toContain("Sam Rivera");
   });
 
   it("uses severity modifier classes for card conflicts", () => {
     const conflicts: readonly CalendarConflict[] = [
       {
-        dimension: "instructor",
+        dimension: "person",
         id: "warning",
-        label: "Dr. Smith",
+        label: "Sam Rivera",
         severity: "warning",
       },
       {
-        dimension: "classroom",
+        dimension: "resource",
         id: "error",
-        label: "Room B12",
+        label: "Room 2",
         severity: "error",
       },
     ];
@@ -435,7 +435,7 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
 
   it("replaces conflict rendering through the renderConflict slot", () => {
     const conflicts: readonly CalendarConflict[] = [
-      { dimension: "classroom", id: "c1", label: "Room B12" },
+      { dimension: "resource", id: "c1", label: "Room 2" },
     ];
 
     const renderConflict = vi.fn<
@@ -446,14 +446,14 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
     >((conflict) => <span>Clash: {conflict.label}</span>);
     renderCard({ conflicts, renderConflict });
 
-    expect(screen.getByText("Clash: Room B12")).toBeVisible();
+    expect(screen.getByText("Clash: Room 2")).toBeVisible();
     expect(renderConflict).toHaveBeenCalledOnce();
     expect(renderConflict.mock.calls[0]?.[0]).toStrictEqual(conflicts[0]);
     expect(renderConflict.mock.calls[0]?.[1]?.event.id).toBe("event-1");
   });
 
   it("carries the supplied segment into the render context", () => {
-    const event = scheduleEvent();
+    const event = sampleEvent();
 
     const segment: CalendarEventSegment = {
       date: DATE,
@@ -464,12 +464,12 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
     };
 
     const renderMetadata = vi.fn<
-      (context: CalendarEventRenderContext<SchedulePayload>) => ReactNode
+      (context: CalendarEventRenderContext<SamplePayload>) => ReactNode
     >((context) => <span>{context.event.id}</span>);
 
     renderCard({ event, renderMetadata, segment });
 
-    expect(getCard().textContent).toContain("Chemistry");
+    expect(getCard().textContent).toContain("Planning");
     expect(renderMetadata.mock.calls[0]?.[0].segment).toStrictEqual(segment);
   });
 
@@ -510,7 +510,7 @@ describe("EventCard geometry tiers", () => {
 
     expect(card).toHaveAttribute("data-event-card-layout", "single");
     expect(card).toHaveAttribute("data-event-card-compact", "true");
-    expect(card).toHaveTextContent(/Chemistry.*9:00/u);
+    expect(card).toHaveTextContent(/Planning.*9:00/u);
   });
 
   it("shows only the start minute without a clock icon on the compact strip", () => {
@@ -524,7 +524,7 @@ describe("EventCard geometry tiers", () => {
   });
 
   it("keeps a minimized all-day card title-only", () => {
-    renderCard({ event: scheduleAllDayEvent(), geometry: eventGeometry(21) });
+    renderCard({ event: sampleAllDayEvent(), geometry: eventGeometry(21) });
 
     const card = screen.getByRole("button", { name: /Faculty meeting/u });
 
@@ -540,12 +540,12 @@ describe("EventCard accessibility", () => {
 
     expect(card).toHaveAccessibleName();
     expect(card.getAttribute("aria-label") ?? card.textContent).toContain(
-      "Chemistry"
+      "Planning"
     );
   });
 
   it("keeps a non-empty accessible name when the title is missing", () => {
-    renderCard({ event: scheduleEvent({ title: "" }) });
+    renderCard({ event: sampleEvent({ title: "" }) });
     const buttons = screen.getAllByRole("button");
 
     expect(buttons).toHaveLength(1);
@@ -555,7 +555,7 @@ describe("EventCard accessibility", () => {
   });
 
   it("reports unavailable state through ARIA", () => {
-    renderCard({ event: scheduleEvent({ available: false }) });
+    renderCard({ event: sampleEvent({ available: false }) });
 
     expect(getCard()).toHaveAttribute("aria-disabled", "true");
   });
@@ -615,7 +615,7 @@ describe("EventCard accessibility", () => {
       vi.fn<
         (event: CalendarEvent, context: CalendarEventRenderContext) => void
       >();
-    renderCard({ event: scheduleEvent({ available: false }), onSelect });
+    renderCard({ event: sampleEvent({ available: false }), onSelect });
     const card = getCard();
 
     card.focus();

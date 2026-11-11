@@ -15,8 +15,8 @@ import type { CalendarSidePanelProps } from "../calendar-side-panel";
 const PANEL_ID = "calendar-side-panel";
 
 const CALENDARS: readonly CalendarRef[] = [
-  { colorFamily: "turquoise", id: "cal-courses", name: "Courses" },
-  { colorFamily: "purple", id: "cal-exams", name: "Exams" },
+  { colorFamily: "turquoise", id: "cal-teams", name: "Teams" },
+  { colorFamily: "purple", id: "cal-workshops", name: "Workshops" },
 ];
 
 const baseProps = (
@@ -235,7 +235,7 @@ describe(CalendarSidePanel, () => {
     render(
       <CalendarSidePanel
         {...baseProps({
-          hiddenCalendarIds: ["cal-exams"],
+          hiddenCalendarIds: ["cal-workshops"],
           onHiddenCalendarIdsChange,
           slots: {
             calendarList: () => (

@@ -11,7 +11,7 @@ Props: `cells`, `headerFormat`, `interactionMode="read-only"`, `rowHeight`.
 // demo/examples/recipes/s10-tiny-grid.tsx
 import { AvailabilityGrid } from "@gears-frontx/calendar-kit";
 
-import { hourCells } from "./schedule-fixtures";
+import { hourCells } from "./recipe-fixtures";
 
 // Two day columns, three rows. Blocked cells are `available: false`.
 const cells = [

@@ -43,7 +43,7 @@ const popoverProps = () => ({
   direction: "ltr" as const,
   locale: "en-US",
   locations: [
-    { id: "room-1", label: "Science Hall 204" },
+    { id: "room-1", label: "North Hall 204" },
     { id: "room-2", label: "Virtual room" },
   ],
   onCancel: () => {},
@@ -224,9 +224,9 @@ describe("create-event-format", () => {
     await user.click(addLocation);
 
     const location = screen.getByLabelText(/location/iu);
-    fireEvent.change(location, { target: { value: "Science Hall 204" } });
+    fireEvent.change(location, { target: { value: "North Hall 204" } });
 
-    assert(location).toHaveValue("Science Hall 204");
+    assert(location).toHaveValue("North Hall 204");
   });
 });
 

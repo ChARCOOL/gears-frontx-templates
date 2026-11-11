@@ -1,6 +1,6 @@
 # calendar-kit documentation
 
-`@gears-frontx/calendar-kit` is a calendar and scheduling UI for FrontX host applications: week, day, month and agenda views, the event card and detail, the create-event form, and the side-panel tools around them. It renders what the host gives it and reports what the user did. It never fetches, stores or decides anything about scheduling.
+`@gears-frontx/calendar-kit` is a calendar UI for FrontX host applications: week, day, month and agenda views, the event card and detail, the create-event form, and the side-panel tools around them. It renders what the host gives it and reports what the user did. It never fetches, stores or decides anything about events.
 
 ## Start here
 
@@ -31,7 +31,7 @@
 | [`EventCard`](../ui/event-card/event-card.md) | `event-card` | The event surface every view uses by default |
 | [`EventDetailPanel`](../ui/event-detail-panel/event-detail-panel.md) | `event-detail-panel` | Inline event detail region for a side sheet |
 | [`CreateEventPanel`](../ui/create-event/create-event.md) | `create-event` | Create-event form with recurrence, people and discard guard |
-| [`ConflictIndicator`](../ui/conflict-indicator/conflict-indicator.md) | `conflict-indicator` | Named scheduling conflicts |
+| [`ConflictIndicator`](../ui/conflict-indicator/conflict-indicator.md) | `conflict-indicator` | Named conflicts |
 | [`AvailabilityGrid`](../ui/availability-grid/availability-grid.md) | `availability-grid` | Paint free time over host availability |
 | [`CalendarSidePanel`](../ui/calendar-side-panel/calendar-side-panel.md) | `calendar-side-panel` | Panel shell composing the tools below |
 | [`MonthNavigator`](../ui/month-navigator/month-navigator.md) | `month-navigator` | Mini month for picking a day |

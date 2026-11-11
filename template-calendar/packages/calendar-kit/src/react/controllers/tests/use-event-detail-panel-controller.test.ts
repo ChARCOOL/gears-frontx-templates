@@ -15,7 +15,7 @@ import {
   useEventDetailPanelController,
 } from "../use-event-detail-panel-controller";
 
-const SAFE_JOIN_URL = "https://join.example.com/chemistry";
+const SAFE_JOIN_URL = "https://join.example.com/planning";
 const UNSAFE_SCRIPT_SCHEME = ["java", "script:"].join("");
 
 type TimedCalendarEvent = Extract<CalendarEvent, { readonly allDay: false }>;
@@ -26,7 +26,7 @@ const makeEvent = (
   timedEvent({
     available: true,
     colorFamily: "purple",
-    title: "Chemistry",
+    title: "Planning",
     ...overrides,
   });
 

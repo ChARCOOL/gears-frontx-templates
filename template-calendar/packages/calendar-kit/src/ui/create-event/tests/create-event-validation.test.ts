@@ -75,7 +75,7 @@ describe("create-event-validation", () => {
     ).toBe(true);
 
     const missing = validateCreateEventDraft(draft(), {
-      eventTypeIds: ["lecture"],
+      eventTypeIds: ["meeting"],
       eventTypeRequired: true,
     });
 
@@ -86,8 +86,8 @@ describe("create-event-validation", () => {
     ).toBe("calendar.create_event.error.event_type_required");
     assert(
       validateCreateEventDraft(
-        { ...draft(), eventTypeId: "lecture" },
-        { eventTypeIds: ["lecture"], eventTypeRequired: true }
+        { ...draft(), eventTypeId: "meeting" },
+        { eventTypeIds: ["meeting"], eventTypeRequired: true }
       ).valid
     ).toBe(true);
   });
@@ -95,7 +95,7 @@ describe("create-event-validation", () => {
   it("rejects an event type id the host does not offer", () => {
     const stale = validateCreateEventDraft(
       { ...draft(), eventTypeId: "retired" },
-      { eventTypeIds: ["lecture"] }
+      { eventTypeIds: ["meeting"] }
     );
 
     assert(stale.valid).toBe(false);

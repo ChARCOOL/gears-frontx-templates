@@ -96,7 +96,7 @@ const popoverProps = (
   direction: "ltr",
   locale: "en-US",
   locations: [
-    { id: "room-1", label: "Science Hall 204" },
+    { id: "room-1", label: "North Hall 204" },
     { id: "room-2", label: "Virtual room" },
   ],
   onCancel: () => {},
@@ -209,17 +209,17 @@ describe("CreateEventPanel public shell", () => {
     assert(close.textContent).toBe("");
   });
 
-  it("renders the translated schedule prefix only in the calendar option", () => {
+  it("renders the translated calendar prefix only in the calendar option", () => {
     renderPopover();
 
     const trigger = screen.getByRole("combobox", { name: /calendar/iu });
     assert(trigger).toHaveTextContent("Teaching");
-    assert(trigger).not.toHaveTextContent("Schedule:");
+    assert(trigger).not.toHaveTextContent("Calendar:");
 
     fireEvent.click(trigger);
 
     assert(
-      screen.getByRole("option", { name: "Schedule: Teaching" })
+      screen.getByRole("option", { name: "Calendar: Teaching" })
     ).toBeInTheDocument();
   });
 
@@ -491,29 +491,29 @@ describe("CreateEventPanel draft and validation behaviour", () => {
     const onSubmit = submitSpy();
     renderPopover({
       eventTypes: [
-        { colorFamily: "green", id: "lecture", label: "Lecture" },
-        { id: "exam", label: "Exam" },
+        { colorFamily: "green", id: "meeting", label: "Meeting" },
+        { id: "workshop", label: "Workshop" },
       ],
       onSubmit,
     });
 
-    chooseSelectOption(/event type/iu, "Lecture");
+    chooseSelectOption(/event type/iu, "Meeting");
     await user.click(getSubmitButton());
 
     assert(onSubmit).toHaveBeenCalledWith(
-      assert.objectContaining({ eventTypeId: "lecture" })
+      assert.objectContaining({ eventTypeId: "meeting" })
     );
   });
 
   it("keeps Save disabled until a required event type is picked", () => {
     renderPopover({
       eventTypeRequired: true,
-      eventTypes: [{ id: "lecture", label: "Lecture" }],
+      eventTypes: [{ id: "meeting", label: "Meeting" }],
     });
 
     assert(getSubmitButton()).toBeDisabled();
 
-    chooseSelectOption(/event type/iu, "Lecture");
+    chooseSelectOption(/event type/iu, "Meeting");
 
     assert(getSubmitButton()).toBeEnabled();
   });
@@ -522,7 +522,7 @@ describe("CreateEventPanel draft and validation behaviour", () => {
     const onSubmit = submitSpy();
     renderPopover({
       eventTypeRequired: true,
-      eventTypes: [{ id: "lecture", label: "Lecture" }],
+      eventTypes: [{ id: "meeting", label: "Meeting" }],
       onSubmit,
     });
 
@@ -548,7 +548,7 @@ describe("CreateEventPanel draft and validation behaviour", () => {
   it("does not apply the host event types to a reminder", () => {
     renderPopover({
       eventTypeRequired: true,
-      eventTypes: [{ id: "lecture", label: "Lecture" }],
+      eventTypes: [{ id: "meeting", label: "Meeting" }],
       kind: "reminder",
     });
 
@@ -1089,7 +1089,7 @@ describe("CreateEventPanel conflict result", () => {
   it("keeps the form open without an inline error for a conflict", async () => {
     const user = userEvent.setup({ delay: null });
     const onSubmit = submitSpy({
-      error: { kind: "conflict", message: "Room A is booked" },
+      error: { kind: "conflict", message: "Room 1 is booked" },
     });
 
     renderPopover({ onSubmit });
@@ -1099,7 +1099,7 @@ describe("CreateEventPanel conflict result", () => {
       assert(onSubmit).toHaveBeenCalledOnce();
     });
     assert(getCreateDialog()).toBeInTheDocument();
-    assert(screen.queryByText("Room A is booked")).toBeNull();
+    assert(screen.queryByText("Room 1 is booked")).toBeNull();
     assert(screen.queryByRole("status")).toBeNull();
   });
 });
@@ -1247,7 +1247,7 @@ describe("CreateEventPanel discard and submit behaviour", () => {
         { colorFamily: "purple", id: "calendar-1", name: "Teaching" },
         { colorFamily: "turquoise", id: "calendar-2", name: "Research" },
         { colorFamily: "orange", id: "calendar-3", name: "Operations" },
-        { colorFamily: "green", id: "calendar-4", name: "Students" },
+        { colorFamily: "green", id: "calendar-4", name: "Reviewers" },
         { colorFamily: "blue", id: "calendar-5", name: "Clients" },
         { colorFamily: "pink", id: "calendar-6", name: "Personal" },
       ],
@@ -1417,18 +1417,18 @@ describe("CreateEventPanel discard and submit behaviour", () => {
     const onSubmit = submitSpy();
     renderPopover({ onSubmit });
 
-    await setInputValue(user, screen.getByLabelText(/title/iu), "Exam review");
+    await setInputValue(user, screen.getByLabelText(/title/iu), "Design review");
     await user.click(screen.getByRole("button", { name: "Add a location" }));
     const location = screen.getByRole("combobox", { name: /location/iu });
     act(() => {
-      fireEvent.change(location, { target: { value: "Science Hall 204" } });
+      fireEvent.change(location, { target: { value: "North Hall 204" } });
     });
     await user.click(getSubmitButton());
 
     assert(onSubmit).toHaveBeenCalledExactlyOnceWith({
       ...BASE_DRAFT,
-      location: "Science Hall 204",
-      title: "Exam review",
+      location: "North Hall 204",
+      title: "Design review",
     });
   });
 });
@@ -1823,7 +1823,7 @@ describe("CreateEventPanel Event and Reminder kinds", () => {
       attendeeIds: ["person-1"],
       conferencingProviderId: "team-sync",
       description: "Agenda",
-      location: "Science Hall 204",
+      location: "North Hall 204",
     };
     const { rerender } = renderPopover({
       defaultDraft,
@@ -1898,7 +1898,7 @@ describe("CreateEventPanel reminder notify", () => {
     return requestPermission;
   };
 
-  it("asks for permission when Notify turns on and saves the default lead time", async () => {
+  it("asks the browser when Notify turns on and saves the default lead time", async () => {
     const user = userEvent.setup({ delay: null });
     const requestPermission = stubNotification("default");
     const onSubmit = submitSpy();
@@ -1922,7 +1922,7 @@ describe("CreateEventPanel reminder notify", () => {
     });
   });
 
-  it("keeps Notify on without a prompt when permission is already granted", async () => {
+  it("keeps Notify on without a prompt when notifications are already granted", async () => {
     const user = userEvent.setup({ delay: null });
     const requestPermission = stubNotification("granted");
     renderPopover({ kind: "reminder", onKindChange: vi.fn() });
@@ -1933,7 +1933,7 @@ describe("CreateEventPanel reminder notify", () => {
     assert(requestPermission).not.toHaveBeenCalled();
   });
 
-  it("keeps Notify off and explains it when permission is denied", async () => {
+  it("keeps Notify off and explains it when notifications are denied", async () => {
     const user = userEvent.setup({ delay: null });
     const requestPermission = stubNotification("denied");
     renderPopover({ kind: "reminder", onKindChange: vi.fn() });
@@ -1945,7 +1945,7 @@ describe("CreateEventPanel reminder notify", () => {
     assert(screen.getByText("Enable notifications in your browser")).toBeInTheDocument();
   });
 
-  it("keeps Notify off when the permission prompt is dismissed", async () => {
+  it("keeps Notify off when the browser prompt is dismissed", async () => {
     const user = userEvent.setup({ delay: null });
     stubNotification("default", "default");
     renderPopover({ kind: "reminder", onKindChange: vi.fn() });
@@ -1985,7 +1985,7 @@ describe("CreateEventPanel reminder notify", () => {
     });
   });
 
-  it("keeps a title typed while the permission prompt is pending", async () => {
+  it("keeps a title typed while the browser prompt is pending", async () => {
     const user = userEvent.setup({ delay: null });
     let answerPrompt: (permission: NotificationPermission) => void = () =>
       undefined;

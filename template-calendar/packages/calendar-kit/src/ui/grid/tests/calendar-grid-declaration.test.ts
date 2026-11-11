@@ -58,7 +58,7 @@ const ignoreCallback = (..._args: unknown[]): void => {
 };
 
 interface Payload {
-  readonly courseCode: string;
+  readonly itemId: string;
 }
 
 const localizedProps: CalendarLocalizedProps = {
@@ -102,7 +102,7 @@ const event: CalendarEvent<Payload> = {
   endDate: DATE,
   endTime: firstCell.endTime,
   id: "event-1",
-  metadata: { courseCode: "CAL-101" },
+  metadata: { itemId: "ITEM-101" },
   start: firstCell.start,
   startDate: DATE,
   startTime: firstCell.startTime,
@@ -111,9 +111,9 @@ const event: CalendarEvent<Payload> = {
 };
 
 const conflict: CalendarConflict = {
-  dimension: "classroom",
+  dimension: "resource",
   id: "conflict-1",
-  label: "Classroom",
+  label: "Resource",
 };
 
 const segment: CalendarEventSegment = {
@@ -261,7 +261,7 @@ const eventCardProps: EventCardProps<Payload> = {
   past: false,
   readOnly: false,
   renderConflict: (value, context) => `${value.label}:${context.event.id}`,
-  renderMetadata: (context) => context.event.metadata?.courseCode,
+  renderMetadata: (context) => context.event.metadata?.itemId,
   renderTime: (context) => context.event.startTime,
   renderTitle: (context) => context.event.title,
   segment,

@@ -16,7 +16,7 @@ import type { EventCardProps } from "../event-card";
 import cardStyles from "../event-card.module.css";
 
 const DATE = calendarDate("2026-08-24");
-const TIMED_EVENT = { id: "timed-1", title: "Chemistry lab" };
+const TIMED_EVENT = { id: "timed-1", title: "Planning lab" };
 
 const ALL_DAY_EVENT = {
   colorFamily: "purple" as const,
@@ -49,7 +49,7 @@ const eventGeometry = (height: number): CalendarEventGeometry => ({
 describe("EventCard default timed time row", () => {
   it("pairs the clock icon with the range on the default timed row (G-09)", () => {
     renderCard();
-    const card = screen.getByRole("button", { name: /Chemistry lab/u });
+    const card = screen.getByRole("button", { name: /Planning lab/u });
     const timeRow = card.querySelector<HTMLElement>(
       '[data-event-card-time="true"]'
     );
@@ -61,7 +61,7 @@ describe("EventCard default timed time row", () => {
 
   it("applies the module timeIcon class to the rendered clock icon", () => {
     const { container } = renderCard();
-    const card = screen.getByRole("button", { name: /Chemistry lab/u });
+    const card = screen.getByRole("button", { name: /Planning lab/u });
     const icon = card.querySelector("svg.lucide-clock");
 
     expect(icon?.getAttribute("class")).toContain("timeIcon");
@@ -81,7 +81,7 @@ describe("EventCard default timed time row", () => {
   it("marks a past event with the past class", () => {
     renderCard({ past: true });
 
-    expect(screen.getByRole("button", { name: /Chemistry lab/u })).toHaveClass(
+    expect(screen.getByRole("button", { name: /Planning lab/u })).toHaveClass(
       cardStyles.past
     );
   });
@@ -109,26 +109,26 @@ describe("EventCard default timed time row", () => {
 
 const metadataEvent = (): CalendarEvent => ({
   ...timedEvent(TIMED_EVENT),
-  eventType: "Course",
-  location: "B-107 (classroom)",
-  organizer: "Dr. Smith",
+  eventType: "Workshop",
+  location: "Room 4",
+  organizer: "Sam Rivera",
 });
 
 describe("EventCard default metadata rows", () => {
   it("renders the populated location, organizer, and type rows", () => {
     renderCard({ event: metadataEvent() });
 
-    const card = screen.getByRole("button", { name: /Chemistry lab/u });
+    const card = screen.getByRole("button", { name: /Planning lab/u });
 
-    expect(card).toHaveTextContent("B-107 (classroom)");
-    expect(card).toHaveTextContent("Dr. Smith");
-    expect(card).toHaveTextContent("Course");
+    expect(card).toHaveTextContent("Room 4");
+    expect(card).toHaveTextContent("Sam Rivera");
+    expect(card).toHaveTextContent("Workshop");
   });
 
   it("marks each populated metadata row with its field icon", () => {
     renderCard({ event: metadataEvent() });
 
-    const card = screen.getByRole("button", { name: /Chemistry lab/u });
+    const card = screen.getByRole("button", { name: /Planning lab/u });
 
     expect(card.querySelector("svg.lucide-map-pin")).not.toBeNull();
     expect(card.querySelector("svg.lucide-user")).not.toBeNull();
@@ -144,26 +144,26 @@ describe("EventCard default metadata rows", () => {
     };
 
     renderCard({ event });
-    const card = screen.getByRole("button", { name: /Chemistry lab/u });
+    const card = screen.getByRole("button", { name: /Planning lab/u });
 
-    expect(card).not.toHaveTextContent(/B-107|Dr\. Smith|Course/iu);
+    expect(card).not.toHaveTextContent(/Room 4|Sam Rivera|Workshop/iu);
   });
 
   it("derives metadata visibility from geometry height", () => {
     const event = metadataEvent();
     const { unmount } = renderCard({ event, geometry: eventGeometry(40) });
-    const shortCard = screen.getByRole("button", { name: /Chemistry lab/u });
+    const shortCard = screen.getByRole("button", { name: /Planning lab/u });
 
     expect(shortCard).toHaveAttribute("data-event-card-compact", "true");
-    expect(shortCard).not.toHaveTextContent(/B-107|Dr\. Smith|Course/iu);
+    expect(shortCard).not.toHaveTextContent(/Room 4|Sam Rivera|Workshop/iu);
 
     unmount();
     renderCard({ event, geometry: eventGeometry(88) });
-    const tallCard = screen.getByRole("button", { name: /Chemistry lab/u });
+    const tallCard = screen.getByRole("button", { name: /Planning lab/u });
 
     expect(tallCard).toHaveAttribute("data-event-card-compact", "true");
     expect(tallCard).toHaveTextContent(
-      /B-107 \(classroom\)[\s\S]*Dr\. Smith[\s\S]*Course/iu
+      /Room 4[\s\S]*Sam Rivera[\s\S]*Workshop/iu
     );
   });
 
@@ -171,12 +171,12 @@ describe("EventCard default metadata rows", () => {
     const event = metadataEvent();
     renderCard({ event, geometry: eventGeometry(129), positioned: false });
 
-    const card = screen.getByRole("button", { name: /Chemistry lab/u });
+    const card = screen.getByRole("button", { name: /Planning lab/u });
 
     expect(card).toHaveAttribute("data-event-card-compact", "false");
-    expect(card).toHaveTextContent("B-107 (classroom)");
-    expect(card).toHaveTextContent("Dr. Smith");
-    expect(card).toHaveTextContent("Course");
+    expect(card).toHaveTextContent("Room 4");
+    expect(card).toHaveTextContent("Sam Rivera");
+    expect(card).toHaveTextContent("Workshop");
     expect(card).not.toHaveAttribute("style");
   });
 
@@ -199,7 +199,7 @@ describe("EventCard reminder marker", () => {
     renderCard({ event });
 
     const title = screen
-      .getByRole("button", { name: /Chemistry lab/u })
+      .getByRole("button", { name: /Planning lab/u })
       .querySelector("[data-event-card-title]");
     const icon = title?.querySelector("svg.lucide-bell");
 
@@ -221,7 +221,7 @@ describe("EventCard recurrence indicator", () => {
 
     renderCard({ event });
 
-    const card = screen.getByRole("button", { name: /Chemistry lab/u });
+    const card = screen.getByRole("button", { name: /Planning lab/u });
     const icon = card.querySelector("svg.lucide-refresh-cw");
 
     expect(card).toHaveClass(cardStyles.recurring);
@@ -235,7 +235,7 @@ describe("EventCard recurrence indicator", () => {
     renderCard({ event });
 
     expect(
-      screen.getByRole("button", { name: /Chemistry lab/u })
+      screen.getByRole("button", { name: /Planning lab/u })
     ).not.toHaveClass(cardStyles.recurring);
     expect(document.querySelector("svg.lucide-refresh-cw")).toBeNull();
   });
@@ -245,7 +245,7 @@ describe("EventCard visual identity", () => {
   it("resolves the family modifier and renders a dedicated leading colour bar", () => {
     renderCard();
 
-    const card = screen.getByRole("button", { name: /Chemistry lab/u });
+    const card = screen.getByRole("button", { name: /Planning lab/u });
     const bar = card.querySelector('[data-event-card-bar="true"]');
 
     expect(card).toHaveClass(cardStyles.colorTurquoise);
@@ -256,7 +256,7 @@ describe("EventCard visual identity", () => {
   it("marks past cards", () => {
     renderCard({ past: true });
 
-    const card = screen.getByRole("button", { name: /Chemistry lab/u });
+    const card = screen.getByRole("button", { name: /Planning lab/u });
 
     expect(card).toHaveClass(cardStyles.past);
   });

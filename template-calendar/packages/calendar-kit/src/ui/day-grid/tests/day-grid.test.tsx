@@ -187,8 +187,8 @@ describe(DayGrid, () => {
         {...BASE_PROPS}
         events={[
           event(
-            "chemistry",
-            "Introduction to Chemistry",
+            "planning",
+            "Strategy planning",
             "2026-08-24T09:00:00.000Z",
             "2026-08-24T10:00:00.000Z"
           ),
@@ -203,11 +203,11 @@ describe(DayGrid, () => {
     );
 
     const first = screen.getByRole("button", {
-      name: /Introduction to Chemistry/iu,
+      name: /Strategy planning/iu,
     });
     const second = screen.getByRole("button", { name: /Overlap A/iu });
 
-    assert(first).toHaveAttribute("data-event-id", "chemistry");
+    assert(first).toHaveAttribute("data-event-id", "planning");
 
     const firstFrame = requiredElement(
       first.closest<HTMLElement>('[class*="timedEvent"]')
@@ -237,8 +237,8 @@ describe(DayGrid, () => {
         {...BASE_PROPS}
         events={[
           event(
-            "chemistry",
-            "Introduction to Chemistry",
+            "planning",
+            "Strategy planning",
             "2026-08-24T09:00:00.000Z",
             "2026-08-24T10:00:00.000Z"
           ),
@@ -248,7 +248,7 @@ describe(DayGrid, () => {
 
     const eventSlot = screen
       .getByRole("button", {
-        name: /Introduction to Chemistry/iu,
+        name: /Strategy planning/iu,
       })
       .closest<HTMLElement>('[class*="timedEvent"]');
     const eventLayer = screen
@@ -267,7 +267,7 @@ describe(DayGrid, () => {
         events={[
           event(
             "welcome",
-            "Welcome lecture events",
+            "Welcome meeting events",
             "2026-08-23T00:00:00.000Z",
             "2026-08-26T00:00:00.000Z",
             {
@@ -279,7 +279,7 @@ describe(DayGrid, () => {
     );
 
     const slot = screen.getByRole("button", {
-      name: /Welcome lecture events/iu,
+      name: /Welcome meeting events/iu,
     });
     assert(slot.closest('[class*="allDayEvent"]')).toBeTruthy();
     assert(slot.className).toContain("segmentMiddle");
@@ -403,8 +403,8 @@ describe(DayGrid, () => {
         onEventSelect={onEventSelect}
         events={[
           event(
-            "chemistry",
-            "Introduction to Chemistry",
+            "planning",
+            "Strategy planning",
             "2026-08-24T09:00:00.000Z",
             "2026-08-24T10:00:00.000Z"
           ),
@@ -413,7 +413,7 @@ describe(DayGrid, () => {
     );
 
     const eventButton = screen.getByRole("button", {
-      name: /Introduction to Chemistry/iu,
+      name: /Strategy planning/iu,
     });
     eventButton.focus();
     await user.keyboard("{Enter}");
@@ -422,8 +422,8 @@ describe(DayGrid, () => {
 
     const [selectedEvent, selectedContext] = onEventSelect.mock.calls[0] ?? [];
 
-    assert(selectedEvent?.id).toBe("chemistry");
-    assert(selectedContext?.event.id).toBe("chemistry");
+    assert(selectedEvent?.id).toBe("planning");
+    assert(selectedContext?.event.id).toBe("planning");
   });
 
   it("opens an empty timed cell with its date, local time, and anchor", async () => {
@@ -532,8 +532,8 @@ describe(DayGrid, () => {
         {...BASE_PROPS}
         events={[
           event(
-            "chemistry",
-            "Introduction to Chemistry",
+            "planning",
+            "Strategy planning",
             "2026-08-24T09:00:00.000Z",
             "2026-08-24T10:00:00.000Z"
           ),
@@ -544,15 +544,15 @@ describe(DayGrid, () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: /Introduction to Chemistry/iu })
+      screen.getByRole("button", { name: /Strategy planning/iu })
     );
 
     assert(onEventSelect).toHaveBeenCalledOnce();
 
     const [selectedEvent, selectedContext] = onEventSelect.mock.calls[0] ?? [];
 
-    assert(selectedEvent?.id).toBe("chemistry");
-    assert(selectedContext?.event.id).toBe("chemistry");
+    assert(selectedEvent?.id).toBe("planning");
+    assert(selectedContext?.event.id).toBe("planning");
     assert(onQuickCreate).not.toHaveBeenCalled();
   });
 });

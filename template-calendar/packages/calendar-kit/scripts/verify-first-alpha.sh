@@ -774,12 +774,12 @@ function event(id: string, title: string, startTime: string, endTime: string, av
     start: utcInstant(`2026-08-24T${startTime}:00.000Z`),
     end: utcInstant(`2026-08-24T${endTime}:00.000Z`),
     available,
-    conflicts: available ? [{ id: `${id}-conflict`, dimension: 'instructor', label: 'Dr. Smith' }] : [{ id: `${id}-conflict`, dimension: 'classroom', label: 'Room B12' }],
+    conflicts: available ? [{ id: `${id}-conflict`, dimension: 'person', label: 'Sam Rivera' }] : [{ id: `${id}-conflict`, dimension: 'resource', label: 'Room 2' }],
   };
 }
 
 const events = [
-  event('event-1', 'Chemistry', '09:00', '10:00'),
+  event('event-1', 'Planning', '09:00', '10:00'),
   event('event-2', 'Physics', '10:00', '11:00', false),
   event('event-3', 'Mathematics', '11:00', '12:00'),
 ];
@@ -825,10 +825,10 @@ describe('first-alpha installed consumer', () => {
     );
 
     expect(screen.getByRole('grid')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Chemistry' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Planning' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Physics' }).getAttribute('aria-disabled')).toBe('true');
-    expect(screen.getAllByText('instructor: Dr. Smith')).toHaveLength(2);
-    expect(screen.getByText('classroom: Room B12')).toBeTruthy();
+    expect(screen.getAllByText('person: Sam Rivera')).toHaveLength(2);
+    expect(screen.getByText('resource: Room 2')).toBeTruthy();
     expect(screen.getByRole('complementary', { name: 'Consumer details' })).toBeTruthy();
 
     fireEvent.keyDown(cellAt('13:00'), { key: 'Enter' });
@@ -856,13 +856,13 @@ describe('first-alpha installed consumer', () => {
 
     fireEvent.keyDown(cellAt('13:00'), { key: 'Enter' });
     expect(readOnlyCreates).toHaveLength(0);
-    expect(screen.getByRole('button', { name: 'Chemistry' }).getAttribute('aria-description')).toMatch(/read[- ]?only/i);
+    expect(screen.getByRole('button', { name: 'Planning' }).getAttribute('aria-description')).toMatch(/read[- ]?only/i);
   });
 
   it('renders EventCard and ConflictIndicator from installed family entries', () => {
     const conflicts: readonly CalendarConflict[] = [
-      { id: 'c1', dimension: 'program/section', label: 'BSc CS / Section 2' },
-      { id: 'c2', dimension: 'classroom', label: 'Room B12' },
+      { id: 'c1', dimension: 'group', label: 'Group 2' },
+      { id: 'c2', dimension: 'resource', label: 'Room 2' },
     ];
 
     render(
@@ -878,16 +878,16 @@ describe('first-alpha installed consumer', () => {
       />,
     );
 
-    const card = screen.getByRole('button', { name: /^Chemistry/ });
+    const card = screen.getByRole('button', { name: /^Planning/ });
     expect(card.getAttribute('data-event-id')).toBe('event-1');
     expect(card.getAttribute('aria-describedby')).toBeTruthy();
-    expect(card.textContent).toContain('program/section');
+    expect(card.textContent).toContain('group');
 
     cleanup();
     render(<FlatConflictIndicator conflicts={conflicts} direction="ltr" t={t} />);
-    expect(screen.getByText('program/section')).toBeTruthy();
-    expect(screen.getByText('BSc CS / Section 2')).toBeTruthy();
-    expect(screen.getByText('classroom')).toBeTruthy();
+    expect(screen.getByText('group')).toBeTruthy();
+    expect(screen.getByText('Group 2')).toBeTruthy();
+    expect(screen.getByText('resource')).toBeTruthy();
   });
 
   it('loads every first-alpha family entry at runtime', () => {

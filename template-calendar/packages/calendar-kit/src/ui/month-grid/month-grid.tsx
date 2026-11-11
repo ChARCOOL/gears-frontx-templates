@@ -15,7 +15,7 @@ import type {
 
 import { isEventActionable } from "../../core/actionability";
 import { formatCalendarList, formatGridTime } from "../../core/format";
-import { termWeekNumber } from "../../core/grid";
+import { relativeWeekNumber } from "../../core/grid";
 import type { MonthWeekRow } from "../../core/grid";
 import { dateTimeFormatter } from "../../core/intl-cache";
 import type {
@@ -83,13 +83,13 @@ export interface MonthGridData {
 
 export type MonthGridSelectionMode = "none" | "date-range";
 
-export interface MonthGridTermWeekNumbering {
+export interface MonthGridRelativeWeekNumbering {
   /** The week holding this date is week 1; earlier weeks have no number. */
-  readonly termStart: CalendarDate;
+  readonly startDate: CalendarDate;
 }
 
 export type MonthGridWeekNumbering =
-  "month" | "iso" | MonthGridTermWeekNumbering;
+  "month" | "iso" | MonthGridRelativeWeekNumbering;
 
 export interface MonthGridProps extends CalendarContextProps {
   /** Class added to the component root. */
@@ -560,7 +560,7 @@ const monthWeekNumber = (
     return row.rowIndex + 1;
   }
 
-  return termWeekNumber(row.weekStart, weekNumbering.termStart);
+  return relativeWeekNumber(row.weekStart, weekNumbering.startDate);
 };
 
 const dayStart = (date: CalendarDate, timeZone: IanaTimeZone): UtcInstant =>

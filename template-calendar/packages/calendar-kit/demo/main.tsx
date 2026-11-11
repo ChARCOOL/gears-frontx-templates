@@ -237,14 +237,14 @@ export const sampleEvents: readonly CalendarEvent<DemoEventMetadata>[] = [
       calendarName: "Work",
       conflicts: [
         {
-          dimension: "classroom",
-          id: "cf-room-a",
-          label: "Room A-101",
+          dimension: "resource",
+          id: "cf-room-1",
+          label: "Room 1",
           severity: "warning",
         },
       ],
-      location: "Room A-101",
-      metadata: { room: "A-101" },
+      location: "Room 1",
+      metadata: { room: "1" },
     }
   ),
   makeAllDayEvent(
@@ -288,15 +288,15 @@ export const sampleEvents: readonly CalendarEvent<DemoEventMetadata>[] = [
       conferencingProviderId: "prov-sync",
       conflicts: [
         {
-          dimension: "instructor",
-          id: "cf-instructor",
+          dimension: "person",
+          id: "cf-person",
           label: "Priya Nair double-booked",
           severity: "error",
         },
       ],
       description: "Plan the next two-week sprint and review capacity.",
       joinUrl: "https://call.example.com/sprint-planning",
-      location: "Room B-204",
+      location: "Room 2",
       metadata: { project: "Atlas" },
       organizer: "Priya Nair",
       recurrenceRule: "FREQ=WEEKLY;BYDAY=WE",
@@ -397,8 +397,8 @@ export const samplePeople: readonly CalendarResourceOption[] = [
 ];
 
 export const sampleLocations: readonly CalendarResourceOption[] = [
-  { id: "loc-a101", label: "Room A-101" },
-  { id: "loc-b204", label: "Room B-204" },
+  { id: "loc-1", label: "Room 1" },
+  { id: "loc-2", label: "Room 2" },
 ];
 
 export const sampleProviders: readonly CalendarResourceOption[] = [

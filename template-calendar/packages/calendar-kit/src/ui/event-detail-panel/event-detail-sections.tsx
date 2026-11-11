@@ -226,21 +226,6 @@ const EarlyReminderNotice = ({
   );
 };
 
-const CourseSection = ({ event }: { readonly event: CalendarEvent }) => {
-  const { t } = useCalendarLocalization();
-  const fields = [
-    { label: t("calendar.detail.classroom"), value: event.classroom ?? "" },
-    { label: t("calendar.detail.instructor"), value: event.instructor ?? "" },
-    { label: t("calendar.detail.course"), value: event.course ?? "" },
-  ].filter(({ value }) => value !== "");
-
-  return fields.map(({ label, value }) => (
-    <EventDetailRow key={label} label={label}>
-      <p className={styles.mutedText}>{value}</p>
-    </EventDetailRow>
-  ));
-};
-
 interface ParticipantsSectionProps {
   readonly event: CalendarEvent;
   /** Lists every guest by response in place of the avatar stack. */
@@ -502,9 +487,6 @@ export const DefaultDetail = ({
             url={reminderUrl}
           />
         )}
-      </EventDetailSection>
-      <EventDetailSection>
-        {isReminder ? null : <CourseSection event={event} />}
       </EventDetailSection>
       <EventDetailSection>
         {location !== "" && !isReminder && (

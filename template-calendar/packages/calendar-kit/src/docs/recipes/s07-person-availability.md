@@ -1,30 +1,30 @@
-# S7: Instructors availability
+# S7: Person availability
 
-The S6 grid with sparse data. Each instructor has cells only for the hours they teach or are free.
+The S6 grid with sparse data. Each person has cells only for the hours they are free.
 
 Parts: `AvailabilityGrid`.
 Props: as S6. Use `headerFormat="weekday"` when the column shows only the weekday.
 
-<!-- generated:example demo/examples/recipes/s07-instructors-availability.tsx -->
+<!-- generated:example demo/examples/recipes/s07-person-availability.tsx -->
 
 ```tsx
-// demo/examples/recipes/s07-instructors-availability.tsx
+// demo/examples/recipes/s07-person-availability.tsx
 import { useState } from "react";
 
 import { AvailabilityGrid } from "@gears-frontx/calendar-kit";
 import type { CalendarSelectionRange } from "@gears-frontx/calendar-kit";
 
-import { hourCells } from "./schedule-fixtures";
+import { hourCells } from "./recipe-fixtures";
 
-// Only the hours an instructor checked are passed as cells, so the rest stay unpainted.
-const instructorCells = hourCells("2026-09-21", 9, 12);
+// Only the hours a person checked are passed as cells, so the rest stay unpainted.
+const personCells = hourCells("2026-09-21", 9, 12);
 
-export function InstructorAvailability() {
+export function PersonAvailability() {
   const [selected, setSelected] = useState<CalendarSelectionRange | null>(null);
 
   return (
     <AvailabilityGrid
-      cells={instructorCells}
+      cells={personCells}
       headerFormat="weekday"
       onSelectedRangeChange={setSelected}
       paintMode="cells"
@@ -39,5 +39,5 @@ export function InstructorAvailability() {
 
 Rules:
 
-- Build `cells` from host data in one place. Keep one grid per instructor.
+- Build `cells` from host data in one place. Keep one grid per person.
 - The grid paints only the cells it gets. Hours with no cell are not paintable.

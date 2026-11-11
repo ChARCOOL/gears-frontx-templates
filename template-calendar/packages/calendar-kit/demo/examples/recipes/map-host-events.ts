@@ -15,19 +15,19 @@ interface ApiEvent {
   readonly endDate: string;
   readonly startTime?: string;
   readonly endTime?: string;
-  readonly room?: string;
-  readonly courseCode?: string;
+  readonly location?: string;
+  readonly itemId?: string;
   readonly canEdit: boolean;
 }
 
-export interface CourseMetadata {
-  readonly courseCode: string | null;
+export interface ItemMetadata {
+  readonly itemId: string | null;
   readonly canEdit: boolean;
 }
 
 export const toCalendarEvent = (
   api: ApiEvent
-): CalendarEvent<CourseMetadata> => {
+): CalendarEvent<ItemMetadata> => {
   const timeZone = parseIanaTimeZone(api.zone);
   const startDate = calendarDate(api.startDate);
   const endDate = calendarDate(api.endDate);
@@ -35,8 +35,8 @@ export const toCalendarEvent = (
   const shared = {
     colorFamily: "turquoise",
     id: api.id,
-    location: api.room ?? null,
-    metadata: { canEdit: api.canEdit, courseCode: api.courseCode ?? null },
+    location: api.location ?? null,
+    metadata: { canEdit: api.canEdit, itemId: api.itemId ?? null },
     timeZone,
     title: api.name,
   } as const;

@@ -17,15 +17,15 @@ const NOW = utcInstant("2026-08-24T08:00:00.000Z");
 
 const EVENTS: readonly CalendarEvent[] = [
   timedEvent(
-    "chemistry",
-    "Introduction to Chemistry",
+    "planning",
+    "Strategy planning",
     "2026-08-24",
     "09:00",
     "10:00"
   ),
   timedEvent(
-    "biology",
-    "Biology Unleashed",
+    "design",
+    "Design Unleashed",
     "2026-08-25",
     "11:00",
     "12:00",
@@ -82,12 +82,12 @@ describe(SearchResults, () => {
 
   it("debounces and keeps previous results visible while the next query settles", () => {
     vi.useFakeTimers();
-    const rendered = renderResults("chem");
+    const rendered = renderResults("plan");
     settle();
 
     rendered.rerender(<SearchResults {...rendered.props} query="history" />);
     expect(
-      screen.getByRole("button", { name: /Introduction to Chemistry/iu })
+      screen.getByRole("button", { name: /Strategy planning/iu })
     ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: /Modern History/iu })
@@ -95,7 +95,7 @@ describe(SearchResults, () => {
 
     settle();
     expect(
-      screen.queryByRole("button", { name: /Introduction to Chemistry/iu })
+      screen.queryByRole("button", { name: /Strategy planning/iu })
     ).toBeNull();
     expect(
       screen.getByRole("button", { name: /Modern History/iu })
@@ -104,23 +104,23 @@ describe(SearchResults, () => {
 
   it("groups matches by viewer day and announces the live result count", () => {
     vi.useFakeTimers();
-    renderResults("chem");
+    renderResults("plan");
     settle();
 
     expect(screen.getByRole("status")).toHaveTextContent("1 result");
     expect(screen.getByText("Today")).toBeVisible();
     expect(
-      screen.getByRole("button", { name: /Introduction to Chemistry/iu })
+      screen.getByRole("button", { name: /Strategy planning/iu })
     ).toBeVisible();
   });
 
   it("draws each result as a flat row with its event's colour bar", () => {
     vi.useFakeTimers();
-    renderResults("chemistry");
+    renderResults("planning");
     settle();
 
     expect(
-      screen.getByRole("button", { name: /Introduction to Chemistry/iu })
+      screen.getByRole("button", { name: /Strategy planning/iu })
     ).toHaveClass(styles.result, styles.colorPurple);
   });
 
@@ -138,7 +138,7 @@ describe(SearchResults, () => {
     const { unmount } = renderResults("maria");
     settle();
     expect(
-      screen.getByRole("button", { name: /Biology Unleashed/iu })
+      screen.getByRole("button", { name: /Design Unleashed/iu })
     ).toBeVisible();
 
     unmount();
@@ -154,7 +154,7 @@ describe(SearchResults, () => {
     const { unmount } = renderResults("zzzz");
     settle();
     expect(
-      screen.queryByRole("button", { name: /Introduction to Chemistry/iu })
+      screen.queryByRole("button", { name: /Strategy planning/iu })
     ).toBeNull();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     const message = screen.getByText("No events match your search");
@@ -162,21 +162,21 @@ describe(SearchResults, () => {
     expect(message.closest('[role="list"]')).toBeNull();
 
     unmount();
-    renderResults("chem");
+    renderResults("plan");
     settle();
     expect(
-      screen.getByRole("button", { name: /Introduction to Chemistry/iu })
+      screen.getByRole("button", { name: /Strategy planning/iu })
     ).toBeVisible();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("reveals rows from pointer, Enter, and Space and dismisses from Escape", async () => {
     vi.useFakeTimers();
-    const { props } = renderResults("chem");
+    const { props } = renderResults("plan");
     settle();
 
     const row = screen.getByRole("button", {
-      name: /Introduction to Chemistry/iu,
+      name: /Strategy planning/iu,
     });
     vi.useRealTimers();
     const user = userEvent.setup();
@@ -186,7 +186,7 @@ describe(SearchResults, () => {
     await user.keyboard("{Escape}");
 
     expect(props.onReveal).toHaveBeenCalledTimes(3);
-    expect(props.onReveal).toHaveBeenCalledWith("chemistry", "2026-08-24");
+    expect(props.onReveal).toHaveBeenCalledWith("planning", "2026-08-24");
     expect(props.onDismiss).toHaveBeenCalledOnce();
   });
 
@@ -222,7 +222,7 @@ describe(SearchResults, () => {
 
   it("renders supplied result and group-header slots", () => {
     vi.useFakeTimers();
-    renderResults("chem", {
+    renderResults("plan", {
       renderGroupHeader: (group: string, count: number) => (
         <h3>{`${group}:${count}`}</h3>
       ),
@@ -233,6 +233,6 @@ describe(SearchResults, () => {
     settle();
 
     expect(screen.getByText(/:1$/u)).toBeVisible();
-    expect(screen.getByText("0:Introduction to Chemistry")).toBeVisible();
+    expect(screen.getByText("0:Strategy planning")).toBeVisible();
   });
 });

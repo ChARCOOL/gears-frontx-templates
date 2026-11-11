@@ -12,7 +12,7 @@ Props: `events`, `renderEvent`, `renderEventMetadata`, `onEventSelect`, `rowHeig
 import { WeekGrid, calendarDate } from "@gears-frontx/calendar-kit";
 import type { CalendarEvent } from "@gears-frontx/calendar-kit";
 
-import { timedEvent } from "./schedule-fixtures";
+import { timedEvent } from "./recipe-fixtures";
 
 // Each intersection block is a timed event. The host's state field drives its colour.
 const blocks: readonly CalendarEvent[] = [

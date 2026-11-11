@@ -6,7 +6,7 @@ import type {
   CalendarSelectionRange,
 } from "@gears-frontx/calendar-kit";
 
-import { hourCells } from "./schedule-fixtures";
+import { hourCells } from "./recipe-fixtures";
 
 // `state` is host data. The kit passes it to renderCell and does not read it.
 const cells: CalendarAvailabilityCell[] = hourCells("2026-09-21", 8, 19).map(

@@ -199,14 +199,12 @@ Event state words shared by the views.
 | Translation ID | English | Values |
 | --- | --- | --- |
 | `calendar.detail.activity` | Activity |  |
-| `calendar.detail.classroom` | Classroom |  |
 | `calendar.detail.close` | Close |  |
 | `calendar.detail.conferencing` | Conferencing |  |
 | `calendar.detail.conflicts` | Conflicts |  |
 | `calendar.detail.copy.copied` | Copied |  |
 | `calendar.detail.copy.failed` | Copy failed |  |
 | `calendar.detail.copy.link` | Copy link |  |
-| `calendar.detail.course` | Course |  |
 | `calendar.detail.dateTime` | Date & time |  |
 | `calendar.detail.delete` | Delete |  |
 | `calendar.detail.description` | Description |  |
@@ -218,7 +216,6 @@ Event state words shared by the views.
 | `calendar.detail.group.no` | Not going · {{count}} | `count` |
 | `calendar.detail.group.unknown` | Invited · {{count}} | `count` |
 | `calendar.detail.group.yes` | Going · {{count}} | `count` |
-| `calendar.detail.instructor` | Instructor |  |
 | `calendar.detail.invited` | {{count}} invited | `count` |
 | `calendar.detail.join` | Join |  |
 | `calendar.detail.location` | Location |  |
@@ -251,7 +248,7 @@ Event state words shared by the views.
 | --- | --- | --- |
 | `calendar.create_event.all_day` | All day |  |
 | `calendar.create_event.back` | Back |  |
-| `calendar.create_event.calendarSchedule` | Schedule: |  |
+| `calendar.create_event.calendarField` | Calendar: |  |
 | `calendar.create_event.cancel` | Cancel |  |
 | `calendar.create_event.close` | Close |  |
 | `calendar.create_event.create_dialog` | Create event |  |

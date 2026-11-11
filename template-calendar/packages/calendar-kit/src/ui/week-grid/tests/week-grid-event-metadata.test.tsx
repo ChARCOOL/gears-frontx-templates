@@ -15,7 +15,7 @@ describe("WeekGrid renderEventMetadata", () => {
         events={[
           timedEvent({
             endTime: "10:00",
-            id: "course",
+            id: "item",
             startDate: "2026-09-14",
             startTime: "09:00",
             title: "Algebra",
@@ -28,7 +28,7 @@ describe("WeekGrid renderEventMetadata", () => {
 
     const card = screen.getByRole("button", { name: /^Algebra/u });
 
-    assert(card.textContent).toContain("Room course");
+    assert(card.textContent).toContain("Room item");
     assert(card.querySelectorAll("button")).toHaveLength(0);
     assert(screen.getAllByRole("button", { name: /^Algebra/u })).toHaveLength(
       1

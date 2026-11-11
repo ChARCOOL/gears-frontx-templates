@@ -1,4 +1,4 @@
-import { describe, expect as assert, it } from "vitest";
+import { describe, expect as assert, expectTypeOf, it } from "vitest";
 
 import { timedEvent, UTC } from "../../__test-utils__/fixtures";
 import {
@@ -15,9 +15,9 @@ import type {
   CalendarSelectionRange,
 } from "../model";
 
-interface CourseMetadata {
-  readonly courseCode: string;
-  readonly classroom: string;
+interface ItemMetadata {
+  readonly itemId: string;
+  readonly resource: string;
 }
 
 const buildCell = (
@@ -90,21 +90,21 @@ describe("calendar core model contracts", () => {
     const zone = parseIanaTimeZone("UTC");
 
     const conflict: CalendarConflict = {
-      dimension: "classroom",
+      dimension: "resource",
       id: "conflict-1",
-      label: "Classroom conflict",
+      label: "Resource conflict",
       severity: "warning",
     };
 
-    const event: CalendarEvent<CourseMetadata> = {
+    const event: CalendarEvent<ItemMetadata> = {
       allDay: false,
       colorFamily: "turquoise",
       conflicts: [conflict],
       end: utcInstant("2026-08-24T10:00:00.000Z"),
       endDate: calendarDate("2026-08-24"),
       endTime: parseLocalTime("10:00"),
-      id: "course-1",
-      metadata: { classroom: "A-12", courseCode: "CS-101" },
+      id: "item-1",
+      metadata: { resource: "A-12", itemId: "ITEM-102" },
       start: utcInstant("2026-08-24T09:00:00.000Z"),
       startDate: calendarDate("2026-08-24"),
       startTime: parseLocalTime("09:00"),
@@ -113,8 +113,8 @@ describe("calendar core model contracts", () => {
     };
 
     assert(event.metadata).toStrictEqual({
-      classroom: "A-12",
-      courseCode: "CS-101",
+      resource: "A-12",
+      itemId: "ITEM-102",
     });
     assert(event.conflicts?.[0]).toStrictEqual(conflict);
   });
@@ -148,5 +148,22 @@ describe("calendar core model contracts", () => {
       end: { date: "2026-08-24", startTime: "10:00" },
       start: { date: "2026-08-24", startTime: "09:00" },
     });
+  });
+});
+
+describe("calendar core type contracts", () => {
+  it("types conflict dimensions as any string and drops the removed event fields", () => {
+    expectTypeOf<CalendarConflict["dimension"]>().toEqualTypeOf<string>();
+    expectTypeOf<CalendarEvent>().not.toHaveProperty("roomId");
+    expectTypeOf<CalendarEvent>().not.toHaveProperty("classroom");
+    expectTypeOf<CalendarEvent>().not.toHaveProperty("instructor");
+    expectTypeOf<CalendarEvent>().not.toHaveProperty("course");
+
+    const conflict: CalendarConflict = {
+      dimension: "person",
+      id: "conflict-2",
+      label: "Sam Rivera",
+    };
+    assert(conflict.dimension).toBe("person");
   });
 });

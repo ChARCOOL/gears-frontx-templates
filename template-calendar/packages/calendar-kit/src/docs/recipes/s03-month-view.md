@@ -14,7 +14,7 @@ import { useState } from "react";
 import { MonthGrid, calendarDate } from "@gears-frontx/calendar-kit";
 import type { CalendarDateRange, CalendarEvent } from "@gears-frontx/calendar-kit";
 
-import { allDayEvent } from "./schedule-fixtures";
+import { allDayEvent } from "./recipe-fixtures";
 
 const events: readonly CalendarEvent[] = [
   allDayEvent({

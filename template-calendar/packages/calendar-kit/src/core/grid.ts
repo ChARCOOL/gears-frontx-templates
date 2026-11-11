@@ -172,18 +172,18 @@ const isoWeekNumber = (date: CalendarDate): number => {
   );
 };
 
-/** Weeks counted from the week that holds `termStart` as week 1; `null` for weeks before it. */
-export const termWeekNumber = (
+/** Weeks counted from the week that holds `startDate` as week 1; `null` for weeks before it. */
+export const relativeWeekNumber = (
   weekStart: CalendarDate,
-  termStart: CalendarDate
+  startDate: CalendarDate
 ): number | null => {
-  const termWeekStart = addCalendarDays(
-    termStart,
-    -((weekdayIndex(termStart) + 6) % 7)
+  const startWeekStart = addCalendarDays(
+    startDate,
+    -((weekdayIndex(startDate) + 6) % 7)
   );
   const weeks = Math.round(
     (Date.parse(`${weekStart}T00:00:00.000Z`) -
-      Date.parse(`${termWeekStart}T00:00:00.000Z`)) /
+      Date.parse(`${startWeekStart}T00:00:00.000Z`)) /
       (DAYS_PER_WEEK * MILLISECONDS_PER_DAY)
   );
 

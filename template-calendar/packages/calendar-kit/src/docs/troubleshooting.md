@@ -75,7 +75,7 @@ Something asked the kit translator for an id the kit does not define and no laye
 ## Tips
 
 - **Keep `events` stable.** Build the array in state or `useMemo`; a new array each render re-runs layout.
-- **Filter before, not after.** Hidden calendars, search and permissions are host decisions; pass only the events the user should see.
+- **Filter before, not after.** Hidden calendars, search and access rules are host decisions; pass only the events the user should see.
 - **Type `metadata` once** with `CalendarEvent<MyMetadata>` and the component generic (`WeekGrid<MyMetadata>`).
 - **Use the root providers** for zone, locale, direction and translator, and override per component only when a component really differs.
 - **Prefer slots over wrappers.** Wrapping a kit component to restyle it with descendant selectors breaks on the next release; a slot or token does not.

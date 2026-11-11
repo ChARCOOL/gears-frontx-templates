@@ -74,11 +74,11 @@ describe("DayGrid event-card geometry seam", () => {
     const tallCard = screen.getByRole("button", { name: /^Tall event/u });
 
     assert(shortCard).toHaveAttribute("data-event-card-compact", "true");
-    assert(shortCard).not.toHaveTextContent(/B-107|Dr\. Smith|Course/iu);
+    assert(shortCard).not.toHaveTextContent(/Room 4|Sam Rivera|Workshop/iu);
     assert(tallCard).toHaveAttribute("data-event-card-compact", "false");
-    assert(tallCard).toHaveTextContent("B-107");
-    assert(tallCard).toHaveTextContent("Dr. Smith");
-    assert(tallCard).toHaveTextContent("Course");
+    assert(tallCard).toHaveTextContent("Room 4");
+    assert(tallCard).toHaveTextContent("Sam Rivera");
+    assert(tallCard).toHaveTextContent("Workshop");
 
     const shortFrame = shortCard.closest<HTMLElement>('[class*="timedEvent"]');
 

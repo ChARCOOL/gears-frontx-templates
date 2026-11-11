@@ -101,7 +101,7 @@ describe(useMonthNavigatorController, () => {
   it("marks all-day dates before the exclusive end and timed viewer-day segments", () => {
     const { result } = renderController({
       events: [
-        allDayEvent("exam", "2026-08-10", "2026-08-13"),
+        allDayEvent("workshop", "2026-08-10", "2026-08-13"),
         timedEvent("overnight", "2026-08-20", "23:00", "2026-08-21", "01:00"),
       ],
     });

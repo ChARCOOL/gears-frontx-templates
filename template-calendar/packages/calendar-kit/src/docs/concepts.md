@@ -9,7 +9,7 @@ The kit's data model is small, serializable and deliberately strict. Everything 
 | Fetching, caching and saving events | Laying events out and drawing them |
 | Deciding what is available, busy or conflicting | Showing those decisions |
 | Which date, view, event and draft are current | Keyboard, focus, selection gestures and announcements |
-| Permissions: who may edit, delete or move | Hiding controls when the host leaves a callback out |
+| Access rules: who may edit, delete or move | Hiding controls when the host leaves a callback out |
 | Language choice and translations | Stable message ids and English fallback text |
 | Loading, error and empty screens | The ordinary surface, even with zero events |
 
@@ -33,7 +33,7 @@ Convert between them with `fromViewerDateTime({ date, time, timeZone })` (wall c
 
 ### Two time zones
 
-- The **event's zone** (`event.timeZone`) is where the event was scheduled. Its `startDate`/`startTime` are wall-clock values in that zone.
+- The **event's zone** (`event.timeZone`) is the zone the event's wall-clock times are written in. Its `startDate`/`startTime` are wall-clock values in that zone.
 - The **viewer's zone** (the `timeZone` prop or provider value) is where the user is. Every grid, label and "today" is computed in it.
 
 A 09:00 London meeting shown to a viewer in Istanbul appears at 11:00. The grid places timed events by their `start`/`end` instants, so the two zones never have to agree.
@@ -59,20 +59,17 @@ The exclusive end is the most common source of off-by-one bugs; see [Troubleshoo
 | --- | --- | --- | --- |
 | `colorFamily` | `CalendarColorFamily` | yes | Palette for the card, bar and chip. |
 | `id` | `string` | yes | Stable id. Used for selection, `data-event-id`, and as the React key. |
-| `timeZone` | `IanaTimeZone` | yes | Scheduling zone; `startDate`/`startTime` are wall-clock values in it. |
+| `timeZone` | `IanaTimeZone` | yes | Time zone; `startDate`/`startTime` are wall-clock values in it. |
 | `title` | `string` | yes | Card text and detail heading; empty shows the translatable "(untitled)" and "Event details". |
 | `access` | `"full" \| "busy"` |  | `busy` is inert (no selection, no drag); the detail shows only its time. |
 | `attendees` | `readonly CalendarAttendee[]` |  | Invitees shown as avatars and, in the event detail, grouped by response. |
 | `available` | `boolean` |  | `false` renders the event as unavailable and ignores activation. Default `true`. |
 | `calendarId` | `string` |  | The calendar this event belongs to; matches `CalendarRef.id`. |
 | `calendarName` | `string` |  | Display name of the calendar, for hosts that render it in a slot. |
-| `classroom` | `string` |  | Detail rows after Participants; each shows only when its value is set. |
 | `conferencingProviderId` | `string` |  | Id of the conferencing provider the host offers in the create form. |
 | `conflicts` | `readonly CalendarConflict[]` |  | Shown on the card and in the detail; the card's `conflicts` prop overrides them. |
-| `course` | `string` |  | Detail row after Instructor; shown only when set. |
 | `description` | `string` |  | Plain text shown in the detail panel. |
-| `eventType` | `string` |  | Short type label ("Lecture", "Exam") shown in the card's default metadata row. |
-| `instructor` | `string` |  | Detail row after Classroom; shown only when set. |
+| `eventType` | `string` |  | Short type label ("Meeting", "Workshop") shown in the card's default metadata row. |
 | `joinUrl` | `string` |  | Meeting link. Join and Copy appear only for `http(s)` URLs; anything else is plain text. |
 | `location` | `string` |  | Shown in the card metadata and the detail panel. |
 | `metadata` | `NonNullable<Payload>` |  | Host data carried through to every render slot untouched. |
@@ -83,7 +80,6 @@ The exclusive end is the most common source of off-by-one bugs; see [Troubleshoo
 | `organizerEmail` | `string` |  | Shown under the organizer in the detail panel. |
 | `recurrenceRule` | `string` |  | RRULE body without `RRULE:`, e.g. `FREQ=WEEKLY;BYDAY=MO,WE`; summarized in the detail. |
 | `recurrenceSummary` | `string` |  | Host summary of `recurrenceRule` for the detail, used in place of the kit's own text. Set it for rules the kit cannot describe, such as COUNT. |
-| `roomId` | `string` |  | Host room id, carried through for host slots. |
 | `rsvp` | `CalendarRsvp` |  | Aggregate RSVP counts for the detail panel. |
 | `seriesId` | `string` |  | Id shared by all occurrences of a recurring series, carried through for the host. |
 | `url` | `string` |  | Reminder link. The detail offers Go to page and Copy link for `http(s)` URLs only. |
@@ -94,11 +90,11 @@ The exclusive end is the most common source of off-by-one bugs; see [Troubleshoo
 
 - `available: false` draws the event as unavailable and ignores activation. On a time grid the slots it covers are also marked unavailable, and `renderUnavailable` draws in them.
 - `access: "busy"` is for events the viewer may not see: the event is inert and the detail shows only its time.
-- `conflicts` are computed by the host (a room double-booked, an instructor in two places). The kit only names them: each conflict has a `dimension` (what collides) and a `label` (the colliding thing). Unknown dimensions are shown as given.
+- `conflicts` are computed by the host (a resource double-booked, a person in two places). The kit only names them: each conflict has a `dimension` (what collides) and a `label` (the colliding thing). Unknown dimensions are shown as given.
 
 ## Layout vocabulary
 
-| Term | Type | Meaning |
+| Name | Type | Meaning |
 | --- | --- | --- |
 | Slot | `CalendarCell` | One row of a time grid in one day column: its date, local times and UTC instants |
 | Visible hours | `CalendarTimeWindow` | The part of the day a time grid shows, for example 06:00–23:00 |

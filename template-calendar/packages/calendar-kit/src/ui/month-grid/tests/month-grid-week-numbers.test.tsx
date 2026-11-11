@@ -46,7 +46,7 @@ describe("MonthGrid week numbers", () => {
   });
 
   it("counts weeks from a term start and leaves the weeks before it unnumbered", () => {
-    renderMonth({ weekNumbering: { termStart: calendarDate("2025-09-15") } });
+    renderMonth({ weekNumbering: { startDate: calendarDate("2025-09-15") } });
 
     assert(weekHeaders()).toStrictEqual(["", "", "Week 1", "Week 2", "Week 3"]);
   });

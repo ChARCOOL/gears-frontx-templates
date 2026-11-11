@@ -76,11 +76,11 @@ describe("WeekGrid event-card geometry seam", () => {
     const tallCard = screen.getByRole("button", { name: /^Tall week event/u });
 
     assert(shortCard).toHaveAttribute("data-event-card-compact", "true");
-    assert(shortCard).not.toHaveTextContent(/Room B12|Prof\. Curie|Lecture/iu);
+    assert(shortCard).not.toHaveTextContent(/Room 2|Prof\. Curie|Meeting/iu);
     assert(tallCard).toHaveAttribute("data-event-card-compact", "false");
-    assert(tallCard).toHaveTextContent("Room B12");
-    assert(tallCard).toHaveTextContent("Prof. Curie");
-    assert(tallCard).toHaveTextContent("Lecture");
+    assert(tallCard).toHaveTextContent("Room 2");
+    assert(tallCard).toHaveTextContent("Jordan Lee");
+    assert(tallCard).toHaveTextContent("Meeting");
 
     const shortFrame = document.querySelector<HTMLElement>(
       '[data-event-id="short"][draggable="true"]'

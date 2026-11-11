@@ -1,6 +1,6 @@
 # EventDetailPanel
 
-Event detail as an inline, labelled region (`<section>`). The host places it, for example in a side sheet; the panel opens no popover or dialog. The header is one row: the title, clamped to three lines, then icon buttons with tooltips (edit, delete, a divider, close); the header stays put while the body scrolls inside the panel. The body is rows in groups split by a rule. Each row has a visible label above its content: time with recurrence (in words, as the create form says it, for daily, weekly, monthly and yearly rules; any other rule goes to `calendar.detail.recurrence` as raw text), time zones and conferencing (Join and Copy link); location and conflicts; organizer with email and participants as one line (the invited count, then the responses given) above up to five avatars, whose +N swaps them for the full guest list grouped by response; description. Each label is also a heading for screen readers. Reminders show a bell before the title, and an early-reminder notice when `notify` is set. Course rows (classroom, instructor, course) appear only when set. Activity offers Go to page and Copy link for an `http(s)` `url`; other URLs are not linked or copied. Edit and delete are left to the host through `onEdit`/`onDelete` or `renderActions`.
+Event detail as an inline, labelled region (`<section>`). The host places it, for example in a side sheet; the panel opens no popover or dialog. The header is one row: the title, clamped to three lines, then icon buttons with tooltips (edit, delete, a divider, close); the header stays put while the body scrolls inside the panel. The body is rows in groups split by a rule. Each row has a visible label above its content: time with recurrence (in words, as the create form says it, for daily, weekly, monthly and yearly rules; any other rule goes to `calendar.detail.recurrence` as raw text), time zones and conferencing (Join and Copy link); location and conflicts; organizer with email and participants as one line (the invited count, then the responses given) above up to five avatars, whose +N swaps them for the full guest list grouped by response; description. Each label is also a heading for screen readers. Reminders show a bell before the title, and an early-reminder notice when `notify` is set. Workshop rows (resource, person, item) appear only when set. Activity offers Go to page and Copy link for an `http(s)` `url`; other URLs are not linked or copied. Edit and delete are left to the host through `onEdit`/`onDelete` or `renderActions`.
 
 Import it from its own entry; the stylesheet arrives with the component:
 
@@ -76,14 +76,12 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | Translation ID | English | Values |
 | --- | --- | --- |
 | `calendar.detail.activity` | Activity |  |
-| `calendar.detail.classroom` | Classroom |  |
 | `calendar.detail.close` | Close |  |
 | `calendar.detail.conferencing` | Conferencing |  |
 | `calendar.detail.conflicts` | Conflicts |  |
 | `calendar.detail.copy.copied` | Copied |  |
 | `calendar.detail.copy.failed` | Copy failed |  |
 | `calendar.detail.copy.link` | Copy link |  |
-| `calendar.detail.course` | Course |  |
 | `calendar.detail.dateTime` | Date & time |  |
 | `calendar.detail.delete` | Delete |  |
 | `calendar.detail.description` | Description |  |
@@ -95,7 +93,6 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.detail.group.no` | Not going · {{count}} | `count` |
 | `calendar.detail.group.unknown` | Invited · {{count}} | `count` |
 | `calendar.detail.group.yes` | Going · {{count}} | `count` |
-| `calendar.detail.instructor` | Instructor |  |
 | `calendar.detail.invited` | {{count}} invited | `count` |
 | `calendar.detail.join` | Join |  |
 | `calendar.detail.location` | Location |  |

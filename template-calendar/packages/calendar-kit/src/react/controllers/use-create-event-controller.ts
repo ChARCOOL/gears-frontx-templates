@@ -44,7 +44,7 @@ export interface UseCreateEventControllerOptions {
   readonly defaultDraft?: CreateEventDraft;
   /** Called on every field edit. */
   readonly onDraftChange?: (draft: CreateEventDraft) => void;
-  /** Calendars offered in the schedule field. */
+  /** Calendars offered in the calendar field. */
   readonly calendars?: readonly CalendarRef[];
   /** People offered in the people combobox. */
   readonly people?: readonly CalendarResourceOption[];

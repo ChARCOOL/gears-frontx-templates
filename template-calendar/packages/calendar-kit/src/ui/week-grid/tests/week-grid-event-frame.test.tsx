@@ -21,7 +21,7 @@ describe("WeekGrid getEventFrameProps", () => {
     render(
       <WeekGrid
         date={DATE}
-        events={[event("exam", "Exam")]}
+        events={[event("workshop", "Workshop")]}
         timeZone={UTC}
         getEventFrameProps={() => ({
           className: "host-conflict",
@@ -30,7 +30,7 @@ describe("WeekGrid getEventFrameProps", () => {
       />
     );
 
-    const card = screen.getByRole("button", { name: /^Exam/u });
+    const card = screen.getByRole("button", { name: /^Workshop/u });
 
     assert(card.classList.contains("host-conflict")).toBe(true);
     assert(card.getAttribute("data-tone")).toBe("conflict");
@@ -40,7 +40,7 @@ describe("WeekGrid getEventFrameProps", () => {
     render(
       <WeekGrid
         date={DATE}
-        events={[event("exam", "Exam")]}
+        events={[event("workshop", "Workshop")]}
         timeZone={UTC}
         renderEvent={(context) => <span>{context.event.id}</span>}
         getEventFrameProps={() => ({
@@ -50,7 +50,7 @@ describe("WeekGrid getEventFrameProps", () => {
       />
     );
 
-    const button = screen.getByRole("button", { name: "Exam" });
+    const button = screen.getByRole("button", { name: "Workshop" });
 
     assert(button.classList.contains("host-busy")).toBe(true);
     assert(button.getAttribute("data-tone")).toBe("busy");
@@ -85,13 +85,13 @@ describe("WeekGrid getEventFrameProps", () => {
     render(
       <WeekGrid
         date={DATE}
-        events={[event("exam", "Exam")]}
+        events={[event("workshop", "Workshop")]}
         timeZone={UTC}
         getEventFrameProps={() => ({ "data-tone": "conflict" })}
       />
     );
 
-    const card = screen.getByRole("button", { name: /^Exam/u });
+    const card = screen.getByRole("button", { name: /^Workshop/u });
 
     card.focus();
 

@@ -20,8 +20,8 @@ export { MonthGrid } from "./ui/month-grid/public";
 export type {
   MonthGridData,
   MonthGridProps,
+  MonthGridRelativeWeekNumbering,
   MonthGridSelectionMode,
-  MonthGridTermWeekNumbering,
   MonthGridWeekNumbering,
 } from "./ui/month-grid/public";
 

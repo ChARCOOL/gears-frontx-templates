@@ -5,10 +5,10 @@ import type {
   CalendarEventRenderContext,
 } from "@gears-frontx/calendar-kit";
 
-import type { CourseMetadata } from "./map-host-events";
+import type { ItemMetadata } from "./map-host-events";
 
-const CourseCard = (context: CalendarEventRenderContext<CourseMetadata>) => (
-  <EventCard<CourseMetadata>
+const ItemCard = (context: CalendarEventRenderContext<ItemMetadata>) => (
+  <EventCard<ItemMetadata>
     event={context.event}
     segment={context.segment}
     geometry={context.geometry}
@@ -17,23 +17,23 @@ const CourseCard = (context: CalendarEventRenderContext<CourseMetadata>) => (
     past={context.isPast}
     readOnly={context.isReadOnly}
     renderMetadata={({ event }) => {
-      const courseCode = event.metadata?.courseCode ?? null;
+      const itemId = event.metadata?.itemId ?? null;
 
-      return courseCode === null ? null : <span>{courseCode}</span>;
+      return itemId === null ? null : <span>{itemId}</span>;
     }}
   />
 );
 
-export const CourseWeek = ({
+export const ItemWeek = ({
   date,
   events,
 }: {
   readonly date: CalendarDate;
-  readonly events: readonly CalendarEvent<CourseMetadata>[];
+  readonly events: readonly CalendarEvent<ItemMetadata>[];
 }) => (
-  <WeekGrid<CourseMetadata>
+  <WeekGrid<ItemMetadata>
     date={date}
     events={events}
-    renderEvent={CourseCard}
+    renderEvent={ItemCard}
   />
 );

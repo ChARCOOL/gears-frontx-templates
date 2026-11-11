@@ -129,7 +129,7 @@ export interface CreateEventPanelProps
     Omit<UseCreateEventControllerOptions, "timeZone"> {
   /** Class added to the component root. */
   readonly className?: string;
-  /** Calendars offered in the schedule field. */
+  /** Calendars offered in the calendar field. */
   readonly calendars: readonly CalendarRef[];
   /** Event types offered in the event-type field. The field is not rendered when empty or omitted. */
   readonly eventTypes?: readonly CreateEventTypeOption[];
@@ -1541,7 +1541,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
       </Field>
     );
 
-  const scheduleRows = (
+  const calendarRows = (
     <>
       <div className={clsx(styles.timeRow, styles.groupStart)}>
         <TimeField
@@ -1693,7 +1693,7 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
           ) : null}
           {isReminder ? null : calendarField}
           {isReminder ? null : eventTypeField}
-          {scheduleRows}
+          {calendarRows}
           {isReminder ? (
             <div className={clsx(styles.fields, styles.groupStart)}>
               <NotifyFields
@@ -1932,7 +1932,7 @@ const CreateEventPanelContent = (props: CreateEventPanelProps) => {
         ),
         label: (
           <>
-            <span>{t("calendar.create_event.calendarSchedule")}</span>{" "}
+            <span>{t("calendar.create_event.calendarField")}</span>{" "}
             {calendar.name}
           </>
         ),

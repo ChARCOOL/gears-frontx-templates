@@ -3,17 +3,17 @@ import { useState } from "react";
 import { AvailabilityGrid } from "@gears-frontx/calendar-kit";
 import type { CalendarSelectionRange } from "@gears-frontx/calendar-kit";
 
-import { hourCells } from "./schedule-fixtures";
+import { hourCells } from "./recipe-fixtures";
 
-// Only the hours an instructor checked are passed as cells, so the rest stay unpainted.
-const instructorCells = hourCells("2026-09-21", 9, 12);
+// Only the hours a person checked are passed as cells, so the rest stay unpainted.
+const personCells = hourCells("2026-09-21", 9, 12);
 
-export function InstructorAvailability() {
+export function PersonAvailability() {
   const [selected, setSelected] = useState<CalendarSelectionRange | null>(null);
 
   return (
     <AvailabilityGrid
-      cells={instructorCells}
+      cells={personCells}
       headerFormat="weekday"
       onSelectedRangeChange={setSelected}
       paintMode="cells"

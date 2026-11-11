@@ -10,9 +10,9 @@ import type { ConflictIndicatorProps } from "../conflict-indicator";
 import indicatorStyles from "../conflict-indicator.module.css";
 
 const CONFLICTS: readonly CalendarConflict[] = [
-  { dimension: "program/section", id: "c1", label: "BSc CS / Section 2" },
-  { dimension: "instructor", id: "c2", label: "Dr. Smith" },
-  { dimension: "classroom", id: "c3", label: "Room B12", severity: "error" },
+  { dimension: "group", id: "c1", label: "Group 2" },
+  { dimension: "person", id: "c2", label: "Sam Rivera" },
+  { dimension: "resource", id: "c3", label: "Room 2", severity: "error" },
 ];
 
 const renderIndicator = (overrides: Partial<ConflictIndicatorProps> = {}) =>
@@ -26,8 +26,8 @@ const renderIndicator = (overrides: Partial<ConflictIndicatorProps> = {}) =>
   );
 
 const UNIT_CONFLICTS: readonly CalendarConflict[] = [
-  { dimension: "instructor", id: "u1", label: "Dr. Smith" },
-  { dimension: "classroom", id: "u2", label: "Room B12" },
+  { dimension: "person", id: "u1", label: "Sam Rivera" },
+  { dimension: "resource", id: "u2", label: "Room 2" },
 ];
 
 const rootElement = (container: HTMLElement): HTMLElement => {
@@ -57,14 +57,14 @@ describe(ConflictIndicator, () => {
 
   it("names an unknown dimension string using the supplied label", () => {
     const conflicts: readonly CalendarConflict[] = [
-      { dimension: "exam-slot", id: "c1", label: "Exam slot 4" },
+      { dimension: "slot", id: "c1", label: "Slot 4" },
     ];
 
     const { container } = renderIndicator({ conflicts });
     const text = container.textContent || "";
 
-    assert(text).toContain("exam-slot");
-    assert(text).toContain("Exam slot 4");
+    assert(text).toContain("slot");
+    assert(text).toContain("Slot 4");
   });
 
   it("replaces default rendering through the renderConflict slot", () => {
@@ -73,7 +73,7 @@ describe(ConflictIndicator, () => {
     );
     void renderIndicator({ renderConflict });
 
-    assert(screen.getByText("Clash: BSc CS / Section 2")).toBeVisible();
+    assert(screen.getByText("Clash: Group 2")).toBeVisible();
     assert(renderConflict).toHaveBeenCalledTimes(CONFLICTS.length);
 
     for (const conflict of CONFLICTS) {
@@ -102,15 +102,15 @@ describe(ConflictIndicator, () => {
   it("passes severity to the renderer and keeps naming dimension and label for every severity", () => {
     const conflicts: readonly CalendarConflict[] = [
       {
-        dimension: "instructor",
+        dimension: "person",
         id: "c1",
-        label: "Dr. Smith",
+        label: "Sam Rivera",
         severity: "warning",
       },
       {
-        dimension: "classroom",
+        dimension: "resource",
         id: "c2",
-        label: "Room B12",
+        label: "Room 2",
         severity: "error",
       },
     ];
@@ -158,16 +158,16 @@ describe(ConflictIndicator, () => {
       renderConflict,
     });
 
-    assert(screen.getByText("Slot: Dr. Smith")).toBeVisible();
-    assert(screen.getByText("Slot: Room B12")).toBeVisible();
+    assert(screen.getByText("Slot: Sam Rivera")).toBeVisible();
+    assert(screen.getByText("Slot: Room 2")).toBeVisible();
     assert(renderConflict).toHaveBeenCalledTimes(UNIT_CONFLICTS.length);
   });
 
   it("exposes the full label through a title attribute for truncated text", () => {
     const longLabel =
-      "A very long classroom name that will be truncated by the card layout";
+      "A very long resource name that will be truncated by the card layout";
     renderIndicator({
-      conflicts: [{ dimension: "classroom", id: "u1", label: longLabel }],
+      conflicts: [{ dimension: "resource", id: "u1", label: longLabel }],
     });
 
     assert(screen.getByTitle(longLabel)).toHaveTextContent(longLabel);

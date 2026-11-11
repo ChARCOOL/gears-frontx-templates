@@ -21,13 +21,13 @@ describe("DayGrid now marker", () => {
         events={[
           timedEvent(
             "a",
-            "Morning lecture",
+            "Morning meeting",
             "2026-08-24T09:00:00.000Z",
             "2026-08-24T10:00:00.000Z"
           ),
           timedEvent(
             "b",
-            "Lab session",
+            "Planning session",
             "2026-08-24T11:00:00.000Z",
             "2026-08-24T13:00:00.000Z"
           ),
@@ -58,7 +58,7 @@ describe("DayGrid now marker", () => {
         events={[
           timedEvent(
             "a",
-            "Morning lecture",
+            "Morning meeting",
             "2026-08-24T09:00:00.000Z",
             "2026-08-24T10:00:00.000Z"
           ),

@@ -1,6 +1,6 @@
 import { AvailabilityGrid } from "@gears-frontx/calendar-kit";
 
-import { hourCells } from "./schedule-fixtures";
+import { hourCells } from "./recipe-fixtures";
 
 // Two day columns, three rows. Blocked cells are `available: false`.
 const cells = [

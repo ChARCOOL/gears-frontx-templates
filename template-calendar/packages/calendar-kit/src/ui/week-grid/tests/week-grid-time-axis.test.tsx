@@ -83,14 +83,14 @@ describe("WeekGrid time axis", () => {
           endTime: "11:00",
           id: "inside",
           startTime: "10:00",
-          title: "Lecture",
+          title: "Meeting",
         }),
       ],
       visibleHours: timeWindow("09:00", "18:00"),
     });
 
     assert(screen.queryByRole("button", { name: /Early standup/u })).toBeNull();
-    assert(screen.getByRole("button", { name: /Lecture/u })).toBeVisible();
+    assert(screen.getByRole("button", { name: /Meeting/u })).toBeVisible();
   });
 
   it("hides the now line while the current time is outside the visible hours", () => {

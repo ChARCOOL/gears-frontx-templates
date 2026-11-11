@@ -1,25 +1,25 @@
-# S2: Exam dates
+# S2: Second date span
 
-The same term picker as S1, with a different colour for the selection. Use it for a second kind of range that sits on the same month view.
+The same date-span picker as S1, with a different colour for the selection. Use it for a second kind of range that sits on the same month view.
 
 Parts: `MonthGrid`.
 Props: as S1.
 
-<!-- generated:example demo/examples/recipes/s02-exam-dates.tsx -->
+<!-- generated:example demo/examples/recipes/s02-second-date-span.tsx -->
 
 ```tsx
-// demo/examples/recipes/s02-exam-dates.tsx
+// demo/examples/recipes/s02-second-date-span.tsx
 import { useState } from "react";
 
 import { MonthGrid, calendarDate } from "@gears-frontx/calendar-kit";
 import type { CalendarDateRange } from "@gears-frontx/calendar-kit";
 
-// Host CSS on `.exam-term` sets the purple selection tokens for this subtree.
-export function ExamDatesPicker() {
+// Host CSS on `.second-span` sets the purple selection tokens for this subtree.
+export function SecondSpanPicker() {
   const [range, setRange] = useState<CalendarDateRange | null>(null);
 
   return (
-    <div className="exam-term">
+    <div className="second-span">
       <MonthGrid
         date={calendarDate("2026-09-01")}
         events={[]}
@@ -27,7 +27,7 @@ export function ExamDatesPicker() {
         selectedDateRange={range}
         selectionMode="date-range"
         trailingGutter
-        weekNumbering={{ termStart: calendarDate("2026-09-08") }}
+        weekNumbering={{ startDate: calendarDate("2026-09-08") }}
       />
     </div>
   );

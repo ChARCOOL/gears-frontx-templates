@@ -7,10 +7,10 @@ import styles from "../empty.module.css";
 
 describe(Empty, () => {
   it("renders its children in a status region", () => {
-    render(<Empty aria-label="No events">No events scheduled</Empty>);
+    render(<Empty aria-label="No events">No events yet</Empty>);
 
     const empty = screen.getByRole("status", { name: "No events" });
-    expect(empty).toHaveTextContent("No events scheduled");
+    expect(empty).toHaveTextContent("No events yet");
     expect(empty).toHaveClass(styles.empty);
   });
 

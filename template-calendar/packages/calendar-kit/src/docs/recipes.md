@@ -27,19 +27,19 @@ interface ApiEvent {
   readonly endDate: string;
   readonly startTime?: string;
   readonly endTime?: string;
-  readonly room?: string;
-  readonly courseCode?: string;
+  readonly location?: string;
+  readonly itemId?: string;
   readonly canEdit: boolean;
 }
 
-export interface CourseMetadata {
-  readonly courseCode: string | null;
+export interface ItemMetadata {
+  readonly itemId: string | null;
   readonly canEdit: boolean;
 }
 
 export const toCalendarEvent = (
   api: ApiEvent
-): CalendarEvent<CourseMetadata> => {
+): CalendarEvent<ItemMetadata> => {
   const timeZone = parseIanaTimeZone(api.zone);
   const startDate = calendarDate(api.startDate);
   const endDate = calendarDate(api.endDate);
@@ -47,8 +47,8 @@ export const toCalendarEvent = (
   const shared = {
     colorFamily: "turquoise",
     id: api.id,
-    location: api.room ?? null,
-    metadata: { canEdit: api.canEdit, courseCode: api.courseCode ?? null },
+    location: api.location ?? null,
+    metadata: { canEdit: api.canEdit, itemId: api.itemId ?? null },
     timeZone,
     title: api.name,
   } as const;
@@ -322,10 +322,10 @@ import type {
   CalendarEventRenderContext,
 } from "@gears-frontx/calendar-kit";
 
-import type { CourseMetadata } from "./map-host-events";
+import type { ItemMetadata } from "./map-host-events";
 
-const CourseCard = (context: CalendarEventRenderContext<CourseMetadata>) => (
-  <EventCard<CourseMetadata>
+const ItemCard = (context: CalendarEventRenderContext<ItemMetadata>) => (
+  <EventCard<ItemMetadata>
     event={context.event}
     segment={context.segment}
     geometry={context.geometry}
@@ -334,24 +334,24 @@ const CourseCard = (context: CalendarEventRenderContext<CourseMetadata>) => (
     past={context.isPast}
     readOnly={context.isReadOnly}
     renderMetadata={({ event }) => {
-      const courseCode = event.metadata?.courseCode ?? null;
+      const itemId = event.metadata?.itemId ?? null;
 
-      return courseCode === null ? null : <span>{courseCode}</span>;
+      return itemId === null ? null : <span>{itemId}</span>;
     }}
   />
 );
 
-export const CourseWeek = ({
+export const ItemWeek = ({
   date,
   events,
 }: {
   readonly date: CalendarDate;
-  readonly events: readonly CalendarEvent<CourseMetadata>[];
+  readonly events: readonly CalendarEvent<ItemMetadata>[];
 }) => (
-  <WeekGrid<CourseMetadata>
+  <WeekGrid<ItemMetadata>
     date={date}
     events={events}
-    renderEvent={CourseCard}
+    renderEvent={ItemCard}
   />
 );
 ```
@@ -369,7 +369,7 @@ export const CourseWeek = ({
 import { WeekGrid } from "@gears-frontx/calendar-kit";
 import type { CalendarDate, CalendarEvent } from "@gears-frontx/calendar-kit";
 
-export const ExamWeek = ({
+export const ConflictWeek = ({
   date,
   events,
   conflictIds,
@@ -383,7 +383,7 @@ export const ExamWeek = ({
     events={events}
     getEventFrameProps={({ event }) =>
       conflictIds.has(event.id)
-        ? { className: "exam-conflict", "data-tone": "conflict" }
+        ? { className: "conflict-frame", "data-tone": "conflict" }
         : undefined
     }
   />
@@ -393,7 +393,7 @@ export const ExamWeek = ({
 <!-- /generated -->
 
 ```css
-.exam-conflict[data-tone="conflict"] {
+.workshop-conflict[data-tone="conflict"] {
   background: repeating-linear-gradient(45deg, #fde2e2 0 6px, #fff 6px 12px);
 }
 ```
@@ -592,7 +592,7 @@ See [Headless controllers](headless.md#example-your-own-toolbar).
 
 - **Read-only screens:** `interactionMode="read-only"` on the grids, `readOnly` on `EventDetailPanel`, and leave out `onEdit`/`onDelete`.
 - **Five-day weeks with short days:** `visibleDays={5}`, `visibleHours={{ start: "08:00", end: "18:00" }}`, `slotMinutes={30}`.
-- **Term or exam windows:** `MonthGrid` with `selectionMode="date-range"` and `onSelectedDateRangeChange`.
+- **Date spans:** `MonthGrid` with `selectionMode="date-range"` and `onSelectedDateRangeChange`.
 - **Timetables:** `trailingGutter` repeats the hour labels on the far edge.
 - **Breaks, holds and slots as background bands:** pass `timeRanges` and `renderTimeRange` to `WeekGrid`, e.g. `timeRanges={[{ key: "lunch", start: "12:00", end: "13:00" }]}` and `renderTimeRange={() => <div className="lunch" />}`. A band with `date` draws on that day only; without it, on every visible day. Bands sit behind events, take no pointer input and are hidden from assistive technology, so state that matters also goes in an event or the host UI.
 - **Blocked days and greyed weekends:** `getCellState` returns `{ unavailable: true }` for blocked days on `MonthGrid` or `WeekGrid`. On `WeekGrid`, `renderHeader` reads `column.date` to grey Saturday and Sunday headers.

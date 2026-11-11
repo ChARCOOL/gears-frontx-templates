@@ -1,27 +1,27 @@
-# S6: Rooms availability
+# S6: Resource availability
 
 Paint free hours for each day. The host sends one cell per hour and receives the painted range.
 
 Parts: `AvailabilityGrid`.
 Props: `cells`, `paintMode="cells"`, `selectedRange`, `onSelectedRangeChange`, `headerFormat="date"`, `showHourLabels`, `renderCell`.
 
-<!-- generated:example demo/examples/recipes/s06-rooms-availability.tsx -->
+<!-- generated:example demo/examples/recipes/s06-resource-availability.tsx -->
 
 ```tsx
-// demo/examples/recipes/s06-rooms-availability.tsx
+// demo/examples/recipes/s06-resource-availability.tsx
 import { useState } from "react";
 
 import { AvailabilityGrid } from "@gears-frontx/calendar-kit";
 import type { CalendarSelectionRange } from "@gears-frontx/calendar-kit";
 
-import { hourCells } from "./schedule-fixtures";
+import { hourCells } from "./recipe-fixtures";
 
 const cells = [
   ...hourCells("2026-09-21", 8, 18),
   ...hourCells("2026-09-22", 8, 18),
 ];
 
-export function RoomAvailability() {
+export function ResourceAvailability() {
   const [selected, setSelected] = useState<CalendarSelectionRange | null>(null);
 
   return (

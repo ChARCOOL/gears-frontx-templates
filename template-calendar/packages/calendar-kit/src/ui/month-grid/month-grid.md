@@ -62,7 +62,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 ## Date range selection
 
-Set `selectionMode="date-range"` to let the user pick whole days, as a term or exam window. The value is a `CalendarDateRange` whose `start` and `end` are both inclusive; use `selectedDateRange` with `onSelectedDateRangeChange`, or `defaultSelectedDateRange` for uncontrolled use.
+Set `selectionMode="date-range"` to let the user pick whole days, as a date span. The value is a `CalendarDateRange` whose `start` and `end` are both inclusive; use `selectedDateRange` with `onSelectedDateRangeChange`, or `defaultSelectedDateRange` for uncontrolled use.
 
 - Pointer: drag from the first day to the last, or click the first day and then the last. The second click may be in another month after navigating. A drag passes over event and overflow chips; a press that starts on a chip activates it and does not start a range.
 - Keyboard: Enter or Space on a day sets the start, the arrow keys move the end, and Enter or Space commits. Escape abandons a range in progress.
@@ -81,7 +81,7 @@ Pass `onMoveRequest` to move timed events by whole days. Dragging a timed event 
 
 ## Week numbers, trailing column, and part classes
 
-`weekNumbering="iso"` shows the ISO 8601 week of the year in the week column instead of the in-month `W1`…`Wn`. `weekNumbering={{ termStart }}` counts weeks from the week that holds `termStart`, which is week 1; the weeks before it have no label. `trailingGutter` repeats that column on the trailing edge, hidden from assistive technology.
+`weekNumbering="iso"` shows the ISO 8601 week of the year in the week column instead of the in-month `W1`…`Wn`. `weekNumbering={{ startDate }}` counts weeks from the week that holds `startDate`, which is week 1; the weeks before it have no label. `trailingGutter` repeats that column on the trailing edge, hidden from assistive technology.
 
 `cellClassName`, `columnHeaderClassName`, and `weekNumberClassName` add host classes to the day cells, the weekday headers, and the week column (including its heading and the trailing copy). They are the stable styling hooks for these parts; the kit's own CSS Module class names are internal.
 

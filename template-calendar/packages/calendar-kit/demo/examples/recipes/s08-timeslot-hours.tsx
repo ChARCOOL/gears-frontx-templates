@@ -6,7 +6,7 @@ import {
 } from "@gears-frontx/calendar-kit";
 import type { CalendarSelectionRange } from "@gears-frontx/calendar-kit";
 
-import { hourCells } from "./schedule-fixtures";
+import { hourCells } from "./recipe-fixtures";
 
 const cells = hourCells("2026-09-21", 8, 18);
 

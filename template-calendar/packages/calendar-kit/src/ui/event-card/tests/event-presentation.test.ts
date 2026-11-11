@@ -33,7 +33,7 @@ const presentationEvent = (
     available: false,
     colorFamily: "purple",
     conflicts: [
-      { dimension: "classroom", id: "event-conflict", label: "Room A" },
+      { dimension: "resource", id: "event-conflict", label: "Room 1" },
     ],
     id: "timed-event",
     metadata: { source: "test" },

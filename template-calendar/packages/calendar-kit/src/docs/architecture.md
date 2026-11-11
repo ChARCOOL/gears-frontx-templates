@@ -4,7 +4,7 @@
 
 ```mermaid
 graph TD
-  Host["Host app: data, current date and view, permissions, translations"]
+  Host["Host app: data, current date and view, access rules, translations"]
   UI["ui/: components, CSS Modules"]
   React["react/: controllers and hooks"]
   I18n["i18n/: providers, resolver, English catalog"]
@@ -70,7 +70,7 @@ Stateful props come in threes: `value`, `defaultValue`, `onValueChange` (for exa
 
 ## Why it is built this way
 
-- **The host owns data and decisions** so one kit can serve hosts with different back ends, permission models and scheduling rules. Nothing host-specific lives in the kit; hosts reach in through slots, `metadata` and callbacks.
+- **The host owns data and decisions** so one kit can serve hosts with different back ends and access models. Nothing host-specific lives in the kit; hosts reach in through slots, `metadata` and callbacks.
 - **Branded values** make the most common calendar bugs (a local time treated as UTC, a date string in the wrong format) type errors at the boundary instead of wrong pixels later.
 - **A React-free core** keeps the time and layout math testable without a DOM and reusable outside React.
 - **Moves wait for `confirm`** because only the host knows whether a move is allowed or saved. The grid never shows a state the server rejected.

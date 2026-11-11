@@ -13,7 +13,7 @@
 />
 ```
 
-The host supplies each `CalendarAvailabilityCell`; the kit does not fetch or interpret host scheduling data. Available cells can be painted with pointer or keyboard input. Blocked cells remain navigable but cannot start, extend, or commit a selection. Set `interactionMode="read-only"` to preserve navigation while disabling selection.
+The host supplies each `CalendarAvailabilityCell`; the kit does not fetch or interpret host data. Available cells can be painted with pointer or keyboard input. Blocked cells remain navigable but cannot start, extend, or commit a selection. Set `interactionMode="read-only"` to preserve navigation while disabling selection.
 
 `selectedRange` and `onSelectedRangeChange` form the controlled contract. Use `defaultSelectedRange` for uncontrolled usage. `renderCell` receives the standard `CalendarCellContext` plus `available` and the cell's host `state` id, which the kit passes through without interpreting it.
 
@@ -27,7 +27,7 @@ The host supplies each `CalendarAvailabilityCell`; the kit does not fetch or int
 
 An empty `cells` collection renders the grid structure with no rows and says "No time slots" (`calendar.availability.empty`) under it. The kit does not create loading or error shells, alerts, or status regions; multi-step-flow and fetch-state presentation remains host-owned.
 
-The component is intentionally independent of host-flow orchestration: a host that embeds a planning flow owns its steps, permissions, persistence, and any confirmation UI, and may use `onPaintSelect` to map the returned range into its own request model. No host-scheduling imports are required.
+The component is intentionally independent of host-flow orchestration: a host that embeds a planning flow owns its steps, access rules, persistence, and any confirmation UI, and may use `onPaintSelect` to map the returned range into its own request model. No host-specific imports are required.
 
 The root accepts `className`; styles use the calendar theme aliases and include focus-visible, dark-theme, reduced-motion, and forced-colors support.
 

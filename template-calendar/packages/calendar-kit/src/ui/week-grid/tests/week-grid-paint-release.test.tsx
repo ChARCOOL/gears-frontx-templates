@@ -8,7 +8,7 @@ import { WeekGrid } from "../week-grid";
 
 const DATE = calendarDate("2026-08-24");
 
-const chemistry: CalendarEvent = {
+const planning: CalendarEvent = {
   allDay: false,
   available: true,
   colorFamily: "purple",
@@ -20,7 +20,7 @@ const chemistry: CalendarEvent = {
   startDate: DATE,
   startTime: parseLocalTime("09:00"),
   timeZone: UTC,
-  title: "Chemistry",
+  title: "Planning",
 };
 
 const timedCell = (time: string): HTMLElement =>
@@ -47,7 +47,7 @@ describe("WeekGrid paint release", () => {
       <WeekGrid
         date={DATE}
         direction="ltr"
-        events={[chemistry]}
+        events={[planning]}
         interactionMode="paint-and-move"
         locale="en-US"
         onPaintSelect={onPaintSelect}
@@ -58,7 +58,7 @@ describe("WeekGrid paint release", () => {
 
     fireEvent.pointerDown(timedCell("11:00"));
     fireEvent.pointerMove(timedCell("10:00"));
-    fireEvent.pointerUp(screen.getByRole("button", { name: /Chemistry/u }));
+    fireEvent.pointerUp(screen.getByRole("button", { name: /Planning/u }));
 
     assert(onPaintSelect).toHaveBeenCalledExactlyOnceWith({
       cells: [cellAt("10:00"), cellAt("11:00")],

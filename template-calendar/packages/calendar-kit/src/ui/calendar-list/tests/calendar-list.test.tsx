@@ -10,8 +10,8 @@ import type { CalendarListProps } from "../calendar-list";
 import styles from "../calendar-list.module.css";
 
 const CALENDARS: readonly CalendarRef[] = [
-  { colorFamily: "turquoise", id: "cal-courses", name: "Courses" },
-  { colorFamily: "purple", id: "cal-exams", name: "Exams" },
+  { colorFamily: "turquoise", id: "cal-teams", name: "Teams" },
+  { colorFamily: "purple", id: "cal-workshops", name: "Workshops" },
   { colorFamily: "orange", id: "cal-events", name: "Events" },
 ];
 
@@ -31,8 +31,8 @@ describe(CalendarList, () => {
     render(<CalendarList {...baseProps()} />);
 
     expect(screen.getByRole("region", { name: "Calendars" })).toBeVisible();
-    expect(screen.getByRole("checkbox", { name: "Courses" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Exams" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Teams" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Workshops" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Events" })).toBeChecked();
   });
 
@@ -43,24 +43,24 @@ describe(CalendarList, () => {
     render(
       <CalendarList
         {...baseProps({
-          hiddenCalendarIds: ["cal-exams"],
+          hiddenCalendarIds: ["cal-workshops"],
           onHiddenCalendarIdsChange,
         })}
       />
     );
 
-    expect(screen.getByRole("checkbox", { name: "Courses" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Exams" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Teams" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Workshops" })).not.toBeChecked();
 
     const user = userEvent.setup();
-    await user.click(screen.getByRole("checkbox", { name: "Courses" }));
+    await user.click(screen.getByRole("checkbox", { name: "Teams" }));
 
     expect(onHiddenCalendarIdsChange).toHaveBeenCalledWith([
-      "cal-exams",
-      "cal-courses",
+      "cal-workshops",
+      "cal-teams",
     ]);
 
-    await user.click(screen.getByRole("checkbox", { name: "Exams" }));
+    await user.click(screen.getByRole("checkbox", { name: "Workshops" }));
 
     expect(onHiddenCalendarIdsChange).toHaveBeenLastCalledWith([]);
   });
@@ -74,12 +74,12 @@ describe(CalendarList, () => {
 
     render(
       <CalendarList
-        {...baseProps({ hiddenCalendarIds: ["cal-exams"], renderCalendar })}
+        {...baseProps({ hiddenCalendarIds: ["cal-workshops"], renderCalendar })}
       />
     );
 
-    expect(screen.getByText("Courses:visible")).toBeVisible();
-    expect(screen.getByText("Exams:hidden")).toBeVisible();
+    expect(screen.getByText("Teams:visible")).toBeVisible();
+    expect(screen.getByText("Workshops:hidden")).toBeVisible();
     expect(renderCalendar).toHaveBeenCalledWith(CALENDARS[0], false);
     expect(renderCalendar).toHaveBeenCalledWith(CALENDARS[1], true);
   });
@@ -180,7 +180,7 @@ describe(CalendarList, () => {
       expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
     });
 
-    it("disables Make default for the default calendar and Delete without permission", async () => {
+    it("disables Make default for the default calendar and Delete without access", async () => {
       const user = userEvent.setup();
 
       render(
@@ -345,9 +345,9 @@ describe(CalendarList, () => {
 
   describe("nested calendars and groups", () => {
     const NESTED: readonly CalendarRef[] = [
-      { colorFamily: "turquoise", group: "My calendars", id: "school", name: "School" },
-      { colorFamily: "turquoise", id: "maths", name: "Maths", parentId: "school" },
-      { colorFamily: "turquoise", id: "art", name: "Art", parentId: "school" },
+      { colorFamily: "turquoise", group: "My calendars", id: "team-a", name: "Team A" },
+      { colorFamily: "turquoise", id: "design", name: "Design", parentId: "team-a" },
+      { colorFamily: "turquoise", id: "ops", name: "Ops", parentId: "team-a" },
       { colorFamily: "purple", group: "Shared calendars", id: "team", name: "Team" },
     ];
 
@@ -356,16 +356,16 @@ describe(CalendarList, () => {
 
       expect(screen.getByRole("heading", { name: "My calendars" })).toBeVisible();
       expect(screen.getByRole("heading", { name: "Shared calendars" })).toBeVisible();
-      expect(screen.getByRole("checkbox", { name: "Maths" }).closest("ul")).toHaveClass(
+      expect(screen.getByRole("checkbox", { name: "Design" }).closest("ul")).toHaveClass(
         styles.nested
       );
     });
 
     it("marks the parent indeterminate when only some children are visible", () => {
-      render(<CalendarList {...baseProps({ calendars: NESTED, hiddenCalendarIds: ["art"] })} />);
+      render(<CalendarList {...baseProps({ calendars: NESTED, hiddenCalendarIds: ["ops"] })} />);
 
-      expect(screen.getByRole("checkbox", { name: "School" })).toBePartiallyChecked();
-      expect(screen.getByRole("checkbox", { name: "Maths" })).toBeChecked();
+      expect(screen.getByRole("checkbox", { name: "Team A" })).toBePartiallyChecked();
+      expect(screen.getByRole("checkbox", { name: "Design" })).toBeChecked();
     });
 
     it("hides the parent and every child with one click, then shows them again", async () => {
@@ -375,20 +375,20 @@ describe(CalendarList, () => {
         <CalendarList {...baseProps({ calendars: NESTED, onHiddenCalendarIdsChange })} />
       );
 
-      await user.click(screen.getByRole("checkbox", { name: "School" }));
+      await user.click(screen.getByRole("checkbox", { name: "Team A" }));
 
-      expect(onHiddenCalendarIdsChange).toHaveBeenLastCalledWith(["school", "maths", "art"]);
+      expect(onHiddenCalendarIdsChange).toHaveBeenLastCalledWith(["team-a", "design", "ops"]);
 
       rerender(
         <CalendarList
           {...baseProps({
             calendars: NESTED,
-            hiddenCalendarIds: ["school", "maths", "art"],
+            hiddenCalendarIds: ["team-a", "design", "ops"],
             onHiddenCalendarIdsChange,
           })}
         />
       );
-      await user.click(screen.getByRole("checkbox", { name: "School" }));
+      await user.click(screen.getByRole("checkbox", { name: "Team A" }));
 
       expect(onHiddenCalendarIdsChange).toHaveBeenLastCalledWith([]);
     });
@@ -400,12 +400,12 @@ describe(CalendarList, () => {
         <CalendarList
           {...baseProps({
             calendars: NESTED,
-            hiddenCalendarIds: ["art", "team"],
+            hiddenCalendarIds: ["ops", "team"],
             onHiddenCalendarIdsChange,
           })}
         />
       );
-      await userEvent.setup().click(screen.getByRole("checkbox", { name: "School" }));
+      await userEvent.setup().click(screen.getByRole("checkbox", { name: "Team A" }));
 
       expect(onHiddenCalendarIdsChange).toHaveBeenLastCalledWith(["team"]);
     });

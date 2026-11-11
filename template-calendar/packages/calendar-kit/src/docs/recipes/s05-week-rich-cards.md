@@ -11,16 +11,16 @@ Props: `events`, `renderEventMetadata`.
 // demo/examples/recipes/s05-week-rich-cards.tsx
 import { WeekGrid, calendarDate } from "@gears-frontx/calendar-kit";
 
-import { timedEvent } from "./schedule-fixtures";
+import { timedEvent } from "./recipe-fixtures";
 
 const events = [
   timedEvent({
     date: "2026-09-21",
     end: "11:00",
     id: "lab",
-    location: "Room B-204",
+    location: "Room 3",
     start: "09:00",
-    title: "Lab session",
+    title: "Planning session",
   }),
 ];
 

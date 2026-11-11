@@ -99,7 +99,7 @@ describe(validateCreateEventDraft, () => {
       attendeeIds: ["person-1", "person-2"],
       conferencingProviderId: "team-sync",
       description: "Bring the release checklist.",
-      location: "Science Hall 204",
+      location: "North Hall 204",
       recurrenceRule: "FREQ=WEEKLY;BYDAY=MO,WE",
     };
 

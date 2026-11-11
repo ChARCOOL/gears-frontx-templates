@@ -37,7 +37,7 @@ const makeTimedEvent = (overrides: TimedEventOverrides = {}): TimedEvent => ({
   startDate: DATE,
   startTime: parseLocalTime("09:00"),
   timeZone: UTC,
-  title: "Chemistry",
+  title: "Planning",
   ...overrides,
 });
 

@@ -33,7 +33,7 @@ const options = (
   calendars: [{ colorFamily: "purple", id: "calendar-1", name: "Teaching" }],
   conferencingProviders: [{ id: "team-sync", label: "Team Sync" }],
   defaultDraft: draft(),
-  locations: [{ id: "room-1", label: "Science Hall 204" }],
+  locations: [{ id: "room-1", label: "North Hall 204" }],
   onCancel: () => {},
   onSubmit: noSubmit,
   people: [

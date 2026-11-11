@@ -95,7 +95,7 @@ describe(MonthNavigator, () => {
       <MonthNavigator
         {...baseProps({
           events: [
-            allDayEvent("exam", "2026-08-10", "2026-08-13"),
+            allDayEvent("workshop", "2026-08-10", "2026-08-13"),
             timedEvent(
               "overnight",
               "2026-08-20",
@@ -128,7 +128,7 @@ describe(MonthNavigator, () => {
         {...baseProps({
           events: [
             timedEvent(
-              "chemistry",
+              "planning",
               "2026-08-26",
               "09:00",
               "2026-08-26",

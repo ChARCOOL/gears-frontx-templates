@@ -1,7 +1,7 @@
 import { WeekGrid } from "@gears-frontx/calendar-kit";
 import type { CalendarDate, CalendarEvent } from "@gears-frontx/calendar-kit";
 
-export const ExamWeek = ({
+export const ConflictWeek = ({
   date,
   events,
   conflictIds,
@@ -15,7 +15,7 @@ export const ExamWeek = ({
     events={events}
     getEventFrameProps={({ event }) =>
       conflictIds.has(event.id)
-        ? { className: "exam-conflict", "data-tone": "conflict" }
+        ? { className: "conflict-frame", "data-tone": "conflict" }
         : undefined
     }
   />

@@ -1,6 +1,6 @@
 # @gears-frontx/calendar-kit
 
-> React 19 calendar and scheduling UI for FrontX host applications: week, day, month and agenda views, event card and detail, create-event form, availability painting, and side-panel tools. It renders host data and reports user intent through typed callbacks; the host owns data, permissions, conflicts, persistence and translations.
+> React 19 calendar UI for FrontX host applications: week, day, month and agenda views, event card and detail, create-event form, availability painting, and side-panel tools. It renders host data and reports user intent through typed callbacks; the host owns data, access rules, conflicts, persistence and translations.
 
 Rules an assistant should follow when writing code against this package:
 
@@ -25,23 +25,23 @@ Rules an assistant should follow when writing code against this package:
 - [Headless controllers](dist/docs/headless.md): the controller hooks and the React-free core functions
 - [Recipes](dist/docs/recipes.md): compiled examples for common screens
 - [Which part when](dist/docs/which-part-when.md): goal to component, prop and recipe, plus invariants
-- Schedule recipes, each with a compiled sample:
-  - [S1 term duration](dist/docs/s01-term-duration.md): MonthGrid date range with blocked days
-  - [S2 exam dates](dist/docs/s02-exam-dates.md): S1 with a host colour wrapper
+- Numbered recipes, each with a compiled sample:
+  - [S1 date span](dist/docs/s01-date-span.md): MonthGrid date range with blocked days
+  - [S2 second date span](dist/docs/s02-second-date-span.md): S1 with a host colour wrapper
   - [S3 month view](dist/docs/s03-month-view.md): month events with a selected range
   - [S4 weekly hours](dist/docs/s04-weekly-hours.md): WeekGrid weekdays, 15-minute slots, break bands
   - [S5 week rich cards](dist/docs/s05-week-rich-cards.md): WeekGrid metadata rows per card
-  - [S6 rooms availability](dist/docs/s06-rooms-availability.md): AvailabilityGrid cell painting
-  - [S7 instructors availability](dist/docs/s07-instructors-availability.md): sparse AvailabilityGrid per person
+  - [S6 resource availability](dist/docs/s06-resource-availability.md): AvailabilityGrid cell painting
+  - [S7 person availability](dist/docs/s07-person-availability.md): sparse AvailabilityGrid per person
   - [S8 timeslot hours](dist/docs/s08-timeslot-hours.md): add hours and days with addAvailabilityCells
   - [S9 timeslot availability](dist/docs/s09-timeslot-availability.md): AvailabilityGrid in a native details section
   - [S10 tiny grid](dist/docs/s10-tiny-grid.md): compact read-only AvailabilityGrid
   - [S11 slot picker](dist/docs/s11-slot-picker.md): AvailabilityGrid cell states in renderCell
-  - [S12 solutions calendar](dist/docs/s12-solutions-calendar.md): toolbar slots, overflow chip, dense WeekGrid
+  - [S12 dense week](dist/docs/s12-dense-week.md): toolbar slots, overflow chip, dense WeekGrid
   - [S13 intersections](dist/docs/s13-intersections.md): WeekGrid blocks with host state colour
   - [S14 kit demo card](dist/docs/s14-kit-demo.md): standalone EventCard with metadata
-  - [E1 exam term solutions](dist/docs/e01-exam-term-solutions.md): conflict frame, weekend header, toolbar
-  - [E2 event term](dist/docs/e02-event-term.md): joined card line and toolbar action
+  - [E1 conflict week](dist/docs/e01-conflict-week.md): conflict frame, weekend header, toolbar
+  - [E2 long event blocks](dist/docs/e02-long-event-blocks.md): joined card line and toolbar action
   - [E3 event detail sheet](dist/docs/e03-event-detail-sheet.md): EventDetailContent with sections and rows
   - [E4 event wizard](dist/docs/e04-event-wizard.md): host page with host inputs
   - [E5 event detail in the side panel](dist/docs/e05-event-detail-side-panel.md): EventDetailPanel controlled by open
@@ -61,7 +61,7 @@ Rules an assistant should follow when writing code against this package:
 - [EventCard](dist/docs/event-card.md): the default event surface
 - [EventDetailPanel](dist/docs/event-detail-panel.md): inline event detail region
 - [CreateEventPanel](dist/docs/create-event.md): create-event form with recurrence and discard guard
-- [ConflictIndicator](dist/docs/conflict-indicator.md): named scheduling conflicts
+- [ConflictIndicator](dist/docs/conflict-indicator.md): named conflicts
 - [AvailabilityGrid](dist/docs/availability-grid.md): paint free time
 - [CalendarSidePanel](dist/docs/calendar-side-panel.md): side-panel shell
 - [MonthNavigator](dist/docs/month-navigator.md): mini month

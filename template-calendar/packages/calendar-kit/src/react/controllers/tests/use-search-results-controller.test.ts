@@ -29,7 +29,7 @@ const EVENTS: readonly CalendarEvent[] = [
     }),
     endDate: calendarDate("2026-08-24"),
     endTime: parseLocalTime("10:00"),
-    id: "chemistry",
+    id: "planning",
     start: fromViewerDateTime({
       date: calendarDate("2026-08-24"),
       time: "09:00",
@@ -38,7 +38,7 @@ const EVENTS: readonly CalendarEvent[] = [
     startDate: calendarDate("2026-08-24"),
     startTime: parseLocalTime("09:00"),
     timeZone: UTC,
-    title: "Introduction to Chemistry",
+    title: "Strategy planning",
   },
   {
     allDay: false,
@@ -107,12 +107,12 @@ describe(useSearchResultsController, () => {
 
   it("debounces query changes while preserving the previous grouped result set", () => {
     vi.useFakeTimers();
-    const { result, rerender } = renderController({ query: "chem" });
+    const { result, rerender } = renderController({ query: "plan" });
     act(() => {
       vi.advanceTimersByTime(250);
     });
 
-    expect(result.current.groups[0]?.rows[0]?.event.id).toBe("chemistry");
+    expect(result.current.groups[0]?.rows[0]?.event.id).toBe("planning");
 
     rerender({
       events: EVENTS,
@@ -123,7 +123,7 @@ describe(useSearchResultsController, () => {
       timeZone: UTC,
     });
 
-    expect(result.current.groups[0]?.rows[0]?.event.id).toBe("chemistry");
+    expect(result.current.groups[0]?.rows[0]?.event.id).toBe("planning");
 
     act(() => {
       vi.advanceTimersByTime(250);
@@ -158,14 +158,14 @@ describe(useSearchResultsController, () => {
 
   it("reveals by focus index and ignores a missing row", () => {
     const onReveal = vi.fn<(eventId: string, date: CalendarDate) => void>();
-    const { result } = renderController({ onReveal, query: "chem" });
+    const { result } = renderController({ onReveal, query: "plan" });
 
     act(() => {
       result.current.revealRow(0);
       result.current.revealRow(99);
     });
 
-    expect(onReveal).toHaveBeenCalledExactlyOnceWith("chemistry", "2026-08-24");
+    expect(onReveal).toHaveBeenCalledExactlyOnceWith("planning", "2026-08-24");
   });
 
   it("uses the injected instant and viewer zone when grouping results", () => {
@@ -198,7 +198,7 @@ describe(useSearchResultsController, () => {
 
   it("clears a pending query debounce on unmount", () => {
     vi.useFakeTimers();
-    const { unmount } = renderController({ query: "chem" });
+    const { unmount } = renderController({ query: "plan" });
 
     expect(vi.getTimerCount()).toBe(1);
 

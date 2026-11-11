@@ -121,10 +121,10 @@ describe(CalendarGrid, () => {
   });
 
   it("names the grid with the host label and falls back to the generic name", () => {
-    const { unmount } = renderGrid({ label: "Room A bookings" });
+    const { unmount } = renderGrid({ label: "Room 1 bookings" });
 
     expect(
-      screen.getByRole("grid", { name: "Room A bookings" })
+      screen.getByRole("grid", { name: "Room 1 bookings" })
     ).toBeInTheDocument();
     unmount();
 

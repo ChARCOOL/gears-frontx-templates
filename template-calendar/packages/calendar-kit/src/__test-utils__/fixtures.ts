@@ -101,7 +101,7 @@ const timeValue = (value: ReturnType<typeof parseLocalTime> | string) =>
   typeof value === "string" ? parseLocalTime(value) : value;
 
 interface PositionalPayload {
-  readonly courseCode: string;
+  readonly itemId: string;
 }
 
 const isIso = (value: unknown): value is string =>
@@ -118,9 +118,9 @@ const positionalDefaults = (
 ): TimedEventInput<PositionalPayload> => ({
   available: true,
   colorFamily: "purple",
-  conflicts: [{ dimension: "classroom", id: "conflict", label: "Room A" }],
+  conflicts: [{ dimension: "resource", id: "conflict", label: "Room 1" }],
   id,
-  metadata: { courseCode: "CAL-101" },
+  metadata: { itemId: "ITEM-101" },
   title: id,
 });
 
@@ -169,15 +169,15 @@ const positionalTimedEventThree = (
     if (first.includes("week")) {
       geometryDefaults = {
         colorFamily: "purple",
-        eventType: "Lecture",
-        location: "Room B12",
-        organizer: "Prof. Curie",
+        eventType: "Meeting",
+        location: "Room 2",
+        organizer: "Jordan Lee",
       };
     } else if (first.includes("event")) {
       geometryDefaults = {
-        eventType: "Course",
-        location: "B-107",
-        organizer: "Dr. Smith",
+        eventType: "Workshop",
+        location: "Room 4",
+        organizer: "Sam Rivera",
       };
     }
 
@@ -251,8 +251,8 @@ const positionalTimedEventFiveOrMore = (
   if (isTime(fourth)) {
     return {
       ...defaults,
-      calendarId: "cal-courses",
-      calendarName: "Courses",
+      calendarId: "cal-teams",
+      calendarName: "Teams",
       endTime: fourth,
       location: typeof sixth === "string" ? sixth : undefined,
       organizer: typeof fifth === "string" ? fifth : undefined,

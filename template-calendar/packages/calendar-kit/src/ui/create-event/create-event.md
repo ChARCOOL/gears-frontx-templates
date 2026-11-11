@@ -10,7 +10,7 @@ The form renders inline in the host container and is shadow-root safe; the host 
 
 | Prop | Type | Required | Description |
 | --- | --- | --- | --- |
-| `calendars` | `readonly CalendarRef[]` | yes | Calendars offered in the schedule field. |
+| `calendars` | `readonly CalendarRef[]` | yes | Calendars offered in the calendar field. |
 | `conferencingProviders` | `readonly CalendarResourceOption[]` | yes | Conferencing providers offered in the conferencing select. |
 | `locations` | `readonly CalendarResourceOption[]` | yes | Locations offered in the location combobox. |
 | `onCancel` | `() => void` | yes | Called when the form closes without saving: a clean cancel, or a confirmed discard. |
@@ -42,9 +42,9 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 ## Behaviour
 
 - The header shows an event-type title (`Event` by default), a slot for host header content, and a close icon action with its accessible label. The body scrolls inside its region above the Cancel/Save footer.
-- Title, schedule, time range, all-day switch, dates with a day count once they span a day, recurrence, timezone, people, conferencing, location, and description fields update one draft.
+- Title, calendar, time range, all-day switch, dates with a day count once they span a day, recurrence, timezone, people, conferencing, location, and description fields update one draft.
 - With `onKindChange`, the header shows an Event/Reminder switch and `kind` selects the form. Reminder shows title, URL, time range, dates, all-day, Notify me, repeat, and the time zone row; it hides calendar, event type, people, conferencing, location, and description, and switching to it clears those draft fields. Switching to Event clears `url`. The URL must be an `http(s)` link without credentials, at most 2048 characters, and shows `Enter a valid value` while invalid. Notify stores `notify: { leadMinutes }` (0, 5, 10, 15, 30 or 60, default 10) or `null` when off. Turning it on asks for browser permission only when the permission is `default`; a denied, missing or dismissed prompt keeps it off with an inline message. The form only stores the choice; the host delivers the notification.
-- Dates and times use the large icon-left field treatment; the schedule shows its calendar colour as a dot in the selected value and each option, and people tags use stroke tags with dismiss and clear-all actions.
+- Dates and times use the large icon-left field treatment; the calendar field shows its calendar colour as a dot in the selected value and each option, and people tags use stroke tags with dismiss and clear-all actions.
 - Timed events leave the end date empty when it is the same as the start date; the day-span indicator is shown only for a positive span.
 - Date rows are masked date inputs: the date mask is typed segment by segment in the order the display reads (day, then month, for `Wed, 11 Nov`) and commits as soon as it parses, the calendar button ahead of the value (or `Alt+ArrowDown`) opens a picker whose selection writes the row directly, and the optional end date clears from the trailing clear button. A typed end date before the start shows `End must be after start` under the end date as soon as it commits, and Save stays disabled until it is fixed.
 - The location control starts as a secondary `Add a location` action and opens the injected location combobox when requested. With `locationHierarchy`, one select per level replaces it: the next level appears after a choice, and the leaf id is written to `draft.location`.
@@ -129,7 +129,7 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | --- | --- | --- |
 | `calendar.create_event.all_day` | All day |  |
 | `calendar.create_event.back` | Back |  |
-| `calendar.create_event.calendarSchedule` | Schedule: |  |
+| `calendar.create_event.calendarField` | Calendar: |  |
 | `calendar.create_event.cancel` | Cancel |  |
 | `calendar.create_event.close` | Close |  |
 | `calendar.create_event.create_dialog` | Create event |  |

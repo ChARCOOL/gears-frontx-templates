@@ -101,10 +101,10 @@ const failingSubmit = async (): Promise<CreateEventResult> =>
   });
 
 const CONFLICT: CalendarConflict = {
-  dimension: "classroom",
+  dimension: "resource",
   id: "conflict-1",
-  label: "Room B12",
-  message: "Double-booked with Biology",
+  label: "Room 2",
+  message: "Double-booked with Design",
   severity: "warning",
 };
 
@@ -121,7 +121,7 @@ const EVENT = {
   startDate: DATE,
   startTime: parseLocalTime("09:00"),
   timeZone: UTC,
-  title: "Chemistry",
+  title: "Planning",
 } satisfies CalendarEvent;
 
 const UNAVAILABLE_EVENT = {
@@ -222,7 +222,7 @@ const AVAILABILITY_CELLS: readonly CalendarAvailabilityCell[] = [
 
 const CALENDARS: readonly CalendarRef[] = [
   { colorFamily: "purple", id: "calendar-1", name: "Teaching" },
-  { colorFamily: "orange", id: "calendar-2", name: "Exams" },
+  { colorFamily: "orange", id: "calendar-2", name: "Workshops" },
 ];
 
 const CREATE_DRAFT: CreateEventDraft = {
@@ -363,7 +363,7 @@ const searchResultsProps = (
   now: utcInstant("2026-08-24T08:00:00.000Z"),
   onDismiss: () => {},
   onReveal: () => {},
-  query: "Chemistry",
+  query: "Planning",
   t,
   timeZone: UTC,
   ...overrides,
@@ -411,9 +411,9 @@ describe("integrated WCAG 2.1 AA gate: week-grid & event surfaces", () => {
 
     assert(within(container).getByRole("grid")).toBeInTheDocument();
     assert(
-      within(container).getByRole("button", { name: /Chemistry/u })
+      within(container).getByRole("button", { name: /Planning/u })
     ).toBeInTheDocument();
-    assert(within(container).getByText("Room B12")).toBeInTheDocument();
+    assert(within(container).getByText("Room 2")).toBeInTheDocument();
 
     await expectNoAxeViolations(container);
   });
@@ -450,7 +450,7 @@ describe("integrated WCAG 2.1 AA gate: week-grid & event surfaces", () => {
 
     assert(within(container).getByRole("grid")).toBeInTheDocument();
     assert(
-      within(container).getByRole("button", { name: /Chemistry/u })
+      within(container).getByRole("button", { name: /Planning/u })
     ).toBeInTheDocument();
 
     await expectNoAxeViolations(container);
@@ -465,7 +465,7 @@ describe("integrated WCAG 2.1 AA gate: week-grid & event surfaces", () => {
 
     assert(within(container).getByRole("grid")).toBeInTheDocument();
     assert(
-      within(container).getByRole("button", { name: /Chemistry/u })
+      within(container).getByRole("button", { name: /Planning/u })
     ).toBeInTheDocument();
 
     await expectNoAxeViolations(container);
@@ -487,7 +487,7 @@ describe("integrated WCAG 2.1 AA gate: week-grid & event surfaces", () => {
     const { container } = render(<EventCard {...cardProps()} />);
 
     assert(
-      within(container).getByRole("button", { name: /Chemistry/u })
+      within(container).getByRole("button", { name: /Planning/u })
     ).toBeInTheDocument();
 
     await expectNoAxeViolations(container);
@@ -499,7 +499,7 @@ describe("integrated WCAG 2.1 AA gate: week-grid & event surfaces", () => {
     );
 
     assert(
-      within(container).getByRole("button", { name: /Chemistry/u })
+      within(container).getByRole("button", { name: /Planning/u })
     ).toHaveAttribute("aria-pressed", "true");
 
     await expectNoAxeViolations(container);
@@ -513,7 +513,7 @@ describe("integrated WCAG 2.1 AA gate: week-grid & event surfaces", () => {
     );
 
     assert(
-      within(container).getByRole("button", { name: /Chemistry/u })
+      within(container).getByRole("button", { name: /Planning/u })
     ).toHaveAttribute("aria-disabled", "true");
 
     await expectNoAxeViolations(container);
@@ -525,7 +525,7 @@ describe("integrated WCAG 2.1 AA gate: week-grid & event surfaces", () => {
     );
 
     assert(
-      within(container).getByRole("button", { name: /Chemistry/u })
+      within(container).getByRole("button", { name: /Planning/u })
     ).toHaveAttribute("aria-disabled", "true");
 
     await expectNoAxeViolations(container);
@@ -542,7 +542,7 @@ describe("integrated WCAG 2.1 AA gate: week-grid & event surfaces", () => {
 
     assert(within(container).getByRole("list")).toBeInTheDocument();
     assert(within(container).getByRole("listitem")).toHaveTextContent(
-      "Room B12"
+      "Room 2"
     );
 
     await expectNoAxeViolations(container);
@@ -559,7 +559,7 @@ describe("integrated WCAG 2.1 AA gate: week-grid & event surfaces", () => {
     const { container } = render(<ConflictIndicator {...props} />);
 
     assert(
-      within(container).getByRole("img", { name: "classroom: Room B12" })
+      within(container).getByRole("img", { name: "resource: Room 2" })
     ).toBeInTheDocument();
 
     await expectNoAxeViolations(container);
@@ -575,11 +575,11 @@ describe("integrated WCAG 2.1 AA gate: week-grid & event surfaces", () => {
         container,
       });
       const dialog = within(container).getByRole("region", {
-        name: "Chemistry",
+        name: "Planning",
       });
 
       assert(dialog.getRootNode()).toBe(root);
-      assert(within(dialog).getByText("Room B12")).toBeInTheDocument();
+      assert(within(dialog).getByText("Room 2")).toBeInTheDocument();
       await expectNoAxeViolations(container);
     } finally {
       host.remove();
@@ -810,7 +810,7 @@ describe("integrated WCAG 2.1 AA gate: panels & navigation surfaces", () => {
     const rendered = render(<SearchResults {...searchResultsProps()} />);
 
     assert(
-      within(rendered.container).getByRole("button", { name: /Chemistry/u })
+      within(rendered.container).getByRole("button", { name: /Planning/u })
     ).toBeInTheDocument();
     await expectNoAxeViolations(rendered.container);
 
@@ -819,7 +819,7 @@ describe("integrated WCAG 2.1 AA gate: panels & navigation surfaces", () => {
     );
     await waitFor(() => {
       assert(
-        within(rendered.container).queryByRole("button", { name: /Chemistry/u })
+        within(rendered.container).queryByRole("button", { name: /Planning/u })
       ).not.toBeInTheDocument();
     });
     assert(
