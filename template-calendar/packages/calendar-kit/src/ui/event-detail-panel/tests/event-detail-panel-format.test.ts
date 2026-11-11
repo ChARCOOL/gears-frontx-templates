@@ -201,6 +201,30 @@ describe(formatRecurrenceSummary, () => {
     expect(summary("FREQ=YEARLY")).toMatch(/^Repeats every year on /u);
   });
 
+  it("shows the host's summary in place of the rule, and the kit's own text without one", () => {
+    const t = vi.fn<CalendarTranslate>(() => "Repeats FREQ=WEEKLY;COUNT=12");
+
+    expect(
+      formatRecurrenceSummary(
+        makeTimedEvent({
+          recurrenceRule: "FREQ=WEEKLY;WKST=MO;BYDAY=MO;COUNT=12",
+          recurrenceSummary: "Repeats every week on Monday for 12 occurrences",
+        }),
+        t,
+        "en-US"
+      )
+    ).toBe("Repeats every week on Monday for 12 occurrences");
+    expect(t).not.toHaveBeenCalled();
+
+    expect(
+      formatRecurrenceSummary(
+        makeTimedEvent({ recurrenceRule: "FREQ=WEEKLY;COUNT=12", recurrenceSummary: "  " }),
+        t,
+        "en-US"
+      )
+    ).toBe("Repeats FREQ=WEEKLY;COUNT=12");
+  });
+
   it("hands a rule it cannot read to the consumer translation", () => {
     const t = vi.fn<CalendarTranslate>(() => "Repeats five times");
 

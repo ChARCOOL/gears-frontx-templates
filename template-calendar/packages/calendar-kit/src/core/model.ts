@@ -131,6 +131,9 @@ export interface CalendarEventBase<Payload = unknown> {
   readonly notify?: { readonly leadMinutes: number } | null;
   /** RRULE body without `RRULE:`, e.g. `FREQ=WEEKLY;BYDAY=MO,WE`; summarized in the detail. */
   readonly recurrenceRule?: string | null;
+  /** Host summary of `recurrenceRule` for the detail, used in place of the kit's own text. Set it
+   * for rules the kit cannot describe, such as COUNT. */
+  readonly recurrenceSummary?: string | null;
   /** Id shared by all occurrences of a recurring series, carried through for the host. */
   readonly seriesId?: string | null;
   /** Id of this occurrence within its series, carried through for the host. */

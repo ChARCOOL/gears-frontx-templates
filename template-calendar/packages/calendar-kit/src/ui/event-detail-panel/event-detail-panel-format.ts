@@ -100,6 +100,10 @@ export const formatRecurrenceSummary = (
   if (rule === "") {
     return undefined;
   }
+  const hostSummary = (event.recurrenceSummary ?? "").trim();
+  if (hostSummary !== "") {
+    return hostSummary;
+  }
   if (describesRule(rule)) {
     return formatRepeatHint(rule, event.startDate, t, locale);
   }

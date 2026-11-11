@@ -82,6 +82,7 @@ The exclusive end is the most common source of off-by-one bugs; see [Troubleshoo
 | `organizer` | `string` |  | Organizer name, shown in the card metadata and the detail panel. |
 | `organizerEmail` | `string` |  | Shown under the organizer in the detail panel. |
 | `recurrenceRule` | `string` |  | RRULE body without `RRULE:`, e.g. `FREQ=WEEKLY;BYDAY=MO,WE`; summarized in the detail. |
+| `recurrenceSummary` | `string` |  | Host summary of `recurrenceRule` for the detail, used in place of the kit's own text. Set it for rules the kit cannot describe, such as COUNT. |
 | `roomId` | `string` |  | Host room id, carried through for host slots. |
 | `rsvp` | `CalendarRsvp` |  | Aggregate RSVP counts for the detail panel. |
 | `seriesId` | `string` |  | Id shared by all occurrences of a recurring series, carried through for the host. |
