@@ -17,8 +17,14 @@
  * `MfeJsonEnricher` calls, promoted to a free function.
  */
 
-import { describe, expect, it } from 'vitest';
-import { normalizeEmbeddedModulePathsInSource } from '../../src/build/mf-gts';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  computeContentHash,
+  normalizeEmbeddedModulePathsInSource,
+} from '../../src/build/mf-gts';
 
 describe('normalizeEmbeddedModulePathsInSource', () => {
   it('collapses pnpm\'s content-addressed store segment to the flat layout', () => {
@@ -85,3 +91,81 @@ describe('normalizeEmbeddedModulePathsInSource', () => {
   });
 });
 
+describe('computeContentHash', () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'content-hash-test-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+    vi.restoreAllMocks();
+  });
+
+  function write(fileName: string, contents: string): string {
+    const filePath = path.join(dir, fileName);
+    fs.writeFileSync(filePath, contents, 'utf-8');
+    return filePath;
+  }
+
+  it('is deterministic over the same bytes', () => {
+    const filePath = write('a.js', 'export default 1;\n');
+    expect(computeContentHash(filePath)).toBe(computeContentHash(filePath));
+  });
+
+  it('returns a 64-char lowercase hex sha256 digest', () => {
+    const filePath = write('a.js', 'export default 1;\n');
+    const hash = computeContentHash(filePath);
+    expect(hash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('returns undefined and warns when the chunk file does not exist', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const missing = path.join(dir, 'does-not-exist.js');
+    expect(computeContentHash(missing)).toBeUndefined();
+    expect(warn).toHaveBeenCalledTimes(1);
+    const message = warn.mock.calls[0]?.[0] as string;
+    expect(message).toContain(missing);
+    expect(message).toContain('[frontx-mf-gts]');
+  });
+
+  it('two-builds-same-hash: inputs differing only in normalized path shapes hash identically', () => {
+    // Simulates the same dependency built twice — once under pnpm at one
+    // cwd depth, once under pnpm at another — going through the full
+    // pipeline (normalize, then hash) the plugin actually runs.
+    const pnpmBuildA =
+      '// node_modules/.pnpm/react-dom@19.2.8/node_modules/react-dom/cjs/react-dom.development.js\n' +
+      'var require_x = __commonJS({\n' +
+      '  "node_modules/.pnpm/react-dom@19.2.8/node_modules/react-dom/cjs/react-dom.development.js"(exports, module) {\n' +
+      '    module.exports = {};\n' +
+      '  }\n' +
+      '});\n';
+    const pnpmBuildB =
+      '// ../../node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom.development.js\n' +
+      'var require_x = __commonJS({\n' +
+      '  "../../node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom.development.js"(exports, module) {\n' +
+      '    module.exports = {};\n' +
+      '  }\n' +
+      '});\n';
+
+    const fileA = write('a.js', normalizeEmbeddedModulePathsInSource(pnpmBuildA));
+    const fileB = write('b.js', normalizeEmbeddedModulePathsInSource(pnpmBuildB));
+
+    expect(computeContentHash(fileA)).toBe(computeContentHash(fileB));
+  });
+
+  it('a real code difference still produces a different hash', () => {
+    const pnpmBuildA =
+      '// node_modules/.pnpm/react-dom@19.2.8/node_modules/react-dom/cjs/react-dom.development.js\n' +
+      'module.exports = { version: "19.2.8" };\n';
+    const pnpmBuildC =
+      '// node_modules/.pnpm/react-dom@19.2.9/node_modules/react-dom/cjs/react-dom.development.js\n' +
+      'module.exports = { version: "19.2.9" };\n';
+
+    const fileA = write('a.js', normalizeEmbeddedModulePathsInSource(pnpmBuildA));
+    const fileC = write('c.js', normalizeEmbeddedModulePathsInSource(pnpmBuildC));
+
+    expect(computeContentHash(fileA)).not.toBe(computeContentHash(fileC));
+  });
+});

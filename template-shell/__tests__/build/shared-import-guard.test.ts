@@ -13,10 +13,27 @@
  * interop have to get right.
  */
 
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import type { BuildOptions } from 'esbuild';
 import { parseAst } from 'vite';
-import { describe, expect, it, vi } from 'vitest';
-import { findCjsWrapperExport, findSharedImportMismatches, findUncheckedNamespaceImports, formatSharedImportMismatchError, formatUncheckedNamespaceImportWarning, patchCjsExternalsInSource, readChunkLinkage, type AmbiguousExport, type ImportingChunk, type SharedChunk } from '../../src/build/mf-gts';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+  StandaloneEsmBuilder,
+  findCjsWrapperExport,
+  findSharedImportMismatches,
+  findUncheckedNamespaceImports,
+  formatSharedImportMismatchError,
+  formatUncheckedNamespaceImportWarning,
+  patchCjsExternalsInSource,
+  readChunkLinkage,
+  type AmbiguousExport,
+  type ImportingChunk,
+  type MintedSharedChunk,
+  type SharedChunk,
+} from '../../src/build/mf-gts';
 
 // The builder sets no `absWorkingDir`, so esbuild resolves each shared dep
 // from its default working directory, which it reads once, when it loads.
@@ -551,3 +568,210 @@ describe('findUncheckedNamespaceImports', () => {
 
 type Files = Record<string, string>;
 
+/** CommonJS unless `type: "module"` is passed in `pkg`. */
+const FIXTURES: Record<string, { pkg?: Record<string, unknown>; files: Files }> = {
+  // Reads `window` at load, so Node's require() throws during discovery.
+  'cjs-window': {
+    files: { 'index.js': 'exports.ratio = window.devicePixelRatio;\n' },
+  },
+  // Node reads index.js; esbuild bundles browser.js, which has one more name.
+  'cjs-browser': {
+    pkg: { browser: './browser.js' },
+    files: {
+      'index.js': 'exports.a = 1;\n',
+      'browser.js': 'exports.a = 1;\nexports.b = 2;\n',
+    },
+  },
+  // No keys to discover, and nothing wrong with the chunk.
+  'cjs-fn': {
+    files: { 'index.js': 'module.exports = function () { return 4; };\n' },
+  },
+  'esm-nodefault': {
+    pkg: { type: 'module' },
+    files: { 'index.js': 'export const x = 5;\n' },
+  },
+  'cjs-uses-nodefault': {
+    pkg: { dependencies: { 'esm-nodefault': '*' } },
+    files: { 'index.js': 'exports.getX = () => require("esm-nodefault").x;\n' },
+  },
+  'esm-default': {
+    pkg: { type: 'module' },
+    files: { 'index.js': 'export default "d";\nexport const x = 6;\n' },
+  },
+  'cjs-uses-default': {
+    pkg: { dependencies: { 'esm-default': '*' } },
+    files: {
+      'index.js':
+        'exports.getX = () => require("esm-default").x;\n' +
+        'exports.getDefault = () => require("esm-default").default;\n',
+    },
+  },
+  // esbuild cannot list the names of `export *` from CommonJS.
+  'esm-star-cjs': {
+    pkg: { type: 'module' },
+    files: {
+      'index.js': 'export * from "./lib.cjs";\n',
+      'lib.cjs': 'exports.fromCjs = 7;\n',
+    },
+  },
+  'star-outer': {
+    pkg: { type: 'module', dependencies: { 'star-inner': '*' } },
+    files: { 'index.js': 'export * from "star-inner";\nexport const own = 1;\n' },
+  },
+  'star-inner': {
+    pkg: { type: 'module' },
+    files: { 'index.js': 'export const fromInner = 2;\nexport default 3;\n' },
+  },
+};
+
+describe('shared chunks built from fixture packages', () => {
+  const originalCwd = process.cwd();
+  let root = '';
+  let sharedChunks: SharedChunk[] = [];
+  let minted: MintedSharedChunk[] = [];
+
+  /** The mismatches an MFE chunk importing `names` from `pkg` would get. */
+  function check(pkg: string, names: string[]) {
+    return findSharedImportMismatches(
+      [importer('assets/mfe.js', { [pkg]: names }), ...sharedChunks],
+      sharedChunks
+    );
+  }
+
+  /**
+   * Loads one shared chunk in Node with every bare import of a shared chunk
+   * pointed at that chunk's file, the way the handler points them at blob
+   * URLs.
+   */
+  async function load(name: string): Promise<Record<string, unknown>> {
+    const loadDir = path.join(root, 'load');
+    fs.mkdirSync(loadDir, { recursive: true });
+    for (const chunk of minted) {
+      const source = fs
+        .readFileSync(chunk.outfile, 'utf-8')
+        .replace(/from "([^"]+)"/g, (statement, from: string) =>
+          minted.some((other) => other.name === from)
+            ? `from "./${StandaloneEsmBuilder.normalizeDepName(from)}.mjs"`
+            : statement
+        );
+      fs.writeFileSync(
+        path.join(loadDir, StandaloneEsmBuilder.normalizeDepName(chunk.name) + '.mjs'),
+        source
+      );
+    }
+    const file = path.join(loadDir, StandaloneEsmBuilder.normalizeDepName(name) + '.mjs');
+    return (await import(/* @vite-ignore */ pathToFileURL(file).href)) as Record<
+      string,
+      unknown
+    >;
+  }
+
+  beforeAll(async () => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'mf-gts-shared-imports-'));
+    fs.writeFileSync(path.join(root, 'package.json'), '{"name":"fixture-root"}\n');
+    for (const [name, fixture] of Object.entries(FIXTURES)) {
+      const dir = path.join(root, 'node_modules', name);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, 'package.json'),
+        JSON.stringify({ name, version: '1.0.0', main: './index.js', ...fixture.pkg })
+      );
+      for (const [file, content] of Object.entries(fixture.files)) {
+        fs.writeFileSync(path.join(dir, file), content);
+      }
+    }
+
+    // See the esbuild mock at the top of the file.
+    process.chdir(root);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const builder = new StandaloneEsmBuilder(
+      Object.keys(FIXTURES),
+      path.join(root, 'dist', 'shared'),
+      root
+    );
+    minted = await builder.build((message) => {
+      throw new Error(message);
+    });
+    sharedChunks = minted.map((chunk) => ({
+      name: chunk.name,
+      fileName: path.relative(path.join(root, 'dist'), chunk.outfile),
+      discoveryFailure: chunk.discoveryFailure,
+      ...readChunkLinkage(fs.readFileSync(chunk.outfile, 'utf-8'), parseAst),
+    }));
+  });
+
+  afterAll(() => {
+    process.chdir(originalCwd);
+    vi.restoreAllMocks();
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it('fails a name of a CommonJS package that cannot load in Node, and says why', () => {
+    const [mismatch] = check('cjs-window', ['ratio']);
+    expect(mismatch).toMatchObject({ packageName: 'cjs-window', missing: ['ratio'] });
+    expect(mismatch.discoveryFailure).toMatch(
+      /^named-export discovery failed: require\("cjs-window"\) threw: .*window is not defined/
+    );
+  });
+
+  it('fails a name only the browser file of a CommonJS package has', () => {
+    expect(check('cjs-browser', ['a', 'b'])).toEqual([
+      expect.objectContaining({ packageName: 'cjs-browser', missing: ['b'] }),
+    ]);
+  });
+
+  it('warns about a namespace import of a package whose discovery failed', () => {
+    const [unchecked, ...rest] = findUncheckedNamespaceImports(
+      [importer('assets/mfe.js', { 'cjs-window': ['*'], 'esm-default': ['*'] })],
+      sharedChunks
+    );
+    expect(rest).toEqual([]);
+    expect(unchecked).toMatchObject({ importer: 'assets/mfe.js', packageName: 'cjs-window' });
+    expect(unchecked.discoveryFailure).toMatch(/window is not defined/);
+  });
+
+  it('reads every name through the default export when discovery failed', async () => {
+    // The fix the error and the warning offer: the default export is the
+    // whole module.exports, so a browser reads `ratio` through it.
+    expect(check('cjs-window', ['default'])).toEqual([]);
+    vi.stubGlobal('window', { devicePixelRatio: 2 });
+    try {
+      const mod = await load('cjs-window');
+      expect((mod.default as { ratio: unknown }).ratio).toBe(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('passes a function-only CommonJS package imported by its default', () => {
+    expect(check('cjs-fn', ['default'])).toEqual([]);
+  });
+
+  it('fails a name of an ESM entry that does export * from CommonJS', () => {
+    expect(check('esm-star-cjs', ['fromCjs'])).toEqual([
+      expect.objectContaining({ packageName: 'esm-star-cjs', missing: ['fromCjs'] }),
+    ]);
+  });
+
+  it('passes names a shared chunk re-exports from a sibling through export *', () => {
+    expect(check('star-outer', ['own', 'fromInner'])).toEqual([]);
+    expect(check('star-outer', ['default'])).toEqual([
+      expect.objectContaining({ packageName: 'star-outer', missing: ['default'] }),
+    ]);
+  });
+
+  it('passes every import between the fixture shared chunks', () => {
+    expect(findSharedImportMismatches(sharedChunks, sharedChunks)).toEqual([]);
+  });
+
+  it('lets CommonJS require an ESM shared chunk that has no default export', async () => {
+    const mod = await load('cjs-uses-nodefault');
+    expect((mod.getX as () => unknown)()).toBe(5);
+  });
+
+  it('lets CommonJS require an ESM shared chunk that has a default export', async () => {
+    const mod = await load('cjs-uses-default');
+    expect((mod.getX as () => unknown)()).toBe(6);
+    expect((mod.getDefault as () => unknown)()).toBe('d');
+  });
+});
