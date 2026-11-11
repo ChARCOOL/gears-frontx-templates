@@ -15,15 +15,18 @@ The component is controlled by neutral calendar-kit data. Provide `t`, `locale`,
 | `cellClassName` | `string` |  | Class added to every time cell. |
 | `className` | `string` |  | Class added to the component root. |
 | `columnHeaderClassName` | `string` |  | Class added to the day header. |
-| `defaultInteractionMode` | `"quick-create" \| "read-only"` |  | Initial mode when uncontrolled. |
+| `defaultInteractionMode` | `WeekGridInteractionMode` |  | Initial mode when uncontrolled. |
 | `defaultSelectedEventId` | `string` |  | Initial selected event when uncontrolled. |
 | `gutterClassName` | `string` |  | Class added to every gutter label. |
-| `interactionMode` | `"quick-create" \| "read-only"` |  | Controlled mode. `read-only` disables quick-create. Default `quick-create`. |
+| `interactionMode` | `WeekGridInteractionMode` |  | Controlled mode. `quick-create` opens a form on an empty cell, `paint-and-move` paints a range and moves events, `read-only` disables both. Default `quick-create`. |
 | `now` | `UtcInstant` |  | Reference instant for the now line and past styling. Default: the wall clock. |
 | `onEventSelect` | `(event: CalendarEvent, context: CalendarEventRenderContext<unknown>, anchor?: HTMLElement…` |  | An available event was activated. `anchor` is the card element. |
-| `onInteractionModeChange` | `(mode: "quick-create" \| "read-only") => void` |  | Called when the grid asks to change mode. |
+| `onInteractionModeChange` | `(mode: WeekGridInteractionMode) => void` |  | Called when the grid asks to change mode. |
+| `onMoveRequest` | `(request: CalendarMoveRequest) => void` |  | An event was dropped on a new slot in `paint-and-move` mode. Call `confirm` or `cancel`. |
+| `onPaintSelect` | `(range: CalendarSelectionRange) => void` |  | A range was painted in `paint-and-move` mode. |
 | `onQuickCreate` | `(payload: CalendarQuickCreatePayload) => void` |  | An empty slot was activated in `quick-create` mode. |
 | `onSelectedEventIdChange` | `(eventId: string \| null) => void` |  | Called when an event is selected or deselected. |
+| `paintColorFamily` | `CalendarColorFamily` |  | Colour family of a painted range. Unset, the range uses the plain selection style. |
 | `renderCell` | `(context: CalendarCellContext) => ReactNode` |  | Replaces the content of each empty time cell. |
 | `renderConflict` | `CalendarConflictRenderer` |  | Replaces how each conflict renders inside the default card. |
 | `renderEvent` | `CalendarEventRenderer` |  | Replaces the default `EventCard`. |
@@ -31,7 +34,7 @@ The component is controlled by neutral calendar-kit data. Provide `t`, `locale`,
 | `slotMinutes` | `CalendarSlotMinutes` |  | Length of one row. Default `60`. |
 | `trailingGutter` | `boolean` |  | Repeat the hour labels on the trailing edge, hidden from assistive technology. |
 | `visibleHours` | `CalendarTimeWindow` |  | Visible part of the day, on slot boundaries. Default: the whole day. |
-| `workingHours` | `CalendarTimeWindow` |  | Shaded business hours; also where the grid first scrolls to. Default 08:00–18:00. |
+| `workingHours` | `CalendarTimeWindow` |  | Working hours; cells outside them are hatched. Also where the grid first scrolls to. Default 08:00–18:00. |
 
 Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`, `translations`; see [Internationalization](../../docs/i18n.md#per-component-overrides).
 <!-- /generated -->
