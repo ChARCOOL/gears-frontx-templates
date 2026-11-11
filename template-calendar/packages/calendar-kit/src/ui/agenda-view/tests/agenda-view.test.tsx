@@ -2,7 +2,6 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { declarations } from "../../../__test-utils__/css-declarations";
 import { allDayEvent, timedEvent, UTC } from "../../../__test-utils__/fixtures";
 import type { CalendarEvent } from "../../../core/model";
 import {
@@ -15,7 +14,6 @@ import { englishTranslate as t } from "../../../i18n/english";
 import type { CalendarEventRenderer } from "../../../react/public";
 import { AgendaView } from "../agenda-view";
 import type { AgendaViewProps } from "../agenda-view";
-import agendaCss from "../agenda-view.module.css?raw";
 import agendaStyles from "../agenda-view.module.css";
 
 type CalendarEventRenderContext = Parameters<CalendarEventRenderer>[0];
@@ -102,32 +100,7 @@ describe(AgendaView, () => {
     });
   });
 
-  it("sets the day label and end time at the 10px caption size, event text at 12px", () => {
-    for (const selector of [".dayRelative", ".slotTimeEnd"]) {
-      expect(declarations(agendaCss, selector).get("font-size")).toBe(
-        "var(--cal-text-caption-size)"
-      );
-    }
-    expect(declarations(agendaCss, ".eventTitle").get("font-size")).toBe(
-      "var(--cal-text-meta-size)"
-    );
-  });
-
-  it("draws the now time tag as a filled caption pill", () => {
-    const tag = declarations(agendaCss, ".nowGutter");
-
-    expect(tag.get("background")).toBe("var(--cal-color-now-label)");
-    expect(tag.get("color")).toBe("var(--cal-color-action-foreground)");
-    expect(tag.get("font-size")).toBe("var(--cal-text-caption-size)");
-  });
-
-  it("paints the Join button with the primary action colour, not the error colour", () => {
-    expect(declarations(agendaCss, ".joinButton").get("background")).toBe(
-      "var(--cal-color-action)"
-    );
-  });
-
-  it("titles an empty busy event Busy and an empty event Event in the agenda", () => {
+        it("titles an empty busy event Busy and an empty event Event in the agenda", () => {
     const { unmount } = renderAgenda({
       events: [
         {

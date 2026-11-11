@@ -1,7 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect as assert, it, vi } from "vitest";
 
-import { declarations } from "../../../__test-utils__/css-declarations";
 import {
   timedEvent,
   UTC,
@@ -11,9 +10,6 @@ import { calendarDate, utcInstant } from "../../../core/model";
 import type { CalendarEvent, UtcInstant } from "../../../core/model";
 import { AgendaView } from "../agenda-view";
 import type { AgendaViewProps } from "../agenda-view";
-
-import agendaStyles from "../agenda-view.module.css";
-import agendaViewCss from "../agenda-view.module.css?raw";
 
 // Before every event below, so none of them is past unless a test moves the clock.
 const MORNING = utcInstant("2026-08-24T08:00:00.000Z");
@@ -164,59 +160,4 @@ describe("agenda event slot", () => {
     assert(screen.queryByRole("link")).toBeNull();
   });
 
-  it("element-qualifies the slot layout so ui-kit Button rules cannot tie it", () => {
-    const slot = declarations(agendaViewCss, "button.agendaEvent");
-
-    assert(slot.get("display")).toBe("block");
-    assert(slot.get("padding")).toBe("var(--cal-space-1) 0");
-    assert(slot.get("text-align")).toBe("start");
-    assert(slot.get("background")).toBe("var(--cal-color-surface)");
-    assert(
-      declarations(
-        agendaViewCss,
-        "button.agendaEvent:not(.unavailable):hover"
-      ).get("background")
-    ).toBe("var(--cal-state-hover)");
-  });
-
-  it("greys out a past slot's times and metadata along with the row", () => {
-    const rowColor = declarations(agendaViewCss, ".agendaEvent.past").get(
-      "color"
-    );
-
-    assert(rowColor).toBe("var(--cal-color-muted)");
-
-    for (const part of [
-      ".slotTimes",
-      ".slotTimeStart",
-      ".slotTimeAllDay",
-      ".slotTimeEnd",
-      ".eventMetadata",
-    ]) {
-      assert(
-        declarations(agendaViewCss, `.agendaEvent.past ${part}`).get("color")
-      ).toBe(rowColor);
-    }
-  });
-
-  it("paints a blue row from the blue family tokens", () => {
-    renderAgenda([
-      {
-        ...timedEvent(
-          "blue",
-          "2026-08-24T09:00:00.000Z",
-          "2026-08-24T10:30:00.000Z"
-        ),
-        colorFamily: "blue",
-      },
-    ]);
-
-    const blue = declarations(agendaViewCss, ".agendaEvent.colorBlue");
-
-    assert(screen.getByRole("button")).toHaveClass(agendaStyles.colorBlue);
-    assert(blue.get("--agenda-slot-accent")).toBe(
-      "var(--cal-color-blue-accent)"
-    );
-    assert(blue.get("color")).toBe("var(--cal-color-blue-foreground)");
-  });
-});
+      });

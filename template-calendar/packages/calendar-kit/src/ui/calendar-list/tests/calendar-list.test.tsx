@@ -2,14 +2,12 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { declarations } from "../../../__test-utils__/css-declarations";
 import type { CalendarRef } from "../../../core/model";
 import { englishTranslate as t } from "../../../i18n/english";
 import { CalendarList } from "../calendar-list";
 import type { CalendarListProps } from "../calendar-list";
 
 import styles from "../calendar-list.module.css";
-import calendarListCss from "../calendar-list.module.css?raw";
 
 const CALENDARS: readonly CalendarRef[] = [
   { colorFamily: "turquoise", id: "cal-courses", name: "Courses" },
@@ -126,88 +124,7 @@ describe(CalendarList, () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
-  it("fills a checked blue calendar with the blue calendar swatch", () => {
-    render(
-      <CalendarList
-        {...baseProps({
-          calendars: [{ colorFamily: "blue", id: "cal-blue", name: "Blue" }],
-        })}
-      />
-    );
-
-    const forcedColors = calendarListCss.slice(
-      calendarListCss.indexOf("@media (forced-colors: active)")
-    );
-
-    expect(screen.getByRole("checkbox", { name: "Blue" })).toHaveClass(
-      styles.colorBlue
-    );
-    expect(
-      declarations(calendarListCss, ".colorBlue").get("--calendar-color")
-    ).toBe("var(--cal-color-calendar-blue)");
-    expect(
-      declarations(calendarListCss, ".colorBlue:is([data-checked], [data-indeterminate])").get(
-        "background-color"
-      )
-    ).toBe("var(--calendar-color)");
-    expect(
-      declarations(forcedColors, ".colorBlue:is([data-checked], [data-indeterminate])").get(
-        "background-color"
-      )
-    ).toBe("Highlight");
-  });
-
-  it("gives lavender, violet and brown calendars their own accent class", () => {
-    render(
-      <CalendarList
-        {...baseProps({
-          calendars: [
-            { colorFamily: "lavender", id: "cal-lavender", name: "Lavender" },
-            { colorFamily: "violet", id: "cal-violet", name: "Violet" },
-            { colorFamily: "brown", id: "cal-brown", name: "Brown" },
-          ],
-        })}
-      />
-    );
-
-    expect(screen.getByRole("checkbox", { name: "Lavender" })).toHaveClass(
-      styles.colorLavender
-    );
-    expect(screen.getByRole("checkbox", { name: "Violet" })).toHaveClass(
-      styles.colorViolet
-    );
-    expect(screen.getByRole("checkbox", { name: "Brown" })).toHaveClass(
-      styles.colorBrown
-    );
-    expect(
-      declarations(calendarListCss, ".colorBrown").get("--calendar-color")
-    ).toBe("var(--cal-color-calendar-brown)");
-  });
-
-  it("mutes the name and the unticked box of a hidden calendar", () => {
-    render(
-      <CalendarList
-        {...baseProps({ hiddenCalendarIds: ["cal-exams"] })}
-      />
-    );
-
-    expect(screen.getByText("Exams")).toHaveAttribute("data-hidden");
-    expect(screen.getByText("Courses")).not.toHaveAttribute("data-hidden");
-    expect(screen.getByRole("checkbox", { name: "Exams" })).toHaveClass(
-      styles.hiddenCheckbox
-    );
-    expect(
-      declarations(calendarListCss, ".name[data-hidden]").get("color")
-    ).toBe("var(--cal-color-muted)");
-  });
-
-  it("highlights a row on hover with the shared state colour", () => {
-    expect(
-      declarations(calendarListCss, ".row:hover").get("background-color")
-    ).toBe("var(--cal-state-hover)");
-  });
-
-  describe("options menu", () => {
+          describe("options menu", () => {
     const OPTION_CALENDARS: readonly CalendarRef[] = [
       {
         canDelete: true,

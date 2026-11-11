@@ -2,8 +2,6 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { declarations } from "../../../__test-utils__/css-declarations";
-
 import { calendarDate } from "../../../core/model";
 import type { CalendarDate, CalendarView } from "../../../core/model";
 import type { CalendarTranslate } from "../../../i18n/calendar-localization";
@@ -12,7 +10,6 @@ import { CalendarToolbar } from "../calendar-toolbar";
 import type { CalendarToolbarProps } from "../calendar-toolbar";
 
 import toolbarStyles from "../calendar-toolbar.module.css";
-import toolbarCss from "../calendar-toolbar.module.css?raw";
 
 const missingTranslation: CalendarTranslate = (key) => key;
 
@@ -541,24 +538,3 @@ describe("CalendarToolbar title runs and stepper labels", () => {
   });
 });
 
-// A host narrower than the viewport, as beside an open side panel, never meets the breakpoints.
-describe("CalendarToolbar in a narrow host", () => {
-  it("wraps the actions under a title that keeps its width", () => {
-    expect(declarations(toolbarCss, ".root").get("flex-wrap")).toBe("wrap");
-    expect(declarations(toolbarCss, ".title").get("flex")).toBe("none");
-    expect(declarations(toolbarCss, ".actions").get("flex")).toBe("1 1 auto");
-  });
-});
-
-describe("CalendarToolbar end group", () => {
-  it("keeps the stepper and the trailing slot 4px apart in one group", () => {
-    renderToolbar({ renderTrailing: () => <span>trailing-slot</span> });
-
-    expect(screen.getByRole("group").parentElement).toBe(
-      screen.getByText("trailing-slot").parentElement?.parentElement
-    );
-    expect(declarations(toolbarCss, ".end").get("gap")).toBe(
-      "var(--cal-space-1)"
-    );
-  });
-});

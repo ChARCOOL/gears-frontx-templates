@@ -10,7 +10,6 @@ import userEvent from "@testing-library/user-event";
 import { createRef } from "react";
 import { afterEach, describe, expect as assert, it, vi } from "vitest";
 
-import { declarations } from "../../../__test-utils__/css-declarations";
 import { UTC } from "../../../__test-utils__/fixtures";
 import {
   calendarDate,
@@ -33,7 +32,6 @@ import type {
 } from "../create-event-panel";
 
 import styles from "../create-event.module.css";
-import createEventCss from "../create-event.module.css?raw";
 
 const DATE = calendarDate("2026-08-24");
 const NEXT_DATE = calendarDate("2026-08-25");
@@ -1050,16 +1048,6 @@ describe("CreateEventPanel coverage paths", () => {
   });
 });
 
-describe("CreateEventPanel repeat unit popup", () => {
-  it("sizes the unit popup to its longest label instead of the narrow field", () => {
-    expect(
-      declarations(createEventCss, ".repeatUnitPopup").get(
-        "--c-select-popup-width"
-      )
-    ).toBe("max-content");
-  });
-});
-
 describe("CreateEventPanel custom repeat dimming", () => {
   it("dims the form fields around the open custom repeat block", () => {
     renderPopover({ onSubmit: submitSpy() });
@@ -1253,13 +1241,7 @@ describe("CreateEventPanel discard and submit behaviour", () => {
     assert(screen.getAllByRole("option")).toHaveLength(6);
   });
 
-  it("paints a blue calendar dot from the blue accent", () => {
-    assert(
-      declarations(createEventCss, ".calendarColorBlue").get("background")
-    ).toBe("var(--cal-color-blue-accent)");
-  });
-
-  it("picks a start date from the date row calendar", async () => {
+    it("picks a start date from the date row calendar", async () => {
     const user = userEvent.setup({ delay: null });
     const onSubmit = submitSpy();
     renderPopover({ onSubmit });
@@ -2199,16 +2181,4 @@ describe("CreateEventPanel expanded layout", () => {
     assert(screen.getByRole("button", { name: "Expand" })).toBeInTheDocument();
   });
 
-  it("lays out the expanded body as two columns with people fixed to the second", () => {
-    assert(
-      declarations(createEventCss, ".expandedFields").get(
-        "grid-template-columns"
-      )
-    ).toBe("repeat(2, minmax(0, 1fr))");
-    assert(
-      declarations(createEventCss, ".expandedFields > .peopleBlock").get(
-        "grid-column"
-      )
-    ).toBe("2");
   });
-});

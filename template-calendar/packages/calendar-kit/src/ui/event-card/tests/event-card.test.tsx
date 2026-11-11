@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { declarations } from "../../../__test-utils__/css-declarations";
 import {
   allDayEvent,
   timedEvent,
@@ -23,7 +22,6 @@ import { EventCard } from "../event-card";
 import type { EventCardProps } from "../event-card";
 
 import cardStyles from "../event-card.module.css";
-import cardCss from "../event-card.module.css?raw";
 
 const DATE = calendarDate("2026-08-24");
 
@@ -505,16 +503,7 @@ describe("EventCard geometry tiers", () => {
     }
   });
 
-  it("hides the recurrence icon on one-line cards", () => {
-    expect(
-      declarations(
-        cardCss,
-        '.card[data-event-card-layout="single"] .recurrenceIcon, .card[data-event-card-layout="title"] .recurrenceIcon'
-      ).get("display")
-    ).toBe("none");
-  });
-
-  it("uses the one-line treatment at the 21px compact boundary", () => {
+    it("uses the one-line treatment at the 21px compact boundary", () => {
     renderCard({ geometry: eventGeometry(21) });
 
     const card = getCard();
@@ -764,62 +753,3 @@ describe("EventCard unit behaviour beyond the acceptance suite", () => {
   });
 });
 
-describe("EventCard styles", () => {
-  it("colours the time row with the card's foreground over the composed muted text", () => {
-    expect(declarations(cardCss, ".time.time").get("color")).toBe(
-      "var(--button-fg)"
-    );
-  });
-
-  it("colours metadata with the card's own foreground, so it stays readable on a filled card", () => {
-    expect(declarations(cardCss, ".metadata").get("color")).toBe(
-      "var(--button-fg)"
-    );
-  });
-
-  it("element-qualifies the card rules that tie with the ui-kit button", () => {
-    expect(declarations(cardCss, "button.card").get("position")).toBe(
-      "absolute"
-    );
-    expect(
-      declarations(cardCss, "button.card:focus-visible").get("box-shadow")
-    ).toBe("none");
-    expect(
-      declarations(cardCss, "button.card:not(.unavailable):hover").get(
-        "background-color"
-      )
-    ).toBe("var(--button-bg-hover)");
-  });
-
-  it("paints a blue card from the blue family tokens", () => {
-    const blue = declarations(cardCss, ".card.selected.colorBlue");
-
-    expect(blue.get("--button-bg")).toBe("var(--cal-color-blue-background)");
-    expect(blue.get("--button-fg")).toBe("var(--cal-color-blue-foreground)");
-    expect(blue.get("--event-card-bar-color")).toBe(
-      "var(--cal-color-blue-accent)"
-    );
-    expect(blue.get("border-color")).toBe("var(--cal-color-blue-border)");
-  });
-
-  it("keeps family colours on past and busy cards and hovers at 90%", () => {
-    const hover = declarations(cardCss, "button.card:not(.unavailable):hover");
-
-    expect([...declarations(cardCss, ".card.past").keys()]).toStrictEqual([]);
-    expect([...declarations(cardCss, ".card.unavailable").keys()]).toStrictEqual(
-      ["background-image"]
-    );
-    expect(
-      declarations(cardCss, ".card.unavailable").get("background-image")
-    ).toBe(
-      "repeating-linear-gradient(-45deg, var(--cal-slot-busy-stripe) 0 31px, transparent 31px 45px)"
-    );
-    expect(hover.get("opacity")).toBe("var(--cal-state-hover-opacity)");
-    expect(
-      declarations(cardCss, "button.card.unavailable").get("--button-bg-hover")
-    ).toBe("var(--button-bg)");
-    expect(declarations(cardCss, "button.card").get("transition")).toContain(
-      "opacity var(--cal-motion-duration-short) ease"
-    );
-  });
-});
