@@ -1,7 +1,16 @@
 export {
+  EventDetailContent,
   EventDetailPanel,
   type EventDetailPanelProps,
 } from "./event-detail-panel";
+
+export {
+  EventDetailDivider,
+  EventDetailRow,
+  EventDetailSection,
+  type EventDetailRowProps,
+  type EventDetailSectionProps,
+} from "./event-detail-sections";
 
 export {
   COPY_STATUS_RESET_MS,

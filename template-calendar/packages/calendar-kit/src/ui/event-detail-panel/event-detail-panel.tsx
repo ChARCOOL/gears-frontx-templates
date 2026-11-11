@@ -342,8 +342,12 @@ const EventDetailPanelContent = (props: EventDetailPanelContentProps) => {
   // @cpt-end:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-slots
 };
 
-export const EventDetailPanel = (props: EventDetailPanelProps) => (
+// The inline region with no frame. A host places it in its own sheet, popover or dialog.
+export const EventDetailContent = (props: EventDetailPanelProps) => (
   <CalendarScope {...props}>
     <EventDetailPanelContent {...omitCalendarContextProps(props)} />
   </CalendarScope>
 );
+
+// Kept under the existing name. The kit draws no frame, so both names render the same region.
+export const EventDetailPanel = EventDetailContent;

@@ -43,6 +43,18 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 The region is labelled by its title, which takes focus when the panel opens or the event changes. Escape closes it, also while a header tooltip is open; a press outside does not close it. Participant rows show a decorative avatar beside the attendee's name and email. The default copy action is a low-emphasis text button that shows Copied, with a check, for a moment after a copy; every icon-only header button carries an accessible label and a tooltip.
 
+## Host frame and parts
+
+`EventDetailContent` is the same inline region as `EventDetailPanel`, under the name a host uses when it draws its own frame. The kit draws no popover, dialog or sheet, so the host places the content in its own container and owns open state, Escape and focus return. It takes the same props as `EventDetailPanel`.
+
+To add host rows in the kit's look, use the exported parts inside `renderBody` or `renderMetadata`:
+
+- `EventDetailSection` groups rows. An empty section is hidden, and a rule is drawn only between sections that have content. Takes `className` and `children`.
+- `EventDetailRow` is one labelled row: `label` renders as a heading above `children`. Takes `label`, `className` and `children`.
+- `EventDetailDivider` draws a decorative rule between rows or sections the host adds.
+
+Do not copy the kit's CSS classes into host CSS to imitate these rows. Use the parts.
+
 ## Safety and announcements
 
 - Only `http(s)` join URLs become a link or a copy target; anything else fails closed (no link, no copy button, and no clipboard access).

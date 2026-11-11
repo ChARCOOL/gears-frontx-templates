@@ -546,6 +546,44 @@ export const ShadowDetail = ({
 
 <!-- /generated -->
 
+## Event detail in your own sheet
+
+Put `EventDetailContent` in a host sheet, and add host rows with the kit's section, row and divider parts so they match the kit's detail. The host owns open state, the sheet and focus return. Close runs through `onClose`.
+
+```tsx
+import {
+  EventDetailContent,
+  EventDetailDivider,
+  EventDetailRow,
+  EventDetailSection,
+} from "@gears-frontx/calendar-kit";
+import type { CalendarEvent } from "@gears-frontx/calendar-kit";
+
+export const EventSheet = ({
+  event,
+  onClose,
+}: {
+  readonly event: CalendarEvent | null;
+  readonly onClose: () => void;
+}) => (
+  <div role="complementary">
+    <EventDetailContent
+      event={event}
+      onClose={onClose}
+      open={event !== null}
+      renderMetadata={(current) => (
+        <>
+          <EventDetailDivider />
+          <EventDetailSection>
+            <EventDetailRow label="Room">{current.location ?? "No room"}</EventDetailRow>
+          </EventDetailSection>
+        </>
+      )}
+    />
+  </div>
+);
+```
+
 ## Your own markup on the kit's logic
 
 See [Headless controllers](headless.md#example-your-own-toolbar).

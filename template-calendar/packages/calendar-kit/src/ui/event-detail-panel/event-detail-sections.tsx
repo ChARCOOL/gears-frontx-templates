@@ -18,6 +18,7 @@ import type { EventDetailPanelCopyStatus } from "../../react/public";
 import { ConflictIndicator } from "../conflict-indicator/conflict-indicator";
 import { Avatar } from "../primitives/avatar/avatar";
 import { Button } from "../primitives/button/button";
+import { Separator } from "../primitives/separator/separator";
 import { activationKeyDown } from "./event-detail-activation";
 import {
   COPY_STATUS_KEYS,
@@ -31,7 +32,7 @@ import {
 
 import styles from "./event-detail-panel.module.css";
 
-interface DetailRowProps {
+export interface EventDetailRowProps {
   readonly children: ReactNode;
   /** Class added to the row's content. */
   readonly className?: string;
@@ -39,7 +40,11 @@ interface DetailRowProps {
   readonly label?: string;
 }
 
-const DetailRow = ({ children, className, label }: DetailRowProps) => (
+export const EventDetailRow = ({
+  children,
+  className,
+  label,
+}: EventDetailRowProps) => (
   <section className={styles.row}>
     {label === undefined ? null : (
       <h3 className={styles.sectionLabel}>{label}</h3>
@@ -47,6 +52,23 @@ const DetailRow = ({ children, className, label }: DetailRowProps) => (
     <div className={clsx(styles.rowContent, className)}>{children}</div>
   </section>
 );
+
+export interface EventDetailSectionProps {
+  readonly children?: ReactNode;
+  /** Class added to the section. */
+  readonly className?: string;
+}
+
+// An empty section is hidden by the stylesheet, and a rule is drawn only between sections with content.
+export const EventDetailSection = ({
+  children,
+  className,
+}: EventDetailSectionProps) => (
+  <div className={clsx(styles.group, className)}>{children}</div>
+);
+
+// A horizontal rule for separating rows or sections a host adds itself.
+export const EventDetailDivider = () => <Separator decorative />;
 
 export const RestrictedSection = ({
   event,
@@ -58,14 +80,14 @@ export const RestrictedSection = ({
 
   return (
     <div className={styles.group} role="note">
-      <DetailRow label={t("calendar.detail.dateTime")}>
+      <EventDetailRow label={t("calendar.detail.dateTime")}>
         <p className={styles.mutedText}>
           {formatEventRange(event, timeZone, locale)}
         </p>
-      </DetailRow>
-      <DetailRow>
+      </EventDetailRow>
+      <EventDetailRow>
         <p className={styles.mutedText}>{t("calendar.detail.restricted")}</p>
-      </DetailRow>
+      </EventDetailRow>
     </div>
   );
 };
@@ -80,7 +102,7 @@ const OrganizerSection = ({ event }: { readonly event: CalendarEvent }) => {
   }
 
   return (
-    <DetailRow label={t("calendar.detail.organizer")}>
+    <EventDetailRow label={t("calendar.detail.organizer")}>
       <div className={styles.person}>
         <Avatar className={styles.stackAvatar} decorative name={organizer} />
         <div className={styles.personText}>
@@ -88,7 +110,7 @@ const OrganizerSection = ({ event }: { readonly event: CalendarEvent }) => {
           {email === "" ? null : <p className={styles.personMeta}>{email}</p>}
         </div>
       </div>
-    </DetailRow>
+    </EventDetailRow>
   );
 };
 
@@ -129,7 +151,7 @@ const ConferencingSection = ({
   const { t } = useCalendarLocalization();
 
   return (
-    <DetailRow label={t("calendar.detail.conferencing")}>
+    <EventDetailRow label={t("calendar.detail.conferencing")}>
       {canCopyJoinLink ? (
         <div className={styles.conferencingRow}>
           <a
@@ -148,7 +170,7 @@ const ConferencingSection = ({
       ) : (
         <p className={styles.mutedText}>{joinUrl}</p>
       )}
-    </DetailRow>
+    </EventDetailRow>
   );
 };
 
@@ -164,7 +186,7 @@ const ActivitySection = ({
   const { t } = useCalendarLocalization();
 
   return (
-    <DetailRow label={t("calendar.detail.activity")}>
+    <EventDetailRow label={t("calendar.detail.activity")}>
       <div className={styles.conferencingRow}>
         <a
           className={styles.pageLink}
@@ -179,7 +201,7 @@ const ActivitySection = ({
           onCopy={() => copyLink(url)}
         />
       </div>
-    </DetailRow>
+    </EventDetailRow>
   );
 };
 
@@ -213,9 +235,9 @@ const CourseSection = ({ event }: { readonly event: CalendarEvent }) => {
   ].filter(({ value }) => value !== "");
 
   return fields.map(({ label, value }) => (
-    <DetailRow key={label} label={label}>
+    <EventDetailRow key={label} label={label}>
       <p className={styles.mutedText}>{value}</p>
-    </DetailRow>
+    </EventDetailRow>
   ));
 };
 
@@ -243,7 +265,7 @@ const ParticipantsSection = ({
   }
 
   return (
-    <DetailRow
+    <EventDetailRow
       label={t("calendar.detail.participants")}
       className={styles.participantsRow}
     >
@@ -291,7 +313,7 @@ const ParticipantsSection = ({
           </Fragment>
         ))}
       </p>
-    </DetailRow>
+    </EventDetailRow>
   );
 };
 
@@ -315,13 +337,13 @@ const TimeZoneSection = ({
       : [timeZone, comparisonTimeZone];
 
   return (
-    <DetailRow label={t("calendar.detail.timeZone")}>
+    <EventDetailRow label={t("calendar.detail.timeZone")}>
       {zones.map((zone) => (
         <p key={zone} className={styles.mutedText}>
           {formatZoneLine(event, zone, locale)}
         </p>
       ))}
-    </DetailRow>
+    </EventDetailRow>
   );
 };
 
@@ -446,15 +468,15 @@ export const DefaultDetail = ({
       {event.notify ? (
         <EarlyReminderNotice leadMinutes={event.notify.leadMinutes} />
       ) : null}
-      <div className={styles.group}>
-        <DetailRow label={t("calendar.detail.dateTime")}>
+      <EventDetailSection>
+        <EventDetailRow label={t("calendar.detail.dateTime")}>
           <p className={styles.mutedText}>
             {formatEventRange(event, timeZone, locale)}
           </p>
           {recurrenceSummary !== undefined && (
             <p className={styles.mutedText}>{recurrenceSummary}</p>
           )}
-        </DetailRow>
+        </EventDetailRow>
         {isReminder ? null : <OrganizerSection event={event} />}
         {joinUrl !== undefined && !isReminder && (
           <ConferencingSection
@@ -480,35 +502,35 @@ export const DefaultDetail = ({
             url={reminderUrl}
           />
         )}
-      </div>
-      <div className={styles.group}>
+      </EventDetailSection>
+      <EventDetailSection>
         {isReminder ? null : <CourseSection event={event} />}
-      </div>
-      <div className={styles.group}>
+      </EventDetailSection>
+      <EventDetailSection>
         {location !== "" && !isReminder && (
-          <DetailRow label={t("calendar.detail.location")}>
+          <EventDetailRow label={t("calendar.detail.location")}>
             <p className={styles.mutedText}>{location}</p>
-          </DetailRow>
+          </EventDetailRow>
         )}
         {conflicts.length > 0 && (
-          <DetailRow label={t("calendar.detail.conflicts")}>
+          <EventDetailRow label={t("calendar.detail.conflicts")}>
             <ConflictIndicator
               className={styles.conflicts}
               conflicts={conflicts}
               renderConflict={renderConflictDetail}
             />
-          </DetailRow>
+          </EventDetailRow>
         )}
         <TimeZoneSection
           comparisonTimeZone={comparisonTimeZone}
           event={event}
         />
         {description !== "" && (
-          <DetailRow label={t("calendar.detail.description")}>
+          <EventDetailRow label={t("calendar.detail.description")}>
             <p className={styles.description}>{description}</p>
-          </DetailRow>
+          </EventDetailRow>
         )}
-      </div>
+      </EventDetailSection>
     </>
   );
 };

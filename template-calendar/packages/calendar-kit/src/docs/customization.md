@@ -147,7 +147,7 @@ The larger components are assembled from the smaller ones, and you can reassembl
 
 - `CalendarSidePanel` is a shell around `MonthNavigator`, `SearchResults`, `TimeZoneList`, `WorldClocks` and `CalendarList`. Replace any section through `slots`, or skip the shell and place the pieces in your own layout.
 - `CreateEventPanel` renders inline in its host and does not open a popover. Place it in your own side sheet or layout; only its discard confirmation is an overlay.
-- `EventDetailPanel` renders inline as a labelled `<section>`. Place it in your own side sheet or layout; it does not open a popover or dialog.
+- `EventDetailPanel` renders inline as a labelled `<section>`. Place it in your own side sheet or layout; it does not open a popover or dialog. `EventDetailContent` is the same region under the name for hosts that draw their own frame.
 - `EventCard` and `ConflictIndicator` work outside the grids, for example in a list or a notification.
 
 ## 8. Headless

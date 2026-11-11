@@ -32,12 +32,18 @@ export type {
 } from "./ui/grid/public";
 
 export {
+  EventDetailContent,
+  EventDetailDivider,
   EventDetailPanel,
+  EventDetailRow,
+  EventDetailSection,
   COPY_STATUS_RESET_MS,
   useEventDetailPanelController,
 } from "./ui/event-detail-panel/public";
 export type {
   EventDetailPanelProps,
+  EventDetailRowProps,
+  EventDetailSectionProps,
   EventDetailPanelControllerInternals,
   EventDetailPanelCopyStatus,
   UseEventDetailPanelControllerOptions,
