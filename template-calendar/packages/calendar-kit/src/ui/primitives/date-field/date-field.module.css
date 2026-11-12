@@ -13,7 +13,7 @@
 
 div.control.control {
   gap: calc(var(--cal-space-1) / 2);
-  padding-inline: var(--cal-space-2);
+  padding-inline: var(--cal-space-3);
 }
 
 div.control.control > label {
@@ -38,8 +38,6 @@ input.control.control {
   cursor: pointer;
   display: flex;
   justify-content: center;
-  /* The shell pads 8px; the other fields set their glyph 12px in, so the calendar glyph lines up with them. */
-  margin-inline-start: calc(var(--cal-space-1) - var(--cal-border-width-1));
   padding: 0;
 }
 

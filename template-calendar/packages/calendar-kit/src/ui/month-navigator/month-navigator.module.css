@@ -86,7 +86,7 @@
   block-size: 4px;
   inline-size: 4px;
   border-radius: var(--cal-radius-pill);
-  background: var(--cal-color-muted);
+  background: var(--cal-color-error);
 }
 
 @media (forced-colors: active), (prefers-contrast: more) {

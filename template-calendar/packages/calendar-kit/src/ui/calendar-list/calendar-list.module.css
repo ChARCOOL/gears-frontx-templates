@@ -48,6 +48,7 @@
   border-radius: var(--cal-radius-sm);
   min-inline-size: 0;
   color: var(--cal-color-text);
+  align-items: center;
 }
 
 .row:hover {
@@ -146,8 +147,15 @@
   opacity: 0;
 }
 
+/* The icon sits in nested inline spans; their baseline gap moves it off the row centre. */
+.moreButton span {
+  align-items: center;
+  display: flex;
+}
+
+/* Pointer focus left on a button would keep it shown after its menu closes; only keyboard focus reveals it. */
 .row:hover .moreButton,
-.row:focus-within .moreButton,
+.row:has(:focus-visible) .moreButton,
 .moreButtonOpen {
   opacity: 1;
 }
@@ -162,7 +170,9 @@
 
 .menu {
   border-radius: var(--cal-radius-popover);
-  inline-size: 226px;
+  font-size: var(--cal-text-label-size);
+  inline-size: 228px;
+  line-height: var(--cal-text-label-line-height);
 }
 
 .menuList {
