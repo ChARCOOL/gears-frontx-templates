@@ -125,6 +125,20 @@ describe("DayGrid resize", () => {
     expect(onResizeRequest).not.toHaveBeenCalled();
   });
 
+  it("resizes a recurring event when recurringEventsMovable is set", () => {
+    const onResizeRequest = vi.fn<(request: CalendarResizeRequest) => void>();
+    renderDay({
+      events: [fixtureTimedEvent({ id: "resize", recurrenceRule: "FREQ=WEEKLY;BYDAY=MO" })],
+      onResizeRequest,
+      recurringEventsMovable: true,
+    });
+
+    dragHandleTo(rowCenter(11));
+
+    expect(onResizeRequest).toHaveBeenCalledOnce();
+    expect(onResizeRequest.mock.calls[0]?.[0].event.recurrenceRule).toBe("FREQ=WEEKLY;BYDAY=MO");
+  });
+
   it("does not start a paint while the handle is dragged", () => {
     const onPaintSelect = vi.fn();
     renderDay({

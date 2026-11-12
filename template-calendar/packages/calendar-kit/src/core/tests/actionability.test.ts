@@ -14,6 +14,13 @@ describe("event movability", () => {
     assert(isEventMovable({ recurrenceRule: "FREQ=DAILY" })).toBe(false);
   });
 
+  it("moves recurring events when the grid opts in, unless the host pins them", () => {
+    assert(isEventMovable({ recurrenceRule: "FREQ=DAILY" }, true)).toBe(true);
+    assert(
+      isEventMovable({ movable: false, recurrenceRule: "FREQ=DAILY" }, true)
+    ).toBe(false);
+  });
+
   it("blocks moves when the host sets movable to false", () => {
     assert(isEventMovable({ movable: false, recurrenceRule: null })).toBe(false);
   });

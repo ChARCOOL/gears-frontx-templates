@@ -118,6 +118,25 @@ describe("DayGrid paint-and-move", () => {
     expect(preview?.style.blockSize).toBe(`${(3 / cells.length) * 100}%`);
     expect(preview?.style.insetBlockStart).toBe(`${(13 / cells.length) * 100}%`);
     expect(preview?.textContent).toContain("13:00 - 16:00");
+    expect(preview?.querySelector("svg.lucide-clock")).not.toBeNull();
+  });
+
+  it("draws the preview as a bar and a time row whose clock icon leads the label", () => {
+    stubRowRects();
+    const { container } = render(
+      <DayGrid {...baseProps} events={[]} interactionMode="paint-and-move" />
+    );
+    const cells = gridCells(container);
+
+    fireEvent.pointerDown(cells[13], { clientY: rowCenter(13) });
+    fireEvent.pointerMove(cells[15], { clientY: rowCenter(15) });
+
+    const [bar, time] = Array.from(
+      container.querySelector("[data-paint-preview]")?.children ?? []
+    );
+    expect(bar).toBeEmptyDOMElement();
+    expect(time?.firstElementChild).toHaveClass("lucide-clock");
+    expect(time).toHaveTextContent("13:00 - 16:00");
   });
 
   it("clears the painted range once the pointer leaves the grid after the paint is emitted", () => {
@@ -213,6 +232,32 @@ describe("DayGrid paint-and-move", () => {
     expect(card?.closest("[draggable]")?.getAttribute("draggable")).toBe(
       "false"
     );
+  });
+
+  it("moves a recurring event when recurringEventsMovable is set", () => {
+    stubRowRects();
+    const onMoveRequest = vi.fn();
+    const recurring = { ...architecture, recurrenceRule: "FREQ=WEEKLY" };
+    const { container } = render(
+      <DayGrid
+        {...baseProps}
+        events={[recurring]}
+        interactionMode="paint-and-move"
+        onMoveRequest={onMoveRequest}
+        recurringEventsMovable
+      />
+    );
+    const cells = gridCells(container);
+    // A browser starts the drag on the draggable frame around the card.
+    const frame = container
+      .querySelector('[data-event-id="architecture"]')
+      ?.closest('[draggable="true"]');
+
+    fireEvent.dragStart(frame!, { dataTransfer: { setDragImage: vi.fn() } });
+    dragAt(cells[12], "drop", rowCenter(12));
+
+    expect(onMoveRequest).toHaveBeenCalledTimes(1);
+    expect(onMoveRequest.mock.calls[0]?.[0].event.recurrenceRule).toBe("FREQ=WEEKLY");
   });
 
   it("keeps an event the host marks movable: false in place", () => {

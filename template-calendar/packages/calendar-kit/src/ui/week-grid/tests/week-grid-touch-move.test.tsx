@@ -120,6 +120,33 @@ describe("WeekGrid touch move", () => {
     assert(onMoveRequest).not.toHaveBeenCalled();
   });
 
+  it("moves a recurring event dragged with a finger only when recurringEventsMovable is set", () => {
+    const onMoveRequest = vi.fn();
+    renderWeek({
+      events: [{ ...timedEvent("move"), recurrenceRule: "FREQ=WEEKLY" }],
+      onMoveRequest,
+      recurringEventsMovable: true,
+    });
+
+    holdAndDragTo("11:00");
+    touch(document, "pointerup");
+
+    assert(onMoveRequest).toHaveBeenCalledOnce();
+  });
+
+  it("does not move a recurring event dragged with a finger by default", () => {
+    const onMoveRequest = vi.fn();
+    renderWeek({
+      events: [{ ...timedEvent("move"), recurrenceRule: "FREQ=WEEKLY" }],
+      onMoveRequest,
+    });
+
+    holdAndDragTo("11:00");
+    touch(document, "pointerup");
+
+    assert(onMoveRequest).not.toHaveBeenCalled();
+  });
+
   it("does not move an event pinned with movable: false", () => {
     const onMoveRequest = vi.fn();
     renderWeek({

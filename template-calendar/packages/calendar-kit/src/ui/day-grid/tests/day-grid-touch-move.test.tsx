@@ -94,6 +94,21 @@ describe("DayGrid touch move", () => {
     assert(onMoveRequest).not.toHaveBeenCalled();
   });
 
+  it("moves a recurring event dragged with a finger only when recurringEventsMovable is set", () => {
+    const onMoveRequest = vi.fn();
+    renderDay({
+      events: [{ ...timedEvent("move"), recurrenceRule: "FREQ=WEEKLY" }],
+      onMoveRequest,
+      recurringEventsMovable: true,
+    });
+
+    hold();
+    touch(document, "pointermove", 11 * rowHeight + 5);
+    touch(document, "pointerup");
+
+    assert(onMoveRequest).toHaveBeenCalledOnce();
+  });
+
   it("does not move an event pinned with movable: false", () => {
     const onMoveRequest = vi.fn();
     renderDay({

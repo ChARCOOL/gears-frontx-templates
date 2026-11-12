@@ -29,6 +29,14 @@ export const isEventActionable = (
 ): boolean => eventActionBlocker(event, availableOverride) === null;
 
 /** Recurring moves wait for the occurrence-or-series choice, so these cards stay where they are. */
+/**
+ * Whether a drag or resize may start on the card. Recurring events need the grid's
+ * `recurringEventsMovable` opt-in, because the host then picks occurrence or series.
+ * `movable: false` pins the card either way.
+ */
 export const isEventMovable = (
-  event: Pick<CalendarEvent, "recurrenceRule" | "movable">
-): boolean => !isRecurringEvent(event) && event.movable !== false;
+  event: Pick<CalendarEvent, "recurrenceRule" | "movable">,
+  recurringEventsMovable = false
+): boolean =>
+  (recurringEventsMovable || !isRecurringEvent(event)) &&
+  event.movable !== false;

@@ -46,7 +46,7 @@ button.card:focus-visible {
   position: absolute;
   inset-block: 0;
   inset-inline-start: calc(-1 * var(--cal-border-width-1));
-  inline-size: 3px;
+  inline-size: var(--cal-event-card-bar-width);
   background-color: var(--event-card-bar-color);
   border-radius: inherit;
   pointer-events: none;
@@ -82,7 +82,7 @@ button.card:focus-visible {
   min-inline-size: 0;
   min-block-size: 0;
   overflow: hidden;
-  padding: var(--cal-space-1) calc(var(--cal-space-1) + var(--cal-space-1) / 2)
+  padding: var(--cal-space-1) var(--cal-event-card-padding-inline-end)
     var(--cal-space-1) var(--cal-space-1);
 }
 

@@ -192,6 +192,7 @@ export const useWeekGridContent = <Payload = unknown>(
     onPaintSelect,
     onMoveRequest,
     onResizeRequest,
+    recurringEventsMovable = false,
     className,
   } = props;
 
@@ -656,7 +657,7 @@ export const useWeekGridContent = <Payload = unknown>(
         controller.interactionMode !== "paint-and-move" ||
         pressedEvent === undefined ||
         !isEventActionable(pressedEvent) ||
-        !isEventMovable(pressedEvent) ||
+        !isEventMovable(pressedEvent, recurringEventsMovable) ||
         origin === null ||
         origin.meta.slotIndex === null
       ) {

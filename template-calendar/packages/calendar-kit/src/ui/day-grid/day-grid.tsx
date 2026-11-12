@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { CheckIcon } from "lucide-react";
+import { ClockIcon } from "lucide-react";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import type {
   CSSProperties,
@@ -129,6 +129,8 @@ interface DayGridBaseProps extends CalendarContextProps {
   readonly onMoveRequest?: (request: CalendarMoveRequest) => void;
   /** A resize handle on timed, single-day, movable events asks the host to move the event's end. */
   readonly onResizeRequest?: (request: CalendarResizeRequest) => void;
+  /** Lets recurring events be dragged and resized. The requests carry the event, so the host picks occurrence or series. */
+  readonly recurringEventsMovable?: boolean;
 }
 
 /**
@@ -372,6 +374,7 @@ const DayGridEventLayerImpl = ({
   dropGhost,
   movable,
   onOverflowSelect,
+  recurringEventsMovable,
   overflowTiles,
   paintPreview,
   slotCount,
@@ -387,6 +390,7 @@ const DayGridEventLayerImpl = ({
   readonly draggingEventId: string | null;
   readonly dropGhost: DropGhost | null;
   readonly movable: boolean;
+  readonly recurringEventsMovable: boolean;
   readonly onOverflowSelect:
     ((slotIndex: number, anchor: HTMLElement) => void) | undefined;
   readonly overflowTiles: readonly DayGridOverflowTile[];
@@ -405,7 +409,7 @@ const DayGridEventLayerImpl = ({
         movable &&
         placement.segment.segment === null &&
         isEventActionable(event) &&
-        isEventMovable(event)
+        isEventMovable(event, recurringEventsMovable)
           ? resize.handleProps(event)
           : null;
       const style = timedEventStyle(
@@ -419,7 +423,9 @@ const DayGridEventLayerImpl = ({
           className={clsx(styles.event, styles.timedEvent, "timedEvent")}
           data-dragging={draggingEventId === event.id ? "" : undefined}
           draggable={
-            movable && isEventActionable(event) && isEventMovable(event)
+            movable &&
+            isEventActionable(event) &&
+            isEventMovable(event, recurringEventsMovable)
           }
           key={`${event.id}-${placement.segment.start}`}
           onFocusCapture={() => {
@@ -497,8 +503,9 @@ const DayGridEventLayerImpl = ({
           insetBlockStart: `${paintPreview.topPercent}%`,
         }}
       >
-        <span className={styles.paintPreviewLabel}>
-          <CheckIcon aria-hidden="true" className={styles.paintPreviewIcon} />
+        <span className={styles.paintPreviewBar} />
+        <span className={styles.paintPreviewTime}>
+          <ClockIcon aria-hidden="true" className={styles.paintPreviewIcon} />
           {paintPreview.label}
         </span>
       </div>
@@ -588,6 +595,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     onPaintSelect,
     onQuickCreate,
     onResizeRequest,
+    recurringEventsMovable = false,
     maxEventsPerSlot,
     onOverflowSelect,
     now,
@@ -957,7 +965,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
         placement === undefined ||
         from === undefined ||
         !isEventActionable(placement.segment.event) ||
-        !isEventMovable(placement.segment.event) ||
+        !isEventMovable(placement.segment.event, recurringEventsMovable) ||
         !(pressed instanceof Element)
       ) {
         return false;
@@ -1172,6 +1180,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     paintKeys,
     paintPreview,
     readOnly,
+    recurringEventsMovable,
     renderCell,
     resolvedDirection,
     resolvedSelectedEventId,
@@ -1231,6 +1240,7 @@ const DayGridContent = (props: DayGridContentProps) => {
     locale,
     nowPercent,
     readOnly,
+    recurringEventsMovable,
     renderCell,
     resolvedDirection,
     resolvedSelectedEventId,
@@ -1446,6 +1456,7 @@ const DayGridContent = (props: DayGridContentProps) => {
             dropGhost={dropGhost}
             movable={interactionMode === "paint-and-move"}
             onOverflowSelect={handleOverflowSelect}
+            recurringEventsMovable={recurringEventsMovable}
             overflowTiles={overflowTiles}
             paintPreview={paintPreview}
             slotCount={slotStarts.length}

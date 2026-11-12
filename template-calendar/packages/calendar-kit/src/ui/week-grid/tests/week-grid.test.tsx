@@ -348,6 +348,35 @@ describe(WeekGrid, () => {
     assert(onMoveRequest).not.toHaveBeenCalled();
   });
 
+  it("moves a recurring event only when recurringEventsMovable is set", () => {
+    const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
+    renderWeek({
+      events: [{ ...timedEvent("recurring"), recurrenceRule: "FREQ=WEEKLY" }],
+      interactionMode: "paint-and-move",
+      onMoveRequest,
+      recurringEventsMovable: true,
+    });
+    const eventButton = screen.getByRole("button", { name: /recurring/u });
+
+    fireEvent.dragStart(eventButton);
+    fireEvent.drop(getTimedCell("10:00"));
+
+    assert(onMoveRequest).toHaveBeenCalledOnce();
+    assert(onMoveRequest.mock.calls[0]?.[0].event.recurrenceRule).toBe("FREQ=WEEKLY");
+  });
+
+  it("leaves a recurring event undraggable without recurringEventsMovable", () => {
+    renderWeek({
+      events: [{ ...timedEvent("recurring"), recurrenceRule: "FREQ=WEEKLY" }],
+      interactionMode: "paint-and-move",
+    });
+
+    assert(document.querySelector('[data-event-id="recurring"]')).toHaveAttribute(
+      "draggable",
+      "false",
+    );
+  });
+
   it("keeps a drag alive when the browser cancels the pointer as the drag starts", () => {
     const onMoveRequest = vi.fn<() => void>();
     renderWeek({

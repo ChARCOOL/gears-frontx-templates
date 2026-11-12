@@ -291,32 +291,47 @@
   opacity: 0.4;
 }
 
+/* Mirrors the event card body and its time row so the preview reads as an uncoloured card. */
 .paintPreview {
   position: absolute;
   inset-inline: 0;
   z-index: 20;
-  padding: 2px;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: var(--cal-space-1) var(--cal-event-card-padding-inline-end) var(--cal-space-1) var(--cal-space-1);
   border-radius: var(--cal-radius-slot);
-  background: var(--cal-color-pink-accent);
-  color: var(--cal-color-pink-background);
+  background-color: var(--cal-color-raised);
+  color: var(--cal-color-text);
+  font-family: var(--cal-font-family);
+  letter-spacing: var(--cal-text-grid-tracking);
   pointer-events: none;
 }
 
-.paintPreviewLabel {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  min-inline-size: 0;
-  font-size: var(--cal-text-caption-size);
-  font-weight: var(--cal-text-caption-weight);
-  white-space: nowrap;
+/* Square like the card bar, which inherits its radius from an unrounded wrapper span. */
+.paintPreviewBar {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(-1 * var(--cal-border-width-1));
+  inline-size: var(--cal-event-card-bar-width);
+  background-color: var(--cal-color-text);
+}
+
+.paintPreviewTime {
+  display: inline-flex;
   overflow: hidden;
+  align-items: center;
+  gap: var(--cal-space-1);
+  min-inline-size: 0;
+  font-size: var(--cal-text-meta-size);
+  font-weight: var(--cal-text-meta-weight);
+  line-height: var(--cal-text-meta-line-height);
+  white-space: nowrap;
 }
 
 .paintPreviewIcon {
-  flex: none;
-  inline-size: 12px;
-  block-size: 12px;
+  flex-shrink: 0;
+  inline-size: var(--cal-icon-size-xs);
+  block-size: var(--cal-icon-size-xs);
 }
 
 .eventLayer {

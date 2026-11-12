@@ -192,6 +192,29 @@ describe("WeekGrid resize", () => {
     assert(handle()).toBeNull();
   });
 
+  it("resizes a recurring event when recurringEventsMovable is set", () => {
+    const onResizeRequest = vi.fn<(request: CalendarResizeRequest) => void>();
+    renderWeek({
+      events: [timedEvent({ id: "resize", recurrenceRule: "FREQ=WEEKLY;BYDAY=MO" })],
+      onResizeRequest,
+      recurringEventsMovable: true,
+    });
+
+    dragHandleTo("11:00");
+
+    assert(onResizeRequest).toHaveBeenCalledOnce();
+    assert(onResizeRequest.mock.calls[0]?.[0].event.recurrenceRule).toBe("FREQ=WEEKLY;BYDAY=MO");
+  });
+
+  it("has no handle on a recurring event pinned with movable: false, even when recurring events are movable", () => {
+    renderWeek({
+      events: [timedEvent({ id: "resize", movable: false, recurrenceRule: "FREQ=WEEKLY" })],
+      recurringEventsMovable: true,
+    });
+
+    assert(handle()).toBeNull();
+  });
+
   it("has no handle outside paint-and-move mode", () => {
     renderWeek({
       events: [timedEvent("resize")],

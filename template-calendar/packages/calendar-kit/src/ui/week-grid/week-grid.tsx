@@ -6,7 +6,7 @@
 // @cpt-dod:cpt-template-calendar-calendar-kit-dod-week-grid-keyboard:p1
 
 import { clsx } from "clsx";
-import { CheckIcon } from "lucide-react";
+import { ClockIcon } from "lucide-react";
 import { useRef } from "react";
 import type {
   CSSProperties,
@@ -189,6 +189,8 @@ interface WeekGridBaseProps<Payload = unknown> extends CalendarContextProps {
   readonly onMoveRequest?: (request: CalendarMoveRequest) => void;
   /** A resize handle on timed, single-day, movable events asks the host to move the event's end. */
   readonly onResizeRequest?: (request: CalendarResizeRequest) => void;
+  /** Lets recurring events be dragged and resized. The requests carry the event, so the host picks occurrence or series. */
+  readonly recurringEventsMovable?: boolean;
   /** Colour family of a painted range. Unset, the painted cells use the plain selection style. */
   readonly paintColorFamily?: CalendarColorFamily;
 }
@@ -654,6 +656,7 @@ interface WeekGridEventProps<Payload> {
     anchor?: HTMLElement
   ) => void;
   readonly readOnly: boolean;
+  readonly recurringEventsMovable: boolean;
   readonly renderConflict?: CalendarConflictRenderer;
   readonly renderEvent?: CalendarEventRenderer<Payload>;
   readonly renderEventMetadata?: CalendarEventRenderer<Payload>;
@@ -674,6 +677,7 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
     getEventFrameProps,
     onSelect,
     readOnly,
+    recurringEventsMovable,
     renderConflict,
     renderEvent,
     renderEventMetadata,
@@ -732,7 +736,9 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
         aria-disabled={isAvailable ? undefined : "true"}
         aria-pressed={context.isSelected ? "true" : "false"}
         aria-description={description}
-        draggable={isAvailable && !readOnly && isEventMovable(event)}
+        draggable={
+          isAvailable && !readOnly && isEventMovable(event, recurringEventsMovable)
+        }
         disabled={!isAvailable}
         focusableWhenDisabled
         onClick={(clickEvent) => {
@@ -858,6 +864,7 @@ interface WeekGridCellContentProps<Payload> {
     anchor?: HTMLElement
   ) => void;
   readonly readOnly: boolean;
+  readonly recurringEventsMovable: boolean;
   readonly resizable: boolean;
   readonly resize: ReturnType<typeof useEventResize>;
   readonly renderCell?: CalendarGridProps["renderCell"];
@@ -924,6 +931,7 @@ const WeekGridCellContent = <Payload,>(
     paintColorFamily,
     paintInvalid,
     paintPreview,
+    recurringEventsMovable,
     resizable,
     resize,
     selectedEventId,
@@ -991,8 +999,9 @@ const WeekGridCellContent = <Payload,>(
               insetInlineStart: "0px",
             }}
           >
-            <span className={styles.paintPreviewLabel}>
-              <CheckIcon aria-hidden="true" className={styles.paintPreviewIcon} />
+            <span className={styles.paintPreviewBar} />
+            <span className={styles.paintPreviewTime}>
+              <ClockIcon aria-hidden="true" className={styles.paintPreviewIcon} />
               {paintPreview.label}
             </span>
           </div>
@@ -1019,6 +1028,7 @@ const WeekGridCellContent = <Payload,>(
               geometry={dropTarget.ghost.geometry}
               onSelect={onSelect}
               readOnly={readOnly}
+              recurringEventsMovable={recurringEventsMovable}
               renderConflict={renderConflict}
               renderEvent={renderEvent}
               renderEventMetadata={renderEventMetadata}
@@ -1059,7 +1069,9 @@ const WeekGridCellContent = <Payload,>(
           eventId={position.event.id}
           className={clsx(styles.eventFrame, styles.allDayFrame)}
           dragging={dragPreview?.eventId === position.event.id}
-          draggable={!readOnly && !unavailable && isEventMovable(position.event)}
+          draggable={
+            !readOnly && !unavailable && isEventMovable(position.event, recurringEventsMovable)
+          }
           insetBlockStart={`${position.lane * (EVENT_CHIP_HEIGHT + 2)}px`}
           inlineSize={`${position.endColumn - position.startColumn}00%`}
         >
@@ -1069,6 +1081,7 @@ const WeekGridCellContent = <Payload,>(
             geometry={position.geometry}
             onSelect={onSelect}
             readOnly={readOnly}
+            recurringEventsMovable={recurringEventsMovable}
             renderConflict={renderConflict}
             renderEvent={renderEvent}
             renderEventMetadata={renderEventMetadata}
@@ -1085,7 +1098,7 @@ const WeekGridCellContent = <Payload,>(
           !unavailable &&
           position.segment.segment === null &&
           isEventActionable(event) &&
-          isEventMovable(event)
+          isEventMovable(event, recurringEventsMovable)
             ? resize.handleProps(event)
             : null;
         const resizeBlockSize =
@@ -1099,7 +1112,9 @@ const WeekGridCellContent = <Payload,>(
             eventId={event.id}
             className={clsx(styles.eventFrame, styles.timedFrame)}
             dragging={dragPreview?.eventId === event.id}
-            draggable={!readOnly && !unavailable && isEventMovable(event)}
+            draggable={
+              !readOnly && !unavailable && isEventMovable(event, recurringEventsMovable)
+            }
             onKeyDown={resizeProps?.onKeyDown}
             style={{
               blockSize: `${resizeBlockSize}px`,
@@ -1115,6 +1130,7 @@ const WeekGridCellContent = <Payload,>(
               geometry={position.geometry}
               onSelect={onSelect}
               readOnly={readOnly}
+              recurringEventsMovable={recurringEventsMovable}
               renderConflict={renderConflict}
               renderEvent={renderEvent}
               renderEventMetadata={renderEventMetadata}
@@ -1206,6 +1222,7 @@ const WeekGridContent = <Payload = unknown,>(
     onOverflowSelect,
     paintColorFamily,
     getEventFrameProps,
+    recurringEventsMovable = false,
     renderDetail,
     renderEventMetadata,
     renderHeader,
@@ -1254,6 +1271,7 @@ const WeekGridContent = <Payload = unknown,>(
       meta={gridData.metaByCell.get(context.cell)}
       onSelect={handleEventSelect}
       readOnly={controller.interactionMode === "read-only"}
+      recurringEventsMovable={recurringEventsMovable}
       resizable={controller.interactionMode === "paint-and-move"}
       resize={resize}
       renderCell={renderCell}

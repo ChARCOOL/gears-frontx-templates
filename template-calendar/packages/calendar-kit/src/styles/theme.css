@@ -15,8 +15,6 @@
   --cal-color-focus-ring: var(--ring, #8b5cf6);
   --cal-color-focus-ring-strong: var(--primary-ring, #6d28d9);
   --cal-color-now: var(--now, var(--primary, #8257e6));
-  --cal-color-pink-accent: var(--pink-strong, #df2868);
-  --cal-color-pink-background: var(--pink-light, #ffeaf2);
   --cal-color-now-label: var(--now-label, var(--primary, #8257e6));
   --cal-color-conflict: var(--danger, var(--cal-color-error));
   --cal-color-overlay-surface: var(--popover, #ffffff);
@@ -174,6 +172,10 @@
 
   --cal-radius-pill: 9999px;
   --cal-state-hover-opacity: 0.9;
+
+  /* Card bar and end padding; the paint preview reuses them so the two cannot drift. */
+  --cal-event-card-bar-width: 3px;
+  --cal-event-card-padding-inline-end: calc(var(--cal-space-1) + var(--cal-space-1) / 2);
 
   /* 4% of the text colour, so the stripes stay faint on a dark surface too. */
   --cal-slot-busy-stripe: color-mix(
