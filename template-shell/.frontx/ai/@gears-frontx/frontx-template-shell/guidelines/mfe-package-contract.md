@@ -66,9 +66,10 @@ three, on one shared predicate per rule rather than a copy each.
    AI bundle for the ID taxonomy these fields use.
 3. **`vite.config.ts`** that runs `@module-federation/vite`'s `federation()`
    plugin, then `frontxMfGts()` (imported from
-   `@gears-frontx/frontx-template-shell/build/mf-gts`) with `enforce: 'post'` so
-   it runs after federation. Building without `frontxMfGts()` fails manifest
-   generation with an explicit error naming the missing plugin. The config's
+   `@gears-frontx/frontx-template-shell/build/mf-gts`), whose build plugin is
+   `enforce: 'post'` so it runs after federation. Building without
+   `frontxMfGts()` fails manifest generation with an explicit error naming
+   the missing plugin. The config's
    `sharedDeps` constant (which feeds `rollupOptions.external`) always
    includes `@gears-frontx/routing`, so each MFE runtime evaluates exactly one
    copy of it, never shared across MFEs: the copy the MFE's registry receives
@@ -135,20 +136,21 @@ MFE screens render inside open shadow roots, and shadow roots do not see the
 host document's stylesheets by default. Three delivery paths exist; pick by
 what the package owns:
 
-1. **No package-owned CSS (the `template-mfe` examples).** The host's compiled
-   Tailwind covers `src-app/mfe_packages/**` content paths, and
+1. **No package-owned CSS.**
    `ThemeAwareReactLifecycle.adoptHostStylesIntoShadowRoot()` clones every host
-   `<style>`/`<link>` into the shadow root. A package that only uses Tailwind
-   utilities and UI-kit components needs no stylesheet of its own.
+   `<style>`/`<link>` into the shadow root. A package that only composes UI-kit
+   components needs no stylesheet of its own.
    The copy is taken once, at mount, from the host `<head>` as it is then. A
    stylesheet the host adds or changes later — a lazily loaded chunk's CSS, a
    rule a CSS-in-JS library inserts after mount, a Vite dev-mode update —
    reaches a mounted MFE only on its next remount. Everything this path relies
    on is in the head before any MFE mounts: the shell's entry
-   (`src-app/app/main.tsx`) imports `globals.css`, which holds the compiled
-   Tailwind, and the whole UI kit. Theme changes are not affected: the shell's
-   theme variables reach the shadow root through CSS inheritance, not through
-   the copy.
+   (`src-app/app/main.tsx`) imports `globals.css`, which holds the base
+   reset. What the copy carries is the host's own stylesheets: globals, the
+   theme tokens, and the kit CSS of the components the host itself uses; a
+   screen's kit CSS arrives through its manifest (path 2), not through this
+   copy. Theme changes are not affected: the shell's theme variables reach the
+   shadow root through CSS inheritance, not through the copy.
 2. **Package-owned CSS imported plainly (the default).** A plain
    `import './styles.css'` or a CSS Module (`import styles from
    './x.module.css'`) is extracted by Vite into a CSS file per chunk
@@ -172,22 +174,44 @@ what the package owns:
    module (the lazy-import transform leaves it to Vite). A stylesheet
    imported that way that compiles to no CSS gets an empty chunk Vite
    keeps; its import goes through `__frontx_lazy` like any other lazy chunk.
-   For the files the plugin adds from the chunks an expose reaches, the
-   decision is per CSS file: a file
-   built only from `node_modules` stylesheets (UI-kit component styles) is
-   left out, since the host delivers that by style adoption, path 1. A file
-   that mixes package-own and `node_modules` stylesheets is listed whole,
-   vendor rules included, because Vite emits one file per chunk and the
-   package-own rules must arrive; import vendor CSS from a module of its own,
-   not from the expose module, to keep it out. Files federation already lists
-   for an expose stay in its list unfiltered, so a stylesheet the expose module
-   imports itself, from `node_modules` or not, is delivered. Whatever
-   package-own CSS is still unlisted (with `cssCodeSplit: false` all CSS goes
-   into one file no chunk names) fails the build for an expose that would get
-   no CSS at all; that check covers every stylesheet language Vite compiles to
-   CSS (`.css`, `.less`, `.sass`, `.scss`, `.styl`, `.stylus`, `.pcss`,
-   `.postcss`, `.sss`), not only `.css`. Imports Vite does not extract
-   (`?inline`, `?raw`, `?url`) are not CSS to deliver and never fail it.
+   Every CSS file of the chunks an expose reaches is listed, a file built
+   only from `node_modules` stylesheets (UI-kit component styles) included:
+   the screen is styled at its own kit version, so its kit rules must arrive
+   with it rather than rely on the host's. Rules the host also adopts are
+   duplicated; that is harmless at the same kit version. At a different one
+   the kit's class names differ, so the host's copy does not match the
+   screen's components; where a selector is the same in both, the screen's
+   file comes after the adopted copy and wins ties. Kit CSS a screen reaches
+   only through a dynamic import is in `css.async`, so the host appends it
+   after the screen's own `css.sync` styles; on equal specificity a kit rule
+   from such a file wins over a screen rule from `css.sync`. Files federation
+   already lists for an expose stay in its list, so a stylesheet the expose
+   module imports itself, from `node_modules` or not, is delivered.
+   The build fails when an expose would get no CSS at all while the chunks it
+   reaches hold stylesheets, kit CSS from `node_modules` included, however it
+   reaches them: through static imports, through dynamic imports, or through
+   a CSS-only chunk Vite removes, whose import is gone from the bundle by the
+   time the check runs and which the plugin recovers from what it saw while
+   rendering. A stylesheet whose compiled CSS is the empty string, such as
+   an empty file, is not CSS to deliver and never fails it, save for the
+   case below where the recorder is not placed: nothing of it reaches a CSS
+   file, with per-chunk CSS on and off. "Compiles to" is judged on the CSS
+   the plugin's recorder sees after every transform that can still change
+   the CSS, immediately before Vite stores it, wherever `frontxMfGts()` sits
+   in the plugin list of a single-environment `vite build`. When the plugin
+   warns that it could not place the recorder before `vite:css-post`,
+   empty-stylesheet exclusions are off for that build: an empty stylesheet
+   counts like any other and can fail it. With `cssCodeSplit: false` all CSS
+   goes into one file no chunk names, which federation lists for every expose
+   whose own chunk holds a `.css`, `.scss` or `.less` module (it recognises
+   no other stylesheet extension there); a stylesheet several exposes import
+   goes into a chunk they share and does not count for any of them. Kit
+   styles then reach only those exposes, and every other expose that reaches
+   a stylesheet fails the build. That check covers every stylesheet language
+   Vite compiles to CSS (`.css`, `.less`, `.sass`, `.scss`, `.styl`,
+   `.stylus`, `.pcss`, `.postcss`, `.sss`), not only `.css`. Imports Vite
+   does not extract (`?inline`, `?raw`, `?url`) are not CSS to deliver and
+   never fail it.
 3. **`?inline` + `initializeStyles()`, for a plain stylesheet one lifecycle
    owns.** Import the stylesheet as a string (`import styles from
    './styles.css?inline'`) and append it in an `initializeStyles(container)`
@@ -196,17 +220,17 @@ what the package owns:
    Module: the string carries no class map, so components reading
    `styles.frame` get `undefined`.
 
-**Package-owned CSS must never carry Tailwind's preflight (`@tailwind base` /
-the `@import "tailwindcss"` base layer).** A second preflight inside the shadow
-root — one the package compiled itself — lands after the UI-kit component CSS
-and its element resets (`button { background: transparent }` and friends)
-visibly break kit controls. A package-owned stylesheet destined for
-`initializeStyles()` must contain the utilities and components layers only;
-`injectBaseResets()` already provides the box-model resets a shadow root needs.
-This rule is about path 2 and 3 stylesheets. The shell's own preflight does
-reach the shadow root through path 1 (`adoptHostStylesIntoShadowRoot()` clones
-every host stylesheet), and the lifecycle deliberately neutralises it — see the
-counter-declarations in `ThemeAwareReactLifecycle`.
+**Package-owned CSS must never carry a base reset of its own.**
+A second reset inside the shadow root - one the package compiled itself - lands
+after the UI-kit component CSS and its element resets (`button { background:
+transparent }` and friends) visibly break kit controls. A package-owned
+stylesheet destined for `initializeStyles()` must scope its rules to the
+package's own classes; `injectBaseResets()` already provides the box-model
+resets a shadow root needs. This rule is about path 2 and 3 stylesheets. The
+shell's own base reset does reach the shadow root, on purpose, through path 1
+(`adoptHostStylesIntoShadowRoot()` clones every host stylesheet), and
+`injectBaseResets()` overrides only its border colour (currentColor) and root
+font (system-ui) there, and zeroes margin and padding on every element.
 
 ## What the shell does with a conforming package
 
