@@ -266,11 +266,15 @@ first and read `t()` only after it - one early return covers the whole screen:
 ```tsx
 // _blank-mfe/src/screens/home/HomeScreen.tsx, with its skeleton branch shortened
 const { t, loading } = useScreenTranslations(languageModules, bridge);
-if (loading) return <div className="p-8"><Skeleton className="h-8 w-64 mb-4" /></div>;
+if (loading) return <div className={styles.screen}><Skeleton className={styles.placeholderTitle} /></div>;
 ```
 
-Class names are Tailwind utilities on the element: template-mfe ships no CSS module, so
-there is no `styles` object to reach for.
+`styles` is the screen's CSS Module (`HomeScreen.module.css`): it pads the screen and
+sizes the placeholder on kit tokens. A screen carries no global utility classes; the
+kit's own `@gears-frontx/ui-kit/utilities.css` classes are the one exception, and only
+once the package imports that file in its expose module (`src/lifecycle.tsx`), which
+delivers it with the package's own compiled CSS; nothing loads it by default. For text
+only screen readers should hear, use the kit's `VisuallyHidden` instead of `sr-only`.
 
 **2. Derive translated collections with `useMemo(..., [t])`, never a `useState`
 initializer.** `t` is a `useCallback` keyed on the loaded map, so its identity CHANGES when
@@ -327,6 +331,7 @@ import { Card, CardContent } from '../../components/ui/card';
 import { BillingApiService } from '../../api/BillingApiService';
 import type { GetStatusResponse } from '../../api/types';
 import { requestSave } from '../../actions/homeActions';
+import styles from './HomeScreen.module.css';  // screen-local layout on kit tokens
 
 export const HomeScreen = () => {
   const service = apiRegistry.getService(BillingApiService);
@@ -363,9 +368,9 @@ export const HomeScreen = () => {
 
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent className={styles.content}>
         <form onSubmit={onSubmit}>
-          <label className="font-medium" htmlFor="name">Name</label>
+          <label className={styles.label} htmlFor="name">Name</label>
           <input
             id="name"
             required
@@ -380,6 +385,23 @@ export const HomeScreen = () => {
     </Card>
   );
 };
+```
+
+The two classes the skeleton names live in the screen's own `HomeScreen.module.css`, on the
+same kit tokens the shipped `_blank-mfe` module uses; a copied screen declares every class
+it names:
+
+```css
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.label {
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
+}
 ```
 
 The components under `src/components/ui/` belong to the MFE package that ships them,
