@@ -1,4 +1,4 @@
-# Quick Start — FrontX Standard Template
+# Quick Start - FrontX Standard Template
 
 > **TARGET AUDIENCE:** Project Developers building an app scaffolded from this template
 > **PURPOSE:** How to run the project and develop in it
@@ -25,7 +25,7 @@ The packages [`frontx-template-mfe`](../template-mfe/README.md) contributes -
 not change that: they are that template's own examples and stay out of your app,
 per `src-app/mfe_packages/README.md`.
 
-> First paint may briefly show an empty menu — the MFE system registers screens
+> First paint may briefly show an empty menu - the MFE system registers screens
 > asynchronously after the manifest loads, then the menu populates.
 
 ## Project structure
@@ -39,10 +39,10 @@ src-app/
 │   ├── mfe/                  # bootstrap.ts: registers MFEs from public/generated-mfe-manifests.json
 │   ├── themes/               # Themes over the ui-kit palette
 │   ├── font.css              # Registers the kit's Inter face
-│   └── globals.css           # Tailwind entry and global styles
+│   └── globals.css           # Base reset and global styles
 └── mfe_packages/             # Microfrontends (from `frontx-template-mfe`; empty in a shell-only seed)
     ├── demo-mfe/             # Hello World, Profile, Theme, UIKit, Widgets Host
-    ├── _blank-mfe/           # Minimal MFE — copy this to start a new one
+    ├── _blank-mfe/           # Minimal MFE - copy this to start a new one
     └── widgets-fixture-a|b/  # Widgets that mount into demo-mfe's widgets domain
 packages/                     # Solution packages: react, framework, state, i18n, studio, auth
 src/                          # Shared solution lib (api, build, gts)
@@ -61,7 +61,7 @@ The host shell is intentionally empty. Screens come from **microfrontends**:
    `generated-mfe-manifests.json` from the shell's own folder and registers
    everything at runtime.
 3. `src-app/app/layout/Menu.tsx` reads the registered screen extensions and
-   renders the menu — mounting the corresponding MFE remote on click.
+   renders the menu - mounting the corresponding MFE remote on click.
 
 You extend the app by adding screens/MFEs, not by editing a central registry.
 
@@ -79,13 +79,32 @@ scaffold step deletes it.
    // src/screens/my-screen/MyScreen.tsx
    import React from 'react';
    import type { ChildMfeBridge } from '@gears-frontx/react';
+   import styles from './MyScreen.module.css';
 
    export const MyScreen: React.FC<{ bridge: ChildMfeBridge }> = () => (
-     <div className="p-6">
-       <h1 className="text-2xl font-bold text-primary">My Screen</h1>
-       <p className="text-muted-foreground">Content goes here</p>
+     <div className={styles.screen}>
+       <h1 className={styles.title}>My Screen</h1>
+       <p className={styles.description}>Content goes here</p>
      </div>
    );
+   ```
+
+   ```css
+   /* src/screens/my-screen/MyScreen.module.css */
+   .screen {
+     padding: var(--space-6);
+   }
+
+   .title {
+     color: var(--primary);
+     font-size: var(--text-display-size);
+     font-weight: var(--text-display-weight);
+     line-height: var(--text-display-line-height);
+   }
+
+   .description {
+     color: var(--muted-foreground);
+   }
    ```
 
 2. **Wrap it in a Module Federation lifecycle**
@@ -102,7 +121,7 @@ scaffold step deletes it.
    export default new MyScreenLifecycle();
    ```
 
-3. **Declare it in `mfe.json`** — an entry plus a screen extension whose
+3. **Declare it in `mfe.json`** - an entry plus a screen extension whose
    `route` locates it and whose `presentation` block drives the menu item:
    ```jsonc
    {
@@ -114,14 +133,14 @@ scaffold step deletes it.
    }
    ```
 
-4. **Expose the module** — add `./lifecycle-my-screen` to the MFE's
+4. **Expose the module** - add `./lifecycle-my-screen` to the MFE's
    `vite.config.ts` exposes, then re-run `npm run dev:all`. The screen appears
    in the menu automatically.
 
 ## Add a microfrontend
 
 MFEs are the unit of composition. `_blank-mfe` (the copy-from scaffold) ships
-with [`frontx-template-mfe`](../template-mfe/README.md), not the shell — run
+with [`frontx-template-mfe`](../template-mfe/README.md), not the shell - run
 `frontx add frontx-template-mfe` first if `src-app/mfe_packages/_blank-mfe`
 isn't there yet, then `npm install` (the workspace glob picks up the new
 packages, so the lock must be regenerated). Start from the blank MFE:
@@ -141,7 +160,7 @@ fails to say so.
 Then update its `package.json` name and preview `--port`, declare your entries
 and screen extensions in `mfe.json`, and expose your lifecycle modules in its
 `vite.config.ts`, keeping `@gears-frontx/routing` in its `sharedDeps` and pinned in its `package.json`, as the scaffold has it (add `@gears-frontx/routing-tanstack` to both, under `dependencies`, only when the MFE uses `<ExtensionRouter>` or `navigation()`).
-`dev:all` discovers MFEs automatically by scanning `src-app/mfe_packages/` —
+`dev:all` discovers MFEs automatically by scanning `src-app/mfe_packages/` -
 there is no registry file to edit. See the shell's `mfe-package-contract` AI
 guideline for the exact shape a new package must have.
 
@@ -154,7 +173,7 @@ the screen container). You compose *into* it:
 - **Screen container** mounts one screen at a time (exclusive mount strategy).
 - **Sidebar / popup / overlay** are optional domains an MFE can target the same way.
 
-`src-app/app/layout/Menu.tsx` is the canonical reference — it subscribes to the
+`src-app/app/layout/Menu.tsx` is the canonical reference - it subscribes to the
 MFE registry and dispatches mount actions on click.
 
 ## State
@@ -181,7 +200,8 @@ destroying the container that holds that screen clears it), which the menu reads
 
 ## Styling
 
-Tailwind CSS with CSS-variable theme tokens. Colour, radius and type tokens
+Kit components first; anything else is styled with CSS Modules on
+CSS-variable theme tokens. Colour, radius and type tokens
 come from `@gears-frontx/ui-kit/theme.css`; the shell's themes
 (`src-app/app/themes/`) add the shell's own tokens (left menu, spacing,
 shadows, transitions) and override a kit token only on purpose, as the
@@ -189,10 +209,31 @@ Dracula themes do. The kit's Inter face is registered in
 `src-app/app/font.css`.
 
 ```tsx
-<div className="bg-background text-foreground">
-  <h1 className="text-2xl font-bold text-primary">Title</h1>
-  <p className="text-muted-foreground">Description</p>
+import styles from './Intro.module.css';
+
+<div className={styles.intro}>
+  <h1 className={styles.title}>Title</h1>
+  <p className={styles.description}>Description</p>
 </div>
+```
+
+```css
+/* Intro.module.css */
+.intro {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.title {
+  color: var(--primary);
+  font-size: var(--text-display-size);
+  font-weight: var(--text-display-weight);
+  line-height: var(--text-display-line-height);
+}
+
+.description {
+  color: var(--muted-foreground);
+}
 ```
 
 Common tokens: `background`, `foreground`, `primary`, `secondary`, `accent`,
@@ -207,12 +248,26 @@ App-owned primitives live in `src-app/app/components/ui`:
 // src-app/app/components/ui/badge.tsx
 import React from 'react';
 import { cn } from '@/app/lib/utils';
+import styles from './badge.module.css';
 
 export const Badge: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
-  <span className={cn('px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground', className)}>
+  <span className={cn(styles.badge, className)}>
     {children}
   </span>
 );
+```
+
+```css
+/* src-app/app/components/ui/badge.module.css */
+.badge {
+  padding: 0.125rem var(--space-2);
+  border-radius: var(--radius-xs);
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
+  line-height: var(--text-label-line-height);
+}
 ```
 
 Import via the `@` alias: `import { Badge } from '@/app/components/ui/badge';`
@@ -238,18 +293,18 @@ npm run test:unit         # unit tests (package + app + workspace MFEs)
 
 ## Development best practices
 
-1. **Keep MFEs isolated** — no cross-MFE imports; communicate via the bridge and
+1. **Keep MFEs isolated** - no cross-MFE imports; communicate via the bridge and
    shared properties.
-2. **Extend by adding screens/MFEs** — let the menu populate from extensions;
+2. **Extend by adding screens/MFEs** - let the menu populate from extensions;
    don't hand-wire navigation.
-3. **Type everything** — no `any`, explicit return types, proper generics.
-4. **Prefer events** — emit events for state changes; use selectors for reads.
-5. **Use theme tokens** — avoid hard-coded colors; style with Tailwind utilities.
+3. **Type everything** - no `any`, explicit return types, proper generics.
+4. **Prefer events** - emit events for state changes; use selectors for reads.
+5. **Use theme tokens** - avoid hard-coded colors; style with CSS Modules on kit tokens.
 
 ## Getting help
 
-- `src-app/mfe_packages/demo-mfe/` — a worked reference for screens, the bridge,
+- `src-app/mfe_packages/demo-mfe/` - a worked reference for screens, the bridge,
   theming, and the widgets host.
-- `src-app/app/mfe/bootstrap.ts` and `layout/Menu.tsx` — how MFEs register and
+- `src-app/app/mfe/bootstrap.ts` and `layout/Menu.tsx` - how MFEs register and
   the menu is built.
 - Refer to `@gears-frontx/react` types for the hook and provider APIs.
