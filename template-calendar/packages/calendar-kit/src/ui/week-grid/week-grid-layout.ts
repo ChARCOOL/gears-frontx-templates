@@ -730,10 +730,9 @@ export const buildTimeRangePositions = (
 
       const dayRange = buildTimeWindowRange(column.date, timeZone, timeRange);
 
+      // Overnight or empty bands cannot be drawn on one date; skip them rather than unmount the grid.
       if (compareUtcInstants(dayRange.start, dayRange.end) >= 0) {
-        throw new RangeError(
-          `Time range "${timeRange.key}" must end after it starts`
-        );
+        continue;
       }
 
       const [clipped] = clipSegmentsToRange([dayRange], columnRange);

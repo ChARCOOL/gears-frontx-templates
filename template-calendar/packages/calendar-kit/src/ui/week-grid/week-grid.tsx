@@ -164,7 +164,11 @@ interface WeekGridBaseProps<Payload = unknown> extends CalendarContextProps {
   ) => ReactNode;
   /** Drawn in cells covered by an unavailable or busy timed event, or in cells `getCellState` marks unavailable. */
   readonly renderUnavailable?: (cell: CalendarCell) => ReactNode;
-  /** Host bands drawn behind the timed events. Clipped to `visibleHours`. */
+  /**
+   * Host bands drawn behind the timed events. Clipped to `visibleHours`.
+   * A band must start before it ends on the same day; overnight or empty bands
+   * (e.g. 22:00 to 02:00) are skipped and not drawn. An end of `00:00` means end of day.
+   */
   readonly timeRanges?: readonly CalendarTimeRange[];
   /** Renders the content of each band in `timeRanges`. Without it no band is drawn. */
   readonly renderTimeRange?: (

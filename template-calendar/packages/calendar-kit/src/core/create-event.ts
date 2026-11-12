@@ -230,13 +230,14 @@ export const validateCreateEventDraft = (
 
   const eventTypeIds = options.eventTypeIds ?? [];
 
-  if (
-    eventTypeIds.length > 0 &&
-    (draft.eventTypeId
-      ? !eventTypeIds.includes(draft.eventTypeId)
-      : options.eventTypeRequired === true)
-  ) {
-    errors.eventTypeId = "required";
+  if (eventTypeIds.length > 0) {
+    if (!draft.eventTypeId) {
+      if (options.eventTypeRequired === true) {
+        errors.eventTypeId = "required";
+      }
+    } else if (!eventTypeIds.includes(draft.eventTypeId)) {
+      errors.eventTypeId = "invalid";
+    }
   }
 
   const recurrenceRule = draft.recurrenceRule ?? undefined;

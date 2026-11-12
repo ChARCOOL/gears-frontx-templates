@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect as assert, it, vi } from "vitest";
 
 import { timedEvent, UTC } from "../../../__test-utils__/fixtures";
@@ -79,6 +79,44 @@ describe("WeekGrid touch move", () => {
     assert(request?.event.id).toBe("move");
     assert(request?.from.startTime).toStrictEqual(parseLocalTime("09:00"));
     assert(request?.to.startTime).toStrictEqual(parseLocalTime("11:00"));
+  });
+
+  it("finds the slot under the finger when the grid is in a shadow root", () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const shadow = host.attachShadow({ mode: "open" });
+    const container = shadow.appendChild(document.createElement("div"));
+    let request: CalendarMoveRequest | undefined;
+    render(
+      <WeekGrid
+        date={DATE}
+        events={[timedEvent("move")]}
+        interactionMode="paint-and-move"
+        onMoveRequest={(value) => {
+          request = value;
+        }}
+        timeZone={UTC}
+        locale="en-US"
+        t={t}
+        direction="ltr"
+      />,
+      { container }
+    );
+    const cell = within(container).getByRole("gridcell", {
+      name: /Monday, August 24, 2026 11:00/u,
+    });
+    shadow.elementsFromPoint = () => [cell];
+    document.elementsFromPoint = () => [];
+
+    touch(within(container).getByRole("button", { name: /move/u }), "pointerdown");
+    act(() => {
+      vi.advanceTimersByTime(350);
+    });
+    touch(document, "pointermove", 40);
+    touch(document, "pointerup");
+
+    assert(request?.to.startTime).toStrictEqual(parseLocalTime("11:00"));
+    host.remove();
   });
 
   it("leaves a quick touch to the page", () => {

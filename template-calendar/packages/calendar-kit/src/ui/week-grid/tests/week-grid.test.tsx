@@ -396,6 +396,24 @@ describe(WeekGrid, () => {
     assert(onMoveRequest).toHaveBeenCalledOnce();
   });
 
+  it("cancels a running paint when a drag of a non-actionable event is rejected", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+
+    renderWeek({
+      events: [event({ available: false, id: "blocked" })],
+      interactionMode: "paint-and-move",
+      onPaintSelect,
+    });
+    const button = screen.getByRole("button", { name: /Planning/u });
+
+    fireEvent.pointerDown(getTimedCell("10:00"));
+    fireEvent.dragStart(button);
+    fireEvent.pointerCancel(button);
+    fireEvent.pointerUp(getTimedCell("11:00"));
+
+    assert(onPaintSelect).not.toHaveBeenCalled();
+  });
+
   it("shows the ghost on the slot under a dragged event, without a drop-target outline", () => {
     const onMoveRequest = vi.fn<(request: CalendarMoveRequest) => void>();
     renderWeek({

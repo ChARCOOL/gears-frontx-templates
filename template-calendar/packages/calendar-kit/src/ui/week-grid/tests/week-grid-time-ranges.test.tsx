@@ -205,28 +205,42 @@ describe("WeekGrid time ranges", () => {
     assert(screen.queryByText("lunch")).toBeNull();
   });
 
-  it("rejects a range that ends before it starts", () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+  it("skips an overnight range without unmounting the grid", () => {
+    const renderTimeRange = vi.fn((range: CalendarTimeRange) => <span>{range.key}</span>);
 
-    try {
-      assert(() =>
-        render(
-          <WeekGrid
-            date={MONDAY}
-            events={[]}
-            timeZone={UTC}
-            timeRanges={[
-              lunch({
-                end: parseLocalTime("09:00"),
-                start: parseLocalTime("12:00"),
-              }),
-            ]}
-            renderTimeRange={(range) => <span>{range.key}</span>}
-          />
-        )
-      ).toThrow(RangeError);
-    } finally {
-      vi.restoreAllMocks();
-    }
+    render(
+      <WeekGrid
+        date={MONDAY}
+        events={[]}
+        timeZone={UTC}
+        timeRanges={[
+          lunch({ end: parseLocalTime("02:00"), key: "hold", start: parseLocalTime("22:00") }),
+          lunch(),
+        ]}
+        renderTimeRange={renderTimeRange}
+      />
+    );
+
+    assert(screen.getAllByText("lunch")).toHaveLength(5);
+    assert(screen.queryByText("hold")).toBeNull();
+  });
+
+  it("skips a range that ends before it starts without unmounting the grid", () => {
+    render(
+      <WeekGrid
+        date={MONDAY}
+        events={[]}
+        timeZone={UTC}
+        timeRanges={[
+          lunch({
+            end: parseLocalTime("09:00"),
+            start: parseLocalTime("12:00"),
+          }),
+        ]}
+        renderTimeRange={(range) => <span>{range.key}</span>}
+      />
+    );
+
+    assert(screen.queryByText("lunch")).toBeNull();
   });
 });

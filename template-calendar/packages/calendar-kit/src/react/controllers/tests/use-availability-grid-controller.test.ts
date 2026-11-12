@@ -250,6 +250,29 @@ describe(useAvailabilityGridController, () => {
     expect(onPaintSelect).not.toHaveBeenCalled();
   });
 
+  it("keeps cells painted before a blocked cell in cells paint mode", () => {
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    const { result } = renderHook(() =>
+      useAvailabilityGridController(
+        baseOptions({ onPaintSelect, paintMode: "cells" })
+      )
+    );
+
+    act(() => {
+      result.current.beginPaint(mon08);
+      result.current.updatePaint(mon09);
+      result.current.updatePaint(mon10Blocked);
+      result.current.updatePaint(mon11);
+      result.current.endPaint();
+    });
+
+    expect(onPaintSelect).toHaveBeenCalledExactlyOnceWith({
+      cells: [mon08, mon09, mon11],
+      end: mon11,
+      start: mon08,
+    });
+  });
+
   it("keeps the default selection independently controllable", () => {
     const onSelectedRangeChange =
       vi.fn<(range: CalendarSelectionRange | null) => void>();

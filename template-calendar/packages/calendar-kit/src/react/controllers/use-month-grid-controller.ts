@@ -312,6 +312,7 @@ export const useMonthGridController = (
     });
 
   const cellElementsRef = useRef(new Map<string, HTMLElement>());
+  const moveEventRef = useRef<TimedCalendarEvent | null>(null);
 
   const monthRange = useMemo(
     () => buildMonthRange(options.date, options.timeZone),
@@ -634,6 +635,7 @@ export const useMonthGridController = (
 
       const startDate = toViewerDateTime(event.start, timeZone).date;
 
+      moveEventRef.current = event;
       moveInteraction.beginMove(
         event,
         eventCellOnDate(event, startDate, timeZone)
@@ -642,13 +644,14 @@ export const useMonthGridController = (
     [moveEnabled, moveInteraction, timeZone]
   );
 
+  // Only a timed event can be dragged here, so the target is always computed from a timed event.
   const updateMove = useCallback(
     (date?: CalendarDate): void => {
-      const current = moveInteraction.getInternals().state.drag;
+      const event = moveEventRef.current;
 
       moveInteraction.updateMove(
-        date !== undefined && current?.event.allDay === false
-          ? eventCellOnDate(current.event, date, timeZone)
+        date !== undefined && event !== null
+          ? eventCellOnDate(event, date, timeZone)
           : undefined
       );
     },

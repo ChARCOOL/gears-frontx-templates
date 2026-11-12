@@ -99,7 +99,7 @@ describe("create-event-validation", () => {
     );
 
     assert(stale.valid).toBe(false);
-    assert(stale.errors.eventTypeId).toBe("required");
+    assert(stale.errors.eventTypeId).toBe("invalid");
     assert(
       validateCreateEventDraft({ ...draft(), eventTypeId: "retired" }).valid
     ).toBe(true);

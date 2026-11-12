@@ -673,8 +673,12 @@ export const useWeekGridContent = <Payload = unknown>(
       controller.cancelMove();
       draggedEventIdRef.current = null;
     },
-    cellAt: (clientX, clientY) =>
-      resizeTargetAt(document, clientX, clientY)?.cell ?? null,
+    cellAt: (clientX, clientY, pressed) =>
+      resizeTargetAt(
+        (pressed as Element).getRootNode() as Document | ShadowRoot,
+        clientX,
+        clientY
+      )?.cell ?? null,
     end: () => {
       controller.endMove();
       draggedEventIdRef.current = null;
@@ -850,8 +854,13 @@ export const useWeekGridContent = <Payload = unknown>(
     blankImage.src = transparentPixel;
     event.dataTransfer?.setDragImage(blankImage, 0, 0);
 
-    draggedEventIdRef.current = eventId;
     controller.beginMove(eventId, target.cell);
+    // beginMove rejects blocked events and pending moves; only a drag it started may own the drag events.
+    if (controller.getInternals().interaction.state.drag === null) {
+      return;
+    }
+
+    draggedEventIdRef.current = eventId;
     // @cpt-end:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-move-request
   };
 

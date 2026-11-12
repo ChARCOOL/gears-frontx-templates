@@ -63,7 +63,7 @@ import { WeekGrid } from "@gears-frontx/calendar-kit/week-grid";
 | `rowHeight` | `number` |  | Height of one row in pixels. Default `43`. |
 | `selectedEventId` | `string` |  | Controlled selected event. |
 | `slotMinutes` | `CalendarSlotMinutes` |  | Length of one row. Default `60`. |
-| `timeRanges` | `readonly CalendarTimeRange<unknown>[]` |  | Host bands drawn behind the timed events. Clipped to `visibleHours`. |
+| `timeRanges` | `readonly CalendarTimeRange<unknown>[]` |  | Host bands drawn behind the timed events. Clipped to `visibleHours`. A band must start before it ends on the same day; overnight or empty bands (e.g. 22:00 to 02:00) are skipped and not drawn. An end of `00:00` means end of day. |
 | `trailingGutter` | `boolean` |  | Repeat the hour labels on the trailing edge. The copy is hidden from assistive technology. |
 | `visibleDays` | `5 \| 7` |  | `5` shows Monday–Friday, `7` the whole week. Default `5`. |
 | `visibleHours` | `CalendarTimeWindow` |  | Visible hours, e.g. `{ start: "06:00", end: "23:00" }`, on slot boundaries. Default: all. |
@@ -82,7 +82,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 Events are clipped to the visible hours, and events wholly outside them are not rendered. The now line is hidden while the current time is outside them. The now line draws over event cards, and its time label is an opaque pill, and the gutter hour label it would overlap is hidden. Slots follow elapsed time, so a daylight-saving day has one slot fewer or more.
 
-`timeRanges?: CalendarTimeRange[]` adds host bands (breaks, holds, blocked hours) drawn behind the events. Each band is `{ key, start, end, date?, metadata? }`; an `end` of `00:00` means the end of the day, and minutes are kept. `date` limits a band to one day; omitted, it draws on every visible day. Bands are clipped to `visibleHours` and drawn only when `renderTimeRange` is set. `renderTimeRange(range, { geometry })` returns the band's content. The band is `aria-hidden` and takes no pointer input, so put anything users must read in an event or the host UI. A band whose `end` is at or before its `start` throws a `RangeError`.
+`timeRanges?: CalendarTimeRange[]` adds host bands (breaks, holds, blocked hours) drawn behind the events. Each band is `{ key, start, end, date?, metadata? }`; an `end` of `00:00` means the end of the day, and minutes are kept. `date` limits a band to one day; omitted, it draws on every visible day. Bands are clipped to `visibleHours` and drawn only when `renderTimeRange` is set. `renderTimeRange(range, { geometry })` returns the band's content. The band is `aria-hidden` and takes no pointer input, so put anything users must read in an event or the host UI. A band whose `end` is at or before its `start` on its day (for example an overnight `22:00` to `02:00`) is skipped and not drawn; it does not throw.
 
 ## Trailing gutter and part classes
 

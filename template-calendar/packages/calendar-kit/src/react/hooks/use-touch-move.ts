@@ -9,7 +9,8 @@ const slopPx = 10;
 export interface UseTouchMoveOptions {
   /** Starts the move for the pressed event; `false` when it cannot move. */
   readonly begin: (eventId: string, target: EventTarget) => boolean;
-  readonly cellAt: (clientX: number, clientY: number) => CalendarCell | null;
+  /** Receives the pressed target so callers can hit-test in the root that holds it (shadow roots). */
+  readonly cellAt: (clientX: number, clientY: number, pressed: EventTarget) => CalendarCell | null;
   readonly update: (cell: CalendarCell) => void;
   readonly end: () => void;
   readonly cancel: () => void;
@@ -54,7 +55,7 @@ export const useTouchMove = (options: UseTouchMoveOptions) => {
     };
     const move = (next: globalThis.PointerEvent): void => {
       if (armed) {
-        const cell = optionsRef.current.cellAt(next.clientX, next.clientY);
+        const cell = optionsRef.current.cellAt(next.clientX, next.clientY, target);
 
         if (cell !== null) {
           optionsRef.current.update(cell);
