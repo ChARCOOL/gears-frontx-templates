@@ -41,6 +41,26 @@ const cellAt = (time: string): CalendarCell => {
 };
 
 describe("WeekGrid paint release", () => {
+  it("labels the paint preview with the viewer-time range of the painted rows", () => {
+    render(
+      <WeekGrid
+        date={DATE}
+        direction="ltr"
+        events={[]}
+        interactionMode="paint-and-move"
+        locale="en-US"
+        t={t}
+        timeZone={UTC}
+      />
+    );
+
+    fireEvent.pointerDown(timedCell("09:00"));
+    fireEvent.pointerMove(timedCell("10:00"));
+
+    const preview = document.querySelector<HTMLElement>("[data-paint-preview]");
+    assert(preview?.textContent).toContain("09:00 - 11:00");
+  });
+
   it("finishes the paint and emits its range when released over an event card", () => {
     const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
     render(

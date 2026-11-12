@@ -103,6 +103,23 @@ describe("DayGrid paint-and-move", () => {
     expect(range.end.end).toBe(utcInstant("2026-08-24T16:00:00.000Z"));
   });
 
+  it("draws a preview over the painted rows labelled with the viewer-time range", () => {
+    stubRowRects();
+    const { container } = render(
+      <DayGrid {...baseProps} events={[]} interactionMode="paint-and-move" />
+    );
+    const cells = gridCells(container);
+
+    fireEvent.pointerDown(cells[13], { clientY: rowCenter(13) });
+    fireEvent.pointerMove(cells[15], { clientY: rowCenter(15) });
+
+    const preview = container.querySelector<HTMLElement>("[data-paint-preview]");
+    expect(preview).not.toBeNull();
+    expect(preview?.style.blockSize).toBe(`${(3 / cells.length) * 100}%`);
+    expect(preview?.style.insetBlockStart).toBe(`${(13 / cells.length) * 100}%`);
+    expect(preview?.textContent).toContain("13:00 - 16:00");
+  });
+
   it("clears the painted range once the pointer leaves the grid after the paint is emitted", () => {
     stubRowRects();
     const { container } = render(

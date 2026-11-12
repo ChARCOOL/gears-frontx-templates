@@ -104,6 +104,7 @@
 
 .panelMessage {
   color: var(--cal-color-muted);
+  font-family: var(--cal-font-family);
   font-size: var(--cal-text-label-size);
   line-height: var(--cal-text-label-line-height);
   margin: 0;

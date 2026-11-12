@@ -1,5 +1,5 @@
 import { sortCopy } from "../../core/array";
-import { formatGridTime } from "../../core/format";
+import { formatDuration } from "../../core/format";
 import { dateTimeFormatter } from "../../core/intl-cache";
 import type {
   CalendarDate,
@@ -241,37 +241,26 @@ export const formatSearchDayHeader = (
   }).format(new Date(dayStart));
 };
 
-export const formatSearchResultDetails = (
+/** A timed row is in progress when `now` falls in `[start, end)`. All-day rows never are. */
+export const isSearchResultNow = (
   row: SearchResultRow,
-  timeZone: IanaTimeZone,
-  locale: string,
-  t: CalendarTranslate
-): string => {
-  const details: string[] = [];
+  now: UtcInstant
+): boolean =>
+  row.start !== null &&
+  row.end !== null &&
+  compareUtcInstants(row.start, now) <= 0 &&
+  compareUtcInstants(now, row.end) < 0;
 
-  if (row.start === null || row.end === null) {
-    details.push(t("calendar.agenda.allDay"));
-  } else {
-    const start = formatGridTime(row.start, timeZone, locale);
-    const end = formatGridTime(row.end, timeZone, locale);
-
-    details.push(`${start} – ${end}`);
-  }
-
-  const organizer = row.event.organizer ?? undefined;
-
-  if (organizer !== undefined) {
-    details.push(organizer);
-  }
-
-  const location = row.event.location ?? undefined;
-
-  if (location !== undefined) {
-    details.push(location);
-  }
-
-  return details.join(" · ");
-};
+/** Duration of a timed row, or `null` for all-day and zero-length rows. */
+export const formatSearchResultDuration = (
+  row: SearchResultRow,
+  locale: string
+): string | null =>
+  row.start !== null &&
+  row.end !== null &&
+  compareUtcInstants(row.start, row.end) < 0
+    ? formatDuration(row.start, row.end, locale)
+    : null;
 
 export const countRows = (groups: readonly SearchResultGroup[]): number => {
   let count = 0;

@@ -25,7 +25,7 @@ import { SearchResults } from "@gears-frontx/calendar-kit/search-results";
 | Prop | Type | Required | Description |
 | --- | --- | --- | --- |
 | `events` | `readonly CalendarEvent[]` | yes | Events to search. |
-| `now` | `UtcInstant` | yes | Reference instant for the Today group. |
+| `now` | `UtcInstant` | yes | Reference instant for the Today group and the Now label on in-progress rows. |
 | `onDismiss` | `() => void` | yes | Escape was pressed on a result. |
 | `onReveal` | `(eventId: string, date: CalendarDate) => void` | yes | A result was activated. Receives the event id and the viewer day of the row. |
 | `calendarIds` | `readonly string[]` |  | Search only events on these calendars. |
@@ -47,6 +47,10 @@ Queries are trimmed, lowercased, and diacritic-folded before matching the event 
 Timed events are grouped by viewer day, including midnight-spanning segments; all-day events appear on each date in their exclusive-end range.
 
 The result list uses one roving tab stop. Arrow Up/Down, Home, and End move focus; Enter or Space calls `onReveal`, and Escape calls `onDismiss`. Result rows are native buttons laid out as list rows and expose only the public `data-event-id` hook; all other styling state is expressed through CSS Modules.
+
+## Result cards
+
+Timed events are grouped by viewer day, named relative to `now` (Today, Tomorrow), then by date. Each default row is a card: start and end time, the event colour bar, title, duration, a Now label when `now` falls inside the row, organizer, guest count, and up to six attendee avatars followed by a "+N" overflow. The duration is the length of the row's day segment. Location is not on the default card; it still matches searches. All-day rows show "All day" in place of the times. `renderResult` replaces the card and receives `isNow` in its context.
 
 ## Related
 

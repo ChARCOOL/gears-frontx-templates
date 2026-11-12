@@ -79,7 +79,7 @@ import { WeekGrid } from "@gears-frontx/calendar-kit";
 import { WeekGrid } from "@gears-frontx/calendar-kit/week-grid";
 ```
 
-Entries: `core`, `react`, `i18n`, `grid`, `week-grid`, `day-grid`, `month-grid`, `agenda-view`, `calendar-toolbar`, `event-card`, `event-detail-panel`, `create-event`, `conflict-indicator`, `availability-grid`, `calendar-side-panel`, `month-navigator`, `search-results`, `time-zone-list`, `world-clocks`, `calendar-list`.
+Entries: `core`, `react`, `i18n`, `grid`, `week-grid`, `day-grid`, `month-grid`, `agenda-view`, `calendar-toolbar`, `event-card`, `event-detail-panel`, `create-event`, `conflict-indicator`, `availability-grid`, `calendar-side-panel`, `month-navigator`, `recurrence-scope-dialog`, `search-results`, `time-zone-list`, `world-clocks`, `calendar-list`.
 
 Both shapes drop the JavaScript of components you do not import. CSS is different: a family's stylesheet reaches your bundle through the chunk that imports it, and the root entry re-exports every family, so a root import keeps all of their CSS reachable. **Import family subpaths for CSS tree-shaking** when stylesheet weight matters — `@gears-frontx/calendar-kit/week-grid` pulls that family's CSS and no other.
 

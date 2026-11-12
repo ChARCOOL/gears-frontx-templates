@@ -15,8 +15,10 @@
   --cal-color-focus-ring: var(--ring, #8b5cf6);
   --cal-color-focus-ring-strong: var(--primary-ring, #6d28d9);
   --cal-color-now: var(--now, var(--primary, #8257e6));
+  --cal-color-pink-accent: var(--pink-strong, #df2868);
+  --cal-color-pink-background: var(--pink-light, #ffeaf2);
   --cal-color-now-label: var(--now-label, var(--primary, #8257e6));
-  --cal-color-conflict: var(--danger, #e11d48);
+  --cal-color-conflict: var(--danger, var(--cal-color-error));
   --cal-color-overlay-surface: var(--popover, #ffffff);
   --cal-color-overlay-border: var(
     --popover-border,
@@ -109,6 +111,7 @@
   --cal-text-grid-tracking: var(--text-body-tracking, 0px);
   --cal-text-event-title-weight: var(--text-event-title-weight, 700);
 
+  --cal-space-xxs: var(--space-xxs, 0.125rem);
   --cal-space-1: var(--space-1, 0.25rem);
   --cal-space-2: var(--space-2, 0.5rem);
   --cal-space-3: var(--space-3, 0.75rem);
@@ -183,6 +186,10 @@
     var(--cal-color-text) 7%,
     transparent
   );
+  --cal-slot-conflict-surface: var(--danger-soft, #fff1f2);
+  --cal-slot-conflict-bar: var(--cal-color-conflict);
+  --cal-slot-conflict-text: var(--cal-color-conflict);
+  --cal-slot-conflict-bar-width: 3px;
   --cal-motion-duration-short: 120ms;
   --cal-motion-duration-medium: 200ms;
   --cal-motion-duration-long: 320ms;
@@ -216,7 +223,6 @@
   --cal-color-divider: var(--divider, #282b32);
   --cal-color-grid-line-strong: var(--border-strong, #303a4d);
   --cal-color-focus-ring-strong: var(--primary-ring, #a78bfa);
-  --cal-color-conflict: var(--danger, #d63853);
   --cal-color-selection: var(--selection-subtle, #1c2d3f);
   --cal-slot-selected-foreground: var(--foreground, #f8fafc);
   --cal-color-turquoise-background: var(--info-soft, #06262b);
@@ -247,7 +253,6 @@
     --cal-color-divider: var(--divider, #282b32);
     --cal-color-grid-line-strong: var(--border-strong, #303a4d);
     --cal-color-focus-ring-strong: var(--primary-ring, #a78bfa);
-    --cal-color-conflict: var(--danger, #d63853);
     --cal-color-selection: var(--selection-subtle, #1c2d3f);
     --cal-slot-selected-foreground: var(--foreground, #f8fafc);
     --cal-color-turquoise-background: var(--info-soft, #06262b);

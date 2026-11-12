@@ -433,6 +433,49 @@ it("names an empty busy title Busy and an empty title (untitled)", () => {
     expect(items[1]).toHaveClass(cardStyles.error);
   });
 
+  it("marks a card with an error conflict", () => {
+    renderCard({
+      conflicts: [{ dimension: "resource", id: "c1", label: "Room B12", severity: "error" }],
+    });
+
+    expect(getCard()).toHaveAttribute("data-conflict", "true");
+  });
+
+  it("leaves a card with only warning conflicts unmarked", () => {
+    renderCard({
+      conflicts: [{ dimension: "person", id: "c2", label: "Sam Lee", severity: "warning" }],
+    });
+
+    expect(getCard()).not.toHaveAttribute("data-conflict");
+  });
+
+  it("shows the title-row icon only for an error conflict", () => {
+    renderCard({
+      conflicts: [{ dimension: "resource", id: "c1", label: "Room B12", severity: "error" }],
+    });
+
+    expect(getCard().querySelector(`.${cardStyles.conflictIcon}`)).not.toBeNull();
+  });
+
+  it("keeps the error conflict marking and icon on a selected card", () => {
+    renderCard({
+      selected: true,
+      conflicts: [{ dimension: "resource", id: "c1", label: "Room B12", severity: "error" }],
+    });
+
+    expect(getCard()).toHaveAttribute("aria-pressed", "true");
+    expect(getCard()).toHaveAttribute("data-conflict", "true");
+    expect(getCard().querySelector(`.${cardStyles.conflictIcon}`)).not.toBeNull();
+  });
+
+  it("shows no conflict icon for a warning-only conflict", () => {
+    renderCard({
+      conflicts: [{ dimension: "person", id: "c2", label: "Sam Lee", severity: "warning" }],
+    });
+
+    expect(getCard().querySelector(`.${cardStyles.conflictIcon}`)).toBeNull();
+  });
+
   it("replaces conflict rendering through the renderConflict slot", () => {
     const conflicts: readonly CalendarConflict[] = [
       { dimension: "resource", id: "c1", label: "Room 2" },

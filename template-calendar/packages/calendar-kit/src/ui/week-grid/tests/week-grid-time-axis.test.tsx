@@ -14,7 +14,7 @@ const timeWindow = (start: string, end: string) => ({
   start: parseLocalTime(start),
 });
 
-const renderWeek = (overrides: Partial<WeekGridProps> = {}): void => {
+const renderWeek = (overrides: Partial<Omit<WeekGridProps, "maxEventsPerSlot" | "onOverflowSelect">> = {}): void => {
   render(
     <WeekGrid
       date={DATE}

@@ -39,12 +39,12 @@ import { WeekGrid } from "@gears-frontx/calendar-kit/week-grid";
 | `getEventFrameProps` | `(context: CalendarEventRenderContext<Payload>) => EventFrameHookProps \| undefined` |  | Class and `data-tone` for the event's card frame, so host CSS can mark a state such as a conflict or a busy block. No inline style: the kit keeps the focus outline out of reach. |
 | `gutterClassName` | `string` |  | Class on every gutter label: hours, all-day, zone and the trailing copy. |
 | `interactionMode` | `WeekGridInteractionMode` |  | Controlled interaction mode. Default `quick-create`. |
-| `maxEventsPerSlot` | `number` |  | Most cards that start in one row of a day. Later ones hide behind a `+N` chip. Default: no cap. |
+| `maxEventsPerSlot` | `number` |  | Most cards that start in one row of a day. Later ones hide behind a `+N` lane tile. |
 | `now` | `UtcInstant` |  | Reference instant for the now line and past styling. Default: the wall clock, per minute. |
 | `onEventSelect` | `(event: CalendarEvent<Payload>, context: CalendarEventRenderContext<Payload>, anchor?: HT…` |  | An available event was activated; `anchor` is the card, for a detail popover. |
 | `onInteractionModeChange` | `(mode: WeekGridInteractionMode) => void` |  | Called when the grid asks to change mode. |
 | `onMoveRequest` | `(request: CalendarMoveRequest) => void` |  | An event was dropped on a new slot in `paint-and-move` mode. Call `confirm` or `cancel`. |
-| `onOverflowSelect` | `(cell: CalendarCell, anchor: HTMLElement) => void` |  | The `+N` chip was activated. `anchor` is the chip, for a popover. |
+| `onOverflowSelect` | `(cell: CalendarCell, anchor: HTMLElement) => void` |  | The `+N` tile was activated. `anchor` is the tile, for a popover. |
 | `onPaintSelect` | `(range: CalendarSelectionRange) => void` |  | A range was painted in `paint-and-move` mode. |
 | `onQuickCreate` | `(payload: CalendarQuickCreatePayload) => void` |  | An empty slot was activated in `quick-create` mode. |
 | `onResizeRequest` | `(request: CalendarResizeRequest) => void` |  | A resize handle on timed, single-day, movable events asks the host to move the event's end. |
@@ -56,7 +56,7 @@ import { WeekGrid } from "@gears-frontx/calendar-kit/week-grid";
 | `renderEvent` | `CalendarEventRenderer<Payload>` |  | Replaces the default `EventCard` for timed and all-day events. Renders inside a button, so the content must not be interactive. |
 | `renderEventMetadata` | `CalendarEventRenderer<Payload>` |  | Replaces the metadata rows (location, organizer, type) of the default `EventCard`. |
 | `renderHeader` | `(column: WeekGridHeaderColumn) => ReactNode` |  | Replaces the weekday and day number of each day header. The time column keeps its label. |
-| `renderOverflow` | `(hiddenCount: number, cell: CalendarCell) => ReactNode` |  | Replaces the text of the `+N` chip. Receives the hidden count. |
+| `renderOverflow` | `(hiddenCount: number, cell: CalendarCell) => ReactNode` |  | Replaces the text of the `+N` tile. Receives the hidden count. |
 | `renderTimeRange` | `(range: CalendarTimeRange<unknown>, context: { readonly geometry: CalendarEventGeometry; …` |  | Renders the content of each band in `timeRanges`. Without it no band is drawn. |
 | `renderUnavailable` | `(cell: CalendarCell) => ReactNode` |  | Drawn in cells covered by an unavailable or busy timed event, or in cells `getCellState` marks unavailable. |
 | `rowHeight` | `number` |  | Height of one row in pixels. Default `43`. |
@@ -79,7 +79,7 @@ Also accepts the shared props `direction`, `locale`, `messages`, `t`, `timeZone`
 
 `workingHours?: CalendarTimeWindow` sets the working part of the day; the default is 08:00–18:00. Cells outside it are not hatched (the day grid hatches them); their accessible name says "non-working hour". It is independent of `visibleHours` and also sets where the grid first scrolls to.
 
-Events are clipped to the visible hours, and events wholly outside them are not rendered. The now line is hidden while the current time is outside them. Slots follow elapsed time, so a daylight-saving day has one slot fewer or more.
+Events are clipped to the visible hours, and events wholly outside them are not rendered. The now line is hidden while the current time is outside them. The now line draws over event cards, and its time label is an opaque pill, and the gutter hour label it would overlap is hidden. Slots follow elapsed time, so a daylight-saving day has one slot fewer or more.
 
 `timeRanges?: CalendarTimeRange[]` adds host bands (breaks, holds, blocked hours) drawn behind the events. Each band is `{ key, start, end, date?, metadata? }`; an `end` of `00:00` means the end of the day, and minutes are kept. `date` limits a band to one day; omitted, it draws on every visible day. Bands are clipped to `visibleHours` and drawn only when `renderTimeRange` is set. `renderTimeRange(range, { geometry })` returns the band's content. The band is `aria-hidden` and takes no pointer input, so put anything users must read in an event or the host UI. A band whose `end` is at or before its `start` throws a `RangeError`.
 
@@ -98,7 +98,7 @@ Events are clipped to the visible hours, and events wholly outside them are not 
 ## Interaction modes
 
 - `quick-create` activates an empty timed cell by click or Enter/Space and emits `onQuickCreate`. Available events emit `onEventSelect(event, context, anchor)`, where `anchor` is the activated card element.
-- `paint-and-move` paints an ordered range through pointer gestures and emits `onPaintSelect`. Enter or Space on an empty timed cell paints that one cell. `paintColorFamily` colours the painted cells; unset, they use the plain selection style. A paint that covers unavailable time is marked invalid; releasing it opens an info dialog and emits nothing. Dragging an available event emits `onMoveRequest`; the host must call `confirm` or `cancel` on the request. No move is committed by the component before confirmation. While the drag is over another slot, the target slot shows a ghost card at the event's height and title, above every card. The source card dims, and the browser's drag image is blank. A timed drag draws no `data-drop-target` outline, because the ghost already shows the span. The outline appears only on a drag that has no ghost. Events with a `recurrenceRule`, and events with `movable: false`, cannot be dragged; the latter still open. A timed, single-day event that can move also has a handle on its bottom edge. Its grab bar shows on hover with a fine pointer, on touch, and while the handle is pressed; focus never shows it, and it stays hidden during a move drag. Dragging it emits `onResizeRequest({ event, to, confirm, cancel })` with the new end snapped to the nearest quarter hour, and `to` is the cell ending there. Alt+ArrowDown or Alt+ArrowUp on the card steps the end one slot. The card shows the new size until the host calls `confirm` or `cancel`.
+- `paint-and-move` paints an ordered range through pointer gestures and emits `onPaintSelect`. Enter or Space on an empty timed cell paints that one cell. `paintColorFamily` colours the painted cells; unset, they use the plain selection style. A paint that covers unavailable time is marked invalid; releasing it opens an info dialog and emits nothing. Dragging an available event emits `onMoveRequest`; the host must call `confirm` or `cancel` on the request. No move is committed by the component before confirmation. While the drag is over another slot, the target slot shows a ghost card at the event's height and title, above every card. The source card dims, and the browser's drag image is blank. A timed drag draws no `data-drop-target` outline, because the ghost already shows the span. The outline appears only on a drag that has no ghost. Events with a `recurrenceRule`, and events with `movable: false`, cannot be dragged; the latter still open. A timed, single-day event that can move also has a handle on its bottom edge. Its grab bar shows on hover with a fine pointer, on touch, and while the handle is pressed; focus never shows it, and it stays hidden during a move drag. Dragging it emits `onResizeRequest({ event, to, confirm, cancel })` with the new end snapped to the nearest quarter hour, and `to` is the cell ending there. Alt+ArrowDown or Alt+ArrowUp on the card steps the end one slot. The card shows the new size until the host calls `confirm` or `cancel`. While a range is painted, a preview block covers its rows in each day column with a check icon and the viewer-time range, such as `15:00 - 16:30`.
 - `read-only` preserves the rendered surface and event viewing, but emits none of the create, paint or move callbacks. Unavailable and `access="busy"` events are never activated.
 
 `now?: UtcInstant` optionally controls the reference instant for the current-time marker and past-event state; when omitted, the component follows the host wall clock.
@@ -107,7 +107,7 @@ Events are clipped to the visible hours, and events wholly outside them are not 
 
 ## Density
 
-`rowHeight?: number` sets the height of one row in pixels; the default is `43`. It must be a positive finite number, or render throws a `RangeError`. `maxEventsPerSlot?: number` caps the cards that start in one row of a day column. The earliest stay visible, and the rest hide behind a `+N` chip whose text comes from `renderOverflow(hiddenCount, cell)`. A click on the chip calls `onOverflowSelect(cell, anchor)`. Without `onOverflowSelect` the chip is plain text, not a button. Without a cap every card is drawn.
+`rowHeight?: number` sets the height of one row in pixels; the default is `43`. It must be a positive finite number, or render throws a `RangeError`. `maxEventsPerSlot?: number` caps the cards that start in one row of a day column. The earliest stay visible, and the rest hide behind a `+N` lane tile in the lane after the visible cards. Its text, `+ N events` by default, comes from `renderOverflow(hiddenCount, cell)`. A click on the tile calls `onOverflowSelect(cell, anchor)`. Without `onOverflowSelect` the tile is plain text, not a button. Without a cap every card is drawn.
 
 ## Slots and states
 
@@ -128,8 +128,8 @@ Translate these ids, or override them with `translations`; see [Internationaliza
 | `calendar.week.allDay` | All-day events |  |
 | `calendar.week.currentTime` | Current time |  |
 | `calendar.week.focus` | Week view |  |
-| `calendar.week.hidden` | +{{count}} hidden | `count` |
 | `calendar.week.nonWorkingHour` | non-working hour |  |
+| `calendar.week.overflow` | + {{count}} events | `count` |
 | `calendar.week.range` | Week of |  |
 | `calendar.week.timeZone` | Time zone |  |
 | `calendar.week.unavailableContinue` | Continue |  |

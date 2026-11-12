@@ -22,6 +22,8 @@ export interface TimedLayoutInput {
   readonly start: UtcInstant;
   readonly end: UtcInstant;
   readonly allDay?: boolean;
+  /** Sorts after the other events that start at the same instant, so it takes the lane after them. */
+  readonly trailing?: boolean;
 }
 
 export interface TimedEventGeometry {
@@ -44,6 +46,12 @@ const compareEvents = (
 ): number => {
   if (left.startEpoch !== right.startEpoch) {
     return left.startEpoch - right.startEpoch;
+  }
+
+  const leftTrailing = left.trailing === true;
+  const rightTrailing = right.trailing === true;
+  if (leftTrailing !== rightTrailing) {
+    return leftTrailing ? 1 : -1;
   }
 
   const leftDuration = left.endEpoch - left.startEpoch;

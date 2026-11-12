@@ -16,7 +16,7 @@ const timeWindow = (start: string, end: string) => ({
   start: parseLocalTime(start),
 });
 
-const renderDay = (overrides: Partial<DayGridProps> = {}): void => {
+const renderDay = (overrides: Partial<Omit<DayGridProps, "maxEventsPerSlot" | "onOverflowSelect">> = {}): void => {
   render(
     <DayGrid
       date={DATE}

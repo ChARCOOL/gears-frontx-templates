@@ -10,7 +10,7 @@ import type { WeekGridProps } from "../week-grid";
 
 const DATE = calendarDate("2026-08-24");
 
-const renderWeek = (props: Partial<WeekGridProps>) =>
+const renderWeek = (props: Partial<Omit<WeekGridProps, "maxEventsPerSlot" | "onOverflowSelect">>) =>
   render(
     <WeekGrid
       date={DATE}

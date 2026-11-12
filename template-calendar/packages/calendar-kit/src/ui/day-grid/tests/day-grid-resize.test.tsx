@@ -58,7 +58,7 @@ const baseProps = {
   timeZone: UTC,
 } as const;
 
-const renderDay = (props: Partial<DayGridProps>) =>
+const renderDay = (props: Partial<Omit<DayGridProps, "maxEventsPerSlot" | "onOverflowSelect">>) =>
   render(<DayGrid {...baseProps} {...props} />);
 
 const handle = (): HTMLElement | null =>

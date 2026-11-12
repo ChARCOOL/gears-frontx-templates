@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -234,5 +234,46 @@ describe(SearchResults, () => {
 
     expect(screen.getByText(/:1$/u)).toBeVisible();
     expect(screen.getByText("0:Strategy planning")).toBeVisible();
+  });
+
+  it("marks an event in progress at now and shows its duration, organizer, and guests", () => {
+    vi.useFakeTimers();
+    const attendees = Array.from({ length: 7 }, (_, index) => ({
+      displayName: `Guest ${index}`,
+      id: `guest-${index}`,
+    }));
+    renderResults("standup", {
+      events: [
+        timedEvent(
+          "standup",
+          "Standup",
+          "2026-08-24",
+          "08:00",
+          "2026-08-24",
+          "09:30",
+          { attendees, organizer: "Ada Lovelace" }
+        ),
+      ],
+    });
+    settle();
+
+    const card = screen.getByRole("button", { name: /Standup/iu });
+    expect(within(card).getByText("Now")).toBeVisible();
+    expect(within(card).getByText(/^1 hr\s30 min$/u)).toBeVisible();
+    expect(within(card).getByText("Ada Lovelace")).toBeVisible();
+    expect(within(card).getByText("7")).toBeVisible();
+    expect(within(card).getByText("+1")).toBeVisible();
+    expect(within(card).getByTitle("Guest 0")).toBeInTheDocument();
+    expect(within(card).queryByTitle("Guest 6")).toBeNull();
+  });
+
+  it("shows no Now label for an event that has not started", () => {
+    vi.useFakeTimers();
+    renderResults("planning");
+    settle();
+
+    const card = screen.getByRole("button", { name: /Strategy planning/iu });
+    expect(within(card).queryByText("Now")).toBeNull();
+    expect(within(card).getByText("1 hr")).toBeVisible();
   });
 });

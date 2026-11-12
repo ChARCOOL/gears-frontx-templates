@@ -31,7 +31,7 @@ const event: CalendarEvent<Payload> = {
   title: "Event detail",
 };
 
-const props: Omit<WeekGridProps<Payload>, "renderDetail"> = {
+const props: Omit<WeekGridProps<Payload>, "renderDetail" | "maxEventsPerSlot" | "onOverflowSelect"> = {
   date: calendarDate("2026-08-24"),
   direction: "ltr",
   events: [event],

@@ -12,7 +12,8 @@ import {
 import type { AllDaySpan, ViewerDateEventSegment } from "../../core/grid";
 import { dateTimeFormatter } from "../../core/intl-cache";
 import { layoutTimedEvents } from "../../core/layout";
-import type { TimedEventGeometry } from "../../core/layout";
+import type { TimedEventGeometry, TimedLayoutInput } from "../../core/layout";
+import { capSegmentsPerSlot } from "../../core/slot-overflow";
 import type {
   CalendarCell,
   CalendarDate,
@@ -530,57 +531,14 @@ const clipSegmentsToRange = <
       : [];
   });
 
-export interface SlotOverflow {
+/** The `+N` lane tile for the events a slot hides. It lives in the slot's start cell. */
+export interface PositionedOverflow {
   readonly cell: CalendarCell;
   readonly hiddenCount: number;
+  readonly geometry: CalendarEventGeometry;
 }
 
-/** Keeps the earliest segments per slot up to the cap; the rest feed the `+N` chip. */
-const splitSlotOverflow = <
-  T extends { readonly start: UtcInstant; readonly end: UtcInstant },
->(
-  segments: readonly T[],
-  slots: readonly CalendarCell[],
-  maxEventsPerSlot: number | undefined
-): {
-  readonly visible: readonly T[];
-  readonly overflow: readonly SlotOverflow[];
-} => {
-  if (maxEventsPerSlot === undefined) {
-    return { overflow: [], visible: segments };
-  }
-
-  if (!Number.isInteger(maxEventsPerSlot) || maxEventsPerSlot < 1) {
-    throw new RangeError(
-      `maxEventsPerSlot must be a positive integer: ${maxEventsPerSlot}`
-    );
-  }
-
-  const kept = new Set<T>();
-  const countBySlot = new Map<number, number>();
-  const hiddenBySlot = new Map<number, SlotOverflow>();
-
-  for (const segment of [...segments].sort(
-    (a, b) => Date.parse(a.start) - Date.parse(b.start)
-  )) {
-    const index = findCellIndex(slots, segment.start, segment.end);
-    const cell = arrayAt(slots, index);
-    const count = (countBySlot.get(index) ?? 0) + 1;
-
-    countBySlot.set(index, count);
-
-    if (cell === undefined || count <= maxEventsPerSlot) {
-      kept.add(segment);
-    } else {
-      hiddenBySlot.set(index, { cell, hiddenCount: count - maxEventsPerSlot });
-    }
-  }
-
-  return {
-    overflow: [...hiddenBySlot.values()],
-    visible: segments.filter((segment) => kept.has(segment)),
-  };
-};
+const overflowLayoutId = (cellKey: string): string => `overflow:${cellKey}`;
 
 export const buildTimedPositions = <Payload>(
   segments: readonly ViewerDateEventSegment<TimedCalendarEvent<Payload>>[],
@@ -590,7 +548,7 @@ export const buildTimedPositions = <Payload>(
   maxEventsPerSlot: number | undefined
 ): {
   readonly byCell: ReadonlyMap<string, readonly PositionedEvent<Payload>[]>;
-  readonly overflowByCell: ReadonlyMap<string, SlotOverflow>;
+  readonly overflowByCell: ReadonlyMap<string, PositionedOverflow>;
 } => {
   if (!Number.isFinite(rowHeight) || rowHeight <= 0) {
     throw new RangeError(`rowHeight must be a positive number: ${rowHeight}`);
@@ -598,7 +556,7 @@ export const buildTimedPositions = <Payload>(
 
   // @cpt-begin:cpt-template-calendar-calendar-kit-flow-week-grid-host-embedding:p1:inst-wg-derive
   const byCell = new Map<string, PositionedEvent<Payload>[]>();
-  const overflowByCell = new Map<string, SlotOverflow>();
+  const overflowByCell = new Map<string, PositionedOverflow>();
   const segmentsByDate = new Map<
     CalendarDate,
     ViewerDateEventSegment<TimedCalendarEvent<Payload>>[]
@@ -615,22 +573,43 @@ export const buildTimedPositions = <Payload>(
   }
 
   for (const column of dayColumns) {
-    const split = splitSlotOverflow(
-      clipSegmentsToRange(segmentsByDate.get(column.date) ?? [], column.range),
-      column.slots,
+    const { range, slots } = column;
+    const columnSegments = clipSegmentsToRange(
+      segmentsByDate.get(column.date) ?? [],
+      range
+    );
+    const { hiddenBySlot, visible } = capSegmentsPerSlot(
+      columnSegments,
+      (segment) => {
+        const cell = arrayAt(
+          slots,
+          findCellIndex(slots, segment.start, segment.end)
+        );
+
+        return cell === undefined ? undefined : getCellKey(cell);
+      },
       maxEventsPerSlot
     );
-    const columnSegments = split.visible;
+    const overflowTiles = slots.flatMap((cell) => {
+      const key = getCellKey(cell);
+      const hiddenCount = hiddenBySlot.get(key);
 
-    for (const hidden of split.overflow) {
-      overflowByCell.set(getCellKey(hidden.cell), hidden);
-    }
-
-    const layoutInput = columnSegments.map((segment) => ({
-      end: segment.end,
-      id: segment.key,
-      start: segment.start,
-    }));
+      return hiddenCount === undefined ? [] : [{ cell, hiddenCount, key }];
+    });
+    const layoutInput: TimedLayoutInput[] = [
+      ...visible.map((segment) => ({
+        end: segment.end,
+        id: segment.key,
+        start: segment.start,
+      })),
+      // Trailing, so the tile takes the lane after the cards that start in its slot.
+      ...overflowTiles.map(({ cell, key }) => ({
+        end: cell.end,
+        id: overflowLayoutId(key),
+        start: cell.start,
+        trailing: true,
+      })),
+    ];
 
     const layouts = layoutTimedEvents(layoutInput);
     const layoutById = new Map<string, TimedEventGeometry>();
@@ -639,12 +618,31 @@ export const buildTimedPositions = <Payload>(
       layoutById.set(layout.id, layout);
     }
 
-    const { range, slots } = column;
     const rangeStartEpoch = Date.parse(range.start);
     const rangeDuration = Date.parse(range.end) - rangeStartEpoch;
     const columnHeight = Math.max(slots.length, 1) * rowHeight;
 
-    for (const segment of columnSegments) {
+    for (const { cell, hiddenCount, key } of overflowTiles) {
+      const layout = layoutById.get(overflowLayoutId(key));
+
+      if (!layout) {
+        continue;
+      }
+
+      overflowByCell.set(key, {
+        cell,
+        geometry: {
+          height: rowHeight,
+          inlineSize: layout.width,
+          insetInlineStart: layout.left,
+          top: 0,
+          zIndex: layout.zIndex,
+        },
+        hiddenCount,
+      });
+    }
+
+    for (const segment of visible) {
       const layout = layoutById.get(segment.key);
       if (!layout) {
         continue;

@@ -6,6 +6,7 @@
 import { clsx } from "clsx";
 import {
   BellIcon,
+  CircleXIcon,
   ClockIcon,
   MapPinIcon,
   RefreshCwIcon,
@@ -749,6 +750,9 @@ const EventCardContent = <Payload = unknown,>(
   };
 
   const renderConflictSlot = buildConflictSlot(renderConflict, context);
+  const hasErrorConflict = conflictList.some(
+    (conflict) => conflict.severity === "error"
+  );
 
   return (
     <Button
@@ -771,6 +775,7 @@ const EventCardContent = <Payload = unknown,>(
       data-tone={dataTone}
       data-continues-before={dataContinuesBefore}
       data-continues-after={dataContinuesAfter}
+      data-conflict={hasErrorConflict ? "true" : undefined}
       data-event-id={event.id}
       aria-pressed={booleanAttribute(selected)}
       aria-describedby={hasDescription ? descriptionId : undefined}
@@ -789,6 +794,9 @@ const EventCardContent = <Payload = unknown,>(
           data-event-card-bar="true"
           aria-hidden="true"
         />
+      )}
+      {hasErrorConflict && (
+        <CircleXIcon className={styles.conflictIcon} aria-hidden="true" />
       )}
       <span className={styles.body}>
         {layout === "single" ? (

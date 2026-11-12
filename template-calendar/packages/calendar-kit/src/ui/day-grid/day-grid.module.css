@@ -291,6 +291,34 @@
   opacity: 0.4;
 }
 
+.paintPreview {
+  position: absolute;
+  inset-inline: 0;
+  z-index: 20;
+  padding: 2px;
+  border-radius: var(--cal-radius-slot);
+  background: var(--cal-color-pink-accent);
+  color: var(--cal-color-pink-background);
+  pointer-events: none;
+}
+
+.paintPreviewLabel {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-inline-size: 0;
+  font-size: var(--cal-text-caption-size);
+  font-weight: var(--cal-text-caption-weight);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.paintPreviewIcon {
+  flex: none;
+  inline-size: 12px;
+  block-size: 12px;
+}
+
 .eventLayer {
   position: absolute;
   inset: 0;
@@ -376,4 +404,24 @@
   .nowLabel.nowLabel {
     display: none;
   }
+}
+
+/* The `+N` lane tile. Its position and lane come from the layout as inline styles. */
+.overflow {
+  box-sizing: border-box;
+  overflow: hidden;
+  justify-content: flex-start;
+  border: var(--cal-border-width-1) solid var(--cal-border-event);
+  border-radius: var(--cal-radius-slot);
+  background: var(--cal-color-raised);
+  color: var(--cal-color-text);
+  font-family: var(--cal-font-family);
+  font-size: var(--cal-text-meta-size);
+  font-weight: var(--cal-text-label-weight);
+  line-height: var(--cal-text-meta-line-height);
+  padding-block: var(--cal-space-xxs);
+  padding-inline: var(--cal-space-1);
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

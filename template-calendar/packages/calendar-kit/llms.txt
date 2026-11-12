@@ -70,6 +70,7 @@ Rules an assistant should follow when writing code against this package:
 - [WorldClocks](dist/docs/world-clocks.md): editable clocks
 - [CalendarList](dist/docs/calendar-list.md): show or hide calendars
 - [CalendarGrid](dist/docs/calendar-grid.md): the accessible grid primitive
+- [RecurrenceScopeDialog](dist/docs/recurrence-scope-dialog.md): choose this, following or all events for a recurring change
 
 ## Optional
 

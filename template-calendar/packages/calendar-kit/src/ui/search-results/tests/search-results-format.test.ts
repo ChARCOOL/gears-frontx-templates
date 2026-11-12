@@ -19,7 +19,8 @@ import {
   eventMatches,
   formatSearchCount,
   formatSearchDayHeader,
-  formatSearchResultDetails,
+  formatSearchResultDuration,
+  isSearchResultNow,
   normalizeQuery,
   rowAt,
   viewerToday,
@@ -209,7 +210,7 @@ describe("search-results-format", () => {
     assert(countRows(groups)).toBe(4);
   });
 
-  it("formats relative and absolute group headers, details, and pluralized counts", () => {
+  it("formats relative and absolute group headers and pluralized counts", () => {
     const today = viewerToday(NOW, UTC);
     const todayStart = fromViewerDateTime({
       date: today,
@@ -228,17 +229,6 @@ describe("search-results-format", () => {
       time: "00:00",
       timeZone: UTC,
     });
-
-    const row = buildSearchGroups(
-      [
-        timedEvent("one", "One", "2026-08-24", "09:00", "2026-08-24", "10:00", {
-          location: "Room",
-          organizer: "Organizer",
-        }),
-      ],
-      "one",
-      UTC
-    )[0]?.rows[0];
 
     assert(
       formatSearchDayHeader(today, todayStart, today, UTC, "en-US", t)
@@ -260,21 +250,6 @@ describe("search-results-format", () => {
     ).toBe("Wed, Jan 6, 2027");
     assert(formatSearchCount(1, englishMessage("en-US"))).toBe("1 result");
     assert(formatSearchCount(2, englishMessage("en-US"))).toBe("2 results");
-    assert(formatSearchResultDetails(row, UTC, "en-US", t)).toBe(
-      "09:00 – 10:00 · Organizer · Room"
-    );
-
-    const allDayRow = requiredRow(
-      buildSearchGroups(
-        [allDayEvent("all-day", "All day", "2026-08-24", "2026-08-25")],
-        "all",
-        UTC
-      )[0]?.rows[0]
-    );
-
-    assert(formatSearchResultDetails(allDayRow, UTC, "en-US", t)).toBe(
-      "All day"
-    );
   });
 });
 
@@ -286,5 +261,67 @@ describe(formatSearchCount, () => {
     assert(message).toHaveBeenCalledWith("calendar.panel.searchCount", {
       count: 2,
     });
+  });
+});
+
+const timedRow = (start: string, end: string) =>
+  requiredRow(
+    buildSearchGroups(
+      [timedEvent("row", "Row", "2026-08-24", start, "2026-08-24", end)],
+      "row",
+      UTC
+    )[0]?.rows[0]
+  );
+
+describe(isSearchResultNow, () => {
+  it("is true from the start up to but excluding the end", () => {
+    const row = timedRow("09:00", "10:00");
+
+    assert(isSearchResultNow(row, utcInstant("2026-08-24T08:59:00.000Z"))).toBe(
+      false
+    );
+    assert(isSearchResultNow(row, utcInstant("2026-08-24T09:00:00.000Z"))).toBe(
+      true
+    );
+    assert(isSearchResultNow(row, utcInstant("2026-08-24T09:59:00.000Z"))).toBe(
+      true
+    );
+    assert(isSearchResultNow(row, utcInstant("2026-08-24T10:00:00.000Z"))).toBe(
+      false
+    );
+  });
+
+  it("is never true for an all-day row", () => {
+    const [group] = buildSearchGroups(
+      [allDayEvent("all-day", "All day", "2026-08-24", "2026-08-25")],
+      "all",
+      UTC
+    );
+
+    assert(isSearchResultNow(requiredRow(group?.rows[0]), NOW)).toBe(false);
+  });
+});
+
+describe(formatSearchResultDuration, () => {
+  it("formats the row length with the kit duration format", () => {
+    assert(formatSearchResultDuration(timedRow("09:00", "10:30"), "en-US")).toBe(
+      "1 hr\u202f30 min"
+    );
+  });
+
+  it("returns null for zero-length and all-day rows", () => {
+    const row = timedRow("09:00", "10:00");
+
+    assert(
+      formatSearchResultDuration({ ...row, end: row.start }, "en-US")
+    ).toBeNull();
+
+    const [group] = buildSearchGroups(
+      [allDayEvent("all-day", "All day", "2026-08-24", "2026-08-25")],
+      "all",
+      UTC
+    );
+
+    assert(formatSearchResultDuration(requiredRow(group?.rows[0]), "en-US")).toBeNull();
   });
 });

@@ -59,7 +59,24 @@ const event = (overrides: EventOverrides = {}): CalendarEvent<Payload> => {
   return { ...baseEvent, ...overrides };
 };
 
-const renderWeek = (overrides: Partial<WeekGridProps<Payload>> = {}) =>
+const renderCappedWeek = (
+  overrides: Partial<Omit<WeekGridProps<Payload>, "maxEventsPerSlot" | "onOverflowSelect">>
+) =>
+  render(
+    <WeekGrid
+      date={DATE}
+      events={[]}
+      timeZone={UTC}
+      locale="en-US"
+      t={t}
+      direction="ltr"
+      maxEventsPerSlot={1}
+      onOverflowSelect={vi.fn<(cell: CalendarCell, anchor: HTMLElement) => void>()}
+      {...overrides}
+    />
+  );
+
+const renderWeek = (overrides: Partial<Omit<WeekGridProps<Payload>, "maxEventsPerSlot" | "onOverflowSelect">> = {}) =>
   render(
     <WeekGrid
       date={DATE}
@@ -423,16 +440,14 @@ describe(WeekGrid, () => {
     });
   });
 
-  it("does not start a paint from the +N chip", () => {
+  it("does not start a paint from the +N tile", () => {
     const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
-    renderWeek({
+    renderCappedWeek({
       events: crowdedNineAm,
       interactionMode: "paint-and-move",
-      maxEventsPerSlot: 1,
-      onOverflowSelect: vi.fn<(cell: CalendarCell, anchor: HTMLElement) => void>(),
       onPaintSelect,
     });
-    const chip = screen.getByRole("button", { name: "+3 hidden" });
+    const chip = screen.getByRole("button", { name: "+ 3 events" });
 
     fireEvent.pointerDown(chip);
     fireEvent.pointerUp(chip);
@@ -440,16 +455,14 @@ describe(WeekGrid, () => {
     assert(onPaintSelect).not.toHaveBeenCalled();
   });
 
-  it("does not extend a paint over the +N chip", () => {
+  it("does not extend a paint over the +N tile", () => {
     const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
-    renderWeek({
+    renderCappedWeek({
       events: crowdedNineAm,
       interactionMode: "paint-and-move",
-      maxEventsPerSlot: 1,
-      onOverflowSelect: vi.fn<(cell: CalendarCell, anchor: HTMLElement) => void>(),
       onPaintSelect,
     });
-    const chip = screen.getByRole("button", { name: "+3 hidden" });
+    const chip = screen.getByRole("button", { name: "+ 3 events" });
 
     fireEvent.pointerDown(getTimedCell("11:00"));
     fireEvent.pointerMove(chip);

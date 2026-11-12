@@ -1098,6 +1098,20 @@ const CreateEventAdditionalFields = (
             />
           </Field>
         ))
+      ) : locationEditorOpen && locationItems.length === 0 ? (
+        <Field className={styles.field}>
+          <Input
+            id={fieldId("location")}
+            aria-label={t("calendar.create_event.field.location")}
+            value={locationQuery}
+            size="l"
+            iconLeft={<MapPinIcon aria-hidden="true" />}
+            className={styles.control}
+            disabled={controller.isSubmitting}
+            placeholder={t("calendar.create_event.placeholder.location")}
+            onValueChange={updateLocation}
+          />
+        </Field>
       ) : locationEditorOpen ? (
         <Field className={styles.field}>
           <Combobox
@@ -1721,21 +1735,24 @@ const CreateEventFields = (props: CreateEventFieldsProps) => {
             <>
               {peopleField}
 
-          <Field className={styles.field}>
-            <Select
-              id={fieldId("conferencing")}
-              aria-label={t("calendar.create_event.field.conferencing")}
-              emptyMessage={noOptionsLabel}
-              options={conferencingItems}
-              value={controller.draft.conferencingProviderId ?? ""}
-              size="xl"
-              showSelectedCheck
-              iconLeft={<Link2Icon aria-hidden="true" />}
-              disabled={controller.isSubmitting}
-              placeholder={t("calendar.create_event.placeholder.conferencing")}
-              onValueChange={changeConferencingProvider}
-            />
-          </Field>
+          {/* Without providers there is nothing to pick; a draft's existing conferencingProviderId is left as is. */}
+          {conferencingItems.length === 0 ? null : (
+            <Field className={styles.field}>
+              <Select
+                id={fieldId("conferencing")}
+                aria-label={t("calendar.create_event.field.conferencing")}
+                emptyMessage={noOptionsLabel}
+                options={conferencingItems}
+                value={controller.draft.conferencingProviderId ?? ""}
+                size="xl"
+                showSelectedCheck
+                iconLeft={<Link2Icon aria-hidden="true" />}
+                disabled={controller.isSubmitting}
+                placeholder={t("calendar.create_event.placeholder.conferencing")}
+                onValueChange={changeConferencingProvider}
+              />
+            </Field>
+          )}
 
           <Separator decorative className={styles.separator} />
 

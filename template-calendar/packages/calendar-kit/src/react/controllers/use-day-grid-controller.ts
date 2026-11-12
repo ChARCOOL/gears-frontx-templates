@@ -5,6 +5,8 @@ import { isEventActionable } from "../../core/actionability";
 import { arrayAt } from "../../core/array";
 import { rangesOverlap } from "../../core/event-overlap";
 import { layoutTimedEvents } from "../../core/layout";
+import type { TimedEventGeometry, TimedLayoutInput } from "../../core/layout";
+import { capSegmentsPerSlot } from "../../core/slot-overflow";
 import type {
   CalendarCell,
   CalendarDate,
@@ -81,11 +83,21 @@ export interface DayGridControllerParams {
   readonly onQuickCreate?: (payload: CalendarQuickCreatePayload) => void;
   readonly onPaintSelect?: (range: CalendarSelectionRange) => void;
   readonly onMoveRequest?: (request: CalendarMoveRequest) => void;
+  readonly maxEventsPerSlot?: number;
 }
 
 export interface DayGridControllerInternals {
   readonly eventById: ReadonlyMap<string, CalendarEvent>;
   readonly focusedCellIndex: number;
+}
+
+/** The `+N` lane tile for the cards a slot hides. Its geometry matches a card's. */
+export interface DayGridOverflowTile {
+  readonly slotIndex: number;
+  readonly hiddenCount: number;
+  readonly geometry: TimedEventGeometry;
+  readonly topPercent: number;
+  readonly heightPercent: number;
 }
 
 export interface UseDayGridControllerResult {
@@ -100,6 +112,7 @@ export interface UseDayGridControllerResult {
   readonly workingSlots: readonly boolean[];
   readonly allDaySegments: readonly AllDaySegment[];
   readonly timedEvents: readonly TimedEventPlacement[];
+  readonly overflowTiles: readonly DayGridOverflowTile[];
   readonly hasEvents: boolean;
   readonly nowPercent: number | null;
   readonly focusedCellIndex: number;
@@ -411,21 +424,84 @@ export const useDayGridController = (
     return { allDaySegments: allDay, timedSegments: timed };
   }, [axisRange, daySegments]);
 
-  const timedGeometryByEventId = useMemo(() => {
-    const geometry = layoutTimedEvents(
-      timedSegments.map((segment) => ({
+  const { overflowTiles, timedGeometryByEventId } = useMemo(() => {
+    // A segment belongs to the slot its start falls in.
+    const slotIndexAt = (start: UtcInstant): string | undefined => {
+      const epoch = Date.parse(start);
+
+      for (let index = slotStarts.length - 1; index >= 0; index -= 1) {
+        const slotStart = arrayAt(slotStarts, index);
+
+        if (slotStart !== undefined && Date.parse(slotStart) <= epoch) {
+          return String(index);
+        }
+      }
+
+      return undefined;
+    };
+
+    const { hiddenBySlot, visible } = capSegmentsPerSlot(
+      timedSegments,
+      (segment) => slotIndexAt(segment.start),
+      options.maxEventsPerSlot
+    );
+
+    const tileById = new Map<string, Omit<DayGridOverflowTile, "geometry">>();
+    const tileInputs: TimedLayoutInput[] = [];
+
+    for (const [key, hiddenCount] of hiddenBySlot) {
+      const slotIndex = Number(key);
+      const start = arrayAt(slotStarts, slotIndex);
+      const end = arrayAt(slotStarts, slotIndex + 1) ?? axisRange.end;
+
+      if (start === undefined) {
+        throw new RangeError(`Missing slot start at index ${slotIndex}`);
+      }
+
+      const id = `overflow:${key}`;
+
+      tileById.set(id, {
+        heightPercent:
+          ((Date.parse(end) - Date.parse(start)) / axisDuration) * 100,
+        hiddenCount,
+        slotIndex,
+        topPercent: ((Date.parse(start) - axisStartEpoch) / axisDuration) * 100,
+      });
+      // Trailing, so the tile takes the lane after the cards that start in its slot.
+      tileInputs.push({ end, id, start, trailing: true });
+    }
+
+    const layout = layoutTimedEvents([
+      ...visible.map((segment) => ({
         end: segment.end,
         id: segment.event.id,
         start: segment.start,
-      }))
-    );
+      })),
+      ...tileInputs,
+    ]);
 
-    return new Map(
-      geometry.map(
-        (eventGeometry) => [eventGeometry.id, eventGeometry] as const
-      )
-    );
-  }, [timedSegments]);
+    const cardGeometry = new Map<string, TimedEventGeometry>();
+    const tiles: DayGridOverflowTile[] = [];
+
+    for (const geometry of layout) {
+      const tile = tileById.get(geometry.id);
+
+      if (tile === undefined) {
+        cardGeometry.set(geometry.id, geometry);
+      } else {
+        tiles.push({ ...tile, geometry });
+      }
+    }
+
+    return { overflowTiles: tiles, timedGeometryByEventId: cardGeometry };
+  }, [
+    axisDuration,
+    axisRange.end,
+    axisStartEpoch,
+    options.maxEventsPerSlot,
+    slotStarts,
+    timedSegments,
+  ]);
 
   const dayViewModel = useMemo(() => {
     const input: DayGridViewModelInput = {
@@ -605,6 +681,7 @@ export const useDayGridController = (
     isToday,
     isWorkingDay,
     nowPercent,
+    overflowTiles,
     selectEmptyCell,
     selectEvent,
     selectedEventId: selectedEventIdValue,

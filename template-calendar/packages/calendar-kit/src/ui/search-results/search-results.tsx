@@ -1,9 +1,11 @@
 "use client";
 
 import { clsx } from "clsx";
+import { TimerIcon, UserIcon, UsersIcon } from "lucide-react";
 import { createContext, memo, useContext } from "react";
 import type { ReactNode } from "react";
 
+import { formatGridTime } from "../../core/format";
 import type { CalendarDate, CalendarEvent, UtcInstant } from "../../core/model";
 import { useCalendarContext } from "../../i18n/calendar-context";
 import {
@@ -16,11 +18,13 @@ import {
   SEARCH_STATE,
   useSearchResultsController,
 } from "../../react/controllers/use-search-results-controller";
+import { Avatar, AvatarOverflow } from "../primitives/avatar/avatar";
 import { List, ListItem } from "../primitives/list/list";
 import {
   formatSearchCount,
   formatSearchDayHeader,
-  formatSearchResultDetails,
+  formatSearchResultDuration,
+  isSearchResultNow,
 } from "./search-results-format";
 import type {
   SearchNarrowing,
@@ -35,7 +39,12 @@ export interface SearchResultContext {
   readonly group: string;
   /** Position within that day. */
   readonly index: number;
+  /** The row is in progress at the `now` prop. */
+  readonly isNow: boolean;
 }
+
+/** Attendee avatars shown on a result card before the "+N" overflow. */
+const maxVisibleAvatars = 6;
 
 export interface SearchResultsProps
   extends CalendarContextProps,
@@ -50,7 +59,7 @@ export interface SearchResultsProps
   readonly defaultQuery?: string;
   /** Called when the query changes. */
   readonly onQueryChange?: (query: string) => void;
-  /** Reference instant for the Today group. */
+  /** Reference instant for the Today group and the Now label on in-progress rows. */
   readonly now: UtcInstant;
   /** A result was activated. Receives the event id and the viewer day of the row. */
   readonly onReveal: (eventId: string, date: CalendarDate) => void;
@@ -95,21 +104,74 @@ const COLOR_CLASSES: ReadonlyMap<string, string> = new Map([
 const isUnnamed = (row: SearchResultRow): boolean =>
   row.event.title.trim() === "";
 
-const DefaultResultContent = ({ row }: DefaultResultContentProps) => {
+const DefaultResultContent = ({ isNow, row }: DefaultResultContentProps) => {
   const { locale, t } = useCalendarLocalization();
   const { timeZone } = useCalendarContext();
 
   const title = isUnnamed(row)
     ? t("calendar.eventCard.unnamed")
     : row.event.title;
+  const organizer = row.event.organizer ?? undefined;
+  const attendees = row.event.attendees ?? [];
+  const visibleAttendees = attendees.slice(0, maxVisibleAvatars);
+  const hiddenCount = attendees.length - visibleAttendees.length;
+  const duration = formatSearchResultDuration(row, locale);
 
   return (
-    <span className={styles.content}>
-      <span className={styles.title}>{title}</span>
-      <span className={styles.details}>
-        {formatSearchResultDetails(row, timeZone, locale, t)}
+    <>
+      <span className={styles.times}>
+        {row.start === null || row.end === null ? (
+          <span className={styles.start}>{t("calendar.agenda.allDay")}</span>
+        ) : (
+          <>
+            <span className={styles.start}>
+              {formatGridTime(row.start, timeZone, locale)}
+            </span>
+            <span className={styles.end}>
+              {formatGridTime(row.end, timeZone, locale)}
+            </span>
+          </>
+        )}
       </span>
-    </span>
+      <span className={styles.bar} aria-hidden="true" />
+      <span className={styles.content}>
+        <span className={styles.title}>{title}</span>
+        {duration === null ? null : (
+          <span className={styles.metaRow}>
+            <TimerIcon aria-hidden="true" className={styles.icon} />
+            <span>{duration}</span>
+            {isNow ? (
+              <span className={styles.now}>{t("calendar.agenda.now")}</span>
+            ) : null}
+          </span>
+        )}
+        {organizer === undefined ? null : (
+          <span className={styles.metaRow}>
+            <UserIcon aria-hidden="true" className={styles.icon} />
+            <span className={styles.truncate}>{organizer}</span>
+          </span>
+        )}
+        {attendees.length === 0 ? null : (
+          <>
+            <span className={styles.metaRow}>
+              <UsersIcon aria-hidden="true" className={styles.icon} />
+              <span>{attendees.length}</span>
+            </span>
+            <span className={styles.avatars}>
+              {visibleAttendees.map((attendee) => (
+                <Avatar key={attendee.id} name={attendee.displayName} />
+              ))}
+              {hiddenCount > 0 ? (
+                <AvatarOverflow
+                  count={hiddenCount}
+                  label={t("calendar.detail.participants.more")}
+                />
+              ) : null}
+            </span>
+          </>
+        )}
+      </span>
+    </>
   );
 };
 
@@ -121,6 +183,7 @@ const SearchResultItemImpl = ({
 }: SearchResultItemProps) => {
   const controller = useSearchResultsControllerContext();
   const { t } = useCalendarLocalization();
+  const isNow = isSearchResultNow(row, controller.currentInstant);
 
   return (
     <ListItem
@@ -150,9 +213,9 @@ const SearchResultItemImpl = ({
           tabIndex={controller.focusedIndex === row.focusIndex ? 0 : -1}
         >
           {renderResult ? (
-            renderResult(row.event, { group: group.date, index })
+            renderResult(row.event, { group: group.date, index, isNow })
           ) : (
-            <DefaultResultContent row={row} />
+            <DefaultResultContent isNow={isNow} row={row} />
           )}
         </button>
       }
@@ -315,5 +378,6 @@ interface SearchResultItemProps {
 }
 
 interface DefaultResultContentProps {
+  readonly isNow: boolean;
   readonly row: SearchResultRow;
 }

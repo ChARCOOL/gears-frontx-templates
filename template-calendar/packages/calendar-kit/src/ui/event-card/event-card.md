@@ -59,6 +59,7 @@ The card root carries the public `data-event-id` hook and accepts a consumer `cl
 
 - `data-event-id` — always present, so existing `[data-event-id]` selectors keep matching.
 - `data-event-card-layout` — geometry-driven presentation tier: `full`, `stacked`, `single`, or `title`.
+- `data-conflict` — `"true"` when a conflict has `severity: "error"`. Such a card paints the conflict look: red surface, leading bar, busy stripes, and a circle-xmark icon in the title row. The look holds while the card is selected. Warning-only cards keep their family colours.
 - `aria-disabled="true"` — hard-pinned for unavailable events and `access: 'busy'` events; such cards are not actionable by any gesture.
 - `aria-pressed` — selection state for assistive technology (`"true"` while selected).
 - `aria-describedby` — set whenever `past` or `readOnly` holds, pointing at a visually-hidden element inside the card whose text is the translated `calendar.eventCard.past` and/or `calendar.eventCard.readOnly` string(s), joined by a space. This is the contracted accessible-description observable: past and read-only are named in the **description**, not the name.

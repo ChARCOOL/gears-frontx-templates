@@ -26,6 +26,7 @@ const DOCUMENTED_ENTRIES = [
   "./time-zone-list",
   "./world-clocks",
   "./calendar-list",
+  "./recurrence-scope-dialog",
   "./package.json",
   "./theme.css",
   "./reset.css",

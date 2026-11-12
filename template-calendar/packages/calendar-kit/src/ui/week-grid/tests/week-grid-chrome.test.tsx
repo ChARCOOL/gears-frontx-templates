@@ -21,7 +21,7 @@ const weekProps: WeekGridProps = {
   timeZone: SOFIA,
 };
 
-const renderWeek = (overrides: Partial<WeekGridProps> = {}) =>
+const renderWeek = (overrides: Partial<Omit<WeekGridProps, "maxEventsPerSlot" | "onOverflowSelect">> = {}) =>
   render(<WeekGrid {...weekProps} {...overrides} />);
 
 const scrollHeightDescriptors = new Map<

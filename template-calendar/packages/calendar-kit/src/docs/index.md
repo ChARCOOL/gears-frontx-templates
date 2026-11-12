@@ -39,6 +39,7 @@
 | [`TimeZoneList`](../ui/time-zone-list/time-zone-list.md) | `time-zone-list` | Pick a comparison time zone |
 | [`WorldClocks`](../ui/world-clocks/world-clocks.md) | `world-clocks` | Editable list of clocks |
 | [`CalendarList`](../ui/calendar-list/calendar-list.md) | `calendar-list` | Show or hide calendars |
+| [`RecurrenceScopeDialog`](../ui/recurrence-scope-dialog/recurrence-scope-dialog.md) | `recurrence-scope-dialog` | Choose this, following or all events of a series |
 | [`CalendarGrid`](../ui/grid/calendar-grid.md) | `grid` | The accessible grid primitive the views are built on |
 
 Every component is also exported from the package root.

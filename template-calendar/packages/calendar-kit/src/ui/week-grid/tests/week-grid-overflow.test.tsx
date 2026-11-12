@@ -37,10 +37,10 @@ describe("WeekGrid maxEventsPerSlot", () => {
     assert(screen.getAllByRole("button", { name: /^Event \d/u })).toHaveLength(
       4
     );
-    assert(screen.queryByRole("button", { name: "+2 hidden" })).toBeNull();
+    assert(screen.queryByRole("button", { name: "+ 2 events" })).toBeNull();
   });
 
-  it("keeps the earliest cards in the slot and shows a +N chip for the rest", async () => {
+  it("keeps the earliest cards in the slot and shows a +N tile for the rest", async () => {
     const user = userEvent.setup();
     const selected: CalendarCell[] = [];
     const quickCreate = vi.fn();
@@ -70,7 +70,7 @@ describe("WeekGrid maxEventsPerSlot", () => {
     assert(screen.queryByRole("button", { name: /^Event 3 /u })).toBeNull();
     assert(screen.queryByRole("button", { name: /^Event 4 /u })).toBeNull();
 
-    const chip = screen.getByRole("button", { name: "+2 hidden" });
+    const chip = screen.getByRole("button", { name: "+ 2 events" });
 
     await user.click(chip);
 
@@ -79,21 +79,8 @@ describe("WeekGrid maxEventsPerSlot", () => {
     assert(quickCreate).not.toHaveBeenCalled();
   });
 
-  it("shows the +N chip as plain text when there is no onOverflowSelect", () => {
-    render(
-      <WeekGrid
-        date={DATE}
-        events={crowdedHour}
-        timeZone={UTC}
-        maxEventsPerSlot={2}
-      />
-    );
 
-    assert(screen.queryByRole("button", { name: "+2 hidden" })).toBeNull();
-    assert(screen.getByText("+2 hidden")).toBeInTheDocument();
-  });
-
-  it("takes the accessible name of the chip from renderOverflow content", () => {
+  it("takes the accessible name of the tile from renderOverflow content", () => {
     render(
       <WeekGrid
         date={DATE}
@@ -118,6 +105,7 @@ describe("WeekGrid maxEventsPerSlot", () => {
           events={crowdedHour}
           timeZone={UTC}
           maxEventsPerSlot={0}
+          onOverflowSelect={() => undefined}
         />
       )
     ).toThrow(RangeError);

@@ -71,8 +71,8 @@ Labels several components reuse.
 | `calendar.week.allDay` | All-day events |  |
 | `calendar.week.currentTime` | Current time |  |
 | `calendar.week.focus` | Week view |  |
-| `calendar.week.hidden` | +{{count}} hidden | `count` |
 | `calendar.week.nonWorkingHour` | non-working hour |  |
+| `calendar.week.overflow` | + {{count}} events | `count` |
 | `calendar.week.range` | Week of |  |
 | `calendar.week.timeZone` | Time zone |  |
 | `calendar.week.unavailableContinue` | Continue |  |
@@ -88,17 +88,18 @@ Labels several components reuse.
 
 <!-- generated:messages calendar.day -->
 
-| Translation ID                 | English            | Values |
-| ------------------------------ | ------------------ | ------ |
-| `calendar.day.allDayEventsFor` | All-day events for |        |
-| `calendar.day.currentTime`     | Current time       |        |
-| `calendar.day.eventPrefix`     | Event              |        |
-| `calendar.day.focus`           | Day view           |        |
-| `calendar.day.noAllDayEvents`  | No all-day events  |        |
-| `calendar.day.nonWorkingHour`  | non-working hour   |        |
-| `calendar.day.range`           | Day range          |        |
-| `calendar.day.to`              | to                 |        |
-| `calendar.day.workingHour`     | working hour       |        |
+| Translation ID                 | English            | Values  |
+| ------------------------------ | ------------------ | ------- |
+| `calendar.day.allDayEventsFor` | All-day events for |         |
+| `calendar.day.currentTime`     | Current time       |         |
+| `calendar.day.eventPrefix`     | Event              |         |
+| `calendar.day.focus`           | Day view           |         |
+| `calendar.day.noAllDayEvents`  | No all-day events  |         |
+| `calendar.day.nonWorkingHour`  | non-working hour   |         |
+| `calendar.day.overflow`        | + {{count}} events | `count` |
+| `calendar.day.range`           | Day range          |         |
+| `calendar.day.to`              | to                 |         |
+| `calendar.day.workingHour`     | working hour       |         |
 
 <!-- /generated -->
 
@@ -394,6 +395,28 @@ Dialog chrome.
 | Translation ID          | English | Values |
 | ----------------------- | ------- | ------ |
 | `calendar.dialog.close` | Close   |        |
+
+<!-- /generated -->
+
+## Recurrence scope
+
+`RecurrenceScopeDialog`.
+
+<!-- generated:messages calendar.recurrenceScope -->
+
+| Translation ID | English | Values |
+| --- | --- | --- |
+| `calendar.recurrenceScope.cancel` | Cancel |  |
+| `calendar.recurrenceScope.confirm.delete` | Delete |  |
+| `calendar.recurrenceScope.confirm.edit` | Save |  |
+| `calendar.recurrenceScope.confirm.move` | Update |  |
+| `calendar.recurrenceScope.following` | This and following events |  |
+| `calendar.recurrenceScope.label` | Apply changes to |  |
+| `calendar.recurrenceScope.occurrence` | This event |  |
+| `calendar.recurrenceScope.series` | All events |  |
+| `calendar.recurrenceScope.title.delete` | Delete recurring event |  |
+| `calendar.recurrenceScope.title.edit` | Edit recurring event |  |
+| `calendar.recurrenceScope.title.move` | Move recurring event |  |
 
 <!-- /generated -->
 

@@ -16,6 +16,7 @@ import type {
 import { isEventActionable, isEventMovable } from "../../core/actionability";
 import { arrayAt } from "../../core/array";
 import { compareCalendarCells } from "../../core/calendar-cell";
+import { buildPaintPreviewBlocks } from "../../core/paint-preview";
 import { movedTimedEvent } from "../../core/interactions";
 import type {
   CalendarCell,
@@ -473,6 +474,16 @@ export const useWeekGridContent = <Payload = unknown>(
 
     return keys;
   }, [gridCellKey, paintCells]);
+
+  const paintPreviewByCellKey = useMemo(
+    () =>
+      new Map(
+        buildPaintPreviewBlocks(paintCells, timeZone, locale).map(
+          (block) => [gridCellKey(block.start), block] as const
+        )
+      ),
+    [gridCellKey, locale, paintCells, timeZone]
+  );
 
   const paintTouchesUnavailable = paintCells.some((cell) =>
     unavailableCellKeys.has(gridCellKey(cell))
@@ -997,6 +1008,7 @@ export const useWeekGridContent = <Payload = unknown>(
     rootClassName,
     scrollRef,
     selectedEvent,
+    paintPreviewByCellKey,
     selectedPaintKeys,
     setPaintRefused,
     t,

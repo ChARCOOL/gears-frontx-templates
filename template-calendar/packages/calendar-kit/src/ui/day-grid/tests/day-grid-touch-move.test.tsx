@@ -36,7 +36,7 @@ const baseProps = {
   timeZone: UTC,
 } as const;
 
-const renderDay = (props: Partial<DayGridProps>) =>
+const renderDay = (props: Partial<Omit<DayGridProps, "maxEventsPerSlot" | "onOverflowSelect">>) =>
   render(<DayGrid {...baseProps} {...props} />);
 
 // jsdom has no PointerEvent, so testing-library would drop `clientY`; a MouseEvent keeps it.

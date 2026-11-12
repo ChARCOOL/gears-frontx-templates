@@ -4,6 +4,26 @@ All notable changes to `@gears-frontx/calendar-kit` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the package follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and publishes pre-release versions on the `alpha` channel.
 
+## [Unreleased]
+
+### Added
+
+- An event card with an `error` conflict paints a red surface, a leading bar, and busy stripes, shows a circle-xmark icon in the title row, and sets `data-conflict="true"`. The conflict look holds while the card is selected.
+- `DayGrid` accepts `maxEventsPerSlot` and `onOverflowSelect`, as `WeekGrid` does. Hidden cards show as a `+ N events` lane tile after the visible ones.
+- `layoutTimedEvents` takes a `trailing` flag that sorts an item after the events that start at the same instant.
+
+### Changed
+
+- `WeekGrid` draws the `+N` overflow as a lane tile beside the visible cards instead of a corner chip. Its message `calendar.week.hidden` is replaced by `calendar.week.overflow`.
+## Unreleased
+
+### Changed
+
+- `SearchResults` default rows are cards with start and end times, the event colour bar, duration, a Now label for in-progress rows, organizer, guest count, and attendee avatars with a "+N" overflow. The default row no longer shows location.
+- `SearchResultContext` gains `isNow`, computed from the `now` prop, for `renderResult`.
+- Day and week grids draw a preview block over a painted range, labelled with the viewer-time range and a check icon. `--cal-color-pink-accent` sets the block colour.
+- `RecurrenceScopeDialog` asks whether an edit, move or delete applies to this event, this and following events, or all events. Its strings sit under `calendar.recurrenceScope.*`.
+
 ## [0.1.0-alpha.1] - 2026-11-12
 
 ### Changed

@@ -103,4 +103,4 @@ import { WeekGrid } from "@gears-frontx/calendar-kit";
 import { WeekGrid } from "@gears-frontx/calendar-kit/week-grid";
 ```
 
-Entries: `core`, `react`, `i18n`, `grid`, `week-grid`, `day-grid`, `month-grid`, `agenda-view`, `calendar-toolbar`, `event-card`, `event-detail-panel`, `create-event`, `conflict-indicator`, `availability-grid`, `calendar-side-panel`, `month-navigator`, `search-results`, `time-zone-list`, `world-clocks`, `calendar-list`. Anything else, including files under `src/` or `dist/chunks/`, is private and blocked by the package's `exports` map.
+Entries: `core`, `react`, `i18n`, `grid`, `week-grid`, `day-grid`, `month-grid`, `agenda-view`, `calendar-toolbar`, `event-card`, `event-detail-panel`, `create-event`, `conflict-indicator`, `availability-grid`, `calendar-side-panel`, `month-navigator`, `recurrence-scope-dialog`, `search-results`, `time-zone-list`, `world-clocks`, `calendar-list`. Anything else, including files under `src/` or `dist/chunks/`, is private and blocked by the package's `exports` map.

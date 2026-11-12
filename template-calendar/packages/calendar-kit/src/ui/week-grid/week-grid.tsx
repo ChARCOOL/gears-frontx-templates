@@ -6,6 +6,7 @@
 // @cpt-dod:cpt-template-calendar-calendar-kit-dod-week-grid-keyboard:p1
 
 import { clsx } from "clsx";
+import { CheckIcon } from "lucide-react";
 import { useRef } from "react";
 import type {
   CSSProperties,
@@ -19,6 +20,7 @@ import type {
 
 import { isEventActionable, isEventMovable } from "../../core/actionability";
 import { formatGridTime } from "../../core/format";
+import type { PaintPreviewBlock } from "../../core/paint-preview";
 import { EVENT_CHIP_HEIGHT } from "../../core/grid";
 import type {
   CalendarCell,
@@ -88,7 +90,7 @@ import type {
   NowPosition,
   PositionedEvent,
   PositionedTimeRange,
-  SlotOverflow,
+  PositionedOverflow,
 } from "./week-grid-layout";
 
 import gridStyles from "../grid/calendar-grid.module.css";
@@ -99,7 +101,7 @@ interface EventFrameHookProps {
   readonly "data-tone"?: string;
 }
 
-export interface WeekGridProps<Payload = unknown> extends CalendarContextProps {
+interface WeekGridBaseProps<Payload = unknown> extends CalendarContextProps {
   /** Class added to the component root. */
   readonly className?: string;
   /** Any day in the week to show. The week starts on Monday. */
@@ -116,8 +118,6 @@ export interface WeekGridProps<Payload = unknown> extends CalendarContextProps {
   readonly slotMinutes?: CalendarSlotMinutes;
   /** Height of one row in pixels. Default `43`. */
   readonly rowHeight?: number;
-  /** Most cards that start in one row of a day. Later ones hide behind a `+N` chip. Default: no cap. */
-  readonly maxEventsPerSlot?: number;
   /** Working hours; cells outside them are hatched. Also where the grid first scrolls to. Default 08:00–18:00. */
   readonly workingHours?: CalendarTimeWindow;
   /** Repeat the hour labels on the trailing edge. The copy is hidden from assistive technology. */
@@ -157,13 +157,11 @@ export interface WeekGridProps<Payload = unknown> extends CalendarContextProps {
   readonly renderDetail?: CalendarDetailRenderer<Payload>;
   /** Replaces the content of each empty time cell. */
   readonly renderCell?: CalendarGridProps["renderCell"];
-  /** Replaces the text of the `+N` chip. Receives the hidden count. */
+  /** Replaces the text of the `+N` tile. Receives the hidden count. */
   readonly renderOverflow?: (
     hiddenCount: number,
     cell: CalendarCell
   ) => ReactNode;
-  /** The `+N` chip was activated. `anchor` is the chip, for a popover. */
-  readonly onOverflowSelect?: (cell: CalendarCell, anchor: HTMLElement) => void;
   /** Drawn in cells covered by an unavailable or busy timed event, or in cells `getCellState` marks unavailable. */
   readonly renderUnavailable?: (cell: CalendarCell) => ReactNode;
   /** Host bands drawn behind the timed events. Clipped to `visibleHours`. */
@@ -194,6 +192,24 @@ export interface WeekGridProps<Payload = unknown> extends CalendarContextProps {
   /** Colour family of a painted range. Unset, the painted cells use the plain selection style. */
   readonly paintColorFamily?: CalendarColorFamily;
 }
+/**
+ * The cap and the tile handler come as a pair. A cap without a handler would hide cards the
+ * user cannot reach.
+ */
+type WeekGridOverflowProps =
+  | {
+      readonly maxEventsPerSlot?: undefined;
+      readonly onOverflowSelect?: undefined;
+    }
+  | {
+      /** Most cards that start in one row of a day. Later ones hide behind a `+N` lane tile. */
+      readonly maxEventsPerSlot: number;
+      /** The `+N` tile was activated. `anchor` is the tile, for a popover. */
+      readonly onOverflowSelect: (cell: CalendarCell, anchor: HTMLElement) => void;
+    };
+
+export type WeekGridProps<Payload = unknown> = WeekGridBaseProps<Payload> &
+  WeekGridOverflowProps;
 
 interface WeekGridInteractionLayerProps {
   readonly currentInstant: UtcInstant;
@@ -777,7 +793,7 @@ const WeekGridEvent = <Payload,>(props: WeekGridEventProps<Payload>) => {
 };
 
 interface WeekGridOverflowButtonProps {
-  readonly overflow: SlotOverflow;
+  readonly overflow: PositionedOverflow;
   readonly onOverflowSelect?: WeekGridProps["onOverflowSelect"];
   readonly renderOverflow?: WeekGridProps["renderOverflow"];
 }
@@ -788,14 +804,22 @@ const WeekGridOverflowButton = ({
   renderOverflow,
 }: WeekGridOverflowButtonProps) => {
   const { t } = useCalendarLocalization();
-  const label = t("calendar.week.hidden", { count: overflow.hiddenCount });
+  const label = t("calendar.week.overflow", { count: overflow.hiddenCount });
   const content =
     renderOverflow?.(overflow.hiddenCount, overflow.cell) ?? label;
+  const { geometry } = overflow;
+  const style: CSSProperties = {
+    blockSize: `${geometry.height}px`,
+    insetBlockStart: `${geometry.top}px`,
+    insetInlineStart: `${geometry.insetInlineStart}%`,
+    inlineSize: `${geometry.inlineSize}%`,
+    zIndex: geometry.zIndex,
+  };
 
-  // Without a selection handler the chip is only informational, so it is not a button.
+  // Without a selection handler the tile is only informational, so it is not a button.
   if (onOverflowSelect === undefined) {
     return (
-      <span className={styles.overflow} data-week-overflow="">
+      <span className={styles.overflow} data-week-overflow="" style={style}>
         {content}
       </span>
     );
@@ -809,6 +833,7 @@ const WeekGridOverflowButton = ({
       className={styles.overflow}
       aria-label={renderOverflow ? undefined : label}
       data-week-overflow=""
+      style={style}
       onClick={(clickEvent) => {
         onOverflowSelect(overflow.cell, clickEvent.currentTarget);
       }}
@@ -845,9 +870,10 @@ interface WeekGridCellContentProps<Payload> {
   readonly renderTimeRange?: WeekGridProps["renderTimeRange"];
   readonly dropTargetKeys: ReadonlySet<string>;
   readonly onOverflowSelect?: WeekGridProps["onOverflowSelect"];
-  readonly overflow?: SlotOverflow;
+  readonly overflow?: PositionedOverflow;
   readonly paintColorFamily?: CalendarColorFamily;
   readonly paintInvalid: boolean;
+  readonly paintPreview: PaintPreviewBlock | undefined;
   readonly selectedEventId: string | null;
   readonly selectedPaintKeys: ReadonlySet<string>;
   readonly timeRangePositions: readonly PositionedTimeRange[];
@@ -897,6 +923,7 @@ const WeekGridCellContent = <Payload,>(
     overflow,
     paintColorFamily,
     paintInvalid,
+    paintPreview,
     resizable,
     resize,
     selectedEventId,
@@ -952,6 +979,24 @@ const WeekGridCellContent = <Payload,>(
       >
         {renderCell?.(cellContext)}
         {unavailable && renderUnavailable?.(context.cell)}
+        {paintPreview !== undefined && (
+          <div
+            aria-hidden="true"
+            className={styles.paintPreview}
+            data-paint-preview=""
+            inert
+            style={{
+              blockSize: `calc(${paintPreview.rowCount} * (100% + var(--cal-border-width-1)))`,
+              insetBlockStart: "0px",
+              insetInlineStart: "0px",
+            }}
+          >
+            <span className={styles.paintPreviewLabel}>
+              <CheckIcon aria-hidden="true" className={styles.paintPreviewIcon} />
+              {paintPreview.label}
+            </span>
+          </div>
+        )}
         {dropTarget?.ghost !== undefined && (
           <div
             className={clsx(
@@ -1143,6 +1188,7 @@ const WeekGridContent = <Payload = unknown,>(
     paintRefused,
     paintTouchesUnavailable,
     resize,
+    paintPreviewByCellKey,
     selectedPaintKeys,
     setPaintRefused,
     t,
@@ -1219,6 +1265,7 @@ const WeekGridContent = <Payload = unknown,>(
       onOverflowSelect={onOverflowSelect}
       paintColorFamily={paintColorFamily}
       paintInvalid={paintTouchesUnavailable}
+      paintPreview={paintPreviewByCellKey.get(gridCellKey(context.cell))}
       renderOverflow={renderOverflow}
       renderUnavailable={renderUnavailable}
       renderTimeRange={renderTimeRange}

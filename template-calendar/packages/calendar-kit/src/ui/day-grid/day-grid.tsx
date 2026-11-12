@@ -1,6 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
+import { CheckIcon } from "lucide-react";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import type {
   CSSProperties,
@@ -15,6 +16,7 @@ import { isEventActionable, isEventMovable } from "../../core/actionability";
 import { arrayAt } from "../../core/array";
 import { rangesOverlap } from "../../core/event-overlap";
 import { movedTimedEvent } from "../../core/interactions";
+import { buildPaintPreviewBlocks } from "../../core/paint-preview";
 import {
   formatGridTime,
   formatViewerDate,
@@ -52,6 +54,7 @@ import type {
 } from "../../i18n/calendar-localization";
 import { CalendarScope } from "../../i18n/calendar-localization-provider";
 import { useDayGridController } from "../../react/controllers/use-day-grid-controller";
+import type { DayGridOverflowTile } from "../../react/controllers/use-day-grid-controller";
 import { useEventResize } from "../../react/hooks/use-event-resize";
 import { useTouchMove } from "../../react/hooks/use-touch-move";
 import type {
@@ -63,12 +66,13 @@ import { EventCard } from "../event-card/event-card";
 import { CalendarGrid } from "../grid/calendar-grid";
 import type { CalendarGridProps } from "../grid/calendar-grid";
 import { nowCoversHourLabel } from "../grid/now-label";
+import { Button } from "../primitives/button/button";
 import { transparentPixel } from "../week-grid/use-week-grid-content";
 import { buildEventAnnouncement } from "./day-grid-format";
 
 import styles from "./day-grid.module.css";
 
-export interface DayGridProps extends CalendarContextProps {
+interface DayGridBaseProps extends CalendarContextProps {
   /** Class added to the component root. */
   readonly className?: string;
   /** The day to show. */
@@ -115,7 +119,7 @@ export interface DayGridProps extends CalendarContextProps {
   readonly onEventSelect?: (
     event: CalendarEvent,
     context: CalendarEventRenderContext,
-    anchor?: HTMLElement
+    anchor?: HTMLElement,
   ) => void;
   /** An empty slot was activated in `quick-create` mode. */
   readonly onQuickCreate?: (payload: CalendarQuickCreatePayload) => void;
@@ -126,6 +130,27 @@ export interface DayGridProps extends CalendarContextProps {
   /** A resize handle on timed, single-day, movable events asks the host to move the event's end. */
   readonly onResizeRequest?: (request: CalendarResizeRequest) => void;
 }
+
+/**
+ * The cap and the tile handler come as a pair. A cap without a handler would hide cards the
+ * user cannot reach.
+ */
+type DayGridOverflowProps =
+  | {
+      readonly maxEventsPerSlot?: undefined;
+      readonly onOverflowSelect?: undefined;
+    }
+  | {
+      /** Most cards that start in one row of the day. Later ones hide behind a `+N` lane tile. */
+      readonly maxEventsPerSlot: number;
+      /** The `+N` tile was activated. `anchor` is the tile, for a popover. */
+      readonly onOverflowSelect: (
+        cell: CalendarCell,
+        anchor: HTMLElement,
+      ) => void;
+    };
+
+export type DayGridProps = DayGridBaseProps & DayGridOverflowProps;
 
 interface DayGridStyles extends CSSProperties {
   readonly "--day-grid-slot-count"?: number;
@@ -142,7 +167,7 @@ type DayGridTimedEvent = DayGridControllerResult["timedEvents"][number];
 type DayGridEventSelectHandler = (
   event: CalendarEvent,
   context: CalendarEventRenderContext,
-  anchor: HTMLElement
+  anchor: HTMLElement,
 ) => void;
 
 interface DayGridEventConfig {
@@ -161,7 +186,7 @@ const createSlotCell = (
   index: number,
   date: CalendarCell["date"],
   timeZone: IanaTimeZone,
-  dayEnd: UtcInstant
+  dayEnd: UtcInstant,
 ): CalendarCell => {
   const start = arrayAt(slotStarts, index);
   const end = arrayAt(slotStarts, index + 1) ?? dayEnd;
@@ -189,7 +214,7 @@ const buildCellLabel = (
   workingHour: boolean,
   timeZone: IanaTimeZone,
   locale: string,
-  t: CalendarTranslate
+  t: CalendarTranslate,
 ): string =>
   `${formatGridTime(cell.start, timeZone, locale)} ${t(workingHour ? "calendar.day.workingHour" : "calendar.day.nonWorkingHour")}`;
 
@@ -197,7 +222,7 @@ const buildEventTime = (
   context: CalendarEventRenderContext,
   timeZone: IanaTimeZone,
   locale: string,
-  t: CalendarTranslate
+  t: CalendarTranslate,
 ): string => {
   if (context.event.allDay) {
     return t("calendar.eventCard.allDay");
@@ -207,7 +232,7 @@ const buildEventTime = (
 
 const buildUnavailableCellKeys = (
   cells: readonly CalendarCell[],
-  placements: readonly DayGridTimedEvent[]
+  placements: readonly DayGridTimedEvent[],
 ): ReadonlySet<string> => {
   const unavailable = new Set<string>();
 
@@ -251,7 +276,7 @@ const dayEventGeometry = (
   },
   topPercent: number,
   heightPercent: number,
-  slotCount: number
+  slotCount: number,
 ): CalendarEventGeometry => {
   const dayBlockSize = slotCount * DAY_GRID_SLOT_HEIGHT;
 
@@ -271,7 +296,7 @@ const timedEventStyle = (
     readonly zIndex: number;
   },
   topPercent: number,
-  heightPercent: number
+  heightPercent: number,
 ): CSSProperties => ({
   blockSize: `${heightPercent}%`,
   inlineSize: `calc(${geometry.width}% - var(--calendar-event-inset))`,
@@ -281,7 +306,7 @@ const timedEventStyle = (
 });
 
 const buildSharedRenderTime = (
-  config: DayGridEventConfig
+  config: DayGridEventConfig,
 ): ((context: CalendarEventRenderContext) => ReactNode) =>
   config.renderEvent === undefined
     ? (context) => (
@@ -325,6 +350,12 @@ const renderDayGridEventCard = ({
   />
 );
 
+interface DayPaintPreview {
+  readonly heightPercent: number;
+  readonly label: string;
+  readonly topPercent: number;
+}
+
 interface DropGhost {
   readonly event: CalendarEvent;
   readonly geometry: DayGridTimedEvent["geometry"];
@@ -340,6 +371,9 @@ const DayGridEventLayerImpl = ({
   draggingEventId,
   dropGhost,
   movable,
+  onOverflowSelect,
+  overflowTiles,
+  paintPreview,
   slotCount,
   nowPercent,
   onEventFocus,
@@ -353,6 +387,10 @@ const DayGridEventLayerImpl = ({
   readonly draggingEventId: string | null;
   readonly dropGhost: DropGhost | null;
   readonly movable: boolean;
+  readonly onOverflowSelect:
+    ((slotIndex: number, anchor: HTMLElement) => void) | undefined;
+  readonly overflowTiles: readonly DayGridOverflowTile[];
+  readonly paintPreview: DayPaintPreview | null;
   readonly slotCount: number;
   readonly nowPercent: number | null;
   readonly onEventFocus: (segment: CalendarEventSegment) => void;
@@ -373,7 +411,7 @@ const DayGridEventLayerImpl = ({
       const style = timedEventStyle(
         placement.geometry,
         placement.topPercent,
-        placement.heightPercent
+        placement.heightPercent,
       );
 
       return (
@@ -401,9 +439,10 @@ const DayGridEventLayerImpl = ({
               placement.geometry,
               placement.topPercent,
               placement.heightPercent,
-              slotCount
+              slotCount,
             ),
-            past: compareUtcInstants(placement.segment.end, currentInstant) <= 0,
+            past:
+              compareUtcInstants(placement.segment.end, currentInstant) <= 0,
             positioned: false,
             segment: placement.segment,
             selected: selectedEventId === event.id,
@@ -422,6 +461,48 @@ const DayGridEventLayerImpl = ({
         </div>
       );
     })}
+    {onOverflowSelect !== undefined &&
+      overflowTiles.map((tile) => (
+        <div
+          className={clsx(styles.event, styles.timedEvent, "timedEvent")}
+          key={`overflow-${tile.slotIndex}`}
+          style={timedEventStyle(
+            tile.geometry,
+            tile.topPercent,
+            tile.heightPercent,
+          )}
+        >
+          <Button
+            className={styles.overflow}
+            data-day-overflow=""
+            size="sm"
+            type="button"
+            variant="tertiary"
+            onClick={(clickEvent) => {
+              onOverflowSelect(tile.slotIndex, clickEvent.currentTarget);
+            }}
+          >
+            {config.t("calendar.day.overflow", { count: tile.hiddenCount })}
+          </Button>
+        </div>
+      ))}
+    {paintPreview !== null && (
+      <div
+        aria-hidden="true"
+        className={styles.paintPreview}
+        data-paint-preview=""
+        inert
+        style={{
+          blockSize: `${paintPreview.heightPercent}%`,
+          insetBlockStart: `${paintPreview.topPercent}%`,
+        }}
+      >
+        <span className={styles.paintPreviewLabel}>
+          <CheckIcon aria-hidden="true" className={styles.paintPreviewIcon} />
+          {paintPreview.label}
+        </span>
+      </div>
+    )}
     {dropGhost !== null && (
       <div
         className={clsx(styles.event, styles.timedEvent, styles.dragGhost)}
@@ -442,7 +523,7 @@ const DayGridEventLayerImpl = ({
             dropGhost.geometry,
             (dropGhost.slotIndex / slotCount) * 100,
             dropGhost.heightPercent,
-            slotCount
+            slotCount,
           ),
           past: compareUtcInstants(dropGhost.segment.end, currentInstant) <= 0,
           positioned: false,
@@ -468,7 +549,7 @@ const DayGridEventLayer = memo(DayGridEventLayerImpl);
 DayGridEventLayer.displayName = "DayGridEventLayer";
 
 const useDayGridAnnouncements = (
-  setControllerAnnouncement: (announcement: string) => void
+  setControllerAnnouncement: (announcement: string) => void,
 ): {
   readonly announce: (announcement: string) => void;
   readonly liveText: string;
@@ -480,7 +561,7 @@ const useDayGridAnnouncements = (
       setControllerAnnouncement(announcement);
       setLiveText(announcement);
     },
-    [setControllerAnnouncement]
+    [setControllerAnnouncement],
   );
 
   return { announce, liveText };
@@ -507,6 +588,8 @@ const useDayGridContent = (props: DayGridContentProps) => {
     onPaintSelect,
     onQuickCreate,
     onResizeRequest,
+    maxEventsPerSlot,
+    onOverflowSelect,
     now,
     slotMinutes,
     visibleHours,
@@ -520,6 +603,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     axisRange,
     currentInstant,
     interaction,
+    overflowTiles,
     slotStarts,
     interactionMode: resolvedInteractionMode,
     isToday,
@@ -546,6 +630,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     onPaintSelect,
     onQuickCreate,
     onSelectedEventIdChange,
+    maxEventsPerSlot,
     selectedEventId,
     slotMinutes,
     timeZone,
@@ -559,49 +644,86 @@ const useDayGridContent = (props: DayGridContentProps) => {
     utcDayRange.start,
     timeZone,
     locale,
-    { dateStyle: "full" }
+    { dateStyle: "full" },
   );
 
   const gridCells = useMemo(
     () =>
       slotStarts.map((_, index) =>
-        createSlotCell(slotStarts, index, date, timeZone, axisRange.end)
+        createSlotCell(slotStarts, index, date, timeZone, axisRange.end),
       ),
-    [axisRange.end, date, slotStarts, timeZone]
+    [axisRange.end, date, slotStarts, timeZone],
   );
+
+  const handleOverflowSelect =
+    onOverflowSelect === undefined
+      ? undefined
+      : (slotIndex: number, anchor: HTMLElement) => {
+          const cell = arrayAt(gridCells, slotIndex);
+
+          if (cell === undefined) {
+            throw new RangeError(`Missing slot cell at index ${slotIndex}`);
+          }
+
+          onOverflowSelect(cell, anchor);
+        };
 
   const cellIndexByKey = useMemo(
     () => new Map(gridCells.map((cell, index) => [cellKey(cell), index])),
-    [gridCells]
+    [gridCells],
   );
 
   const gridRows = useMemo(
     () =>
       gridCells.map((cell, index) => ({ cells: [cell], key: `hour-${index}` })),
-    [gridCells]
+    [gridCells],
   );
 
   const unavailableCellKeys = useMemo(
     () => buildUnavailableCellKeys(gridCells, timedEvents),
-    [gridCells, timedEvents]
+    [gridCells, timedEvents],
   );
 
   const paintKeys = useMemo(
     () => new Set((interaction.paint?.cells ?? []).map(cellKey)),
-    [interaction.paint]
+    [interaction.paint],
   );
 
+  const paintPreview = useMemo(() => {
+    const [block] = buildPaintPreviewBlocks(
+      interaction.paint?.cells ?? [],
+      timeZone,
+      locale,
+    );
+    const startIndex =
+      block === undefined
+        ? undefined
+        : cellIndexByKey.get(cellKey(block.start));
+
+    if (block === undefined || startIndex === undefined) {
+      return null;
+    }
+
+    return {
+      heightPercent: (block.rowCount / slotStarts.length) * 100,
+      label: block.label,
+      topPercent: (startIndex / slotStarts.length) * 100,
+    };
+  }, [cellIndexByKey, interaction.paint, locale, slotStarts.length, timeZone]);
+
   const paintTouchesUnavailable = (interaction.paint?.cells ?? []).some(
-    (cell) => unavailableCellKeys.has(cellKey(cell))
+    (cell) => unavailableCellKeys.has(cellKey(cell)),
   );
 
   // Event cards cover the cells, so the slot comes from the pointer's Y, not the event target.
   const slotAtClientY = (
     layout: HTMLElement,
-    clientY: number
-  ): { readonly cell: CalendarCell; readonly element: HTMLElement } | undefined => {
+    clientY: number,
+  ):
+    | { readonly cell: CalendarCell; readonly element: HTMLElement }
+    | undefined => {
     const element = Array.from(
-      layout.querySelectorAll<HTMLElement>('[role="gridcell"]')
+      layout.querySelectorAll<HTMLElement>('[role="gridcell"]'),
     ).find((candidate) => {
       const rect = candidate.getBoundingClientRect();
 
@@ -618,7 +740,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
 
   const cellAtClientY = (
     layout: HTMLElement,
-    clientY: number
+    clientY: number,
   ): CalendarCell | undefined => slotAtClientY(layout, clientY)?.cell;
 
   const resize = useEventResize({
@@ -643,7 +765,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
 
   const draggedEventId = interaction.drag?.event.id ?? null;
   const draggedPlacement = timedEvents.find(
-    (placement) => placement.segment.event.id === draggedEventId
+    (placement) => placement.segment.event.id === draggedEventId,
   );
   const dropEvent =
     interaction.drag === null ||
@@ -653,7 +775,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
       : movedTimedEvent(
           interaction.drag.event,
           interaction.drag.to.start,
-          timeZone
+          timeZone,
         );
   const dropGhost: DropGhost | null =
     interaction.drag === null ||
@@ -686,7 +808,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
 
       return t(key, values);
     },
-    [gridLabel, t]
+    [gridLabel, t],
   );
 
   const readOnly = resolvedInteractionMode === "read-only";
@@ -695,11 +817,11 @@ const useDayGridContent = (props: DayGridContentProps) => {
     (
       event: CalendarEvent,
       context: CalendarEventRenderContext,
-      anchor: HTMLElement
+      anchor: HTMLElement,
     ): void => {
       selectEvent(event.id, context, anchor);
     },
-    [selectEvent]
+    [selectEvent],
   );
 
   const eventConfig = useMemo<DayGridEventConfig>(() => {
@@ -738,7 +860,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
 
   const handleCellKeyDown = (
     event: ReactKeyboardEvent<HTMLDivElement>,
-    context: CalendarCellContext
+    context: CalendarCellContext,
   ): void => {
     const index = cellIndexByKey.get(cellKey(context.cell));
     if (index === undefined) {
@@ -753,7 +875,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
   };
 
   const handleTimedLayoutClick = (
-    event: ReactMouseEvent<HTMLDivElement>
+    event: ReactMouseEvent<HTMLDivElement>,
   ): void => {
     // A click in paint-and-move mode paints by pointer gesture, so it must not open a form.
     if (resolvedInteractionMode !== "quick-create") {
@@ -782,13 +904,13 @@ const useDayGridContent = (props: DayGridContentProps) => {
       selectEmptyCell(
         index,
         cellElement,
-        new DOMRect(event.clientX, event.clientY, 0, 0)
+        new DOMRect(event.clientX, event.clientY, 0, 0),
       );
     }
   };
 
   const handleTimedLayoutKeyDown = (
-    event: ReactKeyboardEvent<HTMLDivElement>
+    event: ReactKeyboardEvent<HTMLDivElement>,
   ): void => {
     if (
       event.defaultPrevented ||
@@ -821,13 +943,13 @@ const useDayGridContent = (props: DayGridContentProps) => {
   const startTouchMove = useTouchMove({
     begin: (eventId, pressed) => {
       const placement = timedEvents.find(
-        (candidate) => candidate.segment.event.id === eventId
+        (candidate) => candidate.segment.event.id === eventId,
       );
       const from = gridCells.find(
         (cell) =>
           placement !== undefined &&
           compareUtcInstants(cell.start, placement.segment.start) <= 0 &&
-          compareUtcInstants(placement.segment.start, cell.end) < 0
+          compareUtcInstants(placement.segment.start, cell.end) < 0,
       );
 
       if (
@@ -865,7 +987,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
   });
 
   const handleTimedLayoutPointerDown = (
-    event: ReactPointerEvent<HTMLDivElement>
+    event: ReactPointerEvent<HTMLDivElement>,
   ): void => {
     const pressedEventId = eventIdAtTarget(event.target);
 
@@ -882,7 +1004,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
   };
 
   const handleTimedLayoutPointerMove = (
-    event: ReactPointerEvent<HTMLDivElement>
+    event: ReactPointerEvent<HTMLDivElement>,
   ): void => {
     if (
       interaction.state.paintAnchor === null ||
@@ -916,7 +1038,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
   };
 
   const handleTimedLayoutDragStart = (
-    event: ReactDragEvent<HTMLDivElement>
+    event: ReactDragEvent<HTMLDivElement>,
   ): void => {
     // The browser starts the drag on the draggable frame; the card that names the event sits inside it.
     const card =
@@ -925,7 +1047,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
         : null;
     const eventId = eventIdAtTarget(card ?? event.target);
     const placement = timedEvents.find(
-      (candidate) => candidate.segment.event.id === eventId
+      (candidate) => candidate.segment.event.id === eventId,
     );
 
     if (
@@ -939,7 +1061,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     const from = gridCells.find(
       (cell) =>
         compareUtcInstants(cell.start, placement.segment.start) <= 0 &&
-        compareUtcInstants(placement.segment.start, cell.end) < 0
+        compareUtcInstants(placement.segment.start, cell.end) < 0,
     );
 
     if (from === undefined) {
@@ -956,7 +1078,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
   };
 
   const handleTimedLayoutDragOver = (
-    event: ReactDragEvent<HTMLDivElement>
+    event: ReactDragEvent<HTMLDivElement>,
   ): void => {
     if (draggedEventIdRef.current === null) {
       return;
@@ -970,7 +1092,9 @@ const useDayGridContent = (props: DayGridContentProps) => {
     }
   };
 
-  const handleTimedLayoutDrop = (event: ReactDragEvent<HTMLDivElement>): void => {
+  const handleTimedLayoutDrop = (
+    event: ReactDragEvent<HTMLDivElement>,
+  ): void => {
     if (draggedEventIdRef.current === null) {
       return;
     }
@@ -1002,7 +1126,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
 
       announce(announcement);
     },
-    [announce, locale, t, timeZone]
+    [announce, locale, t, timeZone],
   );
 
   const liveRegionLabel =
@@ -1036,7 +1160,9 @@ const useDayGridContent = (props: DayGridContentProps) => {
     handleTimedLayoutPointerUp,
     draggedEventId,
     dropGhost,
+    handleOverflowSelect,
     interactionMode: resolvedInteractionMode,
+    overflowTiles,
     isToday,
     isWorkingDay,
     liveRegionLabel,
@@ -1044,6 +1170,7 @@ const useDayGridContent = (props: DayGridContentProps) => {
     locale,
     nowPercent,
     paintKeys,
+    paintPreview,
     readOnly,
     renderCell,
     resolvedDirection,
@@ -1091,8 +1218,11 @@ const DayGridContent = (props: DayGridContentProps) => {
     handleTimedLayoutDrop,
     draggedEventId,
     dropGhost,
+    handleOverflowSelect,
     interactionMode,
+    overflowTiles,
     paintKeys,
+    paintPreview,
     slotStarts,
     isToday,
     isWorkingDay,
@@ -1140,7 +1270,7 @@ const DayGridContent = (props: DayGridContentProps) => {
       workingSlots[index] ?? false,
       timeZone,
       locale,
-      t
+      t,
     );
   };
 
@@ -1161,7 +1291,7 @@ const DayGridContent = (props: DayGridContentProps) => {
           (workingSlots[index] ?? false)
             ? styles.workingHour
             : styles.nonWorkingHour,
-          cellClassName
+          cellClassName,
         )}
         data-paint={paintKeys.has(context.key) ? "" : undefined}
         data-color-family={
@@ -1180,7 +1310,7 @@ const DayGridContent = (props: DayGridContentProps) => {
         "dayGrid",
         isWorkingDay ? styles.workingDay : styles.nonWorkingDay,
         trailingGutter && styles.trailingGutter,
-        className
+        className,
       )}
       dir={resolvedDirection}
       aria-label={gridLabel}
@@ -1200,7 +1330,7 @@ const DayGridContent = (props: DayGridContentProps) => {
             className={clsx(
               styles.weekdayLabel,
               "weekdayLabel",
-              isToday && styles.today
+              isToday && styles.today,
             )}
           >
             {formatViewerWeekdayShort(utcDayRange.start, timeZone, locale)}
@@ -1209,7 +1339,7 @@ const DayGridContent = (props: DayGridContentProps) => {
             className={clsx(
               styles.dayNumber,
               "dayNumber",
-              isToday && styles.today
+              isToday && styles.today,
             )}
           >
             {formatViewerDayNumber(utcDayRange.start, timeZone, locale)}
@@ -1220,7 +1350,7 @@ const DayGridContent = (props: DayGridContentProps) => {
             className={clsx(
               styles.headerGutter,
               styles.trailingGutterCell,
-              gutterClassName
+              gutterClassName,
             )}
             aria-hidden="true"
           >
@@ -1265,7 +1395,7 @@ const DayGridContent = (props: DayGridContentProps) => {
             className={clsx(
               styles.allDayGutter,
               styles.trailingGutterCell,
-              gutterClassName
+              gutterClassName,
             )}
             aria-hidden="true"
           />
@@ -1315,6 +1445,9 @@ const DayGridContent = (props: DayGridContentProps) => {
             draggingEventId={draggedEventId}
             dropGhost={dropGhost}
             movable={interactionMode === "paint-and-move"}
+            onOverflowSelect={handleOverflowSelect}
+            overflowTiles={overflowTiles}
+            paintPreview={paintPreview}
             slotCount={slotStarts.length}
             nowPercent={nowPercent}
             onEventFocus={handleEventFocus}

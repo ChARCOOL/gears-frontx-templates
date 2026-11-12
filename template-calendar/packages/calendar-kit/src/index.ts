@@ -97,6 +97,15 @@ export type {
 export { ConflictIndicator } from "./ui/conflict-indicator/public";
 export type { ConflictIndicatorProps } from "./ui/conflict-indicator/public";
 
+export {
+  RecurrenceScopeDialog,
+} from "./ui/recurrence-scope-dialog/public";
+export type {
+  RecurrenceScope,
+  RecurrenceScopeAction,
+  RecurrenceScopeDialogProps,
+} from "./ui/recurrence-scope-dialog/public";
+
 export { CalendarToolbar } from "./ui/calendar-toolbar/public";
 export type { CalendarToolbarProps } from "./ui/calendar-toolbar/public";
 

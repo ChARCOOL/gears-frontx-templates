@@ -211,6 +211,23 @@ button.card:not(.unavailable):hover {
   );
 }
 
+/* Error conflicts take the busy stripes on a red surface with a leading bar. The doubled class
+   outranks the family colours and the pressed fill of a selected card. */
+button.card.card[data-conflict='true'],
+button.card.card[data-conflict='true']:hover {
+  --button-bg: var(--cal-slot-conflict-surface);
+  --button-fg: var(--cal-slot-conflict-text);
+  --button-bg-hover: var(--cal-slot-conflict-surface);
+  --button-fg-hover: var(--cal-slot-conflict-text);
+  background-color: var(--button-bg);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--cal-slot-busy-stripe) 0 31px,
+    transparent 31px 45px
+  );
+  border-inline-start: var(--cal-slot-conflict-bar-width) solid var(--cal-slot-conflict-bar);
+}
+
 /* ui-kit's hover only swaps the fill, so the stripes stay; the fill stays the card's own too. */
 button.card.unavailable {
   --button-bg-hover: var(--button-bg);
@@ -244,6 +261,20 @@ button.card.unavailable {
   display: none;
 }
 
+/* Same inset as the recurrence icon; the title stops short of it. */
+.conflictIcon {
+  position: absolute;
+  inset-block-start: calc(var(--cal-space-1) + var(--cal-space-1) / 2);
+  inset-inline-end: calc(var(--cal-space-1) + var(--cal-space-1) / 2);
+  inline-size: var(--cal-icon-size-xs);
+  block-size: var(--cal-icon-size-xs);
+  color: var(--button-fg);
+}
+
+.card[data-conflict="true"] .title {
+  max-inline-size: calc(100% - var(--cal-icon-size-xs) - var(--cal-space-1));
+}
+
 .recurrenceIcon {
   position: absolute;
   inset-block-start: calc(var(--cal-space-1) + var(--cal-space-1) / 2);
@@ -253,13 +284,14 @@ button.card.unavailable {
   color: var(--button-fg);
 }
 
+/* middle sits ~1.3px below the text centre; -0.125em (1.5px at 12px) snaps the bell onto it. */
 .reminderIcon {
   display: inline-block;
   block-size: var(--cal-icon-size-xs);
   color: var(--button-fg);
   inline-size: var(--cal-icon-size-xs);
   margin-inline-end: var(--cal-space-1);
-  vertical-align: middle;
+  vertical-align: -0.125em;
 }
 
 .card[data-event-card-layout="stacked"],

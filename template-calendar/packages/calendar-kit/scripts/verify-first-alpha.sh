@@ -151,7 +151,7 @@ assert_tar_file 'NOTICE' 'NOTICE is published'
 assert_tar_file 'dist/index.js' 'root JavaScript entry is published'
 assert_tar_file 'dist/index.d.ts' 'root declaration entry is published'
 
-for entry in core react agenda-view availability-grid calendar-list calendar-side-panel calendar-toolbar conflict-indicator create-event day-grid event-card event-detail-panel grid month-grid month-navigator search-results time-zone-list week-grid world-clocks; do
+for entry in core react agenda-view availability-grid calendar-list calendar-side-panel calendar-toolbar conflict-indicator create-event day-grid event-card event-detail-panel grid month-grid month-navigator recurrence-scope-dialog search-results time-zone-list week-grid world-clocks; do
   assert_tar_file "dist/$entry.js" "$entry JavaScript entry is published"
   assert_tar_file "dist/$entry.d.ts" "$entry declaration entry is published"
 done
@@ -163,7 +163,7 @@ assert_tar_file 'dist/docs/event-detail-panel.md' 'event-detail-panel documentat
 assert_tar_absent '^package/dist/docs/create-event-panel\.md$' 'obsolete create-event-panel documentation is absent'
 assert_tar_absent '^package/dist/docs/detail-panel\.md$' 'obsolete detail-panel documentation is absent'
 
-for family in agenda-view availability-grid calendar-list calendar-side-panel calendar-toolbar conflict-indicator create-event day-grid event-card event-detail-panel grid month-grid month-navigator search-results time-zone-list week-grid world-clocks; do
+for family in agenda-view availability-grid calendar-list calendar-side-panel calendar-toolbar conflict-indicator create-event day-grid event-card event-detail-panel grid month-grid month-navigator recurrence-scope-dialog search-results time-zone-list week-grid world-clocks; do
   assert_tar_pattern "^package/dist/chunks/${family}\\.[^/]+\\.css$" "$family compiled CSS is published"
 done
 
