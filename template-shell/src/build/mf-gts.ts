@@ -1040,19 +1040,21 @@ class StandaloneEsmBuilder {
 
 /**
  * Chunk facts captured during `generateBundle`, the only hook that still sees
- * Rollup's chunk graph. `ownCssModules` holds the module ids of stylesheets
- * this chunk owns that came from the package's own source: module ids of
- * every language Vite compiles to CSS (see {@link isExtractedStylesheet}),
- * excluding imports Vite does not extract (`?inline` and `?raw` travel inside
- * the JS as strings, `?url` is an asset URL, nothing to deliver as a
- * stylesheet) and excluding `node_modules` (the UI kit's
- * CSS-module styles are delivered by `adoptHostStylesIntoShadowRoot()` from
- * the host document, by design - see the `mfe-package-contract` guideline).
- * `cssAssets` holds the emitted CSS files this chunk delivers
- * (`viteMetadata.importedCss`), files Vite merged in from CSS-only chunks it
- * removed first, then the chunk's own file, with every file whose stylesheet
- * sources all sit in `node_modules` left out (see {@link isVendorCssAsset}).
- * It is empty when the build does not split CSS per chunk
+ * Rollup's chunk graph. `cssModules` holds the module ids of every stylesheet
+ * this chunk owns that Vite extracts into a CSS file and whose compiled CSS
+ * is not empty (see {@link isDeliverableCssModule} and
+ * {@link deliverableCssModules}): module ids of every language Vite compiles
+ * to CSS, excluding imports Vite does not extract (`?inline` and `?raw`
+ * travel inside the JS as strings, `?url` is an asset URL, nothing to deliver
+ * as a stylesheet) and stylesheets that compile to no CSS (nothing to
+ * deliver either). `node_modules` ones included: since kit CSS reaches a
+ * screen only through its manifest, this list feeds the CSS-delivery guard,
+ * which fails a build whose expose would get no CSS at all while the chunks
+ * it reaches hold stylesheets, kit stylesheets included. `cssAssets` holds
+ * the emitted CSS files this chunk delivers (`viteMetadata.importedCss`),
+ * files Vite merged in from CSS-only chunks it removed first, then the
+ * chunk's own file: every file the chunk reaches, `node_modules`-only ones
+ * included. It is empty when the build does not split CSS per chunk
  * (`cssCodeSplit: false`).
  */
 export interface CapturedChunk {
@@ -1060,12 +1062,16 @@ export interface CapturedChunk {
   cssAssets: string[];
   imports: string[];
   dynamicImports: string[];
-  ownCssModules: string[];
+  cssModules: string[];
 }
 
-/** The `ownCssModules` filter, applied to a raw Rollup module id. */
-export function isOwnCssModule(moduleId: string): boolean {
-  return isExtractedStylesheet(moduleId) && !moduleId.split('?', 1)[0].includes('/node_modules/');
+/**
+ * The `cssModules` capture filter, applied to a raw Rollup module id: every
+ * stylesheet Vite extracts, `node_modules` ones included, because kit CSS
+ * must reach a screen through its manifest like any other stylesheet.
+ */
+export function isDeliverableCssModule(moduleId: string): boolean {
+  return isExtractedStylesheet(moduleId);
 }
 
 /**
@@ -1082,6 +1088,24 @@ function isExtractedStylesheet(moduleId: string): boolean {
     query === undefined ||
     !/(^|&)(inline|raw|url|worker|sharedworker|commonjs-proxy|transform-only)(=|&|$)/.test(query)
   );
+}
+
+/**
+ * The stylesheet modules of a chunk that the CSS-delivery guard counts: every
+ * stylesheet Vite extracts (see {@link isDeliverableCssModule}) whose
+ * compiled CSS is not the empty string. A stylesheet that compiles to no CSS
+ * needs no delivery - Vite links no rules for it, so no emitted CSS file
+ * carries it - and must never fail the guard: it is the only thing that
+ * guard can fire on in a build with per-chunk CSS, since a chunk holding CSS
+ * with rules emits a file the attribution lists. The `emptyCssModuleIds`
+ * recording is `emptyCssRecorder`'s, the plugin `frontxMfGts()` returns
+ * alongside the build plugin.
+ */
+function deliverableCssModules(
+  moduleIds: readonly string[],
+  emptyCssModuleIds: ReadonlySet<string>
+): string[] {
+  return moduleIds.filter((id) => isDeliverableCssModule(id) && !emptyCssModuleIds.has(id));
 }
 
 /**
@@ -1104,21 +1128,6 @@ function isCssOnlyChunk(chunk: Rollup.RenderedChunk): boolean {
 }
 
 /**
- * Decides per emitted CSS file whether it is vendor CSS the host delivers by
- * style adoption: true only when every stylesheet module it was built from
- * sits in `node_modules`. A file that also carries package-own rules is not
- * vendor CSS and is delivered whole (Vite emits one file per chunk, so its
- * vendor rules come along); a file whose sources are unknown is delivered too.
- */
-function isVendorCssAsset(sources: readonly string[] | undefined): boolean {
-  return (
-    sources !== undefined &&
-    sources.length > 0 &&
-    sources.every((id) => id.split('?', 1)[0].includes('/node_modules/'))
-  );
-}
-
-/**
  * Attributes to each expose the CSS files of every chunk it reaches, in
  * place on `exposes`; returns whether any list changed.
  *
@@ -1133,10 +1142,10 @@ function isVendorCssAsset(sources: readonly string[] | undefined): boolean {
  * of chunks reached through static imports from the expose's sync JS, which
  * ends with the expose's own CSS; `css.async` takes the CSS of chunks reached
  * only through dynamic imports, each lazy chunk after its static
- * dependencies. The `node_modules`-only filter applies to the files this
- * walk adds; files federation listed are kept as they are, vendor-only ones
- * included (an expose that imports a package stylesheet itself), in their
- * place ahead of the walk's.
+ * dependencies. Every file the walk reaches is listed, `node_modules`-only
+ * ones included. A file federation lists in `css.sync` moves to walk order
+ * when the static walk reaches it and otherwise keeps its place ahead of the
+ * walk's files; `css.async` keeps federation's files first.
  */
 function attributeReachableChunkCss(
   exposes: MfManifestExpose[],
@@ -1192,9 +1201,8 @@ function attributeReachableChunkCss(
 }
 
 /**
- * Detects package-own CSS an expose needs at runtime but that
- * mf-manifest.json does not attribute to it: CSS that can never reach the
- * MFE's shadow root.
+ * Detects CSS an expose needs at runtime but that mf-manifest.json does not
+ * attribute to it: CSS that can never reach the MFE's shadow root.
  *
  * Runs after `attributeReachableChunkCss`, which places every CSS file Vite
  * emitted per chunk. What is left is CSS the build did not emit per chunk:
@@ -1205,7 +1213,11 @@ function attributeReachableChunkCss(
  *
  * For each expose whose manifest attributes no CSS at all: walk the chunk
  * graph reachable from its declared JS assets (static and dynamic imports)
- * and collect the package-own CSS modules found there. An expose that does
+ * and collect the CSS modules found there, the package's own and
+ * `node_modules` ones (kit CSS): every stylesheet the walk reaches must be
+ * deliverable through the manifest. Stylesheets whose compiled CSS is empty
+ * are not in the walk's `cssModules` (see {@link deliverableCssModules}):
+ * they need no delivery and never fail the guard. An expose that does
  * declare CSS is trusted. Pure; exported for unit tests.
  */
 export function findUndeclaredExposeCss(
@@ -1223,7 +1235,7 @@ export function findUndeclaredExposeCss(
     while (queue.length > 0) {
       const chunk = chunks.get(queue.pop() as string);
       if (!chunk) continue;
-      for (const css of chunk.ownCssModules) needed.add(css);
+      for (const css of chunk.cssModules) needed.add(css);
       for (const next of [...chunk.imports, ...chunk.dynamicImports]) {
         if (!seen.has(next)) {
           seen.add(next);
@@ -1239,14 +1251,15 @@ export function findUndeclaredExposeCss(
 }
 
 /**
- * Formats the guard failure. The fix that works for every stylesheet,
- * CSS Modules included, is per-chunk CSS (`build.cssCodeSplit: true`), which
- * lets the plugin attribute each file to the exposes that reach it. For a
- * plain stylesheet owned by one lifecycle, inlining also works: `?inline`
- * turns it into a string bundled with the lifecycle chunk, and
- * `initializeStyles()` (the `ThemeAwareReactLifecycle` hook) appends it to
- * the mount container; a CSS Module imported that way loses its class map.
- * See the `mfe-package-contract` guideline, "CSS delivery" section.
+ * Formats the guard failure. The fix that works for every stylesheet, kit CSS
+ * from `node_modules` and CSS Modules included, is per-chunk CSS
+ * (`build.cssCodeSplit: true`), which lets the plugin attribute each file to
+ * the exposes that reach it. For a plain stylesheet owned by one lifecycle,
+ * inlining also works: `?inline` turns it into a string bundled with the
+ * lifecycle chunk, and `initializeStyles()` (the `ThemeAwareReactLifecycle`
+ * hook) appends it to the mount container; a CSS Module imported that way
+ * loses its class map. See the `mfe-package-contract` guideline, "CSS
+ * delivery" section.
  */
 export function formatUndeclaredExposeCssError(
   findings: ReadonlyArray<{ exposePath: string; missingCss: string[] }>
@@ -1260,9 +1273,10 @@ export function formatUndeclaredExposeCssError(
     `manifest-attributed CSS into the MFE's shadow root, so these styles ` +
     `would silently never render:\n${lines.join('\n')}\n` +
     `Fix: set build.cssCodeSplit: true so each chunk's CSS gets a file the ` +
-    `build attributes to every expose that reaches it (works for CSS ` +
-    `Modules), or, for a plain stylesheet owned by one lifecycle, import it ` +
-    `with '?inline' and append it in an initializeStyles() override ` +
+    `build attributes to every expose that reaches it (this covers kit CSS ` +
+    `from node_modules, and is the only delivery for a CSS Module), or, for ` +
+    `a plain package stylesheet owned by one lifecycle, import it with ` +
+    `'?inline' and append it in an initializeStyles() override ` +
     `(see the mfe-package-contract guideline, "CSS delivery").`
   );
 }
@@ -2060,7 +2074,10 @@ function resolvesFromPackageRoot(source: string, importer: string | undefined): 
 }
 
 /**
- * Creates the frontx-mf-gts Vite plugin.
+ * Creates the frontx-mf-gts Vite plugins: the build plugin and the
+ * compiled-CSS recorder its CSS-delivery guard needs (`emptyCssRecorder`
+ * below). Vite flattens the returned array inside a `plugins` list, so a
+ * call site stays `plugins: [..., frontxMfGts()]`.
  *
  * Runs in `closeBundle` after `@module-federation/vite`. Builds standalone
  * ESM modules for shared deps and writes `{outDir}/mfe-manifest.json` with
@@ -2081,19 +2098,21 @@ function resolvesFromPackageRoot(source: string, importer: string | undefined): 
  * });
  * ```
  */
-export function frontxMfGts(): Plugin {
+export function frontxMfGts(): Plugin[] {
   let packageRoot = '';
   let distDirPath = '';
   // Filled in `renderChunk`, after Vite's CSS plugin emitted each chunk's
   // CSS file and before it removes CSS-only chunks in `generateBundle`:
-  // the stylesheet modules each emitted CSS file was built from, the CSS
-  // files each chunk (by preliminary file name) emitted itself, and each
-  // chunk's dynamic imports and own stylesheet modules, by preliminary file
-  // name.
-  const cssAssetSources = new Map<string, string[]>();
+  // the CSS files each chunk (by preliminary file name) emitted itself, and
+  // each chunk's static imports, dynamic imports and stylesheet modules, by
+  // preliminary file name. `cssOnlyChunkNames` holds the rendered chunks the
+  // CSS-only chunk rule marks, the ones whose imports `generateBundle`
+  // recovers when Vite removed them.
   const chunkOwnCss = new Map<string, string[]>();
   const chunkDynamicImports = new Map<string, string[]>();
-  const chunkOwnCssModules = new Map<string, string[]>();
+  const chunkStaticImports = new Map<string, string[]>();
+  const chunkCssModules = new Map<string, string[]>();
+  const cssOnlyChunkNames = new Set<string>();
   // The CSS-only chunks (by preliminary file name) each transformed chunk
   // left its `import()` of for Vite to rewrite.
   const chunkCssOnlyImports = new Map<string, Set<string>>();
@@ -2102,8 +2121,92 @@ export function frontxMfGts(): Plugin {
   let resolvedExternals: string[] = [];
   const capturedChunks = new Map<string, CapturedChunk>();
   const capturedImports = new Map<string, ImportingChunk>();
+  // The stylesheet modules whose compiled CSS is the empty string, recorded
+  // by `emptyCssRecorder` below. Invariant: a stylesheet that compiles to no
+  // CSS needs no delivery - Vite links no rules for it, so no emitted CSS
+  // file carries it, and it must never fail the CSS-delivery guard (it is
+  // the only thing that guard can fire on in a build with per-chunk CSS,
+  // since a chunk holding CSS with rules emits a file the attribution
+  // lists). `vite:css` hands every stylesheet's compiled CSS to the next
+  // transform in the chain, and `vite:css-post` stores exactly that string
+  // per module id and later concatenates it into the chunk's CSS file, so a
+  // recorded id contributes nothing to any emitted file. The build plugin
+  // below is `enforce: 'post'`, whose transform would only see the empty
+  // module `vite:css-post` leaves behind, and an `order: 'pre'` transform
+  // would see the raw source instead, so the recorder is its own plugin with
+  // no `enforce`, and its `configResolved` splices it into the resolved
+  // plugin list immediately before `vite:css-post`, the last transform every
+  // stylesheet's compiled CSS flows through before `vite:css-post` stores
+  // it - wherever the user lists `frontxMfGts()`, so a plugin after it that
+  // fills an empty stylesheet is seen before the recording, not after it.
+  // The recording persists across a watch rebuild: Rollup replays a rebuild's
+  // cached transforms without running them, so a stylesheet that did not
+  // change keeps its last recorded state, and one that did change runs the
+  // transform again, which records it afresh by adding or deleting below.
+  const emptyCssModuleIds = new Set<string>();
+  // Set by `configResolved` once the recorder sits right before
+  // `vite:css-post`; while it is false the recorder records nothing.
+  let recorderPlaced = false;
+  const emptyCssRecorder: Plugin = {
+    name: 'frontx-mf-gts-empty-css-recorder',
+    // Vite's per-hook sort cache and `resolveEnvironmentPlugins` read
+    // `config.plugins` after the `configResolved` hooks have run, so moving
+    // the recorder here is final for every build of this config. Leaving it
+    // at the position `frontxMfGts()` was listed at would make it see a
+    // stylesheet before any plugin listed after it changes the CSS, and the
+    // guard would then skip a stylesheet Vite does store and deliver. The
+    // placement is made for the single-environment `vite build`, which is
+    // how every MFE in the templates builds.
+    configResolved(config) {
+      // `configResolved` runs once per build, not on a watch rebuild, so
+      // this starts every build of a reused plugin instance (a script that
+      // calls Vite's `build()` twice with the same plugins) with no
+      // recording: a stylesheet the previous build recorded empty would
+      // otherwise stay skipped by the guard in a build whose recorder could
+      // not be placed and records nothing. A watch rebuild keeps the
+      // recording, as described above.
+      emptyCssModuleIds.clear();
+      const plugins = config.plugins as Plugin[];
+      const selfIndex = plugins.indexOf(emptyCssRecorder);
+      const cssPostIndex = plugins.findIndex((plugin) => plugin.name === 'vite:css-post');
+      recorderPlaced = false;
+      if (selfIndex !== -1 && cssPostIndex === selfIndex + 1) {
+        recorderPlaced = true;
+        return;
+      }
+      if (selfIndex === -1 || cssPostIndex === -1) {
+        // Both are unexpected states. Left wherever the user listed
+        // `frontxMfGts()`, the recorder could record a stylesheet empty that
+        // a later plugin fills, and the guard would then skip CSS Vite does
+        // deliver. So the recorder stays off and records nothing: the guard
+        // counts every stylesheet, an empty one too. Warn instead of
+        // throwing: a build without an empty stylesheet stays correct.
+        config.logger.warn(
+          `[frontx-mf-gts] could not place the empty-CSS recorder before vite:css-post (${
+            selfIndex === -1 ? 'the recorder' : 'vite:css-post'
+          } was not found among the resolved plugins); empty-stylesheet exclusions are off for this build, so the CSS-delivery guard counts every stylesheet`
+        );
+        return;
+      }
+      plugins.splice(selfIndex, 1);
+      const movedCssPostIndex = plugins.findIndex((plugin) => plugin.name === 'vite:css-post');
+      plugins.splice(movedCssPostIndex, 0, emptyCssRecorder);
+      recorderPlaced = true;
+    },
+    transform: {
+      handler(code, id) {
+        if (!recorderPlaced || !isDeliverableCssModule(id)) return;
+        // A watch rebuild replays the cached transform of a stylesheet it
+        // did not invalidate, so this runs once per stylesheet state: it
+        // records the empty ones and drops the recording of one whose CSS
+        // stopped being empty.
+        if (code === '') emptyCssModuleIds.add(id);
+        else emptyCssModuleIds.delete(id);
+      },
+    },
+  };
 
-  return {
+  const gtsPlugin: Plugin = {
     name: 'frontx-mf-gts',
     // Run after all other plugins, including @module-federation/vite, so
     // that dist/mf-manifest.json is already on disk.
@@ -2113,11 +2216,12 @@ export function frontxMfGts(): Plugin {
     // filled during output generation; clear them as each output starts so
     // no fact from an earlier build reaches this one.
     renderStart() {
-      cssAssetSources.clear();
       chunkOwnCss.clear();
       chunkDynamicImports.clear();
-      chunkOwnCssModules.clear();
+      chunkStaticImports.clear();
+      chunkCssModules.clear();
       chunkCssOnlyImports.clear();
+      cssOnlyChunkNames.clear();
       capturedChunks.clear();
       outputFailed = false;
     },
@@ -2140,10 +2244,13 @@ export function frontxMfGts(): Plugin {
     renderChunk(code, chunk, _options, meta) {
       const ownCss = [...(chunk.viteMetadata?.importedCss ?? [])];
       chunkOwnCss.set(chunk.fileName, ownCss);
-      const sources = chunk.moduleIds.filter(isExtractedStylesheet);
-      for (const cssFile of ownCss) cssAssetSources.set(cssFile, sources);
       chunkDynamicImports.set(chunk.fileName, [...chunk.dynamicImports]);
-      chunkOwnCssModules.set(chunk.fileName, chunk.moduleIds.filter(isOwnCssModule));
+      chunkStaticImports.set(chunk.fileName, [...chunk.imports]);
+      chunkCssModules.set(
+        chunk.fileName,
+        deliverableCssModules(chunk.moduleIds, emptyCssModuleIds)
+      );
+      if (isCssOnlyChunk(chunk)) cssOnlyChunkNames.add(chunk.fileName);
 
       // Skip federation control chunks: `@module-federation/vite` generates
       // its own runtime chunks (`hostInit`, `virtualExposes`,
@@ -2227,7 +2334,10 @@ export function frontxMfGts(): Plugin {
 
     // A watch rebuild reuses this plugin instance, and chunk file names carry
     // a content hash, so facts captured by an earlier build would linger
-    // and the guards would check chunks that no longer exist.
+    // and the guards would check chunks that no longer exist. The empty-CSS
+    // recording is NOT cleared here: it is the state of the stylesheets
+    // themselves, which a rebuild does not re-transform while their cached
+    // transforms are still valid (see `emptyCssRecorder`).
     buildStart() {
       capturedChunks.clear();
       capturedImports.clear();
@@ -2241,6 +2351,19 @@ export function frontxMfGts(): Plugin {
     // per specifier; the shared-import guard checks them against the shared
     // chunks.
     generateBundle(_options, bundle) {
+      // The preliminary file names of the chunks still in the bundle: an
+      // import whose preliminary file name is not among them was a chunk an
+      // earlier `generateBundle` hook removed. Each surviving chunk also
+      // maps its preliminary file name to its final one, which the recorded
+      // static imports below are rebuilt through.
+      const preliminaryChunks = new Set<string>();
+      const preliminaryToFinal = new Map<string, string>();
+      for (const output of Object.values(bundle)) {
+        if (output.type === 'chunk') {
+          preliminaryChunks.add(output.preliminaryFileName);
+          preliminaryToFinal.set(output.preliminaryFileName, output.fileName);
+        }
+      }
       for (const [fileName, output] of Object.entries(bundle)) {
         if (output.type !== 'chunk') continue;
         // A CSS-only chunk reached by a dynamic import (`import('./x.css')`)
@@ -2297,12 +2420,90 @@ export function frontxMfGts(): Plugin {
             if (removedCss === undefined) return;
             capturedChunks.set(target, {
               fileName: target,
-              cssAssets: removedCss.filter((f) => !isVendorCssAsset(cssAssetSources.get(f))),
+              cssAssets: removedCss,
               imports: [],
               dynamicImports: [],
-              ownCssModules: chunkOwnCssModules.get(preliminaryDynamic[i]) ?? [],
+              cssModules: chunkCssModules.get(preliminaryDynamic[i]) ?? [],
             });
           });
+        }
+        // A CSS-only chunk a static import reaches is removed the same way,
+        // and Vite also drops that import from `output.imports`; the captured
+        // static imports still list it. Each captured import that the
+        // CSS-only chunk rule marks and that has no chunk in the bundle was
+        // one of those, so it becomes a captured chunk of its own CSS
+        // modules, reached through the importer's static import: the
+        // attribution walk and the CSS-delivery guard see the stylesheets it
+        // held as they do for a dynamic import. It changes no CSS list: with
+        // per-chunk CSS Vite has already merged the chunk's file into the
+        // importer's `importedCss`, and without per-chunk CSS no chunk
+        // emitted a file.
+        //
+        // The same pass rebuilds the importer's static import list. The
+        // final `output.imports` decides both membership and order: it is
+        // what the chunk's metadata says it imports (not a parse of the
+        // written code), so it is what the attribution must read. Whatever a
+        // plugin between `renderChunk` and here did to the list - adding,
+        // removing, replacing, reordering - the edit is the truth; the
+        // recording may not resurrect an import the final list dropped, and
+        // it may not re-order surviving ones. The one exception is a chunk
+        // Vite removed as CSS-only: Vite dropped that import from the final
+        // list too, the chunk's stylesheets still need listing (their files
+        // sit in the importer's `importedCss`), and the final list no longer
+        // says where the import sat, so each removed CSS-only chunk is
+        // reinserted before the first surviving import that followed it in
+        // the recorded order (at the end when none did). That keeps the
+        // place its import sat in the source order, not the place Vite
+        // itself links its CSS in. When a later plugin has reordered the
+        // survivors, the reinserted chunk still follows its recorded
+        // successor: deterministic, but no longer a source position.
+        const staticImportsRecorded = chunkStaticImports.get(output.preliminaryFileName) ?? [];
+        const finalImports = new Set<string>(output.imports);
+        // Which final imports are survivors recorded before the edit: they
+        // alone anchor the reinserted CSS-only chunks. A final import a
+        // plugin added after rendering has no recorded position to anchor
+        // to, so a CSS-only chunk recorded before it must not jump ahead of
+        // it.
+        const recordedSurvivors = new Set<string>();
+        for (const preliminaryImport of staticImportsRecorded) {
+          const finalName = preliminaryToFinal.get(preliminaryImport);
+          if (finalName !== undefined && finalImports.has(finalName)) {
+            recordedSurvivors.add(finalName);
+          }
+        }
+        const recordedImports = [...output.imports];
+        // For each removed CSS-only chunk (in recorded order): the first
+        // surviving import recorded after it marks the position its import
+        // sat at in the source order; reinsert the chunk right before that
+        // import, wherever the final list now has it. With no such survivor
+        // the chunk goes to the end of the list.
+        for (let i = 0; i < staticImportsRecorded.length; i++) {
+          const preliminaryImport = staticImportsRecorded[i];
+          if (
+            !cssOnlyChunkNames.has(preliminaryImport) ||
+            preliminaryChunks.has(preliminaryImport) ||
+            finalImports.has(preliminaryImport)
+          ) {
+            continue;
+          }
+          if (!capturedChunks.has(preliminaryImport)) {
+            capturedChunks.set(preliminaryImport, {
+              fileName: preliminaryImport,
+              cssAssets: chunkOwnCss.get(preliminaryImport) ?? [],
+              imports: [],
+              dynamicImports: [],
+              cssModules: chunkCssModules.get(preliminaryImport) ?? [],
+            });
+          }
+          const anchor = staticImportsRecorded
+            .slice(i + 1)
+            .map((later) => preliminaryToFinal.get(later))
+            .find((finalName) => finalName !== undefined && recordedSurvivors.has(finalName));
+          if (anchor !== undefined) {
+            recordedImports.splice(recordedImports.indexOf(anchor), 0, preliminaryImport);
+          } else {
+            recordedImports.push(preliminaryImport);
+          }
         }
         // A plain `import()` left for a chunk Vite kept cannot load from the
         // screen's blob URL. Vite's CSS plugin has run its `generateBundle`
@@ -2338,10 +2539,10 @@ export function frontxMfGts(): Plugin {
         ];
         capturedChunks.set(fileName, {
           fileName,
-          cssAssets: ordered.filter((f) => !isVendorCssAsset(cssAssetSources.get(f))),
-          imports: [...output.imports],
+          cssAssets: ordered,
+          imports: recordedImports,
           dynamicImports: [...output.dynamicImports],
-          ownCssModules: output.moduleIds.filter(isOwnCssModule),
+          cssModules: deliverableCssModules(output.moduleIds, emptyCssModuleIds),
         });
         capturedImports.set(fileName, {
           fileName,
@@ -2620,6 +2821,8 @@ export function frontxMfGts(): Plugin {
         }
       },
     };
+
+  return [gtsPlugin, emptyCssRecorder];
 }
 
 export { LazyImportTransformer, StandaloneEsmBuilder, transformLazyImports };
