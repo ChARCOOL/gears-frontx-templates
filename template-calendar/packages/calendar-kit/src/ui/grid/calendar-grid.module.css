@@ -14,7 +14,7 @@
   overflow: clip;
   color: var(--cal-color-text);
   background: var(--cal-color-surface);
-  border: var(--cal-border-width-1) solid var(--cal-color-grid-line-strong);
+  border: var(--cal-border-width-1) solid var(--cal-color-divider);
   border-radius: var(--cal-radius-md);
   font-family: var(--cal-font-family);
   font-size: var(--cal-text-grid-size);
@@ -50,8 +50,8 @@
   min-inline-size: 0;
   min-block-size: var(--cal-control-height-md);
   outline: none;
-  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
-  border-block-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
+  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-divider);
+  border-block-end: var(--cal-border-width-1) solid var(--cal-color-divider);
 }
 
 .cell:last-child {

@@ -51,13 +51,13 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 | `--muted-foreground` | Secondary text, gutter labels, read-only state · **dark** | `#64748b` | `#6a6a6a` / `#c2ccdc` |
 | `--subtle-foreground` | Tertiary text · **dark** | `#5f6f88` | `#777777` / `#a7b2c4` |
 | `--placeholder-foreground` | Placeholders, disabled glyphs, field icons · **dark** | `#bbbbbb` | `#bbbbbb` / `#777777` |
-| `--divider` | Hairline dividers and panel edges · **dark** | `rgb(0 0 0 / 0.09)` | `rgb(0 0 0 / 0.09)` / `#282b32` |
+| `--divider` | Hairline dividers, panel edges, and day and week grid lines · **dark** | `rgb(0 0 0 / 0.09)` | `rgb(0 0 0 / 0.09)` / `#282b32` |
 
 ### Lines and focus
 
 | Seam | Meaning | Kit default | Example preset |
 | --- | --- | --- | --- |
-| `--border` | Grid lines and event borders | `#64748b` | `#00000021` / `#ffffff2b` |
+| `--border` | Month grid lines and event borders | `#64748b` | `#00000021` / `#ffffff2b` |
 | `--border-strong` | Emphasised grid lines, conflict borders · **dark** | `#475569` | `#00000021` / `#ffffff3d` |
 | `--ring` | Focus ring and focus state | `#8b5cf6` | `#315efb` / `#8db5ef` |
 | `--primary-ring` | Strong focus ring, dragging ring · **dark** | `#6d28d9` | `#315efb` / `#8db5ef` |
@@ -75,8 +75,7 @@ Defaults shown are the light-mode fallbacks written into `theme.css`. Seams mark
 
 | Seam | Meaning | Kit default | Example preset |
 | --- | --- | --- | --- |
-| `--danger` | Conflict indication · **dark** | `#e11d48` | `#d40834` / `#ff7065` |
-| `--destructive` | Error state | `#e11d48` | `#d63c28` / `#db4f3d` |
+| `--danger` | Error state and conflict indication · **dark** | `#d40834` / `#ff7065` | `#d40834` / `#ff7065` |
 | `--destructive-foreground` | Text on an error fill | `#ffffff` | `#ffffff` |
 | `--success` | Success state | `#059669` | `#228665` / `#0fbd83` |
 

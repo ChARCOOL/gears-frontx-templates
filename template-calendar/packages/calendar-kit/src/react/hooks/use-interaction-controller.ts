@@ -110,6 +110,7 @@ export const useInteractionController = (
 
   // Imperative mirror: the move handshake reads and advances state across callbacks within one commit.
   const stateRef = useRef(state);
+  const mirroredStatesRef = useRef(new WeakSet<InteractionState>());
   const requestSequenceRef = useRef(0);
   const activeMoveRequestIdRef = useRef<number | null>(null);
   const quickCreateRef = useRef(options.onQuickCreate);
@@ -129,13 +130,14 @@ export const useInteractionController = (
     dispatch({ state: renderState, type: "replace" });
   }
 
+  // Only a state the mirror did not produce (a reset) may move the mirror. Otherwise a late
+  // passive effect would revert an update that apply() already advanced but has not rendered yet.
   useEffect(() => {
-    stateRef.current = renderState;
-
-    if (shouldResetState) {
+    if (!mirroredStatesRef.current.has(renderState)) {
+      stateRef.current = renderState;
       activeMoveRequestIdRef.current = null;
     }
-  }, [renderState, shouldResetState]);
+  }, [renderState]);
 
   useEffect(() => {
     quickCreateRef.current = options.onQuickCreate;
@@ -152,7 +154,8 @@ export const useInteractionController = (
   const apply = useCallback((action: InteractionAction): InteractionState => {
     const nextState = transitionInteraction(stateRef.current, action);
     stateRef.current = nextState;
-    dispatch(action);
+    mirroredStatesRef.current.add(nextState);
+    dispatch({ state: nextState, type: "replace" });
 
     return nextState;
   }, []);
@@ -164,6 +167,7 @@ export const useInteractionController = (
   const restoreModeState = useCallback((): void => {
     const nextState = createInteractionState(mode, options.timeZone);
     stateRef.current = nextState;
+    mirroredStatesRef.current.add(nextState);
     dispatch({ state: nextState, type: "replace" });
     clearActiveMove();
   }, [clearActiveMove, mode, options.timeZone]);
@@ -176,6 +180,7 @@ export const useInteractionController = (
 
     const nextState = { ...currentState, committedMove: null };
     stateRef.current = nextState;
+    mirroredStatesRef.current.add(nextState);
     dispatch({ state: nextState, type: "replace" });
   }, []);
 

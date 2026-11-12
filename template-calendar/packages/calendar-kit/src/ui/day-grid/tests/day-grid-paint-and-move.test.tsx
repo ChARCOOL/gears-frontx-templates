@@ -117,7 +117,7 @@ describe("DayGrid paint-and-move", () => {
     expect(preview).not.toBeNull();
     expect(preview?.style.blockSize).toBe(`${(3 / cells.length) * 100}%`);
     expect(preview?.style.insetBlockStart).toBe(`${(13 / cells.length) * 100}%`);
-    expect(preview?.textContent).toContain("13:00 - 16:00");
+    expect(preview?.textContent).toContain("13:00 – 16:00");
     expect(preview?.querySelector("svg.lucide-clock")).not.toBeNull();
   });
 
@@ -136,7 +136,7 @@ describe("DayGrid paint-and-move", () => {
     );
     expect(bar).toBeEmptyDOMElement();
     expect(time?.firstElementChild).toHaveClass("lucide-clock");
-    expect(time).toHaveTextContent("13:00 - 16:00");
+    expect(time).toHaveTextContent("13:00 – 16:00");
   });
 
   it("clears the painted range once the pointer leaves the grid after the paint is emitted", () => {

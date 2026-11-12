@@ -28,7 +28,7 @@
   --cal-color-action: var(--primary, #8257e6);
   --cal-color-action-foreground: var(--primary-foreground, #ffffff);
   --cal-color-selection: var(--selection-subtle, #dce7f2);
-  --cal-color-error: var(--destructive, #e11d48);
+  --cal-color-error: var(--danger, #d40834);
   --cal-color-error-foreground: var(--destructive-foreground, #ffffff);
   --cal-color-success: var(--success, #059669);
   --cal-color-warning: var(--warning, #d97706);
@@ -234,6 +234,8 @@
   --cal-color-violet-background: var(--violet-soft, #33213d);
   --cal-color-brown-background: var(--brown-soft, #33271d);
   --cal-state-hover: var(--card-hover, #151c29);
+  /* #d40834 drops to about 3.4:1 on dark surfaces; this lighter red keeps about 6.9:1. */
+  --cal-color-error: var(--danger, #ff7065);
   color-scheme: dark;
 }
 
@@ -264,6 +266,7 @@
     --cal-color-violet-background: var(--violet-soft, #33213d);
     --cal-color-brown-background: var(--brown-soft, #33271d);
     --cal-state-hover: var(--card-hover, #151c29);
+    --cal-color-error: var(--danger, #ff7065);
     color-scheme: dark;
   }
 }

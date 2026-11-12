@@ -68,7 +68,7 @@
   block-size: 48px;
   min-block-size: 48px;
   padding: var(--cal-space-2);
-  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
+  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-divider);
 }
 
 .weekGrid.weekGrid > [role="row"] > [role="columnheader"] {

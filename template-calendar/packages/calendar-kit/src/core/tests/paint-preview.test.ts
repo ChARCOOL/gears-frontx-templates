@@ -25,7 +25,7 @@ describe("buildPaintPreviewBlocks", () => {
     );
 
     expect(blocks).toHaveLength(1);
-    expect(blocks[0]?.label).toBe("15:00 - 17:00");
+    expect(blocks[0]?.label).toBe("15:00 – 17:00");
     expect(blocks[0]?.rowCount).toBe(2);
     expect(blocks[0]?.start).toEqual(hourCell("2026-08-24", 15));
   });
@@ -43,8 +43,8 @@ describe("buildPaintPreviewBlocks", () => {
     );
 
     expect(blocks.map((block) => [block.label, block.rowCount])).toEqual([
-      ["20:00 - 22:00", 2],
-      ["00:00 - 02:00", 2],
+      ["20:00 – 22:00", 2],
+      ["00:00 – 02:00", 2],
     ]);
   });
 });

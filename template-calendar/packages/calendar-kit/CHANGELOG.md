@@ -15,14 +15,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the
 
 ### Changed
 
+- Paint-and-move delivers the range the preview shows when a paint shrinks before React flushes the previous render.
+- Day and week grid lines and their outer border use `--cal-color-divider` (host `--divider`) instead of `--cal-color-grid-line`.
 - `WeekGrid` draws the `+N` overflow as a lane tile beside the visible cards instead of a corner chip. Its message `calendar.week.hidden` is replaced by `calendar.week.overflow`.
+- `--cal-color-error` maps to the host `--danger` (default `#d40834`, `#ff7065` in dark scopes) instead of `--destructive`, so error and conflict states share one red. Hosts that set only `--destructive` see the kit default.
 ## Unreleased
 
 ### Changed
 
 - `SearchResults` default rows are cards with start and end times, the event colour bar, duration, a Now label for in-progress rows, organizer, guest count, and attendee avatars with a "+N" overflow. The default row no longer shows location.
 - `SearchResultContext` gains `isNow`, computed from the `now` prop, for `renderResult`.
-- Day and week grids now draw the paint preview like a plain event card: neutral surface, text colour, the card's time row and a clock icon.
+- Day and week grids now draw the paint preview like a plain event card: neutral surface, text colour, the card's time row and a clock icon. Its range uses the en dash of the card's time row, such as `15:00 – 16:30`.
 - `RecurrenceScopeDialog` asks whether an edit, move or delete applies to this event, this and following events, or all events. Its strings sit under `calendar.recurrenceScope.*`.
 
 ## [0.1.0-alpha.1] - 2026-11-12

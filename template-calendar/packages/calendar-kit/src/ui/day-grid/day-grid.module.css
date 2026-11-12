@@ -14,7 +14,7 @@
   overflow: hidden;
   color: var(--cal-color-text);
   background: var(--cal-color-surface);
-  border: var(--cal-border-width-1) solid var(--cal-color-grid-line-strong);
+  border: var(--cal-border-width-1) solid var(--cal-color-divider);
   border-radius: var(--cal-radius-md);
   font-family: var(--cal-font-family);
 }
@@ -43,8 +43,8 @@
   composes: gutterCell from "../../styles/modules/grid.module.css";
   display: block;
   min-inline-size: 0;
-  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
-  border-block-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
+  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-divider);
+  border-block-end: var(--cal-border-width-1) solid var(--cal-color-divider);
   color: var(--cal-color-subtle);
   font-size: var(--cal-text-caption-size);
   font-weight: var(--cal-text-caption-weight);
@@ -57,7 +57,7 @@
   display: flex;
   flex-direction: column;
   min-inline-size: 0;
-  border-block-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
+  border-block-end: var(--cal-border-width-1) solid var(--cal-color-divider);
 }
 
 .headerDay.headerDay {
@@ -93,8 +93,8 @@
   color: var(--cal-color-subtle);
   font-size: var(--cal-text-meta-size);
   line-height: var(--cal-text-meta-line-height);
-  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
-  border-block-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
+  border-inline-end: var(--cal-border-width-1) solid var(--cal-color-divider);
+  border-block-end: var(--cal-border-width-1) solid var(--cal-color-divider);
 }
 
 .allDayGutter {
@@ -110,7 +110,7 @@
   gap: 2px;
   min-block-size: var(--grid-hour-height);
   padding: var(--cal-space-1);
-  border-block-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
+  border-block-end: var(--cal-border-width-1) solid var(--cal-color-divider);
 }
 
 /* One day has no lanes to compute, so all-day events stack in flow instead of sharing one spot.
@@ -189,7 +189,7 @@
   block-size: 100%;
   min-block-size: var(--grid-hour-height);
   padding: var(--cal-space-1);
-  border-block-end: var(--cal-border-width-1) solid var(--cal-color-grid-line);
+  border-block-end: var(--cal-border-width-1) solid var(--cal-color-divider);
 }
 
 [role="row"]:last-child .cellContent,
@@ -400,7 +400,7 @@
 
 .trailingGutterCell {
   border-inline-start: var(--cal-border-width-1) solid
-    var(--cal-color-grid-line);
+    var(--cal-color-divider);
   border-inline-end: 0;
 }
 

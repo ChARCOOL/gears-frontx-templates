@@ -7,7 +7,7 @@ export interface PaintPreviewBlock {
   readonly start: CalendarCell;
   /** Painted rows in the block, one per slot. */
   readonly rowCount: number;
-  /** Viewer-time range in the grid's time format, e.g. "15:00 - 16:30". */
+  /** Viewer-time range in the grid's time format, e.g. "15:00 – 16:30". */
   readonly label: string;
 }
 
@@ -41,7 +41,7 @@ export const buildPaintPreviewBlocks = (
     }
 
     return {
-      label: `${formatGridTime(first.start, timeZone, locale)} - ${formatGridTime(last.end, timeZone, locale)}`,
+      label: `${formatGridTime(first.start, timeZone, locale)} – ${formatGridTime(last.end, timeZone, locale)}`,
       rowCount: run.length,
       start: first,
     };

@@ -58,7 +58,7 @@ describe("WeekGrid paint release", () => {
     fireEvent.pointerMove(timedCell("10:00"));
 
     const preview = document.querySelector<HTMLElement>("[data-paint-preview]");
-    assert(preview?.textContent).toContain("09:00 - 11:00");
+    assert(preview?.textContent).toContain("09:00 – 11:00");
     assert(preview?.querySelector("svg.lucide-clock")).not.toBeNull();
   });
 
@@ -83,7 +83,7 @@ describe("WeekGrid paint release", () => {
     );
     assert(bar).toBeEmptyDOMElement();
     assert(time?.firstElementChild).toHaveClass("lucide-clock");
-    assert(time?.textContent).toContain("09:00 - 11:00");
+    assert(time?.textContent).toContain("09:00 – 11:00");
   });
 
   it("finishes the paint and emits its range when released over an event card", () => {

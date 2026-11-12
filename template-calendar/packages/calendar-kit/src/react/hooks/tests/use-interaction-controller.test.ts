@@ -1,4 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
+import { createElement } from "react";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 
 import { UTC } from "../../../__test-utils__/fixtures";
@@ -10,6 +13,7 @@ import type {
   CalendarSelectionRange,
 } from "../../../core/model";
 import { useInteractionController } from "../use-interaction-controller";
+import type { UseInteractionControllerResult } from "../use-interaction-controller";
 
 const cell = (time: string): CalendarCell => {
   const hour = Number(time.slice(0, 2));
@@ -27,6 +31,53 @@ const cell = (time: string): CalendarCell => {
 const first = cell("09:00");
 const second = cell("10:00");
 const third = cell("11:00");
+
+// Read by React's scheduler to choose between act-queued and real async work.
+const reactActGlobal = globalThis as typeof globalThis & {
+  IS_REACT_ACT_ENVIRONMENT?: boolean;
+};
+
+interface PaintPreviewProps {
+  readonly onPaintSelect: (range: CalendarSelectionRange) => void;
+  readonly onRender: (controller: UseInteractionControllerResult) => void;
+}
+
+const PaintPreview = ({ onPaintSelect, onRender }: PaintPreviewProps) => {
+  const controller = useInteractionController({
+    interactionMode: "paint-and-move",
+    onPaintSelect,
+  });
+  const { paint } = controller;
+
+  onRender(controller);
+
+  return createElement(
+    "output",
+    null,
+    paint === null ? "" : `${paint.start.startTime}-${paint.end.endTime}`,
+  );
+};
+
+// Resolves inside the MutationObserver microtask of the commit that shows `label`,
+// before that commit's scheduled passive-effect task runs.
+const waitForPreviewLabel = (
+  container: HTMLElement,
+  label: string,
+): Promise<void> =>
+  new Promise((resolve) => {
+    const observer = new MutationObserver(() => {
+      if (container.textContent === label) {
+        observer.disconnect();
+        resolve();
+      }
+    });
+
+    observer.observe(container, {
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+  });
 
 const event: CalendarEvent = {
   allDay: false,
@@ -511,5 +562,92 @@ describe(useInteractionController, () => {
     });
 
     expect(result.current.pendingMove).toBeNull();
+  });
+
+  it("drops an in-progress paint when the mode resets and comes back", () => {
+    const onPaintSelect = vi.fn<() => void>();
+
+    const { result, rerender } = renderHook(
+      ({
+        interactionMode,
+      }: {
+        readonly interactionMode: "paint-and-move" | "quick-create";
+      }) => useInteractionController({ interactionMode, onPaintSelect }),
+      { initialProps: { interactionMode: "paint-and-move" } },
+    );
+
+    act(() => {
+      result.current.beginPaint(first);
+      result.current.updatePaint(third);
+    });
+
+    rerender({ interactionMode: "quick-create" });
+    rerender({ interactionMode: "paint-and-move" });
+
+    expect(result.current.getInternals().state.paint).toBeNull();
+
+    act(() => {
+      result.current.endPaint();
+    });
+
+    expect(onPaintSelect).not.toHaveBeenCalled();
+  });
+
+  it("delivers the range the preview shows when a shrinking paint commits", async () => {
+    // Scheduler yields after every task, so a passive effect runs in its own task.
+    let clock = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => {
+      clock += 10;
+      return clock;
+    });
+    const previousActEnvironment = reactActGlobal.IS_REACT_ACT_ENVIRONMENT;
+    reactActGlobal.IS_REACT_ACT_ENVIRONMENT = false;
+
+    const container = document.createElement("div");
+    document.body.append(container);
+    const root = createRoot(container);
+    const onPaintSelect = vi.fn<(range: CalendarSelectionRange) => void>();
+    let controller: UseInteractionControllerResult | undefined;
+
+    try {
+      flushSync(() => {
+        root.render(
+          createElement(PaintPreview, {
+            onPaintSelect,
+            onRender: (rendered) => {
+              controller = rendered;
+            },
+          }),
+        );
+      });
+      const paint = (): UseInteractionControllerResult => {
+        if (controller === undefined) {
+          throw new Error("The harness has not rendered.");
+        }
+        return controller;
+      };
+
+      paint().beginPaint(cell("10:00"));
+      paint().updatePaint(cell("13:00"));
+      await waitForPreviewLabel(container, "10:00-14:00");
+
+      // The 14:00 commit's passive effects have not run yet; shrink the paint now.
+      paint().updatePaint(cell("10:00"));
+      await waitForPreviewLabel(container, "10:00-11:00");
+
+      paint().endPaint();
+
+      expect(onPaintSelect).toHaveBeenCalledTimes(1);
+      expect(onPaintSelect.mock.calls[0]?.[0].end.endTime).toBe(
+        cell("10:00").endTime,
+      );
+    } finally {
+      flushSync(() => {
+        root.unmount();
+      });
+      container.remove();
+      reactActGlobal.IS_REACT_ACT_ENVIRONMENT = previousActEnvironment;
+      vi.restoreAllMocks();
+    }
   });
 });
