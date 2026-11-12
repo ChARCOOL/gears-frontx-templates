@@ -252,6 +252,14 @@
   padding-inline: var(--cal-space-2);
 }
 
+/* The chip is capped, so a long name ellipsizes instead of pushing the remove button out. */
+.tagLabel {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tagActions {
   align-items: center;
   display: inline-flex;

@@ -220,8 +220,13 @@
   padding-block: var(--cal-space-2);
 }
 
+/* The toggle shares a capped chip with the name; a long translation ellipsizes. */
 .optionalToggle {
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   border: var(--cal-border-width-1) solid transparent;
   border-radius: var(--cal-radius-pill);
   background: transparent;

@@ -1526,7 +1526,14 @@ describe("CreateEventPanel combobox fidelity", () => {
       throw new Error("Missing people combobox control");
     }
 
-    const chip = within(peopleControl).getByText("Ada Lovelace");
+    const chip = within(peopleControl)
+      .getByText("Ada Lovelace")
+      .closest<HTMLElement>("[data-calendar-combobox-chip]");
+
+    if (chip === null) {
+      throw new Error("Missing people chip");
+    }
+
     assert(peopleControl).toHaveClass(styles.comboboxFieldTags);
     assert(chip).toHaveAttribute("data-calendar-combobox-value", "person-1");
     assert(chip).toHaveTextContent("Ada Lovelace");

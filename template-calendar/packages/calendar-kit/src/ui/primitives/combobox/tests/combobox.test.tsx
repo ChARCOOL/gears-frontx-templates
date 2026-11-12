@@ -145,9 +145,14 @@ describe(Combobox, () => {
   it("pins the tag chip structure and stable chip metadata", () => {
     renderCombobox({ closeOnSelect: false, selectedValues: ["a"], tags: true });
 
-    const chip = screen.getByText("Alpha", {
-      selector: `.${comboboxStyles.tag}`,
-    });
+    const chip = screen
+      .getByText("Alpha", { selector: `.${comboboxStyles.tagLabel}` })
+      .closest<HTMLElement>(`.${comboboxStyles.tag}`);
+
+    if (chip === null) {
+      throw new Error("Missing chip");
+    }
+
     expect(chip).toHaveAttribute("data-calendar-combobox-chip", "");
     expect(chip).toHaveAttribute("data-calendar-combobox-value", "a");
     expect(

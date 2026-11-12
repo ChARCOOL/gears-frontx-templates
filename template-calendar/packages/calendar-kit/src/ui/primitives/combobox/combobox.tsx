@@ -315,7 +315,7 @@ const ComboboxTagsBody = ({
             className={styles.tag}
             removeLabel={`${t("calendar.tag.remove")} ${textFromNode(option.label) || option.value}`}
           >
-            {option.label}
+            <span className={styles.tagLabel}>{option.label}</span>
             {renderTagAction?.(option)}
           </UiComboboxChip>
         ))}
